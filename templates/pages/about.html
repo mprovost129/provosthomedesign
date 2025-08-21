@@ -120,22 +120,23 @@
       </div>
     </div>
 
-    <!-- RIGHT COLUMN: photos -->
+    <!-- RIGHT COLUMN: photos (SAFE: no .url dereference) -->
     <div class="col-md-6 col-lg-5">
       <div class="bg-white border rounded-3 shadow p-3">
         {% if about.photos and about.photos|length > 0 %}
 
           {# First / hero photo #}
           {% with ph=about.photos.0 %}
-            {% with src=ph.url|default:ph %}
+            {# Support either a dict {"src": "...", "alt": "...", "caption": "..."} or a plain string URL #}
+            {% with src=ph.src|default:ph
+                    alt=ph.alt|default:about.owner_name|default:about.company|default:"Company photo"
+                    cap=ph.caption|default:"Pictured: Michael Provost" %}
               <figure class="mb-3">
                 <img src="{{ src }}"
-                     alt="{{ ph.alt|default:about.owner_name|default:about.company|default:'Company photo' }}"
+                     alt="{{ alt }}"
                      class="w-100 h-auto rounded border d-block"
                      loading="lazy" decoding="async">
-                <figcaption class="small text-muted mt-1">
-                  {{ ph.caption|default:"Pictured: Michael Provost" }}
-                </figcaption>
+                <figcaption class="small text-muted mt-1">{{ cap }}</figcaption>
               </figure>
             {% endwith %}
           {% endwith %}
@@ -143,15 +144,15 @@
           {# Additional photos — full width to match first #}
           {% if about.photos|length > 1 %}
             {% for ph in about.photos|slice:"1:" %}
-              {% with src=ph.url|default:ph %}
+              {% with src=ph.src|default:ph
+                      alt=ph.alt|default:"Additional photo"
+                      cap=ph.caption|default:"" %}
                 <figure class="mb-3">
                   <img src="{{ src }}"
-                       alt="{{ ph.alt|default:'Additional photo' }}"
+                       alt="{{ alt }}"
                        class="w-100 h-auto rounded border d-block"
                        loading="lazy" decoding="async">
-                  <figcaption class="small text-muted mt-1">
-                    {{ ph.caption|default:"Pictured: Michael with his family" }}
-                  </figcaption>
+                  {% if cap %}<figcaption class="small text-muted mt-1">{{ cap }}</figcaption>{% endif %}
                 </figure>
               {% endwith %}
             {% endfor %}
@@ -168,3 +169,4 @@
   </div>
 </div>
 {% endblock %}
+
