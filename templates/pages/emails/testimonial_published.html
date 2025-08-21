@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <body style="margin:0;padding:0;background:#f6f7fb;color:#111827;">
+    <!-- Preheader (hidden in most clients) -->
+    <div style="display:none;font-size:1px;line-height:1px;color:#fff;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">
+      Thanks for your feedback — your testimonial is now published.
+    </div>
+
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f6f7fb;">
+      <tr>
+        <td align="center" style="padding:28px 16px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:640px;background:#ffffff;border:1px solid #e7e9ee;border-radius:12px;overflow:hidden;">
+            <!-- Header -->
+            <tr>
+              <td style="padding:18px 24px;background:#f8fafc;border-bottom:1px solid #eef0f4;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="vertical-align:middle;">
+                      <div style="margin:0;font:600 18px/1.4 Arial, sans-serif;color:#111827;">
+                        Thank you, {{ t.name|default:"there"|escape }}!
+                      </div>
+                      <div style="margin:4px 0 0 0;color:#667085;font:400 13px/1.6 Arial, sans-serif;">
+                        Your testimonial has been approved and published.
+                      </div>
+                    </td>
+                    {% if logo_url %}
+                    <td align="right" style="vertical-align:middle;">
+                      <img src="{{ logo_url }}" alt="{{ company|default:'Provost Home Design' }} logo" height="28" style="display:block;">
+                    </td>
+                    {% endif %}
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Body -->
+            <tr>
+              <td style="padding:18px 24px;font:400 14px/1.7 Arial, sans-serif;">
+                <p style="margin:0 0 10px 0;"><strong>Rating:</strong> {{ t.rating|default:"—" }}/5</p>
+
+                <p style="margin:0 0 8px 0;"><strong>Message:</strong></p>
+                <div style="margin:6px 0 0 0;white-space:pre-wrap;border:1px solid #eef0f4;border-radius:8px;padding:12px;">
+                  {{ t.message|default:"(no message provided)"|linebreaksbr }}
+                </div>
+
+                {% if t.public_url %}
+                  <div style="margin:18px 0 6px 0;">
+                    <a href="{{ t.public_url }}" target="_blank" rel="noopener"
+                       style="display:inline-block;background:#0d6efd;color:#ffffff;text-decoration:none;font:600 14px/1 Arial, sans-serif;padding:10px 16px;border-radius:8px;">
+                      View on our site
+                    </a>
+                  </div>
+                {% endif %}
+
+                <p style="margin:16px 0 0 0;color:#667085;font:400 13px/1.6 Arial, sans-serif;">
+                  If you’d like us to make a correction, just reply to this email.
+                </p>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td style="padding:16px 24px;border-top:1px solid #eef0f4;color:#98a2b3;font:400 12px/1.6 Arial, sans-serif;">
+                — {{ company|default:"Provost Home Design" }}
+              </td>
+            </tr>
+          </table>
+
+          {% if t.public_url %}
+            <div style="max-width:640px;margin:10px auto 0;font:400 12px/1.6 Arial, sans-serif;color:#6b7280;">
+              Trouble with the button? Copy and paste this link:<br>
+              <span style="word-break:break-all;">{{ t.public_url }}</span>
+            </div>
+          {% endif %}
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -1,0 +1,142 @@
+{% load humanize %}
+<!doctype html>
+<html>
+  <body style="margin:0;padding:0;background:#f6f7fb;">
+    <!-- Preheader (hidden) -->
+    <div style="display:none;max-height:0;overflow:hidden;">
+      New Get Started submission{% if inquiry.submitted_at %} · {{ inquiry.submitted_at|date:"M j, Y g:ia" }}{% endif %}
+    </div>
+
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f6f7fb;padding:24px 0;">
+      <tr>
+        <td align="center">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;background:#ffffff;border:1px solid #e7e9ee;border-radius:8px;overflow:hidden;">
+            <!-- Header -->
+            <tr>
+              <td style="padding:18px 24px;background:#f8fafc;border-bottom:1px solid #e7e9ee;">
+                <div style="font:600 18px/1.2 Arial, sans-serif;color:#111827;">New Get Started submission</div>
+                {% if inquiry.submitted_at %}
+                <div style="font:400 12px/1.6 Arial, sans-serif;color:#6b7280;">Submitted {{ inquiry.submitted_at|date:"M j, Y g:ia" }}</div>
+                {% endif %}
+              </td>
+            </tr>
+
+            <!-- Body -->
+            <tr>
+              <td style="padding:16px 24px;font:400 14px/1.7 Arial, sans-serif;color:#111827;">
+                <p style="margin:0 0 10px;">From: <strong>{{ inquiry.first_name }} {{ inquiry.last_name }}</strong></p>
+                <p style="margin:0 0 16px;">
+                  Email: <a href="mailto:{{ inquiry.email }}" style="color:#0d6efd;text-decoration:none;">{{ inquiry.email }}</a>
+                  {% if inquiry.phone_number %} &nbsp;|&nbsp; Phone: <a href="tel:{{ inquiry.phone_number }}" style="color:#0d6efd;text-decoration:none;">{{ inquiry.phone_number }}</a>{% endif %}
+                  <br>Preferred contact: {{ inquiry.get_preferred_contact_method_display|default:"—" }}
+                </p>
+
+                {% if inquiry.street_address or inquiry.city or inquiry.state or inquiry.zip_code %}
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:8px 0 16px 0;">
+                  <tr>
+                    <td style="padding:6px 0;color:#6b7280;width:140px;">Address:</td>
+                    <td style="padding:6px 0;">
+                      {{ inquiry.street_address|default_if_none:""|default:"" }}
+                      {% if inquiry.city %} {{ inquiry.city }}{% endif %}
+                      {% if inquiry.state %} {{ inquiry.state }}{% endif %}
+                      {% if inquiry.zip_code %} {{ inquiry.zip_code }}{% endif %}
+                    </td>
+                  </tr>
+                </table>
+                {% endif %}
+
+                <h3 style="margin:12px 0 6px;font:600 14px Arial, sans-serif;">Project preferences</h3>
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:4px 0 12px 0;">
+                  <tr>
+                    <td style="padding:6px 0;color:#6b7280;width:180px;">House style:</td>
+                    <td style="padding:6px 0;">
+                      {% firstof inquiry.house_style.style_name inquiry.house_style.name inquiry.house_style "—" %}
+                    </td>
+                  </tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Min sqft:</td><td style="padding:6px 0;">{{ inquiry.min_square_footage|default:"—" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Max sqft:</td><td style="padding:6px 0;">{{ inquiry.max_square_footage|default:"—" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Floors:</td><td style="padding:6px 0;">{{ inquiry.number_of_floors|default:"—" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Bedrooms:</td><td style="padding:6px 0;">{{ inquiry.number_of_bedrooms|default:"—" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Bathrooms:</td><td style="padding:6px 0;">{{ inquiry.number_of_bathrooms|default:"—" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Garage:</td><td style="padding:6px 0;">{{ inquiry.number_of_garage_spaces|default:"—" }}</td></tr>
+                  <tr>
+                    <td style="padding:6px 0;color:#6b7280;">Budget:</td>
+                    <td style="padding:6px 0;">
+                      {% if inquiry.budget %}${{ inquiry.budget|floatformat:0|intcomma }}{% else %}—{% endif %}
+                    </td>
+                  </tr>
+                </table>
+
+                <h3 style="margin:12px 0 6px;font:600 14px Arial, sans-serif;">Land</h3>
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:4px 0 12px 0;">
+                  <tr><td style="padding:6px 0;color:#6b7280;width:180px;">Purchased:</td><td style="padding:6px 0;">{{ inquiry.land_purchased|yesno:"Yes,No" }}</td></tr>
+                  <tr>
+                    <td style="padding:6px 0;color:#6b7280;">Address:</td>
+                    <td style="padding:6px 0;">
+                      {{ inquiry.land_address|default_if_none:""|default:"" }}
+                      {% if inquiry.land_city %} {{ inquiry.land_city }}{% endif %}
+                      {% if inquiry.land_state %} {{ inquiry.land_state }}{% endif %}
+                      {% if inquiry.land_zip_code %} {{ inquiry.land_zip_code }}{% endif %}
+                    </td>
+                  </tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Lot size:</td><td style="padding:6px 0;">{{ inquiry.land_size|default:"—" }}</td></tr>
+                </table>
+
+                <h3 style="margin:12px 0 6px;font:600 14px Arial, sans-serif;">Plans &amp; structure</h3>
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:4px 0 12px 0;">
+                  <tr><td style="padding:6px 0;color:#6b7280;width:180px;">Pre-existing plans:</td><td style="padding:6px 0;">{{ inquiry.pre_existing_plans|yesno:"Yes,No" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Foundation:</td><td style="padding:6px 0;">{{ inquiry.get_foundation_height_display|default:"—" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">First floor ceiling:</td><td style="padding:6px 0;">{{ inquiry.get_first_floor_height_display|default:"—" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Second floor ceiling:</td><td style="padding:6px 0;">{{ inquiry.get_second_floor_height_display|default:"—" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Third floor ceiling:</td><td style="padding:6px 0;">{{ inquiry.get_third_floor_height_display|default:"—" }}</td></tr>
+                  <tr>
+                    <td style="padding:6px 0;color:#6b7280;">Ceilings:</td>
+                    <td style="padding:6px 0;">
+                      {% with f1=inquiry.get_ceiling_feature_1_display f2=inquiry.get_ceiling_feature_2_display f3=inquiry.get_ceiling_feature_3_display %}
+                        {% if f1 or f2 or f3 %}
+                          {% if f1 %}{{ f1 }}{% endif %}
+                          {% if f2 %}{% if f1 %}, {% endif %}{{ f2 }}{% endif %}
+                          {% if f3 %}{% if f1 or f2 %}, {% endif %}{{ f3 }}{% endif %}
+                        {% else %}—{% endif %}
+                      {% endwith %}
+                    </td>
+                  </tr>
+                </table>
+
+                <h3 style="margin:12px 0 6px;font:600 14px Arial, sans-serif;">Notes</h3>
+                <div style="padding:8px 10px;background:#f8fafc;border:1px solid #e7e9ee;border-radius:6px;">
+                  {{ inquiry.additional_notes|default:"—" }}
+                </div>
+
+                <h3 style="margin:16px 0 6px;font:600 14px Arial, sans-serif;">Attachments</h3>
+                <ul style="margin:0 0 10px 18px;padding:0;">
+                  {% for a in attachments %}
+                    <li style="margin:4px 0;">
+                      {{ a.file.name|default:"(file)" }} ({{ a.file.size|filesizeformat }})<br>
+                      <a href="{{ a.file.url }}" style="color:#0d6efd;text-decoration:none;">{{ a.file.url }}</a>
+                    </li>
+                  {% empty %}
+                    <li style="margin:4px 0;color:#6b7280;">(none)</li>
+                  {% endfor %}
+                </ul>
+
+                <p style="margin:14px 0 0 0;">
+                  <a href="{{ admin_url }}" style="display:inline-block;background:#0d6efd;color:#fff;text-decoration:none;font:600 14px/1 Arial, sans-serif;padding:10px 14px;border-radius:6px;">Open in Admin</a>
+                  &nbsp;&nbsp;
+                  <a href="{{ site_url }}" style="color:#0d6efd;text-decoration:none;">Visit site</a>
+                </p>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td style="padding:16px 24px;border-top:1px solid #e7e9ee;font:400 12px/1.6 Arial, sans-serif;color:#6b7280;">
+                This message was sent automatically from your Get Started form.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

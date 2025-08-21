@@ -1,0 +1,15 @@
+New contact message — {{ company|default:"Provost Home Design" }}
+
+From: {{ from_name }}{% if from_email %} <{{ from_email }}>{% endif %}
+Phone: {% if from_phone %}{{ from_phone }}{% else %}—{% endif %}
+Subject: {{ subject_line|default:"(no subject)" }}{% if terms_accepted|default_if_none:'' != '' %}
+Terms accepted: {{ terms_accepted|yesno:"Yes,No" }}{% endif %}
+
+----------------------------------------
+Message
+----------------------------------------
+{{ message }}
+
+--
+Message ID: {{ message_id|default:"—" }}
+Request URL: {{ request_url|default:"—" }}

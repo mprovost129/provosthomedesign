@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% static 'images/phdlogo.svg' as BRAND_LOGO_STATIC %}
+
+{% block title %}Contact • {{ contact.company|default:"Provost Home Design" }}{% endblock %}
+
+{% block extra_meta %}
+  <meta name="description" content="Contact {{ contact.company|default:'Provost Home Design' }} about stock or custom home plans. We’d love to hear about your project.">
+  <meta property="og:title" content="Contact {{ contact.company|default:'Provost Home Design' }}">
+  <meta property="og:description" content="Tell us about your project and how we can help.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+  <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ contact.logo_url|default:BRAND_LOGO_STATIC }}">
+  <meta name="robots" content="index,follow">
+{% endblock %}
+
+{% block content %}
+<div class="container-lg py-4">
+  <header class="mb-4">
+    <h1 class="h3 mb-1">Contact {{ contact.company|default:"Provost Home Design" }}</h1>
+    <p class="text-muted mb-0">We’d love to hear about your project.</p>
+  </header>
+
+  <div class="row g-4">
+    <!-- Left: Business info + hours + map -->
+    <div class="col-lg-5 order-lg-1">
+      <!-- Business info -->
+      <section class="card border shadow bg-white mb-3 rounded-3" aria-labelledby="contact-info-heading">
+        <div class="card-body p-3">
+          <div class="d-flex align-items-center mb-3">
+            {% if contact.logo_url %}
+              <img src="{{ contact.logo_url }}" alt="{{ contact.company|default:'Provost Home Design' }} logo" height="48" class="me-2" loading="lazy" decoding="async">
+            {% else %}
+              <img src="{% static 'images/phdlogo.svg' %}" alt="{{ contact.company|default:'Provost Home Design' }} logo" height="48" class="me-2" loading="lazy" decoding="async">
+            {% endif %}
+            <div>
+              <strong id="contact-info-heading" class="d-block">{{ contact.company|default:"Provost Home Design" }}</strong>
+              {% if contact.name %}<span class="text-muted small">{{ contact.name }}</span>{% endif %}
+            </div>
+          </div>
+
+          <ul class="list-unstyled mb-0">
+            {% if contact.address %}
+              <li class="mb-2 d-flex">
+                <span class="material-symbols-outlined me-2" aria-hidden="true">location_on</span>
+                <address class="mb-0">
+                  {{ contact.address|linebreaksbr }}
+                </address>
+              </li>
+            {% endif %}
+            {% if contact.phone %}
+              <li class="mb-2 d-flex align-items-center">
+                <span class="material-symbols-outlined me-2" aria-hidden="true">call</span>
+                {% if contact.tel_href %}
+                  <a href="{{ contact.tel_href }}" rel="nofollow">{{ contact.phone }}</a>
+                {% else %}
+                  <a href="tel:{{ contact.phone|urlencode }}" rel="nofollow">{{ contact.phone }}</a>
+                {% endif %}
+              </li>
+            {% endif %}
+            {% if contact.email %}
+              <li class="mb-2 d-flex align-items-center">
+                <span class="material-symbols-outlined me-2" aria-hidden="true">mail</span>
+                {% if contact.mailto_href %}
+                  <a href="{{ contact.mailto_href }}">{{ contact.email }}</a>
+                {% else %}
+                  <a href="mailto:{{ contact.email }}">{{ contact.email }}</a>
+                {% endif %}
+              </li>
+            {% endif %}
+          </ul>
+        </div>
+      </section>
+
+      <!-- Hours -->
+      <section class="card border shadow bg-white rounded-3 mb-3" aria-labelledby="hours-heading">
+        <div class="card-body p-3">
+          <h2 id="hours-heading" class="h6 fw-bold mb-3">Business Hours</h2>
+
+          {% if hours_struct %}
+            <ul class="list-unstyled mb-0">
+              {% for h in hours_struct %}
+                <li class="d-flex justify-content-between border-bottom py-1">
+                  <span class="text-muted">{{ h.get_day_display }}</span>
+                  <strong>
+                    {% if h.is_closed %}
+                      Closed
+                    {% elif h.by_appointment %}
+                      By appointment
+                    {% elif h.open_time and h.close_time %}
+                      {{ h.open_time|time:"g a" }} to {{ h.close_time|time:"g a" }}
+                    {% else %}
+                      —
+                    {% endif %}
+                  </strong>
+                </li>
+              {% empty %}
+                <li class="text-muted">Hours coming soon.</li>
+              {% endfor %}
+            </ul>
+          {% elif hours %}
+            {% if hours.items %}
+              <ul class="list-unstyled mb-0">
+                {% for pair in hours.items %}
+                  {% with day=pair.0 span=pair.1 %}
+                    <li class="d-flex justify-content-between border-bottom py-1">
+                      <span class="text-muted">{{ day }}</span>
+                      <strong>{{ span }}</strong>
+                    </li>
+                  {% endwith %}
+                {% empty %}
+                  <li class="text-muted">Hours coming soon.</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="text-muted mb-0" style="white-space: pre-line">{{ hours }}</p>
+            {% endif %}
+          {% else %}
+            <p class="text-muted mb-0">Hours coming soon.</p>
+          {% endif %}
+        </div>
+      </section>
+
+      {% if contact.address %}
+      <!-- Map (taller) -->
+      <section class="card border shadow bg-white rounded-3" aria-labelledby="map-heading">
+        <div class="card-body p-2">
+          <h2 id="map-heading" class="visually-hidden">Map</h2>
+          {# Make it taller by increasing the aspect ratio percentage #}
+          <div class="ratio" style="--bs-aspect-ratio: 85%;">
+            <iframe
+              src="https://www.google.com/maps?q={{ contact.address|urlencode }}&output=embed"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              title="{{ contact.company|default:'Provost Home Design' }} location map"
+              allowfullscreen>
+            </iframe>
+          </div>
+          <div class="p-2 text-end">
+            <a class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener"
+               href="https://www.google.com/maps/search/?api=1&query={{ contact.address|urlencode }}">
+              Get directions
+            </a>
+          </div>
+        </div>
+      </section>
+      {% endif %}
+    </div>
+
+    <!-- Right: Contact form + Testimonial form -->
+    <div class="col-lg-7 order-lg-2">
+      <!-- Contact form -->
+      <section class="card border shadow bg-white rounded-3 mb-3" aria-labelledby="contact-form-heading">
+        <div class="card-body p-3 p-md-4">
+          <h2 id="contact-form-heading" class="h6 fw-bold mb-2">Send us a message</h2>
+          <p class="text-muted small mb-3">Tell us a bit about your project and how we can help.</p>
+
+          <form method="post" class="vstack gap-3" novalidate action="{% url 'pages:contact' %}" autocomplete="on">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger" role="alert">
+                {{ form.non_field_errors|striptags }}
+              </div>
+            {% endif %}
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label" for="{{ form.name.id_for_label }}">Name</label>
+                {{ form.name }}
+                {% for e in form.name.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="{{ form.email.id_for_label }}">Email</label>
+                {{ form.email }}
+                {% for e in form.email.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="{{ form.phone.id_for_label }}">Phone</label>
+                {{ form.phone }}
+                {% for e in form.phone.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="{{ form.subject.id_for_label }}">Subject</label>
+                {{ form.subject }}
+                {% for e in form.subject.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="{{ form.message.id_for_label }}">Message</label>
+                {{ form.message }}
+                {% for e in form.message.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+
+              {% if form.website %}
+                <div class="d-none" aria-hidden="true">{{ form.website }}</div>
+              {% endif %}
+            </div>
+
+            <div class="form-check mt-1">
+              {% if form.terms_accepted %}
+                {{ form.terms_accepted }}
+                <label class="form-check-label" for="{{ form.terms_accepted.id_for_label }}">
+                  I agree to the <a href="{% url 'pages:terms' %}" target="_blank" rel="noopener">Terms &amp; Conditions</a>
+                </label>
+                {% for e in form.terms_accepted.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              {% else %}
+                <input class="form-check-input" type="checkbox" id="id_terms_accepted" name="terms_accepted" required>
+                <label class="form-check-label" for="id_terms_accepted">
+                  I agree to the <a href="{% url 'pages:terms' %}" target="_blank" rel="noopener">Terms &amp; Conditions</a>
+                </label>
+              {% endif %}
+            </div>
+
+            <div class="text-end">
+              <input type="hidden" name="action" value="send_message">
+              <button type="submit" class="btn btn-primary">Send message</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Testimonial form -->
+      <section class="card border shadow bg-white rounded-3" aria-labelledby="testimonial-form-heading">
+        <div class="card-body p-3 p-md-4">
+          <h2 id="testimonial-form-heading" class="h6 fw-bold mb-2">Leave a testimonial</h2>
+          <p class="text-muted small mb-3">Share your experience working with us.</p>
+
+          <form method="post" class="vstack gap-3" novalidate action="{% url 'pages:contact' %}" autocomplete="on">
+            {% csrf_token %}
+            {% if tform.non_field_errors %}
+              <div class="alert alert-danger" role="alert">
+                {{ tform.non_field_errors|striptags }}
+              </div>
+            {% endif %}
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label" for="{{ tform.name.id_for_label }}">Name</label>
+                {{ tform.name }}
+                {% for e in tform.name.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="{{ tform.email.id_for_label }}">Email (not shown)</label>
+                {{ tform.email }}
+                {% for e in tform.email.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label" for="{{ tform.role.id_for_label }}">I am a…</label>
+                {{ tform.role }}
+                {% for e in tform.role.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label" for="{{ tform.rating.id_for_label }}">Rating</label>
+                {{ tform.rating }}
+                {% for e in tform.rating.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+
+              <div class="col-12">
+                <label class="form-label" for="{{ tform.message.id_for_label }}">Your experience</label>
+                {{ tform.message }}
+                {% for e in tform.message.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+
+              <div class="col-12">
+                <div class="form-check">
+                  {{ tform.consent_to_publish }}
+                  <label class="form-check-label" for="{{ tform.consent_to_publish.id_for_label }}">
+                    I consent to publish this testimonial
+                  </label>
+                </div>
+                {% for e in tform.consent_to_publish.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+
+              <div class="col-12">
+                <div class="form-check">
+                  {{ tform.terms_accepted }}
+                  <label class="form-check-label" for="{{ tform.terms_accepted.id_for_label }}">
+                    I agree to the <a href="{% url 'pages:terms' %}" target="_blank" rel="noopener">Terms &amp; Conditions</a>
+                  </label>
+                </div>
+                {% for e in tform.terms_accepted.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              </div>
+
+              {% if tform.website2 %}
+                <div class="d-none" aria-hidden="true">{{ tform.website2 }}</div>
+              {% endif %}
+            </div>
+
+            <div class="text-end">
+              <input type="hidden" name="action" value="submit_testimonial">
+              <button type="submit" class="btn btn-outline-primary">Submit testimonial</button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  {% if approved_testimonials %}
+    <section class="mt-4" aria-labelledby="what-clients-say-heading">
+      <h2 id="what-clients-say-heading" class="h6 fw-bold mb-3">What clients say</h2>
+      <div class="row g-3">
+        {# Show only 3 at the bottom. Change ':3' to your preferred count. #}
+        {% for t in approved_testimonials|slice:":3" %}
+          <div class="col-md-6 col-lg-4">
+            <article class="card border shadow bg-white h-100 rounded-3">
+              <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                  <strong>{{ t.name }}</strong>
+                  <span class="badge text-bg-success-subtle text-success border" aria-label="Rating {{ t.rating }} out of 5">Rating: {{ t.rating }}/5</span>
+                </div>
+                <p class="mb-1 mt-2">{{ t.message|linebreaksbr }}</p>
+                <small class="text-muted">{{ t.created_at|date:"M j, Y" }}</small>
+              </div>
+            </article>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

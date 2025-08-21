@@ -1,0 +1,13 @@
+Hi {{ t.name|default:"there" }},
+
+Thank you for your feedback! Your testimonial has been approved and published.
+
+Rating: {{ t.rating|default:"—" }}/5
+Message:
+{{ t.message|default:"(no message provided)" }}
+
+{% if t.public_url %}View on our site: {{ t.public_url }}{% endif %}
+
+If you’d like us to make a correction, just reply to this email.
+
+— {{ company|default:"Provost Home Design" }}

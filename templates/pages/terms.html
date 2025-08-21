@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page.title|default:"Terms & Conditions" }} • {{ company|default:"Provost Home Design" }}{% endblock %}
+
+{% block content %}
+<main id="top" class="container-lg py-5">
+  <h1 class="mb-2">{{ page.title|default:"Terms & Conditions" }}</h1>
+  <p class="text-muted">Last updated: {% now "F j, Y" %}</p>
+
+  <!-- Quick nav -->
+  <nav class="mb-4" aria-label="On this page">
+    <ul class="list-inline small text-muted">
+      <li class="list-inline-item"><a href="#acceptance">Acceptance</a></li>
+      <li class="list-inline-item"><a href="#ip">Intellectual Property</a></li>
+      <li class="list-inline-item"><a href="#services">Use of Services</a></li>
+      <li class="list-inline-item"><a href="#obligations">User Obligations</a></li>
+      <li class="list-inline-item"><a href="#payment">Payment & Refunds</a></li>
+      <li class="list-inline-item"><a href="#liability">Limitation of Liability</a></li>
+      <li class="list-inline-item"><a href="#links">Third-Party Links</a></li>
+      <li class="list-inline-item"><a href="#privacy">Privacy</a></li>
+      <li class="list-inline-item"><a href="#law">Governing Law</a></li>
+      <li class="list-inline-item"><a href="#changes">Changes</a></li>
+      <li class="list-inline-item"><a href="#contact">Contact</a></li>
+      <li class="list-inline-item"><a href="#license">Plan License</a></li>
+      <li class="list-inline-item"><a href="#prohibited">Prohibited Uses</a></li>
+      <li class="list-inline-item"><a href="#codes">Local Codes & Permits</a></li>
+      <li class="list-inline-item"><a href="#dimensions">Dimensions & Variations</a></li>
+      <li class="list-inline-item"><a href="#deliverables">Deliverables & Timelines</a></li>
+      <li class="list-inline-item"><a href="#mods">Modifications & Custom Work</a></li>
+      <li class="list-inline-item"><a href="#pricing">Pricing & Payment</a></li>
+      <li class="list-inline-item"><a href="#returns">Returns & Cancellations</a></li>
+      <li class="list-inline-item"><a href="#disclaimers">Disclaimers</a></li>
+      <li class="list-inline-item"><a href="#cap">Liability Cap</a></li>
+      <li class="list-inline-item"><a href="#indemnity">Indemnification</a></li>
+      <li class="list-inline-item"><a href="#force">Force Majeure</a></li>
+      <li class="list-inline-item"><a href="#misc">Miscellaneous</a></li>
+    </ul>
+  </nav>
+
+  <div class="mb-5" id="acceptance">
+    <h2 class="h4">1. Acceptance of Terms</h2>
+    <p>
+      By accessing or using the {{ company|default:"Provost Home Design" }} website, purchasing house plans,
+      or engaging with our services, you agree to be bound by these Terms &amp; Conditions.
+      If you do not agree, you must discontinue use of our website and services.
+    </p>
+  </div>
+
+  <div class="mb-5" id="ip">
+    <h2 class="h4">2. Intellectual Property</h2>
+    <p>
+      All content—including house plans, CAD drawings, images, text, and logos—is the property
+      of {{ company|default:"Provost Home Design" }} and protected by copyright and other laws.
+      You may not reproduce, distribute, modify, or resell our plans without express written consent.
+    </p>
+  </div>
+
+  <div class="mb-5" id="services">
+    <h2 class="h4">3. Use of Services</h2>
+    <p>
+      Purchased plans are licensed (not sold) for your personal project as described below.
+      Modifications may be requested, but resale or redistribution of original or modified
+      plans is prohibited.
+    </p>
+  </div>
+
+  <div class="mb-5" id="obligations">
+    <h2 class="h4">4. User Obligations</h2>
+    <p>
+      You are responsible for ensuring plans comply with local building codes, zoning regulations,
+      HOA/ARC rules, site conditions, and utilities. Consult a licensed architect/engineer and
+      qualified builder before construction and for permit submittals where required.
+    </p>
+  </div>
+
+  <div class="mb-5" id="payment">
+    <h2 class="h4">5. Payment & Refunds</h2>
+    <p>
+      All sales are final. Due to the digital nature of plans, refunds are not offered.
+      If there is an issue with your order, please <a href="{% url 'pages:contact' %}">contact us</a>.
+    </p>
+  </div>
+
+  <div class="mb-5" id="liability">
+    <h2 class="h4">6. Limitation of Liability</h2>
+    <p>
+      To the maximum extent permitted by law, {{ company|default:"Provost Home Design" }} shall not be liable for any
+      indirect, incidental, special, consequential, or punitive damages, or for loss of profits,
+      revenue, data, or use, arising from the use or misuse of our plans. Construction is undertaken
+      at your own risk.
+    </p>
+  </div>
+
+  <div class="mb-5" id="links">
+    <h2 class="h4">7. Third-Party Links</h2>
+    <p>
+      Our site may link to third-party websites. We are not responsible for their content or practices.
+      Accessing third-party resources is at your own discretion and subject to their terms and policies.
+    </p>
+  </div>
+
+  <div class="mb-5" id="privacy">
+    <h2 class="h4">8. Privacy & Data Use</h2>
+    <p>
+      Your use of our site is also governed by our
+      <a href="{% url 'pages:privacy' %}">Privacy Policy</a>. By using our site, you consent to the
+      collection and use of your information as outlined there.
+    </p>
+  </div>
+
+  <div class="mb-5" id="law">
+    <h2 class="h4">9. Governing Law</h2>
+    <p>
+      These Terms are governed by the laws of the Commonwealth of Massachusetts, without regard to
+      conflict-of-law rules. Venue lies in the state or federal courts within Massachusetts.
+    </p>
+  </div>
+
+  <div class="mb-5" id="changes">
+    <h2 class="h4">10. Changes to These Terms</h2>
+    <p>
+      We may update these Terms at any time. Changes will be posted on this page with an updated date.
+      Continued use of the site after changes constitutes acceptance of the revised Terms.
+    </p>
+  </div>
+
+  <div class="mb-5" id="contact">
+    <h2 class="h4">11. Contact Us</h2>
+    <p>
+      Questions about these Terms? Please <a href="{% url 'pages:contact' %}">contact us</a>.
+    </p>
+  </div>
+
+  <!-- Plan-specific clauses -->
+  <div class="mb-5" id="license">
+    <h2 class="h4">12. Plan License (Single-Use, Non-Transferable)</h2>
+    <ul class="mb-0">
+      <li><strong>Single-use license:</strong> A purchase grants you (and your builder) the right to construct one (1) home from the plan.</li>
+      <li><strong>Non-transferable:</strong> You may not transfer, sublicense, sell, or give the plan files to another person or entity.</li>
+      <li><strong>Copies:</strong> You may print/reproduce copies reasonably necessary for bidding, permitting, and constructing the single licensed build.</li>
+      <li><strong>Multiple builds require additional licenses.</strong></li>
+    </ul>
+  </div>
+
+  <div class="mb-5" id="prohibited">
+    <h2 class="h4">13. Prohibited Uses</h2>
+    <ul class="mb-0">
+      <li>Resale, redistribution, or public posting of digital plan files.</li>
+      <li>Using plans (original or modified) to create derivative works for resale or catalog distribution.</li>
+      <li>Constructing more than one home without purchasing additional licenses.</li>
+      <li>Removing or altering copyright notices.</li>
+    </ul>
+  </div>
+
+  <div class="mb-5" id="codes">
+    <h2 class="h4">14. Local Codes, Engineering & Permits</h2>
+    <p class="mb-2">
+      Plans may require review, adaptation, and stamping by a licensed professional in your jurisdiction.
+      Site-specific factors (soil, wind, seismic, snow, energy code, floodplain, etc.) vary by location.
+    </p>
+    <ul class="mb-0">
+      <li><strong>Engineer/Architect of Record:</strong> You are responsible for retaining local professionals when required.</li>
+      <li><strong>Code compliance:</strong> You are responsible for verifying and achieving compliance with all applicable codes and ordinances.</li>
+      <li><strong>Field conditions:</strong> Contractor is responsible for means, methods, and verifying all dimensions and conditions prior to construction.</li>
+    </ul>
+  </div>
+
+  <div class="mb-5" id="dimensions">
+    <h2 class="h4">15. Dimensions, Materials & Variations</h2>
+    <p>
+      Dimensions shown may be nominal; verify in field and on final permit set. Materials and products illustrated
+      may be substituted by your builder or dictated by local availability. As-built conditions may vary from drawings.
+    </p>
+  </div>
+
+  <div class="mb-5" id="deliverables">
+    <h2 class="h4">16. Deliverables & Timelines</h2>
+    <p>
+      Unless otherwise stated, plans are delivered as digital files. Typical timelines for modifications or custom work
+      are estimates only and may change based on scope, revisions, and workload. We will communicate updates as needed.
+    </p>
+  </div>
+
+  <div class="mb-5" id="mods">
+    <h2 class="h4">17. Modifications & Custom Work</h2>
+    <p>
+      We offer plan modifications and custom design services. Fees, deliverables, and schedules will be confirmed in writing.
+      You are responsible for final review/approval prior to permit submittal and construction.
+    </p>
+  </div>
+
+  <div class="mb-5" id="pricing">
+    <h2 class="h4">18. Pricing, Taxes & Payment</h2>
+    <p>
+      Prices are subject to change without notice. Applicable taxes or processing fees may apply and will be shown at checkout or invoicing.
+      Orders may be canceled by us for suspected fraud or misuse (with a refund where applicable).
+    </p>
+  </div>
+
+  <div class="mb-5" id="returns">
+    <h2 class="h4">19. Returns, Exchanges & Cancellations</h2>
+    <p>
+      Due to the nature of digital goods, we generally cannot accept returns or exchanges. If files are defective or a download fails,
+      we will make reasonable efforts to correct the issue or re-deliver the files.
+    </p>
+  </div>
+
+  <div class="mb-5" id="disclaimers">
+    <h2 class="h4">20. Disclaimers</h2>
+    <p>
+      Plans and content are provided “as is” without warranty of any kind, express or implied, including warranties of merchantability,
+      fitness for a particular purpose, or non-infringement. We do not provide legal, engineering, or surveying services,
+      and nothing on this site constitutes professional advice.
+    </p>
+  </div>
+
+  <div class="mb-5" id="cap">
+    <h2 class="h4">21. Liability Cap</h2>
+    <p>
+      In no event will our aggregate liability exceed the amount you paid to us for the applicable plan or service giving rise to the claim.
+    </p>
+  </div>
+
+  <div class="mb-5" id="indemnity">
+    <h2 class="h4">22. Indemnification</h2>
+    <p>
+      You agree to defend, indemnify, and hold harmless {{ company|default:"Provost Home Design" }} from and against claims, damages,
+      liabilities, costs, and expenses arising out of your use of the plans or breach of these Terms.
+    </p>
+  </div>
+
+  <div class="mb-5" id="force">
+    <h2 class="h4">23. Force Majeure</h2>
+    <p>
+      We are not liable for delays or failures caused by events beyond our reasonable control, including acts of God,
+      labor disputes, supply issues, or interruptions of internet/hosting services.
+    </p>
+  </div>
+
+  <div id="misc">
+    <h2 class="h4">24. Miscellaneous</h2>
+    <ul class="mb-0">
+      <li><strong>Severability:</strong> If any provision is unenforceable, the remainder remains in effect.</li>
+      <li><strong>No waiver:</strong> Our failure to enforce a provision is not a waiver.</li>
+      <li><strong>Assignment:</strong> You may not assign these Terms without our consent.</li>
+      <li><strong>Entire agreement:</strong> These Terms, together with our <a href="{% url 'pages:privacy' %}">Privacy Policy</a>, constitute the entire agreement regarding your use of our site and plans.</li>
+    </ul>
+  </div>
+
+  <p class="mt-4"><a href="#top" class="small">Back to top ↑</a></p>
+</main>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% load humanize %}
+New Get Started submission
+{% if inquiry.submitted_at %}Submitted: {{ inquiry.submitted_at|date:"M j, Y g:ia" }}{% endif %}
+
+Name: {{ inquiry.first_name }} {{ inquiry.last_name }}
+Email: {{ inquiry.email }}{% if inquiry.phone_number %} | Phone: {{ inquiry.phone_number }}{% endif %}
+Preferred contact: {{ inquiry.get_preferred_contact_method_display|default:"—" }}
+
+Address:
+{{ inquiry.street_address|default_if_none:""|default:"" }}{% if inquiry.city %} {{ inquiry.city }}{% endif %}{% if inquiry.state %} {{ inquiry.state }}{% endif %}{% if inquiry.zip_code %} {{ inquiry.zip_code }}{% endif %}
+
+---------------------------
+PROJECT PREFERENCES
+---------------------------
+House style: {% firstof inquiry.house_style.style_name inquiry.house_style.name inquiry.house_style "—" %}
+Min sqft:    {{ inquiry.min_square_footage|default:"—" }}
+Max sqft:    {{ inquiry.max_square_footage|default:"—" }}
+Floors:      {{ inquiry.number_of_floors|default:"—" }}
+Bedrooms:    {{ inquiry.number_of_bedrooms|default:"—" }}
+Bathrooms:   {{ inquiry.number_of_bathrooms|default:"—" }}
+Garage:      {{ inquiry.number_of_garage_spaces|default:"—" }}
+Budget:      {% if inquiry.budget %}${{ inquiry.budget|floatformat:0|intcomma }}{% else %}—{% endif %}
+
+---------------------------
+LAND
+---------------------------
+Purchased:   {{ inquiry.land_purchased|yesno:"Yes,No" }}
+Address:     {{ inquiry.land_address|default_if_none:""|default:"" }}{% if inquiry.land_city %} {{ inquiry.land_city }}{% endif %}{% if inquiry.land_state %} {{ inquiry.land_state }}{% endif %}{% if inquiry.land_zip_code %} {{ inquiry.land_zip_code }}{% endif %}
+Lot size:    {{ inquiry.land_size|default:"—" }}
+
+---------------------------
+PLANS / STRUCTURE
+---------------------------
+Pre-existing plans: {{ inquiry.pre_existing_plans|yesno:"Yes,No" }}
+
+Foundation:          {{ inquiry.get_foundation_height_display|default:"—" }}
+First floor height:  {{ inquiry.get_first_floor_height_display|default:"—" }}
+Second floor height: {{ inquiry.get_second_floor_height_display|default:"—" }}
+Third floor height:  {{ inquiry.get_third_floor_height_display|default:"—" }}
+
+Ceilings:
+{% with f1=inquiry.get_ceiling_feature_1_display f2=inquiry.get_ceiling_feature_2_display f3=inquiry.get_ceiling_feature_3_display %}
+{% if f1 or f2 or f3 %}
+  {% if f1 %}{{ f1 }}{% endif %}{% if f2 %}{% if f1 %}, {% endif %}{{ f2 }}{% endif %}{% if f3 %}{% if f1 or f2 %}, {% endif %}{{ f3 }}{% endif %}
+{% else %}—{% endif %}
+{% endwith %}
+
+---------------------------
+NOTES
+---------------------------
+{{ inquiry.additional_notes|default:"—" }}
+
+---------------------------
+ATTACHMENTS
+---------------------------
+{% for a in attachments %}
+- {{ a.file.name|default:"(file)" }} ({{ a.file.size|filesizeformat }})
+  {{ a.file.url }}
+{% empty %}
+- (none)
+{% endfor %}
+
+Admin: {{ admin_url }}
+Site:  {{ site_url }}

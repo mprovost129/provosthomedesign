@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <body style="margin:0;padding:0;background:#f6f7fb;color:#111;">
+    <!-- Preheader (hidden in most clients) -->
+    <div style="display:none;max-height:0;overflow:hidden;">
+      New testimonial from {{ t.name|default:"(No name)" }} — rating {{ t.rating|default:"—" }}/5
+    </div>
+
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f6f7fb;">
+      <tr>
+        <td align="center" style="padding:28px 16px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:640px;background:#ffffff;border:1px solid #e7e9ee;border-radius:12px;overflow:hidden;">
+            <!-- Header -->
+            <tr>
+              <td style="padding:18px 24px;border-bottom:1px solid #eef0f4;">
+                <h1 style="margin:0;font:600 18px/1.4 Arial, sans-serif;">New testimonial submitted</h1>
+                <p style="margin:4px 0 0 0;color:#667085;font:400 13px/1.6 Arial, sans-serif;">
+                  {% if t.created_at %}Received {{ t.created_at|date:"M j, Y, g:ia" }}{% else %}Just now{% endif %}
+                </p>
+              </td>
+            </tr>
+
+            <!-- Body -->
+            <tr>
+              <td style="padding:18px 24px;font:400 14px/1.7 Arial, sans-serif;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                  <tr>
+                    <td style="padding:6px 0;color:#667085;width:160px;">Name</td>
+                    <td style="padding:6px 0;">{{ t.name|default:"—" }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;color:#667085;">Email</td>
+                    <td style="padding:6px 0;">
+                      {% if t.email %}
+                        <a href="mailto:{{ t.email|urlencode }}" style="color:#0d6efd;text-decoration:none;">{{ t.email }}</a>
+                      {% else %}
+                        —
+                      {% endif %}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;color:#667085;">Rating</td>
+                    <td style="padding:6px 0;">
+                      {{ t.rating|default:"—" }}/5
+                      {% if t.rating %}
+                        &nbsp;<span aria-hidden="true">({% for _ in "12345"|slice:":t.rating"|make_list %}★{% endfor %}{% for _ in "12345"|slice:"t.rating:"|make_list %}☆{% endfor %})</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;color:#667085;">Consent to publish</td>
+                    <td style="padding:6px 0;">{{ t.consent_to_publish|yesno:"Yes,No,Unknown" }}</td>
+                  </tr>
+                  {% if t.source_url %}
+                  <tr>
+                    <td style="padding:6px 0;color:#667085;">Source page</td>
+                    <td style="padding:6px 0;">
+                      <a href="{{ t.source_url }}" style="color:#0d6efd;text-decoration:none;" target="_blank" rel="noopener">{{ t.source_url }}</a>
+                    </td>
+                  </tr>
+                  {% endif %}
+                </table>
+
+                <div style="margin:16px 0 6px 0;font-weight:600;">Message</div>
+                <div style="white-space:pre-wrap;border:1px solid #eef0f4;border-radius:8px;padding:12px;">
+                  {{ t.message|default:"(no message provided)"|linebreaksbr }}
+                </div>
+
+                <div style="margin:18px 0 6px 0;">
+                  {% if admin_url %}
+                    <a href="{{ admin_url }}" target="_blank" rel="noopener"
+                       style="display:inline-block;background:#0d6efd;color:#fff;text-decoration:none;font:600 14px/1 Arial, sans-serif;padding:10px 16px;border-radius:8px;">
+                      Review in Admin
+                    </a>
+                  {% endif %}
+                  {% if t.email %}
+                    <a href="mailto:{{ t.email|urlencode }}?subject={{ ('Re: Your testimonial'|urlencode) }}"
+                       style="display:inline-block;margin-left:8px;background:#198754;color:#fff;text-decoration:none;font:600 14px/1 Arial, sans-serif;padding:10px 16px;border-radius:8px;">
+                      Reply to {{ t.name|default:'sender' }}
+                    </a>
+                  {% endif %}
+                  {% if t.public_url %}
+                    <a href="{{ t.public_url }}" target="_blank" rel="noopener"
+                       style="display:inline-block;margin-left:8px;background:#6c757d;color:#fff;text-decoration:none;font:600 14px/1 Arial, sans-serif;padding:10px 16px;border-radius:8px;">
+                      View public page
+                    </a>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td style="padding:16px 24px;border-top:1px solid #eef0f4;color:#98a2b3;font:400 12px/1.6 Arial, sans-serif;">
+                Automated notification from {{ site_name|default:"Provost Home Design" }}
+              </td>
+            </tr>
+          </table>
+
+          {% if admin_url %}
+            <div style="max-width:640px;margin:10px auto 0;font:400 12px/1.6 Arial, sans-serif;color:#6b7280;">
+              Admin link: <span style="word-break:break-all;">{{ admin_url }}</span>
+            </div>
+          {% endif %}
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

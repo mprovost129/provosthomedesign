@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+*.pyc
+*$py.class
+
+# Virtual env
+venv/
+.env/
+.venv/
+env/
+ENV/
+env.bak/
+
+# Django stuff
+*.log
+*.pot
+*.pyc
+*.sqlite3
+db.sqlite3
+media/           # user uploads (don’t track)
+staticfiles/     # collected static files (don’t track)
+*.mo
+
+# Local settings
+.env
+*.env
+settings_local.py
+config/local_settings.py
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Coverage / testing
+htmlcov/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+*.hypothesis/
+
+# Migrations (keep __init__.py only if empty)
+**/migrations/*.py
+!**/migrations/__init__.py

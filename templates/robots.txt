@@ -1,0 +1,10 @@
+{# templates/robots.txt #}
+User-agent: *
+# Admin & auth
+Disallow: /admin/
+Disallow: /accounts/
+
+# Block internal search results (keep real listing pages crawlable)
+Disallow: /*?*q=
+
+Sitemap: {{ request.scheme }}://{{ request.get_host }}{% url 'sitemap' %}

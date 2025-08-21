@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% load static humanize plans_extras %}
+
+{% block title %}
+  {% with style_name=plan.house_style.style_name|default:plan.house_style|default:"" %}
+    Plan {{ plan.plan_number }}{% if style_name %} — {{ style_name }}{% endif %} • Provost Home Design
+  {% endwith %}
+{% endblock %}
+
+{% block extra_meta %}
+  {% if plan.meta_description %}
+    <meta name="description" content="{{ plan.meta_description }}">
+  {% elif plan.description %}
+    <meta name="description" content="{{ plan.description|striptags|truncatechars:160 }}">
+  {% endif %}
+
+  {% with style_name=plan.house_style.style_name|default:plan.house_style|default:"" %}
+    <meta property="og:title" content="Plan {{ plan.plan_number }}{% if style_name %} — {{ style_name }}{% endif %}">
+  {% endwith %}
+  <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+
+  {% if plan.main_image %}
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ plan.main_image.url }}">
+    <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{{ plan.main_image.url }}">
+  {% elif images %}
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ images.0.image.url }}">
+    <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{{ images.0.image.url }}">
+  {% endif %}
+{% endblock %}
+
+{% block jsonld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Plan {{ plan.plan_number }}{% if plan.house_style %} — {{ plan.house_style.style_name|default:plan.house_style|escape }}{% endif %}",
+  "description": "{{ plan.meta_description|default:plan.description|default:''|striptags|truncatechars:300|escapejs }}",
+  "image": [
+    {% if plan.main_image %}
+      "{{ request.scheme }}://{{ request.get_host }}{{ plan.main_image.url }}"{% if images %},{% endif %}
+    {% endif %}
+    {% for img in images %}
+      "{{ request.scheme }}://{{ request.get_host }}{{ img.image.url }}"{% if not forloop.last %}, {% endif %}
+    {% endfor %}
+  ],
+  "sku": "{{ plan.plan_number }}",
+  "brand": { "@type": "Brand", "name": "Provost Home Design" },
+  "url": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}",
+  "offers": {
+    "@type": "Offer",
+    "priceCurrency": "USD",
+    {% if plan.plan_price %}
+      "price": "{{ plan.plan_price|floatformat:2 }}",
+      "availability": "https://schema.org/InStock",
+    {% endif %}
+    "url": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}"
+  }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container-lg py-4">
+  <div class="row g-4">
+
+    <!-- Left: images -->
+    <div class="col-lg-7">
+      {% if plan.main_image %}
+        <a href="#" class="d-block" data-bs-toggle="modal" data-bs-target="#planGalleryModal" data-start-index="0">
+          <img src="{{ plan.main_image.url }}" class="img-fluid rounded-3 border shadow mb-3" alt="Plan {{ plan.plan_number }} main image">
+        </a>
+      {% endif %}
+
+      {% if images %}
+        <div class="row g-2">
+          {% for img in images %}
+            <div class="col-4">
+              <a
+                href="#"
+                class="d-block"
+                data-bs-toggle="modal"
+                data-bs-target="#planGalleryModal"
+                data-start-index="{% if plan.main_image %}{{ forloop.counter0|add:1 }}{% else %}{{ forloop.counter0 }}{% endif %}">
+                <img src="{{ img.image.url }}" class="img-fluid rounded border" alt="{{ img.caption|default:'Gallery image' }}">
+              </a>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Right: specs + price + request changes form -->
+    <div class="col-lg-5">
+      <h1 class="h3">Plan {{ plan.plan_number }}</h1>
+      <p class="text-muted mb-2">
+        {% with style_name=plan.house_style.style_name|default:plan.house_style|default:"" %}
+          {{ style_name }}
+        {% endwith %}
+      </p>
+
+      <ul class="list-group mb-3">
+        <li class="list-group-item d-flex justify-content-between"><span>Square footage</span><strong>{{ plan.square_footage|intcomma }} sq ft</strong></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Bedrooms</span><strong>{{ plan.bedrooms }}</strong></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Bathrooms</span><strong>{{ plan.bathrooms|bath_label }}</strong></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Stories</span><strong>{{ plan.stories }}</strong></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Garage stalls</span><strong>{{ plan.garage_stalls }}</strong></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Width</span><strong>{{ plan.house_width_in|feet_inches }}</strong></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Depth</span><strong>{{ plan.house_depth_in|feet_inches }}</strong></li>
+      </ul>
+
+      {% if plan.description %}
+        <p>{{ plan.description }}</p>
+      {% endif %}
+
+      {% if plan.plan_price %}
+        <div class="h5 mb-3">Base plan price: ${{ plan.plan_price|floatformat:2|intcomma }}</div>
+      {% endif %}
+
+      <!-- Request changes (email comment) -->
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <h2 class="h6 mb-2">Request changes to this plan</h2>
+          <p class="text-muted small mb-3">Describe what you’d like to change. We’ll email your note along with the plan #. Changes are in addition to the base price shown.</p>
+
+          <form action="{% url 'plans:send_plan_comment' plan.id %}" method="post" class="vstack gap-3" novalidate>
+            {% csrf_token %}
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label" for="name">Your name</label>
+                <input id="name" type="text" class="form-control" name="name" placeholder="Your name" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="email">Your email</label>
+                <input id="email" type="email" class="form-control" name="email" placeholder="you@example.com" required>
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label" for="message">Your note</label>
+              <textarea id="message" name="message" rows="4" class="form-control" placeholder="Tell us what you’d like to change… (e.g., mirror plan, add a bedroom, move garage)" required></textarea>
+            </div>
+
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
+              <label class="form-check-label small text-muted" for="terms">
+                I agree to the <a href="{% url 'pages:terms' %}" target="_blank" rel="noopener">Terms &amp; Conditions</a>.
+              </label>
+            </div>
+
+            <div class="text-end">
+              <button type="submit" class="btn btn-primary">Email my request</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="mt-3 d-flex gap-2">
+        <a href="{% url 'plans:plan_list' %}" class="btn btn-outline-primary">Back to Plans</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: lightbox gallery -->
+<div class="modal fade" id="planGalleryModal" tabindex="-1" aria-labelledby="planGalleryLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content bg-dark">
+      <div class="modal-header border-0">
+        <h5 class="modal-title text-white" id="planGalleryLabel">Plan {{ plan.plan_number }} — Gallery</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body pt-0">
+        <div id="planGalleryCarousel" class="carousel slide" data-bs-ride="false">
+          <div class="carousel-inner">
+            {% if plan.main_image %}
+              <div class="carousel-item active">
+                <img src="{{ plan.main_image.url }}" class="d-block w-100" alt="Main image">
+              </div>
+            {% endif %}
+            {% for img in images %}
+              <div class="carousel-item {% if not plan.main_image and forloop.first %}active{% endif %}">
+                <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ img.caption|default:'Gallery image' }}">
+              </div>
+            {% empty %}
+              {% if not plan.main_image %}
+                <div class="carousel-item active">
+                  <div class="d-flex justify-content-center align-items-center text-white" style="height:400px;">
+                    No images available.
+                  </div>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+
+          <button class="carousel-control-prev" type="button" data-bs-target="#planGalleryCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+          </button>
+          <button class="carousel-control-next" type="button" data-bs-target="#planGalleryCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+          </button>
+
+          {% if plan.main_image or images %}
+            <div class="carousel-indicators mt-3" style="position: static;">
+              {% if plan.main_image %}
+                <button type="button" data-bs-target="#planGalleryCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Main"></button>
+                {% for img in images %}
+                  <button type="button" data-bs-target="#planGalleryCarousel" data-bs-slide-to="{{ forloop.counter }}" aria-label="Slide {{ forloop.counter|add:1 }}"></button>
+                {% endfor %}
+              {% else %}
+                {% for img in images %}
+                  <button
+                    type="button"
+                    data-bs-target="#planGalleryCarousel"
+                    data-bs-slide-to="{{ forloop.counter0 }}"
+                    class="{% if forloop.first %}active{% endif %}"
+                    {% if forloop.first %}aria-current="true"{% endif %}
+                    aria-label="Slide {{ forloop.counter }}">
+                  </button>
+                {% endfor %}
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+  // Start the carousel at a specific index when a thumbnail/cover is clicked
+  document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById("planGalleryModal");
+    const carouselEl = document.getElementById("planGalleryCarousel");
+    if (!modal || !carouselEl) return;
+
+    const carousel = new bootstrap.Carousel(carouselEl, { interval: false, ride: false });
+
+    document.querySelectorAll("[data-start-index]").forEach(el => {
+      el.addEventListener("click", function () {
+        const idx = parseInt(this.getAttribute("data-start-index") || "0", 10);
+        modal.addEventListener("shown.bs.modal", function onShown() {
+          carousel.to(idx);
+          modal.removeEventListener("shown.bs.modal", onShown);
+        });
+      });
+    });
+  });
+</script>
+{% endblock %}
+{% endblock %}

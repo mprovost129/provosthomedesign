@@ -1,0 +1,112 @@
+{% load static %}
+{% with m=request.resolver_match %}
+{# Accessible skip link (appears on keyboard focus only) #}
+<a class="visually-hidden-focusable position-absolute top-0 start-0 m-2 px-3 py-2 bg-light border rounded"
+   href="#content">Skip to content</a>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom sticky-top shadow-sm phd-nav" aria-label="Primary">
+  <div class="container-lg">
+
+    {# Mobile brand (< lg) so the logo shows when collapsed #}
+    <a class="navbar-brand d-lg-none p-0" href="{% url 'pages:home' %}" rel="home">
+      <img src="{% static 'images/phdlogo.svg' %}" alt="Provost Home Design" height="48" loading="lazy" decoding="async">
+    </a>
+
+    {# Collapse toggle #}
+    <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+            aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon" aria-hidden="true"></span>
+    </button>
+
+    <div id="mainNav" class="collapse navbar-collapse">
+      <div class="row w-100 align-items-center gx-0">
+
+        {# LEFT: 2/12 at lg+ (desktop logo) #}
+        <div class="col-12 col-lg-2 d-none d-lg-flex justify-content-start">
+          <a class="navbar-brand p-0 m-0" href="{% url 'pages:home' %}" rel="home">
+            <img src="{% static 'images/phdlogo.svg' %}" alt="Provost Home Design" height="48" loading="lazy" decoding="async">
+          </a>
+        </div>
+
+        {# CENTER: 8/12 at lg+ (menu centered) #}
+        <div class="col-12 col-lg-8 d-flex justify-content-center">
+          <ul class="navbar-nav nav-spaced text-uppercase text-center flex-lg-row">
+            <li class="nav-item">
+              <a class="nav-link {% if m and m.url_name == 'home' %}active{% endif %}"
+                 href="{% url 'pages:home' %}"
+                 {% if m and m.url_name == 'home' %}aria-current="page"{% endif %}>Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {% if m and m.namespace == 'plans' %}active{% endif %}"
+                 href="{% url 'plans:plan_list' %}"
+                 {% if m and m.namespace == 'plans' %}aria-current="page"{% endif %}>Plans</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {% if m and m.url_name == 'about' %}active{% endif %}"
+                 href="{% url 'pages:about' %}"
+                 {% if m and m.url_name == 'about' %}aria-current="page"{% endif %}>About</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {% if m and m.url_name == 'get_started' %}active{% endif %}"
+                 href="{% url 'pages:get_started' %}"
+                 {% if m and m.url_name == 'get_started' %}aria-current="page"{% endif %}>Get Started</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {% if m and m.url_name == 'contact' %}active{% endif %}"
+                 href="{% url 'pages:contact' %}"
+                 {% if m and m.url_name == 'contact' %}aria-current="page"{% endif %}>Contact</a>
+            </li>
+          </ul>
+        </div>
+
+        {# RIGHT: 2/12 at lg+ (socials right; centered on mobile) #}
+        <div class="col-12 col-lg-2 d-flex justify-content-lg-end justify-content-center mt-2 mt-lg-0">
+          <ul class="navbar-nav align-items-center gap-2 flex-row">
+            <li class="nav-item">
+              <a href="https://www.facebook.com/ProvostHomeDesign"
+                 class="nav-link px-2 nav-link--icon"
+                 target="_blank" rel="me external noopener noreferrer"
+                 aria-label="Facebook (opens in new tab)">
+                <i class="bi bi-facebook" aria-hidden="true"></i>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="https://www.instagram.com/provosthomedesign/"
+                 class="nav-link px-2 nav-link--icon"
+                 target="_blank" rel="me external noopener noreferrer"
+                 aria-label="Instagram (opens in new tab)">
+                <i class="bi bi-instagram" aria-hidden="true"></i>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="https://www.linkedin.com/in/michael-provost-6077a318/"
+                 class="nav-link px-2 nav-link--icon"
+                 target="_blank" rel="me external noopener noreferrer"
+                 aria-label="LinkedIn (opens in new tab)">
+                <i class="bi bi-linkedin" aria-hidden="true"></i>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</nav>
+
+{# Optional: collapse the menu after choosing a link on mobile #}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var mainNav = document.getElementById('mainNav');
+    if (!mainNav) return;
+    mainNav.querySelectorAll('a.nav-link').forEach(function (link) {
+      link.addEventListener('click', function () {
+        var bsCollapse = bootstrap.Collapse.getInstance(mainNav);
+        if (bsCollapse && window.getComputedStyle(document.querySelector('.navbar-toggler')).display !== 'none') {
+          bsCollapse.hide();
+        }
+      });
+    });
+  });
+</script>
+{% endwith %}

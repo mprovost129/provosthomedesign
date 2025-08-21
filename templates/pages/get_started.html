@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Get Started • Provost Home Design{% endblock %}
+
+{% block content %}
+<div class="container-lg py-4">
+
+  <!-- Page header -->
+  <header class="mb-4 text-center">
+    <h1 class="h3 mb-1">Get Started</h1>
+    <p class="text-muted mb-0">
+      Tell us a bit about your project and upload any plans you already have. We’ll follow up shortly.
+    </p>
+  </header>
+
+  <!-- Form card -->
+  <div class="card border shadow bg-white rounded-3">
+    <div class="card-body p-4 p-md-5">
+
+      <form id="get-started-form" method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">{{ form.non_field_errors|striptags }}</div>
+        {% endif %}
+
+        <!-- Contact -->
+        <h2 class="h5 fw-bold mb-3">Contact</h2>
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.first_name.id_for_label }}">First name</label>
+            {{ form.first_name }}
+            {% if form.first_name.errors %}<div class="invalid-feedback d-block">{{ form.first_name.errors|striptags }}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.last_name.id_for_label }}">Last name</label>
+            {{ form.last_name }}
+            {% if form.last_name.errors %}<div class="invalid-feedback d-block">{{ form.last_name.errors|striptags }}</div>{% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.email.id_for_label }}">Email</label>
+            {{ form.email }}
+            {% if form.email.errors %}<div class="invalid-feedback d-block">{{ form.email.errors|striptags }}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.alt_email.id_for_label }}">Alt email (optional)</label>
+            {{ form.alt_email }}
+            {% if form.alt_email.errors %}<div class="invalid-feedback d-block">{{ form.alt_email.errors|striptags }}</div>{% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.phone_number.id_for_label }}">Phone</label>
+            {{ form.phone_number }}
+            {% if form.phone_number.errors %}<div class="invalid-feedback d-block">{{ form.phone_number.errors|striptags }}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.alt_phone_number.id_for_label }}">Alt phone (optional)</label>
+            {{ form.alt_phone_number }}
+            {% if form.alt_phone_number.errors %}<div class="invalid-feedback d-block">{{ form.alt_phone_number.errors|striptags }}</div>{% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.company.id_for_label }}">Company (optional)</label>
+            {{ form.company }}
+            {% if form.company.errors %}<div class="invalid-feedback d-block">{{ form.company.errors|striptags }}</div>{% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.preferred_contact_method.id_for_label }}">Preferred contact</label>
+            {{ form.preferred_contact_method }}
+            {% if form.preferred_contact_method.errors %}<div class="invalid-feedback d-block">{{ form.preferred_contact_method.errors|striptags }}</div>{% endif %}
+          </div>
+        </div>
+
+        <!-- Current address -->
+        <h2 class="h5 fw-bold mb-3">Current address <span class="text-muted">(optional)</span></h2>
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.street_address.id_for_label }}">Street</label>
+            {{ form.street_address }}
+            {% if form.street_address.errors %}<div class="invalid-feedback d-block">{{ form.street_address.errors|striptags }}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.city.id_for_label }}">City</label>
+            {{ form.city }}
+            {% if form.city.errors %}<div class="invalid-feedback d-block">{{ form.city.errors|striptags }}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.state.id_for_label }}">State</label>
+            {{ form.state }}
+            {% if form.state.errors %}<div class="invalid-feedback d-block">{{ form.state.errors|striptags }}</div>{% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.zip_code.id_for_label }}">ZIP</label>
+            {{ form.zip_code }}
+            {% if form.zip_code.errors %}<div class="invalid-feedback d-block">{{ form.zip_code.errors|striptags }}</div>{% endif %}
+          </div>
+        </div>
+
+        <!-- Project preferences -->
+        <h2 class="h5 fw-bold mb-3">Project preferences</h2>
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <label class="form-label" for="{{ form.house_style.id_for_label }}">House style</label>
+            {{ form.house_style }}
+            {% if form.house_style.errors %}<div class="invalid-feedback d-block">{{ form.house_style.errors|striptags }}</div>{% endif %}
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label" for="{{ form.min_square_footage.id_for_label }}">Min sq ft</label>
+            {{ form.min_square_footage }}
+            {% if form.min_square_footage.errors %}<div class="invalid-feedback d-block">{{ form.min_square_footage.errors|striptags }}</div>{% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="{{ form.max_square_footage.id_for_label }}">Max sq ft</label>
+            {{ form.max_square_footage }}
+            {% if form.max_square_footage.errors %}<div class="invalid-feedback d-block">{{ form.max_square_footage.errors|striptags }}</div>{% endif %}
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label" for="{{ form.number_of_floors.id_for_label }}">Floors</label>
+            {{ form.number_of_floors }}
+            {% if form.number_of_floors.errors %}<div class="invalid-feedback d-block">{{ form.number_of_floors.errors|striptags }}</div>{% endif %}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="{{ form.number_of_bedrooms.id_for_label }}">Bedrooms</label>
+            {{ form.number_of_bedrooms }}
+            {% if form.number_of_bedrooms.errors %}<div class="invalid-feedback d-block">{{ form.number_of_bedrooms.errors|striptags }}</div>{% endif %}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="{{ form.number_of_bathrooms.id_for_label }}">Bathrooms</label>
+            {{ form.number_of_bathrooms }}
+            {% if form.number_of_bathrooms.errors %}<div class="invalid-feedback d-block">{{ form.number_of_bathrooms.errors|striptags }}</div>{% endif %}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label" for="{{ form.number_of_garage_spaces.id_for_label }}">Garage</label>
+            {{ form.number_of_garage_spaces }}
+            {% if form.number_of_garage_spaces.errors %}<div class="invalid-feedback d-block">{{ form.number_of_garage_spaces.errors|striptags }}</div>{% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label" for="{{ form.budget.id_for_label }}">Budget (optional)</label>
+            {{ form.budget }}
+            {% if form.budget.errors %}<div class="invalid-feedback d-block">{{ form.budget.errors|striptags }}</div>{% endif %}
+          </div>
+        </div>
+
+        <!-- Plans / structure -->
+        <h2 class="h5 fw-bold mb-3">Plans &amp; structure</h2>
+        <div class="row g-3 mb-4">
+          <div class="col-12">
+            <div class="form-check">
+              {{ form.pre_existing_plans }}
+              <label class="form-check-label" for="{{ form.pre_existing_plans.id_for_label }}">I have pre-existing plans</label>
+            </div>
+            {% if form.pre_existing_plans.errors %}<div class="invalid-feedback d-block">{{ form.pre_existing_plans.errors|striptags }}</div>{% endif %}
+          </div>
+
+          <div class="col-12">
+            <label class="form-label" for="{{ form.plan_files.id_for_label }}">Upload plan files</label>
+            {{ form.plan_files }}
+            {% if form.plan_files.help_text %}<div class="form-text" id="{{ form.plan_files.id_for_label }}_help">{{ form.plan_files.help_text }}</div>{% endif %}
+            {% if form.plan_files.errors %}<div class="invalid-feedback d-block">{{ form.plan_files.errors|striptags }}</div>{% endif %}
+          </div>
+
+          <div class="col-12">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label" for="{{ form.foundation_height.id_for_label }}">Foundation height</label>
+                {{ form.foundation_height }}
+                {% if form.foundation_height.errors %}<div class="invalid-feedback d-block">{{ form.foundation_height.errors|striptags }}</div>{% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="{{ form.first_floor_height.id_for_label }}">First floor ceiling</label>
+                {{ form.first_floor_height }}
+                {% if form.first_floor_height.errors %}<div class="invalid-feedback d-block">{{ form.first_floor_height.errors|striptags }}</div>{% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="{{ form.second_floor_height.id_for_label }}">Second floor ceiling</label>
+                {{ form.second_floor_height }}
+                {% if form.second_floor_height.errors %}<div class="invalid-feedback d-block">{{ form.second_floor_height.errors|striptags }}</div>{% endif %}
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="{{ form.third_floor_height.id_for_label }}">Third floor ceiling</label>
+                {{ form.third_floor_height }}
+                {% if form.third_floor_height.errors %}<div class="invalid-feedback d-block">{{ form.third_floor_height.errors|striptags }}</div>{% endif %}
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label" for="{{ form.ceiling_feature_1.id_for_label }}">Ceiling feature 1</label>
+                {{ form.ceiling_feature_1 }}
+                {% if form.ceiling_feature_1.errors %}<div class="invalid-feedback d-block">{{ form.ceiling_feature_1.errors|striptags }}</div>{% endif %}
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="{{ form.ceiling_feature_2.id_for_label }}">Ceiling feature 2</label>
+                {{ form.ceiling_feature_2 }}
+                {% if form.ceiling_feature_2.errors %}<div class="invalid-feedback d-block">{{ form.ceiling_feature_2.errors|striptags }}</div>{% endif %}
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="{{ form.ceiling_feature_3.id_for_label }}">Ceiling feature 3</label>
+                {{ form.ceiling_feature_3 }}
+                {% if form.ceiling_feature_3.errors %}<div class="invalid-feedback d-block">{{ form.ceiling_feature_3.errors|striptags }}</div>{% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <h2 class="h5 fw-bold mb-3">Additional notes</h2>
+        <div class="mb-4">
+          {{ form.additional_notes }}
+          {% if form.additional_notes.errors %}<div class="invalid-feedback d-block">{{ form.additional_notes.errors|striptags }}</div>{% endif %}
+        </div>
+
+        <!-- Honeypot (hidden if present) -->
+        {% if form.website %}
+          <div class="d-none" aria-hidden="true">
+            {{ form.website }}
+          </div>
+        {% endif %}
+
+        <!-- Terms & submit -->
+        <div class="border-top pt-3 d-flex flex-column flex-md-row align-items-md-center gap-3">
+          {% if form.terms_accepted %}
+            <div class="form-check mb-3">
+              {{ form.terms_accepted }}
+              <label class="form-check-label" for="{{ form.terms_accepted.id_for_label }}">
+                &nbsp;I agree to the <a href="{% url 'pages:terms' %}" target="_blank" rel="noopener">Terms &amp; Conditions</a>.
+              </label>
+              {% if form.terms_accepted.errors %}<div class="small text-danger">{{ form.terms_accepted.errors|striptags }}</div>{% endif %}
+            </div>
+          {% else %}
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" id="id_terms_accepted" name="terms_accepted" required>
+              <label class="form-check-label" for="id_terms_accepted">
+                &nbsp;I agree to the <a href="{% url 'pages:terms' %}" target="_blank" rel="noopener">Terms &amp; Conditions</a>.
+              </label>
+            </div>
+          {% endif %}
+
+          <div class="ms-md-auto">
+            <button type="submit" class="btn btn-primary">Submit request</button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

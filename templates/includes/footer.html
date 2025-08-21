@@ -1,0 +1,101 @@
+{# templates/includes/footer.html #}
+{% load static util_tags %}
+
+<footer class="bg-light border-top mt-5 py-4">
+  <div class="container">
+    <div class="row gy-4 align-items-start">
+
+      {# LEFT: Logo, name, email, phone, address — with Organization microdata #}
+      <div class="col-md-4" itemscope itemtype="https://schema.org/Organization">
+        <a href="{% url 'pages:home' %}"
+           class="d-inline-flex align-items-center mb-2 link-dark text-decoration-none"
+           itemprop="url" rel="home">
+          <img
+            src="{% static BRAND_LOGO_STATIC|default:'images/phdlogo.svg' %}"
+            alt="{{ COMPANY_NAME }} logo"
+            width="80" height="80"
+            class="me-2"
+            loading="lazy" decoding="async"
+            itemprop="logo">
+          <span class="visually-hidden" itemprop="name">{{ COMPANY_NAME }}</span>
+        </a>
+
+        {% if CONTACT_EMAIL %}
+          <p class="text-muted small mb-1">
+            <a href="mailto:{{ CONTACT_EMAIL }}" class="text-muted text-decoration-none" itemprop="email">{{ CONTACT_EMAIL }}</a>
+          </p>
+        {% endif %}
+
+        {% if CONTACT_PHONE %}
+          <p class="text-muted small mb-1">
+            <a href="{{ CONTACT_PHONE|tel_href }}" class="text-muted text-decoration-none" itemprop="telephone">{{ CONTACT_PHONE }}</a>
+          </p>
+        {% endif %}
+
+        {% if CONTACT_ADDRESS %}
+          <p class="text-muted small mb-0">
+            <a class="text-muted text-decoration-none"
+               href="https://maps.google.com/?q={{ CONTACT_ADDRESS|urlencode }}"
+               target="_blank" rel="noopener"
+               itemprop="address" itemscope itemtype="https://schema.org/PostalAddress">
+              <span itemprop="streetAddress">{{ CONTACT_ADDRESS }}</span>
+            </a>
+          </p>
+        {% endif %}
+      </div>
+
+      {# CENTER: Links (two columns) — expose as a nav landmark #}
+      <div class="col-md-4">
+        <nav aria-label="Footer">
+          <div class="row">
+            <div class="col-6">
+              <h6 class="fw-semibold">Plans</h6>
+              <ul class="list-unstyled small mb-0">
+                <li><a href="{% url 'plans:plan_list' %}" class="text-decoration-none text-muted">Browse Plans</a></li>
+                <li><a href="{% url 'pages:get_started' %}" class="text-decoration-none text-muted">Get Started</a></li>
+                <li><a href="{% url 'pages:contact' %}" class="text-decoration-none text-muted">Contact</a></li>
+              </ul>
+            </div>
+            <div class="col-6">
+              <h6 class="fw-semibold">Company</h6>
+              <ul class="list-unstyled small mb-0">
+                <li><a href="{% url 'pages:about' %}" class="text-decoration-none text-muted">About Us</a></li>
+                <li><a href="{% url 'pages:privacy' %}" class="text-decoration-none text-muted">Privacy Policy</a></li>
+                <li><a href="{% url 'pages:terms' %}" class="text-decoration-none text-muted">Terms &amp; Conditions</a></li>
+                {% if request.user.is_authenticated and request.user.is_staff %}
+                  <li><a href="{% url 'admin:index' %}" class="text-decoration-none text-muted">Admin</a></li>
+                {% endif %}
+              </ul>
+            </div>
+          </div>
+        </nav>
+      </div>
+
+      {# RIGHT: Social icons + copyright; mark as sameAs #}
+      <div class="col-md-4">
+        <div class="d-flex gap-3 justify-content-md-end mb-2">
+          <a href="https://www.facebook.com/ProvostHomeDesign"
+             target="_blank" rel="me external noopener noreferrer"
+             class="text-muted fs-5" aria-label="Facebook"
+             itemprop="sameAs">
+            <i class="bi bi-facebook"></i>
+          </a>
+          <a href="https://www.instagram.com/provosthomedesign/"
+             target="_blank" rel="me external noopener noreferrer"
+             class="text-muted fs-5" aria-label="Instagram"
+             itemprop="sameAs">
+            <i class="bi bi-instagram"></i>
+          </a>
+          <a href="https://www.linkedin.com/in/michael-provost-6077a318/"
+             target="_blank" rel="me external noopener noreferrer"
+             class="text-muted fs-5" aria-label="LinkedIn"
+             itemprop="sameAs">
+            <i class="bi bi-linkedin"></i>
+          </a>
+        </div>
+        <p class="text-muted small mb-0 text-md-end">© {% current_year %} {{ COMPANY_NAME }}</p>
+      </div>
+
+    </div>
+  </div>
+</footer>

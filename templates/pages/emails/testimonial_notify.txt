@@ -1,0 +1,18 @@
+{# pages/emails/testimonial_new.txt #}
+New testimonial submitted
+{% if t.created_at %}Received: {{ t.created_at|date:"M j, Y g:ia" }}{% endif %}
+
+Name:   {{ t.name|default:"—" }}
+Email:  {{ t.email|default:"—" }}{% if t.email %}
+
+Reply:  mailto:{{ t.email }}{% endif %}
+Rating: {{ t.rating|default:"—" }}/5
+Consent to publish: {{ t.consent_to_publish|yesno:"Yes,No,Unknown" }}
+
+Message:
+{{ t.message|default:"(no message provided)" }}
+
+{% if admin_url %}Review in Admin: {{ admin_url }}{% endif %}
+{% if t.public_url %}Public page: {{ t.public_url }}{% endif %}
+
+— {{ site_name|default:"Provost Home Design" }}

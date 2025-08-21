@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page.title|default:"Privacy Policy" }} • {{ company|default:"Provost Home Design" }}{% endblock %}
+
+{% block content %}
+<main class="container-lg py-5">
+  <h1 class="mb-2">{{ page.title|default:"Privacy Policy" }}</h1>
+  <p class="text-muted">Last updated: {% now "F j, Y" %}</p>
+
+  <!-- Quick nav -->
+  <nav class="mb-4" aria-label="On this page">
+    <ul class="list-inline small text-muted">
+      <li class="list-inline-item"><a href="#intro">Introduction</a></li>
+      <li class="list-inline-item"><a href="#scope">Scope</a></li>
+      <li class="list-inline-item"><a href="#collection">Information We Collect</a></li>
+      <li class="list-inline-item"><a href="#use">How We Use Info</a></li>
+      <li class="list-inline-item"><a href="#legal">Legal Bases (EEA/UK)</a></li>
+      <li class="list-inline-item"><a href="#cookies">Cookies</a></li>
+      <li class="list-inline-item"><a href="#analytics">Analytics & Email</a></li>
+      <li class="list-inline-item"><a href="#sharing">Data Sharing</a></li>
+      <li class="list-inline-item"><a href="#security">Security</a></li>
+      <li class="list-inline-item"><a href="#retention">Retention</a></li>
+      <li class="list-inline-item"><a href="#rights">Your Rights</a></li>
+      <li class="list-inline-item"><a href="#regional">Region Notices</a></li>
+      <li class="list-inline-item"><a href="#children">Children’s Privacy</a></li>
+      <li class="list-inline-item"><a href="#transfers">International Transfers</a></li>
+      <li class="list-inline-item"><a href="#changes">Changes</a></li>
+      <li class="list-inline-item"><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <div class="mb-5" id="intro">
+    <h2 class="h4">1. Introduction</h2>
+    <p>
+      {{ company|default:"Provost Home Design" }} (“we,” “our,” or “us”) respects your privacy. This Privacy Policy
+      explains how we collect, use, store, and protect your information when you visit our website, request plan
+      modifications, or otherwise interact with our services.
+    </p>
+  </div>
+
+  <div class="mb-5" id="scope">
+    <h2 class="h4">2. Scope</h2>
+    <p>
+      This Policy applies to information collected through our website and communications with us (email, forms, phone).
+      If you follow links to third-party sites (e.g., payment processors, social networks), their privacy policies apply to your activity there.
+    </p>
+  </div>
+
+  <div class="mb-5" id="collection">
+    <h2 class="h4">3. Information We Collect</h2>
+    <ul>
+      <li><strong>Information you provide:</strong> name, email, phone, messages, project details, testimonials,
+          and files you upload (e.g., for plan modifications or “Get Started”).</li>
+      <li><strong>Account & preferences:</strong> if you sign in or save items (e.g., saved plans/details), we store
+          profile and preference data associated with your account.</li>
+      <li><strong>Transaction information:</strong> if purchases are offered, we process order details (card data is handled by our payment processor).</li>
+      <li><strong>Technical information:</strong> IP address, device/browser type, pages visited, and similar usage data,
+          collected via cookies and similar technologies.</li>
+      <li><strong>From third parties:</strong> we may receive information from service providers (e.g., analytics,
+          email delivery, anti-spam/anti-abuse) or when you interact with us on social platforms.</li>
+    </ul>
+  </div>
+
+  <div class="mb-5" id="use">
+    <h2 class="h4">4. How We Use Your Information</h2>
+    <ul>
+      <li>Provide our services (answer inquiries, deliver plans, handle modifications, manage accounts).</li>
+      <li>Improve our website, products, and customer support.</li>
+      <li>Send service messages and, with your consent or as permitted by law, marketing communications (you can opt out).</li>
+      <li>Protect our services against fraud, abuse, and misuse; enforce our <a href="{% url 'pages:terms' %}">Terms</a>.</li>
+      <li>Comply with legal obligations and respond to lawful requests.</li>
+    </ul>
+  </div>
+
+  <div class="mb-5" id="legal">
+    <h2 class="h4">5. Legal Bases (EEA/UK only)</h2>
+    <p>
+      Where applicable, we process personal data under one or more of the following: (a) consent; (b) contract performance; (c) legitimate interests
+      (e.g., site security, product improvement); (d) legal obligation; (e) vital interests in rare cases.
+    </p>
+  </div>
+
+  <div class="mb-5" id="cookies">
+    <h2 class="h4">6. Cookies & Similar Technologies</h2>
+    <p>
+      We use cookies to operate the site, remember preferences, and analyze usage. You can manage cookies in your browser.
+      Blocking cookies may affect site functionality. If we add a cookie banner or preference center, your choices there will be honored.
+    </p>
+  </div>
+
+  <div class="mb-5" id="analytics">
+    <h2 class="h4">7. Analytics, Email & Social</h2>
+    <ul>
+      <li><strong>Analytics:</strong> we may use analytics tools to understand aggregate usage trends.</li>
+      <li><strong>Email delivery & marketing:</strong> providers may send transactional or marketing emails on our behalf. You can unsubscribe from marketing at any time.</li>
+      <li><strong>Social links:</strong> our site links to Facebook, Instagram, and LinkedIn. Your interactions are governed by those platforms’ policies.</li>
+    </ul>
+  </div>
+
+  <div class="mb-5" id="sharing">
+    <h2 class="h4">8. Data Sharing</h2>
+    <ul>
+      <li><strong>Service providers:</strong> vendors who help operate the site, deliver files, process email, host data, or provide analytics/anti-abuse.</li>
+      <li><strong>Legal & safety:</strong> to comply with law, enforce our Terms, or protect rights, property, and safety.</li>
+      <li><strong>Business transfers:</strong> in connection with a merger, acquisition, or asset sale, with appropriate protections.</li>
+      <li><strong>We do not sell or rent your personal information.</strong></li>
+    </ul>
+  </div>
+
+  <div class="mb-5" id="security">
+    <h2 class="h4">9. Data Security</h2>
+    <p>
+      We take reasonable measures to protect your information. No method of transmission or storage is completely secure,
+      and we cannot guarantee absolute security. If we learn of a security incident, we may notify you as required by law.
+    </p>
+  </div>
+
+  <div class="mb-5" id="retention">
+    <h2 class="h4">10. Data Retention</h2>
+    <p>
+      We retain personal information as long as necessary to provide services, comply with legal obligations, resolve disputes, and enforce agreements.
+      Retention periods vary by data type and purpose.
+    </p>
+  </div>
+
+  <div class="mb-5" id="rights">
+    <h2 class="h4">11. Your Choices & Rights</h2>
+    <p>
+      You may request access, correction, deletion, or a copy of your personal information, and you may object to or restrict certain processing (subject to law).
+      To make a request, please <a href="{% url 'pages:contact' %}">contact us</a>. You can unsubscribe from marketing emails via the link in each email.
+      If you have an account, you can update certain info in your profile.
+    </p>
+  </div>
+
+  <div class="mb-5" id="regional">
+    <h2 class="h4">12. Region-Specific Notices</h2>
+    <ul>
+      <li><strong>California/US state laws:</strong> you may have additional rights (e.g., to know, delete, correct, or limit certain uses). We honor requests as required by law.</li>
+      <li><strong>EEA/UK:</strong> you may also have rights to data portability and to lodge a complaint with your supervisory authority.</li>
+    </ul>
+  </div>
+
+  <div class="mb-5" id="children">
+    <h2 class="h4">13. Children’s Privacy</h2>
+    <p>
+      Our services are not directed to children under 13, and we do not knowingly collect personal information from them. If you believe a child has provided information,
+      please <a href="{% url 'pages:contact' %}">contact us</a> so we can remove it.
+    </p>
+  </div>
+
+  <div class="mb-5" id="transfers">
+    <h2 class="h4">14. International Transfers</h2>
+    <p>
+      If you are outside the United States, your information may be processed in the U.S. or other countries with different data-protection laws.
+      We take steps to protect your information in such cases.
+    </p>
+  </div>
+
+  <div class="mb-5" id="changes">
+    <h2 class="h4">15. Changes to This Policy</h2>
+    <p>
+      We may update this Privacy Policy from time to time. Updates will be posted on this page with the revised date.
+      Continued use of the site following changes indicates your acceptance of the revised Policy.
+    </p>
+  </div>
+
+  <div id="contact">
+    <h2 class="h4">16. Contact Us (Data Controller)</h2>
+    <p>
+      For questions or requests regarding this Privacy Policy, contact {{ company|default:"Provost Home Design" }}
+      at <a href="mailto:{{ contact_email|default:'mike@provosthomedesign.com' }}">{{ contact_email|default:"mike@provosthomedesign.com" }}</a>.
+      You can also use our <a href="{% url 'pages:contact' %}">contact form</a>.
+    </p>
+  </div>
+</main>
+{% endblock %}
