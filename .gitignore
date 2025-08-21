@@ -54,3 +54,4 @@ coverage.xml
 # Migrations (keep __init__.py only if empty)
 **/migrations/*.py
 !**/migrations/__init__.py
+".env" 
