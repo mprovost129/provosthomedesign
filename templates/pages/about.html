@@ -1,23 +1,32 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}{{ about.title|default:"About" }} • {{ about.company|default:"Provost Home Design" }}{% endblock %}
+{% block title %}
+  {{ about.title|default:"About" }} • {{ about.company|default:"Provost Home Design" }}
+{% endblock %}
 
 {% block content %}
 <div class="container-lg py-4">
 
   <!-- Header -->
   <header class="mb-4">
-    <h1 class="h3 mb-1">{{ about.title|default:"About" }}</h1>
-    {% if about.subtitle %}<p class="text-muted mb-0">{{ about.subtitle }}</p>{% endif %}
+    <h1 class="h3 mb-1">
+      {{ about.title|default:"About" }}
+    </h1>
+    {% if about.subtitle %}
+      <p class="text-muted mb-0">{{ about.subtitle }}</p>
+    {% endif %}
   </header>
 
   <!-- Two columns: text (left), photos (right) -->
   <div class="row g-4 align-items-start">
+
     <!-- LEFT COLUMN -->
     <div class="col-md-6 col-lg-7">
+
       <!-- About card -->
       <div class="bg-white border rounded-3 shadow p-4">
+
         {% if about.owner_name or about.company %}
           <h2 class="h5 mb-3">{{ about.owner_name|default:about.company }}</h2>
         {% endif %}
@@ -115,29 +124,39 @@
     <div class="col-md-6 col-lg-5">
       <div class="bg-white border rounded-3 shadow p-3">
         {% if about.photos and about.photos|length > 0 %}
+
+          {# First / hero photo #}
           {% with ph=about.photos.0 %}
             {% with src=ph.url|default:ph %}
-              <img src="{{ src }}"
-                   alt="{{ about.owner_name|default:about.company|default:'Company' }} photo"
-                   class="w-100 h-auto rounded border mb-2 d-block"
-                   loading="lazy" decoding="async">
+              <figure class="mb-3">
+                <img src="{{ src }}"
+                     alt="{{ ph.alt|default:about.owner_name|default:about.company|default:'Company photo' }}"
+                     class="w-100 h-auto rounded border d-block"
+                     loading="lazy" decoding="async">
+                <figcaption class="small text-muted mt-1">
+                  {{ ph.caption|default:"Pictured: Michael Provost" }}
+                </figcaption>
+              </figure>
             {% endwith %}
           {% endwith %}
 
+          {# Additional photos — full width to match first #}
           {% if about.photos|length > 1 %}
-            <div class="row g-2">
-              {% for ph in about.photos|slice:"1:" %}
-                {% with src=ph.url|default:ph %}
-                  <div class="col-6">
-                    <img src="{{ src }}"
-                         alt="Additional photo"
-                         class="w-100 h-auto rounded border d-block"
-                         loading="lazy" decoding="async">
-                  </div>
-                {% endwith %}
-              {% endfor %}
-            </div>
+            {% for ph in about.photos|slice:"1:" %}
+              {% with src=ph.url|default:ph %}
+                <figure class="mb-3">
+                  <img src="{{ src }}"
+                       alt="{{ ph.alt|default:'Additional photo' }}"
+                       class="w-100 h-auto rounded border d-block"
+                       loading="lazy" decoding="async">
+                  <figcaption class="small text-muted mt-1">
+                    {{ ph.caption|default:"Pictured: Michael with his family" }}
+                  </figcaption>
+                </figure>
+              {% endwith %}
+            {% endfor %}
           {% endif %}
+
         {% else %}
           <div class="ratio ratio-16x9 bg-body-tertiary rounded d-flex align-items-center justify-content-center">
             <span class="text-muted">Photo coming soon</span>
@@ -145,30 +164,7 @@
         {% endif %}
       </div>
     </div>
+
   </div>
-
-  <!-- Testimonials (optional) -->
-{% if testimonials %}
-  <section class="mt-4">
-    <div class="bg-white border rounded-3 shadow p-4">
-      <h2 class="h5 mb-3">What clients say</h2>
-      <div class="row g-3">
-        {% for t in testimonials|slice:":3" %}
-          <div class="col-md-6 col-lg-4">
-            <div class="bg-white border rounded-3 shadow-sm p-3 h-100">
-              <div class="d-flex justify-content-between align-items-center">
-                <strong>{{ t.name }}</strong>
-                <span class="badge text-bg-success-subtle text-success border">Rating: {{ t.rating }}/5</span>
-              </div>
-              <p class="mb-1 mt-2">{{ t.message|linebreaksbr }}</p>
-              <small class="text-muted">{{ t.created_at|date:"M j, Y" }}</small>
-            </div>
-          </div>
-        {% endfor %}
-      </div>
-    </div>
-  </section>
-{% endif %}
-
 </div>
 {% endblock %}

@@ -218,8 +218,17 @@ def contact(request: HttpRequest) -> HttpResponse:
                     reply_to=[cd["email"]],
                 )
                 msg.attach_alternative(html_body, "text/html")
-                with contextlib.suppress(Exception):
+                try:
                     msg.send(fail_silently=False)
+                except Exception as e:
+                    logger.exception("Contact email send failed")
+                    err = "We couldn't send your message just now. Please try again in a moment."
+                    if settings.DEBUG:  # show real reason in dev
+                        err += f" ({e.__class__.__name__}: {e})"
+                    if _is_htmx(request):
+                        return _htmx_status(request, "error", err)
+                    messages.error(request, err)
+                    return redirect("pages:contact")
 
                 # Auto-ack
                 with contextlib.suppress(Exception):
@@ -307,7 +316,10 @@ def contact(request: HttpRequest) -> HttpResponse:
                         reply_to=[t.email] if t.email else None,
                     )
                     em.attach_alternative(html_body, "text/html")
-                    em.send(fail_silently=True)
+                    try:
+                        em.send(fail_silently=False)
+                    except Exception:
+                        logger.exception("Testimonial email send failed")
 
                 if _is_htmx(request):
                     return _htmx_status(request, "success", "Thanks! Your testimonial was submitted and will appear once approved.")

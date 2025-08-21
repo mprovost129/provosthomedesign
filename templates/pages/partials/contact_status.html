@@ -1,10 +1,9 @@
 {# templates/pages/partials/contact_status.html #}
 {# Renders either:
-   - a plain text alert using "text" + optional "level"
-   - a Django Message object passed as "msg"
+   - a plain text alert (with "text" + optional "level")
+   - a Django message object ("msg")
 #}
 
-{# 1) Manual/HTMX path (explicit text provided) #}
 {% if text %}
   {% if level == "error" %}
     {% with bs="danger" %}
@@ -21,14 +20,12 @@
       </div>
     {% endwith %}
   {% else %}
-    {# success/info/warning map directly to Bootstrap classes #}
     <div class="alert alert-{{ level|default:'info' }} alert-dismissible fade show" role="alert">
       {{ text }}
       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
   {% endif %}
 
-{# 2) Django messages path (Message object provided) #}
 {% elif msg %}
   {% if msg.level_tag == "error" %}
     {% with bs="danger" %}
@@ -45,7 +42,6 @@
       </div>
     {% endwith %}
   {% else %}
-    {# uses msg.level_tag (success/info/warning) or falls back to msg.tags or 'info' #}
     {% with tag=msg.level_tag|default:msg.tags|default:"info" %}
       <div class="alert alert-{{ tag }} alert-dismissible fade show" role="alert">
         {{ msg.message }}
