@@ -1,3 +1,4 @@
+# plans/management/commands/seed_house_styles.py
 from __future__ import annotations
 
 from django.core.management.base import BaseCommand
@@ -40,6 +41,33 @@ DEFAULT_STYLES = [
     "Carriage House / ADU",
 ]
 
+# --- Helpers that adapt to your model field names ---
+def _get_name_field() -> str:
+    # Prefer 'name'; fall back to 'style_name'
+    fields = {f.name for f in HouseStyle._meta.get_fields() if hasattr(f, "attname")}
+    if "name" in fields:
+        return "name"
+    elif "style_name" in fields:
+        return "style_name"
+    # Last resort: assume 'name'
+    return "name"
+
+def _get_order_field() -> str | None:
+    fields = {f.name for f in HouseStyle._meta.get_fields() if hasattr(f, "attname")}
+    return "order" if "order" in fields else None
+
+NAME_FIELD = _get_name_field()
+ORDER_FIELD = _get_order_field()
+
+def _get_name(obj: HouseStyle) -> str:
+    return getattr(obj, NAME_FIELD, "") or ""
+
+def _set_name(obj: HouseStyle, value: str):
+    setattr(obj, NAME_FIELD, value)
+
+def _set_order_if_present(obj: HouseStyle, idx: int):
+    if ORDER_FIELD:
+        setattr(obj, ORDER_FIELD, idx)
 
 def _unique_slug(base: str) -> str:
     """
@@ -59,14 +87,14 @@ def _unique_slug(base: str) -> str:
 class Command(BaseCommand):
     help = (
         "Seed initial HouseStyle options (creates missing). "
-        "Use --sync to update existing rows' style_name/order to match DEFAULT_STYLES."
+        "Use --sync to update existing rows' name/order to match DEFAULT_STYLES."
     )
 
     def add_arguments(self, parser):
         parser.add_argument(
             "--sync",
             action="store_true",
-            help="If a style exists for the slug/name, update style_name and order to match DEFAULT_STYLES.",
+            help="If a style exists for the slug/name, update name and order to match DEFAULT_STYLES.",
         )
         parser.add_argument(
             "--dry-run",
@@ -89,30 +117,37 @@ class Command(BaseCommand):
             # 1) Exact slug match has priority
             obj = HouseStyle.objects.filter(slug=base_slug).first()
             if obj:
-                # Style name differs (case-insensitive compare)
-                if (obj.style_name or "").strip().casefold() != name.strip().casefold():
+                # Compare current stored name (case-insensitive)
+                if _get_name(obj).strip().casefold() != name.strip().casefold():
                     if sync:
                         if not dry_run:
-                            obj.style_name = name
-                            # Backfill/normalize display order
-                            if getattr(obj, "order", None) != idx:
-                                obj.order = idx
-                            obj.save(update_fields=["style_name", "order"])
+                            _set_name(obj, name)
+                            _set_order_if_present(obj, idx)
+                            update_fields = [NAME_FIELD]
+                            if ORDER_FIELD:
+                                update_fields.append(ORDER_FIELD)
+                            obj.save(update_fields=update_fields)
                         updated += 1
                         self.stdout.write(f"↻ Synced name/order: {name} ({base_slug})")
                     else:
                         # Create a separate row with a unique slug (don't rename existing)
                         new_slug = _unique_slug(base_slug)
                         if not dry_run:
-                            HouseStyle.objects.create(slug=new_slug, style_name=name, order=idx)
+                            new_obj = HouseStyle(slug=new_slug)
+                            _set_name(new_obj, name)
+                            _set_order_if_present(new_obj, idx)
+                            new_obj.save()
                         created += 1
                         self.stdout.write(f"✔ Created (new slug): {name} ({new_slug})")
                 else:
                     # Same name: maybe just order needs syncing/backfilling
-                    if sync and getattr(obj, "order", None) != idx:
+                    needs_order = False
+                    if ORDER_FIELD:
+                        needs_order = getattr(obj, ORDER_FIELD, None) != idx
+                    if sync and needs_order:
                         if not dry_run:
-                            obj.order = idx
-                            obj.save(update_fields=["order"])
+                            _set_order_if_present(obj, idx)
+                            obj.save(update_fields=[ORDER_FIELD])
                         updated += 1
                         self.stdout.write(f"↻ Synced order: {name} ({base_slug})")
                     else:
@@ -120,12 +155,12 @@ class Command(BaseCommand):
                 continue
 
             # 2) No slug match; try case-insensitive name match (stable slug)
-            obj_by_name = HouseStyle.objects.filter(style_name__iexact=name).first()
+            obj_by_name = HouseStyle.objects.filter(**{f"{NAME_FIELD}__iexact": name}).first()
             if obj_by_name:
-                if sync and getattr(obj_by_name, "order", None) != idx:
+                if sync and ORDER_FIELD and getattr(obj_by_name, ORDER_FIELD, None) != idx:
                     if not dry_run:
-                        obj_by_name.order = idx
-                        obj_by_name.save(update_fields=["order"])
+                        _set_order_if_present(obj_by_name, idx)
+                        obj_by_name.save(update_fields=[ORDER_FIELD])
                     updated += 1
                     self.stdout.write(f"↻ Synced order by name: {name} ({obj_by_name.slug})")
                 else:
@@ -135,7 +170,10 @@ class Command(BaseCommand):
             # 3) Create new row with the base slug (or a unique variant if taken concurrently)
             new_slug = base_slug if not HouseStyle.objects.filter(slug=base_slug).exists() else _unique_slug(base_slug)
             if not dry_run:
-                HouseStyle.objects.create(slug=new_slug, style_name=name, order=idx)
+                new_obj = HouseStyle(slug=new_slug)
+                _set_name(new_obj, name)
+                _set_order_if_present(new_obj, idx)
+                new_obj.save()
             created += 1
             self.stdout.write(f"✔ Created: {name} ({new_slug})")
 

@@ -1,24 +1,15 @@
 {# templates/pages/partials/contact_status.html #}
-{# Renders either:
-   - a plain text alert (with "text" + optional "level")
-   - a Django message object ("msg")
-#}
-
 {% if text %}
   {% if level == "error" %}
-    {% with bs="danger" %}
-      <div class="alert alert-{{ bs }} alert-dismissible fade show" role="alert">
-        {{ text }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
-    {% endwith %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      {{ text }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
   {% elif level == "debug" %}
-    {% with bs="secondary" %}
-      <div class="alert alert-{{ bs }} alert-dismissible fade show" role="alert">
-        {{ text }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
-    {% endwith %}
+    <div class="alert alert-secondary alert-dismissible fade show" role="alert">
+      {{ text }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
   {% else %}
     <div class="alert alert-{{ level|default:'info' }} alert-dismissible fade show" role="alert">
       {{ text }}
@@ -28,25 +19,20 @@
 
 {% elif msg %}
   {% if msg.level_tag == "error" %}
-    {% with bs="danger" %}
-      <div class="alert alert-{{ bs }} alert-dismissible fade show" role="alert">
-        {{ msg.message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
-    {% endwith %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      {{ msg }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
   {% elif msg.level_tag == "debug" %}
-    {% with bs="secondary" %}
-      <div class="alert alert-{{ bs }} alert-dismissible fade show" role="alert">
-        {{ msg.message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
-    {% endwith %}
+    <div class="alert alert-secondary alert-dismissible fade show" role="alert">
+      {{ msg }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
   {% else %}
-    {% with tag=msg.level_tag|default:msg.tags|default:"info" %}
-      <div class="alert alert-{{ tag }} alert-dismissible fade show" role="alert">
-        {{ msg.message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
-    {% endwith %}
+    <div class="alert alert-{{ msg.level_tag|default:msg.tags|default:'info' }} alert-dismissible fade show" role="alert">
+      {{ msg }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
   {% endif %}
 {% endif %}
+

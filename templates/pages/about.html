@@ -7,12 +7,9 @@
 
 {% block content %}
 <div class="container-lg py-4">
-
   <!-- Header -->
   <header class="mb-4">
-    <h1 class="h3 mb-1">
-      {{ about.title|default:"About" }}
-    </h1>
+    <h1 class="h3 mb-1">{{ about.title|default:"About" }}</h1>
     {% if about.subtitle %}
       <p class="text-muted mb-0">{{ about.subtitle }}</p>
     {% endif %}
@@ -20,13 +17,10 @@
 
   <!-- Two columns: text (left), photos (right) -->
   <div class="row g-4 align-items-start">
-
     <!-- LEFT COLUMN -->
     <div class="col-md-6 col-lg-7">
-
       <!-- About card -->
       <div class="bg-white border rounded-3 shadow p-4">
-
         {% if about.owner_name or about.company %}
           <h2 class="h5 mb-3">{{ about.owner_name|default:about.company }}</h2>
         {% endif %}
@@ -48,7 +42,7 @@
         {% endif %}
 
         {% if about.highlights %}
-          <hr class="my-4">
+          <hr class="my-4" />
           <h3 class="h6 mb-2">Highlights</h3>
           <div class="d-flex flex-wrap gap-2">
             {% for h in about.highlights %}
@@ -127,15 +121,9 @@
 
           {# First / hero photo #}
           {% with ph=about.photos.0 %}
-            {# Support either a dict {"src": "...", "alt": "...", "caption": "..."} or a plain string URL #}
-            {% with src=ph.src|default:ph
-                    alt=ph.alt|default:about.owner_name|default:about.company|default:"Company photo"
-                    cap=ph.caption|default:"Pictured: Michael Provost" %}
+            {% with src=ph.src|default:ph alt=ph.alt|default:about.owner_name|default:about.company|default:"Company photo" cap=ph.caption|default:"Pictured: Michael Provost" %}
               <figure class="mb-3">
-                <img src="{{ src }}"
-                     alt="{{ alt }}"
-                     class="w-100 h-auto rounded border d-block"
-                     loading="lazy" decoding="async">
+                <img src="{{ src }}" alt="{{ alt }}" class="w-100 h-auto rounded border d-block" loading="lazy" decoding="async">
                 <figcaption class="small text-muted mt-1">{{ cap }}</figcaption>
               </figure>
             {% endwith %}
@@ -144,14 +132,9 @@
           {# Additional photos — full width to match first #}
           {% if about.photos|length > 1 %}
             {% for ph in about.photos|slice:"1:" %}
-              {% with src=ph.src|default:ph
-                      alt=ph.alt|default:"Additional photo"
-                      cap=ph.caption|default:"" %}
+              {% with src=ph.src|default:ph alt=ph.alt|default:"Additional photo" cap=ph.caption|default:"" %}
                 <figure class="mb-3">
-                  <img src="{{ src }}"
-                       alt="{{ alt }}"
-                       class="w-100 h-auto rounded border d-block"
-                       loading="lazy" decoding="async">
+                  <img src="{{ src }}" alt="{{ alt }}" class="w-100 h-auto rounded border d-block" loading="lazy" decoding="async">
                   {% if cap %}<figcaption class="small text-muted mt-1">{{ cap }}</figcaption>{% endif %}
                 </figure>
               {% endwith %}
@@ -165,7 +148,6 @@
         {% endif %}
       </div>
     </div>
-
   </div>
 </div>
 {% endblock %}
