@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Testimonials • Provost Home Design{% endblock %}
+{% block content %}
+<h1>What clients say</h1>
+<div class="grid">
+  {% for t in page.object_list %}
+    <article class="card">
+      <strong>{{ t.name }}</strong>
+      {% if t.role %}<span> • {{ t.role }}</span>{% endif %}
+      <div>Rating: {{ t.rating }}/5</div>
+      <p>{{ t.message }}</p>
+    </article>
+  {% empty %}<p>No testimonials yet.</p>{% endfor %}
+</div>
+<nav class="pager">
+  {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">Prev</a>{% endif %}
+  <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a href="?page={{ page.next_page_number }}">Next</a>{% endif %}
+</nav>
+{% endblock %}

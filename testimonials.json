@@ -1,0 +1,107 @@
+[
+{
+  "model": "pages.testimonial",
+  "pk": 1,
+  "fields": {
+    "name": "Bethany Dufort",
+    "email": "",
+    "rating": 5,
+    "message": "Michael was professional and fun to work with. He took our ideas and transformed them into a dream home. His designs are well thought out and beautiful.",
+    "consent_to_publish": true,
+    "approved": true,
+    "role": "homeowner",
+    "created_at": "2025-08-20T18:17:54.264Z",
+    "updated_at": "2025-08-20T18:18:07.969Z"
+  }
+},
+{
+  "model": "pages.testimonial",
+  "pk": 2,
+  "fields": {
+    "name": "Larry Cotton",
+    "email": "",
+    "rating": 5,
+    "message": "I had the pleasure of working with Michael for ten years prior to my retirement from structural engineering. Michael has diverse and valuable experience in home design and construction. He takes pride in doing a job well and will work closely with you to make the home of your dreams a reality.",
+    "consent_to_publish": true,
+    "approved": true,
+    "role": "engineer",
+    "created_at": "2025-08-20T18:18:59.154Z",
+    "updated_at": "2025-08-20T18:18:59.154Z"
+  }
+},
+{
+  "model": "pages.testimonial",
+  "pk": 3,
+  "fields": {
+    "name": "Shane Laprade",
+    "email": "",
+    "rating": 5,
+    "message": "Provost Home Design was an absolute pleasure to work with while designing an addition for our home including a mudroom, bedroom suite, garage and loft. Michael Provost provided us with a number of creative design options. He was very patient with us as we collaborated on the space and was very quick to respond to questions from my wife and I and our contractor. Michael is a personable, creative guy who I look forward to working with again on future projects.",
+    "consent_to_publish": true,
+    "approved": true,
+    "role": "homeowner",
+    "created_at": "2025-08-20T18:19:43.539Z",
+    "updated_at": "2025-08-20T18:19:43.539Z"
+  }
+},
+{
+  "model": "pages.testimonial",
+  "pk": 4,
+  "fields": {
+    "name": "Erin & Steve Barriere",
+    "email": "",
+    "rating": 5,
+    "message": "It was an absolute pleasure working with Provost Home Design to design our new home! We had a great overall experience working with the owner Mike, he was very professional and great to work with. Their pricing was reasonable, and they delivered on time. Provost Home Design exceeded our expectations, and we would highly recommend their services to others!",
+    "consent_to_publish": true,
+    "approved": true,
+    "role": "homeowner",
+    "created_at": "2025-08-20T18:20:39.491Z",
+    "updated_at": "2025-08-20T18:20:39.492Z"
+  }
+},
+{
+  "model": "pages.testimonial",
+  "pk": 5,
+  "fields": {
+    "name": "Steve Barry",
+    "email": "",
+    "rating": 5,
+    "message": "First of all, the best compliment I can give any person or business is the attention to detail and a willingness to respond to the client in a quick and professional manner. Michael Provost, owner and designer from Provost Home Design answered the phone the first time I called. He was very helpful right from the beginning, and he continued this way all throughout the project, from the beginning stages of design, right through all of the requirements I needed for the permitting process. I have been working in construction for almost 40 years, but this is the first time I have built my own home, and I am very impressed with Provost Home Design. I would highly recommend Mike Provost for your project.",
+    "consent_to_publish": true,
+    "approved": true,
+    "role": "homeowner",
+    "created_at": "2025-08-20T18:21:10.171Z",
+    "updated_at": "2025-08-20T18:21:10.171Z"
+  }
+},
+{
+  "model": "pages.testimonial",
+  "pk": 6,
+  "fields": {
+    "name": "Cici & Billy Mallory",
+    "email": "",
+    "rating": 5,
+    "message": "We hired Provost Home Design to develop house plans for our new construction custom home. Mike was awesome to work with. He is detail-oriented and has a very creative approach. He helped bring our ideas to life and made suggestions that really elevated the design. We were quite picky about the layout of each room and he was patient and understanding with each change we made. We're so glad that we were able to find a local designer like Mike who is knowledgeable, attentive and not super overpriced. We highly recommend him!",
+    "consent_to_publish": true,
+    "approved": true,
+    "role": "homeowner",
+    "created_at": "2025-08-20T18:21:51.538Z",
+    "updated_at": "2025-08-20T18:21:51.538Z"
+  }
+},
+{
+  "model": "pages.testimonial",
+  "pk": 7,
+  "fields": {
+    "name": "Coastal Woods Homes",
+    "email": "coastalwoodshomes@gmail.com",
+    "rating": 5,
+    "message": "Thank you Michael for your patience, expertise, and revisions. I am excited to see this project come to fruition. I greatly appreciate your collaboration and participation, openness to changes and ideas, while leaning on your practicality and experience. I will highly recommend to anyone looking for a reliable, responsive, and creative home designer.",
+    "consent_to_publish": true,
+    "approved": true,
+    "role": "builder",
+    "created_at": "2025-08-20T19:11:24.907Z",
+    "updated_at": "2025-08-20T19:11:24.907Z"
+  }
+}
+]

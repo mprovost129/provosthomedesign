@@ -172,6 +172,7 @@ class AboutPageAdmin(admin.ModelAdmin):
     }
 
     def get_fieldsets(self, request, obj=None):
+        # sourcery skip: inline-immediately-returned-variable
         basics = ["is_published", "title", "owner_name", "subtitle", "body"]
         lists = ("highlights", "badges", "knowledge_skills", "licenses")
         images = ("photo_main", "photo_secondary")
@@ -201,7 +202,7 @@ class SiteSettingsAdmin(SingletonModelAdmin):
         ("Business Hours (legacy text)", {"fields": ("business_hours",)}),
     )
 
-    def logo_preview(self, obj):
+    def logo_preview(self, obj):  # sourcery skip: use-contextlib-suppress
         try:
             if obj.brand_logo:
                 return format_html(
@@ -243,25 +244,37 @@ if ContactMessage:
 @admin.register(Testimonial)
 class TestimonialAdmin(admin.ModelAdmin):
     """
-    Includes the new 'role' field so you can see/filter whether the author is
-    an engineer, architect, builder, homeowner, etc.
+    Manage client testimonials.
     """
-    list_display = ("created_at", "name", "role", "rating", "approved", "consent_to_publish")
+    list_display = (
+        "created_at", "name", "role", "stars", "approved",
+        "consent_to_publish", "short_message",
+    )
     list_filter = ("approved", "consent_to_publish", "rating", "role", "created_at")
     search_fields = ("name", "email", "message")
     readonly_fields = ("created_at",)
     ordering = ("-created_at",)
-    actions = ("approve", "unapprove")
+    date_hierarchy = "created_at"
+    save_on_top = True
+    list_per_page = 25
+    actions = ("approve", "unapprove", "approve_and_consent", "consent", "revoke_consent")
 
     fieldsets = (
-        (None, {
-            "fields": ("name", "email", "role", "rating", "message"),
-        }),
-        ("Publication", {
-            "fields": ("consent_to_publish", "approved", "created_at"),
-        }),
+        (None, {"fields": ("name", "email", "role", "rating", "message")}),
+        ("Publication", {"fields": ("consent_to_publish", "approved", "created_at")}),
     )
 
+    # --- Nice displays ---
+    @admin.display(description="Rating")
+    def stars(self, obj):
+        return "★" * (obj.rating or 0) + "☆" * (5 - (obj.rating or 0))
+
+    @admin.display(description="Snippet")
+    def short_message(self, obj):
+        text = obj.message or ""
+        return f"{text[:90]}…" if len(text) > 90 else text
+
+    # --- Bulk actions ---
     @admin.action(description="Approve")
     def approve(self, request, queryset):
         queryset.update(approved=True)
@@ -269,3 +282,15 @@ class TestimonialAdmin(admin.ModelAdmin):
     @admin.action(description="Unapprove")
     def unapprove(self, request, queryset):
         queryset.update(approved=False)
+
+    @admin.action(description="Approve + mark consent")
+    def approve_and_consent(self, request, queryset):
+        queryset.update(approved=True, consent_to_publish=True)
+
+    @admin.action(description="Mark consent to publish")
+    def consent(self, request, queryset):
+        queryset.update(consent_to_publish=True)
+
+    @admin.action(description="Revoke consent to publish")
+    def revoke_consent(self, request, queryset):
+        queryset.update(consent_to_publish=False)

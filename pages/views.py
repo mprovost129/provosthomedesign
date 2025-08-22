@@ -26,6 +26,8 @@ from .models import (
     SiteSettings,
 )
 from plans.models import Plans, HouseStyle
+from django.core.paginator import Paginator
+from pages.models import Testimonial
 
 logger = logging.getLogger(__name__)
 
@@ -543,3 +545,10 @@ def privacy(request: HttpRequest) -> HttpResponse:
             "contact_email": contact_email,
         },
     )
+
+def testimonials_list(request):
+    qs = Testimonial.objects.filter(
+        approved=True, consent_to_publish=True
+    ).order_by("-created_at")
+    page = Paginator(qs, 12).get_page(request.GET.get("page"))
+    return render(request, "pages/testimonials_list.html", {"page": page})

@@ -77,7 +77,7 @@ class SiteSettings(models.Model):
         return self.company_name or "Site Settings"
 
     @classmethod
-    def load(cls) -> "SiteSettings":
+    def load(cls) -> "SiteSettings":  # sourcery skip: use-contextlib-suppress
         obj, _ = cls.objects.get_or_create(pk=1)
         # Auto-seed a full week of BusinessHour rows for nice inline editing
         try:
@@ -91,7 +91,7 @@ class SiteSettings(models.Model):
         return obj
 
     @property
-    def logo_url(self) -> str:
+    def logo_url(self) -> str:  # sourcery skip: use-contextlib-suppress
         try:
             if self.brand_logo and self.brand_logo.url:
                 return self.brand_logo.url
@@ -174,6 +174,7 @@ class ProjectInquiry(models.Model):
         return f"{self.first_name} {self.last_name} — {self.email} — {self.submitted_at:%Y-%m-%d}"
 
     def clean(self):
+# sourcery skip: merge-nested-ifs
         if self.min_square_footage and self.max_square_footage:
             if self.min_square_footage > self.max_square_footage:
                 from django.core.exceptions import ValidationError
