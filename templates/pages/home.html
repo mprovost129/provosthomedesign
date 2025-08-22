@@ -6,15 +6,29 @@
 {% block content %}
 <div class="container-lg py-4">
 
+  {# --- Card image sizing (matches plans.html) --- #}
+  <style>
+    .plan-thumb{
+      width:100%;
+      aspect-ratio:16/10;   /* pick 16/9 if you prefer */
+      object-fit:cover;
+      height:auto;
+      display:block;
+    }
+    .plan-thumb-placeholder{
+      width:100%;
+      aspect-ratio:16/10;
+      display:flex;align-items:center;justify-content:center;
+    }
+  </style>
+
   <!-- Hero -->
   <section class="mb-4 position-relative overflow-hidden rounded-3 shadow border hero"
            style="background-image: url('{% static 'images/hero-blueprint.jpg' %}');">
     <div class="hero-overlay"></div>
 
     <div class="position-relative p-4 p-md-5 text-white">
-      <div class="d-inline-flex align-items-center gap-2 mb-2 small opacity-75">
-
-      </div>
+      <div class="d-inline-flex align-items-center gap-2 mb-2 small opacity-75"></div>
 
       <h1 class="display-6 fw-semibold mb-2">
         Custom &amp; stock home plans designed for code compliance, with form, function, and style in mind.
@@ -44,7 +58,6 @@
       <div class="d-flex flex-wrap gap-2">
         {% if house_styles %}
           {% for s in house_styles %}
-            {# Build a slug whether s is an object or a plain string #}
             {% with slug=s.slug|default:s|slugify label=s.style_name|default:s %}
               <a href="{% url 'plans:plan_list' %}?style={{ slug }}"
                  class="badge rounded-pill chip text-decoration-none">
@@ -75,12 +88,13 @@
           <div class="col">
             <div class="card h-100 border shadow rounded-3">
               {% if p.main_image %}
-                <img src="{{ p.main_image.url }}" class="card-img-top" alt="Plan {{ p.plan_number }}"
-                     loading="lazy" style="height:220px;object-fit:cover;">
+                <img src="{{ p.main_image.url }}"
+                     class="card-img-top plan-thumb"
+                     alt="Plan {{ p.plan_number }}"
+                     loading="lazy" decoding="async">
               {% else %}
-                <div class="bg-body-tertiary d-flex align-items-center justify-content-center"
-                     style="height:220px;">
-                  <span class="text-muted small">No image</span>
+                <div class="bg-body-tertiary text-muted small plan-thumb-placeholder">
+                  No image
                 </div>
               {% endif %}
               <div class="card-body">
@@ -103,7 +117,7 @@
         {% for _ in "123" %}
           <div class="col">
             <div class="card h-100 border shadow rounded-3">
-              <div class="bg-body-tertiary" style="height:220px;"></div>
+              <div class="bg-body-tertiary plan-thumb-placeholder"></div>
               <div class="card-body">
                 <div class="placeholder-glow mb-2">
                   <span class="placeholder col-7"></span>
@@ -143,7 +157,6 @@
       </div>
     </section>
   {% else %}
-    {# Optional: remove this wire if you prefer no section when empty #}
     <section class="mt-5">
       <div class="bg-white border shadow rounded-3 p-3">
         <div class="placeholder-glow">

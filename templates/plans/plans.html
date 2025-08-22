@@ -6,6 +6,26 @@
 {% block content %}
 <div class="container-lg py-4">
 
+  {# --- Card image sizing (consistent, no stretch) --- #}
+  <style>
+    /* Consistent, responsive preview frame */
+    .plan-thumb {
+      width: 100%;
+      aspect-ratio: 16 / 10;   /* choose 16/9 or 16/10 to taste */
+      object-fit: cover;       /* crop to fill without distortion */
+      height: auto;            /* let aspect-ratio compute the height */
+      display: block;
+    }
+    /* Fallback “no image” box matches the same frame */
+    .plan-thumb-placeholder {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+
   <!-- Page header -->
   <header class="mb-3">
     <h1 class="h3 mb-1">{{ page.title|default:"Plans" }}</h1>
@@ -106,13 +126,16 @@
       {% for p in plans %}
         <div class="col">
           <div class="card h-100 shadow-sm">
+
             {% if p.main_image %}
-              <img src="{{ p.main_image.url }}" class="card-img-top" alt="Plan {{ p.plan_number }}"
-                   style="height:220px;object-fit:cover;">
+              <img
+                src="{{ p.main_image.url }}"
+                class="card-img-top plan-thumb"
+                alt="Plan {{ p.plan_number }}"
+                loading="lazy" decoding="async">
             {% else %}
-              <div class="bg-light d-flex align-items-center justify-content-center"
-                   style="height:220px;">
-                <span class="text-muted small">No image</span>
+              <div class="bg-light text-muted small plan-thumb-placeholder">
+                No image
               </div>
             {% endif %}
 
