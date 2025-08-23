@@ -27,15 +27,28 @@ INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
     "django.contrib.humanize", "django.contrib.sitemaps",
-    "core", "pages", "plans", "sorl.thumbnail",
+    "core", "pages", "plans",
+    "sorl.thumbnail",
 ]
 
+# Thumbnails (sorl-thumbnail)
 THUMBNAIL_ALIASES = {
     "": {
         "plan_card":     {"size": (800, 500), "crop": True, "quality": 85},
         "plan_card@2x":  {"size": (1200, 750), "crop": True, "quality": 82},
     }
 }
+# Simple cache + defaults for sorl
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "phd-local-cache",
+    }
+}
+THUMBNAIL_KVSTORE = "sorl.thumbnail.kvstores.cached_db_kvstore"
+THUMBNAIL_ENGINE = "sorl.thumbnail.engines.pil_engine.Engine"
+THUMBNAIL_DEBUG = config("THUMBNAIL_DEBUG", cast=bool, default=False)
+THUMBNAIL_QUALITY = config("THUMBNAIL_QUALITY", cast=int, default=85)
 
 # --- Middleware ---
 MIDDLEWARE = [
@@ -102,41 +115,30 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # ======================================================================
 # Email
 # Strategy (in order):
-# 1) USE_MAILHOG=true  -> SMTP to local MailHog/Papercut
-# 2) DEV_EMAIL_FILE=true -> file-based backend writing .eml to BASE_DIR/var/emails
-# 3) If EMAIL_BACKEND is explicitly set -> respect it
-# 4) Else if Graph env looks complete -> use msgraphbackend.MSGraphBackend
+# 1) If EMAIL_BACKEND is explicitly set -> respect it
+# 2) If USE_MAILHOG=true -> SMTP to local MailHog/Papercut
+# 3) If DEV_EMAIL_FILE=true -> file-based backend writing .eml to BASE_DIR/var/emails
+# 4) If Graph env looks complete -> use msgraphbackend.MSGraphBackend
 # 5) Else -> console backend
 # ======================================================================
 
-explicit_backend = "msgraphbackend.MSGraphBackend"
-EMAIL_BACKEND = "msgraphbackend.MSGraphBackend"
+USE_MAILHOG = config("USE_MAILHOG", cast=bool, default=False)
+DEV_EMAIL_FILE = config("DEV_EMAIL_FILE", cast=bool, default=False)
+EXPLICIT_BACKEND = config("EMAIL_BACKEND", default="").strip() # type: ignore
 
-# --- Microsoft Graph Email (read env into Django settings) ---
-# Many backends look for these names on settings.*
+# --- Microsoft Graph Email (env → settings) ---
 MSGRAPH_USER_ID = config("MSGRAPH_USER_ID", default="")
 
 # Prefer MICROSOFT_GRAPH_* but accept MSGRAPH_* for backwards compat
-MICROSOFT_GRAPH_CLIENT_ID = config(
-    "MICROSOFT_GRAPH_CLIENT_ID",
-    default=config("MSGRAPH_CLIENT_ID", default="")
-)
-MICROSOFT_GRAPH_CLIENT_SECRET = config(
-    "MICROSOFT_GRAPH_CLIENT_SECRET",
-    default=config("MSGRAPH_CLIENT_SECRET", default="")
-)
-MICROSOFT_GRAPH_TENANT_ID = config(
-    "MICROSOFT_GRAPH_TENANT_ID",
-    default=config("MSGRAPH_TENANT_ID", default="")
-)
+MICROSOFT_GRAPH_CLIENT_ID = config("MICROSOFT_GRAPH_CLIENT_ID", default=config("MSGRAPH_CLIENT_ID", default=""))
+MICROSOFT_GRAPH_CLIENT_SECRET = config("MICROSOFT_GRAPH_CLIENT_SECRET", default=config("MSGRAPH_CLIENT_SECRET", default=""))
+MICROSOFT_GRAPH_TENANT_ID = config("MICROSOFT_GRAPH_TENANT_ID", default=config("MSGRAPH_TENANT_ID", default=""))
 
-# Aliases the msgraphbackend package looks for:
+# Aliases some backends look for:
 MSGRAPH_CLIENT_ID = MICROSOFT_GRAPH_CLIENT_ID
 MSGRAPH_CLIENT_SECRET = MICROSOFT_GRAPH_CLIENT_SECRET
 MSGRAPH_TENANT_ID = MICROSOFT_GRAPH_TENANT_ID
-
 MSGRAPH_SCOPE = config("MSGRAPH_SCOPE", default="https://graph.microsoft.com/.default")
-EMAIL_BACKEND = "msgraphbackend.MSGraphBackend"
 
 def _graph_is_configured() -> bool:
     return all([
@@ -146,11 +148,27 @@ def _graph_is_configured() -> bool:
         MSGRAPH_USER_ID,
     ])
 
+if EXPLICIT_BACKEND:
+    EMAIL_BACKEND = EXPLICIT_BACKEND
+elif USE_MAILHOG:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = config("MAILHOG_HOST", default="127.0.0.1")
+    EMAIL_PORT = config("MAILHOG_PORT", cast=int, default=1025)
+    EMAIL_HOST_USER = ""
+    EMAIL_HOST_PASSWORD = ""
+    EMAIL_USE_TLS = False
+    EMAIL_USE_SSL = False
+    EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", cast=int, default=10)
+elif DEV_EMAIL_FILE:
+    EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
+    EMAIL_FILE_PATH = BASE_DIR / "var" / "emails"
+elif _graph_is_configured():
+    EMAIL_BACKEND = "msgraphbackend.MSGraphBackend"
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
 # From addresses
-DEFAULT_FROM_EMAIL = config(
-    "DEFAULT_FROM_EMAIL",
-    default=(MSGRAPH_USER_ID or "no-reply@localhost")
-)
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default=(MSGRAPH_USER_ID or "no-reply@localhost"))
 SERVER_EMAIL = config("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
 EMAIL_SUBJECT_PREFIX = config("EMAIL_SUBJECT_PREFIX", default="[Provost] ")
 AUTO_ACK_FROM_EMAIL = config("AUTO_ACK_FROM_EMAIL", default=DEFAULT_FROM_EMAIL)
@@ -162,7 +180,7 @@ CONTACT_NAME = config("CONTACT_NAME", default="Michael Provost")
 CONTACT_EMAIL = config("CONTACT_EMAIL", default="mike@provosthomedesign.com")
 CONTACT_PHONE = config("CONTACT_PHONE", default="508-243-7912")
 CONTACT_ADDRESS = config("CONTACT_ADDRESS", default="7 Park St. Unit 1, Rehoboth, MA 02769")
-BRAND_LOGO_STATIC = config("BRAND_LOGO_STATIC", default="images/phdlogo.svg")  # path under /static/
+BRAND_LOGO_STATIC = config("BRAND_LOGO_STATIC", default="images/phdlogo.svg")
 TAGLINE = config("TAGLINE", default="Custom House & Framing Plans")
 
 CONTACT_TO_EMAILS = config("CONTACT_TO_EMAILS", default=CONTACT_EMAIL, cast=csv_list)
@@ -178,12 +196,8 @@ CSRF_COOKIE_SECURE = config("CSRF_COOKIE_SECURE", cast=bool, default=not DEBUG)
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
 SECURE_HSTS_SECONDS = config("SECURE_HSTS_SECONDS", cast=int, default=0 if DEBUG else 31536000)
-SECURE_HSTS_INCLUDE_SUBDOMAINS = config(
-    "SECURE_HSTS_INCLUDE_SUBDOMAINS", cast=bool, default=not DEBUG
-)
-SECURE_HSTS_PRELOAD = config(
-    "SECURE_HSTS_PRELOAD", cast=bool, default=not DEBUG
-)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = config("SECURE_HSTS_INCLUDE_SUBDOMAINS", cast=bool, default=not DEBUG)
+SECURE_HSTS_PRELOAD = config("SECURE_HSTS_PRELOAD", cast=bool, default=not DEBUG)
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 X_FRAME_OPTIONS = "DENY"
 

@@ -80,8 +80,9 @@
           <div class="col">
             <div class="card h-100 border shadow rounded-3">
               {% if p.main_image %}
-                {% thumbnail p.main_image "plan_card" as im %}
-                  {% thumbnail p.main_image "plan_card@2x" as im2 %}
+                {# 1x: 800×500 / 2x: 1200×750; crop center to match your old look #}
+                {% thumbnail p.main_image "800x500" crop="center" quality=85 as im %}
+                  {% thumbnail p.main_image "1200x750" crop="center" quality=82 as im2 %}
                     <img
                       src="{{ im.url }}"
                       srcset="{{ im.url }} 1x, {{ im2.url }} 2x"

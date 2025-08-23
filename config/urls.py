@@ -1,12 +1,12 @@
 from django.contrib import admin
 from django.urls import path, include
-
 from django.conf import settings
 from django.conf.urls.static import static
-from config.sitemaps import PlanSitemap, CorePagesSitemap
-from pages.views import robots_txt  # we'll add this next
 from django.views.decorators.cache import cache_page
 from django.contrib.sitemaps.views import sitemap as sitemap_view
+
+from config.sitemaps import PlanSitemap, CorePagesSitemap
+from pages.views import robots_txt
 
 sitemaps = {
     "pages": CorePagesSitemap,
@@ -15,16 +15,21 @@ sitemaps = {
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("", include(("pages.urls", "pages"), namespace="pages")),
-    path("plans/", include(("plans.urls", "plans"), namespace="plans")),
+
+    # Root site pages & plans
+    path("", include("pages.urls")),          # requires app_name="pages" in pages/urls.py
+    path("plans/", include("plans.urls")),    # requires app_name="plans" in plans/urls.py
+
+    # SEO endpoints
+    path("robots.txt", robots_txt, name="robots_txt"),
     path(
         "sitemap.xml",
-        cache_page(60 * 60)(sitemap_view),   # <— use the function
+        cache_page(60 * 60)(sitemap_view),    # cache for 1 hour
         {"sitemaps": sitemaps},
         name="sitemap",
     ),
 ]
 
-# ✅ serve MEDIA in development
+# Serve media only in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

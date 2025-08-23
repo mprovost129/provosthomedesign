@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static humanize plans_extras %}
+{% load static humanize plans_extras thumbnail %}
 
 {% block title %}Plans • Provost Home Design{% endblock %}
 
@@ -8,15 +8,13 @@
 
   {# --- Card image sizing (consistent, no stretch) --- #}
   <style>
-    /* Consistent, responsive preview frame */
     .plan-thumb {
       width: 100%;
-      aspect-ratio: 16 / 10;   /* choose 16/9 or 16/10 to taste */
-      object-fit: cover;       /* crop to fill without distortion */
-      height: auto;            /* let aspect-ratio compute the height */
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      height: auto;
       display: block;
     }
-    /* Fallback “no image” box matches the same frame */
     .plan-thumb-placeholder {
       width: 100%;
       aspect-ratio: 16 / 10;
@@ -128,19 +126,19 @@
           <div class="card h-100 shadow-sm">
 
             {% if p.main_image %}
-                {% thumbnail p.main_image "plan_card" as im %}
-                  {% thumbnail p.main_image "plan_card@2x" as im2 %}
-                    <img
-                      src="{{ im.url }}"
-                      srcset="{{ im.url }} 1x, {{ im2.url }} 2x"
-                      sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw"
-                      width="{{ im.width }}" height="{{ im.height }}"
-                      class="card-img-top plan-thumb"
-                      alt="Front elevation of Plan {{ p.plan_number }}"
-                      loading="lazy" decoding="async">
-                  {% endthumbnail %}
+              {% thumbnail p.main_image "plan_card" as im %}
+                {% thumbnail p.main_image "plan_card@2x" as im2 %}
+                  <img
+                    src="{{ im.url }}"
+                    srcset="{{ im.url }} 1x, {{ im2.url }} 2x"
+                    sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw"
+                    width="{{ im.width }}" height="{{ im.height }}"
+                    class="card-img-top plan-thumb"
+                    alt="Front elevation of Plan {{ p.plan_number }}"
+                    loading="lazy" decoding="async">
                 {% endthumbnail %}
-              {% else %}
+              {% endthumbnail %}
+            {% else %}
               <div class="bg-light text-muted small plan-thumb-placeholder">
                 No image
               </div>
@@ -165,8 +163,6 @@
     {% if plans.paginator.num_pages > 1 %}
       <nav class="mt-4" aria-label="Plans pagination">
         <ul class="pagination justify-content-center">
-
-          {# Prev #}
           <li class="page-item {% if not plans.has_previous %}disabled{% endif %}">
             {% if plans.has_previous %}
               <a class="page-link"
@@ -178,12 +174,9 @@
             {% endif %}
           </li>
 
-          {# Numbers (window of ±2) #}
           {% for num in plans.paginator.page_range %}
             {% if num == plans.number %}
-              <li class="page-item active" aria-current="page">
-                <span class="page-link">{{ num }}</span>
-              </li>
+              <li class="page-item active" aria-current="page"><span class="page-link">{{ num }}</span></li>
             {% elif num >= plans.number|add:'-2' and num <= plans.number|add:'2' %}
               <li class="page-item">
                 <a class="page-link"
@@ -194,7 +187,6 @@
             {% endif %}
           {% endfor %}
 
-          {# Next #}
           <li class="page-item {% if not plans.has_next %}disabled{% endif %}">
             {% if plans.has_next %}
               <a class="page-link"
@@ -205,7 +197,6 @@
               <span class="page-link" aria-disabled="true">Next</span>
             {% endif %}
           </li>
-
         </ul>
       </nav>
     {% endif %}
