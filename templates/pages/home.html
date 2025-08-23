@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% load static humanize plans_extras thumbnail %}
+{% load static humanize plans_extras %}
 
 {% block title %}Home • Provost Home Design{% endblock %}
 
 {% block content %}
 <div class="container-lg py-4">
 
-  {# --- Card image sizing (intrinsic dims via thumbnails) --- #}
+  {# --- Image sizing (no sorl thumbnail) --- #}
   <style>
-    .plan-thumb{width:100%;height:auto;display:block}
+    .plan-thumb{width:100%;aspect-ratio:16/10;object-fit:cover;height:auto;display:block}
     .plan-thumb-placeholder{
       width:100%;aspect-ratio:16/10;display:flex;align-items:center;justify-content:center
     }
@@ -50,7 +50,6 @@
       <div class="d-flex flex-wrap gap-2">
         {% if house_styles %}
           {% for s in house_styles %}
-            {# Use s.slug when available; otherwise slugify the string form. Label always uses string form. #}
             {% with slug=s.slug|default:s|slugify label=s %}
               <a href="{% url 'plans:plan_list' %}?style={{ slug }}"
                  class="badge rounded-pill chip text-decoration-none">
@@ -81,19 +80,11 @@
           <div class="col">
             <div class="card h-100 border shadow rounded-3">
               {% if p.main_image %}
-                {# 1x: 800×500 / 2x: 1200×750; crop center to match your old look #}
-                {% thumbnail p.main_image "800x500" crop="center" quality=85 as im %}
-                  {% thumbnail p.main_image "1200x750" crop="center" quality=82 as im2 %}
-                    <img
-                      src="{{ im.url }}"
-                      srcset="{{ im.url }} 1x, {{ im2.url }} 2x"
-                      sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw"
-                      width="{{ im.width }}" height="{{ im.height }}"
-                      class="card-img-top plan-thumb"
-                      alt="Front elevation of Plan {{ p.plan_number }}"
-                      loading="lazy" decoding="async">
-                  {% endthumbnail %}
-                {% endthumbnail %}
+                <img
+                  src="{{ p.main_image.url }}"
+                  class="card-img-top plan-thumb"
+                  alt="Front elevation of Plan {{ p.plan_number|default:'—' }}"
+                  loading="lazy" decoding="async">
               {% else %}
                 <div class="bg-body-tertiary text-muted small plan-thumb-placeholder">
                   No image
@@ -114,7 +105,7 @@
         {% endfor %}
       </div>
     {% else %}
-      {# Wireframe placeholders when no plans yet #}
+      <!-- Wireframe placeholders when no plans yet -->
       <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
         {% for _ in "123" %}
           <div class="col">
@@ -220,4 +211,3 @@
 
 </div>
 {% endblock %}
-

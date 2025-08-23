@@ -1,12 +1,11 @@
 {% extends 'base.html' %}
-{% load static humanize plans_extras thumbnail %}
+{% load static humanize plans_extras %}
 
 {% block title %}Plans • Provost Home Design{% endblock %}
 
 {% block content %}
 <div class="container-lg py-4">
 
-  {# --- Card image sizing (consistent, no stretch) --- #}
   <style>
     .plan-thumb {
       width: 100%;
@@ -24,7 +23,6 @@
     }
   </style>
 
-  <!-- Page header -->
   <header class="mb-3">
     <h1 class="h3 mb-1">{{ page.title|default:"Plans" }}</h1>
     <p class="text-muted mb-0">{{ page.description|default:"Explore our house plans." }}</p>
@@ -119,29 +117,19 @@
   </div>
 
   {% if plans and plans.paginator.count %}
-    <!-- Grid -->
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
       {% for p in plans %}
         <div class="col">
           <div class="card h-100 shadow-sm">
 
             {% if p.main_image %}
-              {% thumbnail p.main_image "plan_card" as im %}
-                {% thumbnail p.main_image "plan_card@2x" as im2 %}
-                  <img
-                    src="{{ im.url }}"
-                    srcset="{{ im.url }} 1x, {{ im2.url }} 2x"
-                    sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw"
-                    width="{{ im.width }}" height="{{ im.height }}"
-                    class="card-img-top plan-thumb"
-                    alt="Front elevation of Plan {{ p.plan_number|default:'—' }}"
-                    loading="lazy" decoding="async">
-                {% endthumbnail %}
-              {% endthumbnail %}
+              <img
+                src="{{ p.main_image.url }}"
+                class="card-img-top plan-thumb"
+                alt="Front elevation of Plan {{ p.plan_number|default:'—' }}"
+                loading="lazy" decoding="async">
             {% else %}
-              <div class="bg-light text-muted small plan-thumb-placeholder">
-                No image
-              </div>
+              <div class="bg-light text-muted small plan-thumb-placeholder">No image</div>
             {% endif %}
 
             <div class="card-body">
@@ -159,7 +147,6 @@
       {% endfor %}
     </div>
 
-    <!-- Pagination -->
     {% if plans.paginator.num_pages > 1 %}
       <nav class="mt-4" aria-label="Plans pagination">
         <ul class="pagination justify-content-center">
@@ -206,4 +193,3 @@
 
 </div>
 {% endblock %}
-

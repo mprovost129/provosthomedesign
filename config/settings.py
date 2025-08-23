@@ -28,16 +28,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
     "django.contrib.humanize", "django.contrib.sitemaps",
     "core", "pages", "plans",
-    "sorl.thumbnail",
 ]
 
-# Thumbnails (sorl-thumbnail)
-THUMBNAIL_ALIASES = {
-    "": {
-        "plan_card":     {"size": (800, 500), "crop": True, "quality": 85},
-        "plan_card@2x":  {"size": (1200, 750), "crop": True, "quality": 82},
-    }
-}
 # Simple cache + defaults for sorl
 CACHES = {
     "default": {
@@ -45,10 +37,6 @@ CACHES = {
         "LOCATION": "phd-local-cache",
     }
 }
-THUMBNAIL_KVSTORE = "sorl.thumbnail.kvstores.cached_db_kvstore"
-THUMBNAIL_ENGINE = "sorl.thumbnail.engines.pil_engine.Engine"
-THUMBNAIL_DEBUG = config("THUMBNAIL_DEBUG", cast=bool, default=False)
-THUMBNAIL_QUALITY = config("THUMBNAIL_QUALITY", cast=int, default=85)
 
 # --- Middleware ---
 MIDDLEWARE = [
