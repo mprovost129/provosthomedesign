@@ -27,13 +27,13 @@ INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
     "django.contrib.humanize", "django.contrib.sitemaps",
-    "core", "pages", "plans",
+    "core", "pages", "plans", "sorl.thumbnail",
 ]
 
 THUMBNAIL_ALIASES = {
     "": {
-        "plan_card":  {"size": (800, 500), "crop": True, "quality": 85},
-        "plan_card@2x": {"size": (1200, 750), "crop": True, "quality": 82},
+        "plan_card":     {"size": (800, 500), "crop": True, "quality": 85},
+        "plan_card@2x":  {"size": (1200, 750), "crop": True, "quality": 82},
     }
 }
 

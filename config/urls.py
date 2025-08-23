@@ -6,7 +6,7 @@ from django.conf.urls.static import static
 from config.sitemaps import PlanSitemap, CorePagesSitemap
 from pages.views import robots_txt  # we'll add this next
 from django.views.decorators.cache import cache_page
-from django.contrib.sitemaps.views import sitemap
+from django.contrib.sitemaps.views import sitemap as sitemap_view
 
 sitemaps = {
     "pages": CorePagesSitemap,
@@ -19,7 +19,7 @@ urlpatterns = [
     path("plans/", include(("plans.urls", "plans"), namespace="plans")),
     path(
         "sitemap.xml",
-        cache_page(60 * 60)(sitemap),
+        cache_page(60 * 60)(sitemap_view),   # <— use the function
         {"sitemaps": sitemaps},
         name="sitemap",
     ),
