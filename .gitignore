@@ -55,3 +55,7 @@ coverage.xml
 **/migrations/*.py
 !**/migrations/__init__.py
 ".env" 
+
+# Env files
+.env*
+
