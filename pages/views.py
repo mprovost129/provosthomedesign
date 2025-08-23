@@ -552,3 +552,8 @@ def testimonials_list(request):
     ).order_by("-created_at")
     page = Paginator(qs, 12).get_page(request.GET.get("page"))
     return render(request, "pages/testimonials_list.html", {"page": page})
+
+from django.shortcuts import render
+
+def services(request):
+    return render(request, "pages/services.html")

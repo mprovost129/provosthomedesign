@@ -42,6 +42,11 @@
                  {% if m and m.namespace == 'plans' %}aria-current="page"{% endif %}>Plans</a>
             </li>
             <li class="nav-item">
+              <a class="nav-link {% if m and m.url_name == 'services' %}active{% endif %}"
+                 href="{% url 'pages:services' %}"
+                 {% if m and m.url_name == 'services' %}aria-current="page"{% endif %}>Services</a>
+            </li>
+            <li class="nav-item">
               <a class="nav-link {% if m and m.url_name == 'about' %}active{% endif %}"
                  href="{% url 'pages:about' %}"
                  {% if m and m.url_name == 'about' %}aria-current="page"{% endif %}>About</a>

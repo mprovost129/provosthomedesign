@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}Services • Provost Home Design{% endblock %}
+
+{% block content %}
+<div class="container-lg py-4">
+
+  <!-- Header -->
+  <header class="mb-4">
+    <h1 class="h3 mb-1">Services</h1>
+    <p class="text-muted mb-0">From code-compliant plan sets to custom design, we help you get it built—fast and right.</p>
+  </header>
+
+  <!-- Service cards -->
+  <section class="row g-3">
+    <div class="col-md-6 col-lg-4">
+      <div class="card bg-white border rounded-3 shadow p-4">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-2">
+            <i class="bi bi-house-gear fs-3 me-2"></i>
+            <h2 class="h6 mb-0">Custom Home Design</h2>
+          </div>
+          <p class="mb-2 text-muted">One-on-one design from concept through permit-ready plans. Function, flow, and curb appeal—tailored to your site and budget.</p>
+          <ul class="small text-muted mb-0">
+            <li>Schematic layouts & elevations</li>
+            <li>Iterative design reviews</li>
+            <li>Code & zoning guidance</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+      <div class="card bg-white border rounded-3 shadow p-4">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-2">
+            <i class="bi bi-pencil-square fs-3 me-2"></i>
+            <h2 class="h6 mb-0">Modify a Stock Plan</h2>
+          </div>
+          <p class="mb-2 text-muted">Like a plan but need tweaks? We adjust dimensions, rooflines, garages, porches, and interiors to fit your needs.</p>
+          <ul class="small text-muted mb-0">
+            <li>Room reconfigurations & bump-outs</li>
+            <li>Basement, attic, and ADU options</li>
+            <li>Energy & code updates</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+      <div class="card bg-white border rounded-3 shadow p-4">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-2">
+            <i class="bi bi-diagram-3 fs-3 me-2"></i>
+            <h2 class="h6 mb-0">Framing & Structural Plans</h2>
+          </div>
+          <p class="mb-2 text-muted">Clear, buildable framing drawings for the field. Coordinate with your GC and engineer.</p>
+          <ul class="small text-muted mb-0">
+            <li>Floor/roof framing plans</li>
+            <li>Sections & details</li>
+            <li>Beam & header schedules</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+      <div class="card bg-white border rounded-3 shadow p-4">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-2">
+            <i class="bi bi-file-earmark-check fs-3 me-2"></i>
+            <h2 class="h6 mb-0">Permit Sets & Code Compliance</h2>
+          </div>
+          <p class="mb-2 text-muted">Complete plan sets formatted for your local building department, aligned with current codes.</p>
+          <ul class="small text-muted mb-0">
+            <li>Floor plans, elevations, sections</li>
+            <li>Site plan coordination</li>
+            <li>Responses to plan review comments</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+      <div class="card bg-white border rounded-3 shadow p-4">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-2">
+            <i class="bi bi-brush fs-3 me-2"></i>
+            <h2 class="h6 mb-0">Exterior Options & Rendering</h2>
+          </div>
+          <p class="mb-2 text-muted">Help clients visualize with finish palettes and polished exterior imagery.</p>
+          <ul class="small text-muted mb-0">
+            <li>Material & color studies</li>
+            <li>Front elevation renderings</li>
+            <li>Marketing-ready exports</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+      <div class="card bg-white border rounded-3 shadow p-4">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-2">
+            <i class="bi bi-clock-history fs-3 me-2"></i>
+            <h2 class="h6 mb-0">Revisions & As-Builts</h2>
+          </div>
+          <p class="mb-2 text-muted">Fast updates during construction and post-construction documentation.</p>
+          <ul class="small text-muted mb-0">
+            <li>Change orders & RFIs</li>
+            <li>Record drawing updates</li>
+            <li>Turnaround to meet schedules</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="mt-4">
+    <div class="bg-white border rounded-3 shadow p-4">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+          <h2 class="h6 mb-1">Ready to start?</h2>
+          <p class="text-muted mb-0">Tell us about your site, timeline, and goals. We’ll recommend the best path.</p>
+        </div>
+        <div class="d-flex gap-2">
+          <a class="btn btn-primary" href="{% url 'pages:get_started' %}"><i class="bi bi-pencil-square me-1"></i> Get Started</a>
+          <a class="btn btn-outline-primary" href="{% url 'plans:plan_list' %}"><i class="bi bi-grid me-1"></i> Browse Plans</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
