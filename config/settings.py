@@ -30,6 +30,13 @@ INSTALLED_APPS = [
     "core", "pages", "plans",
 ]
 
+THUMBNAIL_ALIASES = {
+    "": {
+        "plan_card":  {"size": (800, 500), "crop": True, "quality": 85},
+        "plan_card@2x": {"size": (1200, 750), "crop": True, "quality": 82},
+    }
+}
+
 # --- Middleware ---
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -92,42 +99,55 @@ STORAGES = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# --- Email (dev-friendly) ---
-# Strategy:
-# 1) If USE_MAILHOG=true -> SMTP to MailHog/Papercut on localhost:1025
-# 2) elif DEV_EMAIL_FILE=true -> file-based backend writing .eml to BASE_DIR/var/emails
-# 3) elif EMAIL_BACKEND explicitly set -> respect it
-# 4) else (default) -> console backend (prints to runserver console)
+# ======================================================================
+# Email
+# Strategy (in order):
+# 1) USE_MAILHOG=true  -> SMTP to local MailHog/Papercut
+# 2) DEV_EMAIL_FILE=true -> file-based backend writing .eml to BASE_DIR/var/emails
+# 3) If EMAIL_BACKEND is explicitly set -> respect it
+# 4) Else if Graph env looks complete -> use msgraphbackend.MSGraphBackend
+# 5) Else -> console backend
+# ======================================================================
 
-USE_MAILHOG = config("USE_MAILHOG", cast=bool, default=False)
-DEV_EMAIL_FILE = config("DEV_EMAIL_FILE", cast=bool, default=False)
+explicit_backend = "msgraphbackend.MSGraphBackend"
+EMAIL_BACKEND = "msgraphbackend.MSGraphBackend"
 
-explicit_backend = config("EMAIL_BACKEND", default="").strip() # type: ignore
+# --- Microsoft Graph Email (read env into Django settings) ---
+# Many backends look for these names on settings.*
+MSGRAPH_USER_ID = config("MSGRAPH_USER_ID", default="")
 
-if USE_MAILHOG:
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-    EMAIL_HOST = config("MAILHOG_HOST", default="127.0.0.1")
-    EMAIL_PORT = config("MAILHOG_PORT", cast=int, default=1025)
-    EMAIL_HOST_USER = ""
-    EMAIL_HOST_PASSWORD = ""
-    EMAIL_USE_TLS = False
-    EMAIL_USE_SSL = False
-    EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", cast=int, default=10)
-elif DEV_EMAIL_FILE:
-    EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
-    EMAIL_FILE_PATH = BASE_DIR / "var" / "emails"
-else:
-    EMAIL_BACKEND = explicit_backend or "django.core.mail.backends.console.EmailBackend"
-    # Optional SMTP values if you DID set EMAIL_BACKEND to SMTP explicitly
-    EMAIL_HOST = config("EMAIL_HOST", default="")
-    EMAIL_PORT = config("EMAIL_PORT", cast=int, default=587)
-    EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
-    EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
-    EMAIL_USE_TLS = config("EMAIL_USE_TLS", cast=bool, default=True)
-    EMAIL_USE_SSL = config("EMAIL_USE_SSL", cast=bool, default=False)
-    EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", cast=int, default=10)
+# Support either MICROSOFT_GRAPH_* or MSGRAPH_* env names
+MICROSOFT_GRAPH_CLIENT_ID = config(
+    "MICROSOFT_GRAPH_CLIENT_ID",
+    default=config("MSGRAPH_CLIENT_ID", default="")
+)
+MICROSOFT_GRAPH_CLIENT_SECRET = config(
+    "MICROSOFT_GRAPH_CLIENT_SECRET",
+    default=config("MSGRAPH_CLIENT_SECRET", default="")
+)
+MICROSOFT_GRAPH_TENANT_ID = config(
+    "MICROSOFT_GRAPH_TENANT_ID",
+    default=config("MSGRAPH_TENANT_ID", default="")
+)
 
-DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="no-reply@localhost")
+# Common defaults some backends expect
+MSGRAPH_SCOPE = config("MSGRAPH_SCOPE", default="https://graph.microsoft.com/.default")
+
+EMAIL_BACKEND = "msgraphbackend.MSGraphBackend"
+
+def _graph_is_configured() -> bool:
+    return all([
+        MICROSOFT_GRAPH_CLIENT_ID,
+        MICROSOFT_GRAPH_CLIENT_SECRET,
+        MICROSOFT_GRAPH_TENANT_ID,
+        MSGRAPH_USER_ID,
+    ])
+
+# From addresses
+DEFAULT_FROM_EMAIL = config(
+    "DEFAULT_FROM_EMAIL",
+    default=(MSGRAPH_USER_ID or "no-reply@localhost")
+)
 SERVER_EMAIL = config("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
 EMAIL_SUBJECT_PREFIX = config("EMAIL_SUBJECT_PREFIX", default="[Provost] ")
 AUTO_ACK_FROM_EMAIL = config("AUTO_ACK_FROM_EMAIL", default=DEFAULT_FROM_EMAIL)

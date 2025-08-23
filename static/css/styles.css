@@ -63,3 +63,11 @@
   border-color: rgba(0,0,0,.2);
   transform: translateY(-1px);
 }
+
+/* one time CSS */
+.plan-card .card-img-top {
+  width: 100%;
+  aspect-ratio: 16 / 9;   /* keeps all previews consistent */
+  height: auto;           /* let aspect-ratio control height */
+  object-fit: cover;      /* crop to fill without distortion */
+}
