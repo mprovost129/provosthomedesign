@@ -50,7 +50,8 @@
       <div class="d-flex flex-wrap gap-2">
         {% if house_styles %}
           {% for s in house_styles %}
-            {% with slug=s.slug|default:s|slugify label=s.style_name|default:s %}
+            {# Use s.slug when available; otherwise slugify the string form. Label always uses string form. #}
+            {% with slug=s.slug|default:s|slugify label=s %}
               <a href="{% url 'plans:plan_list' %}?style={{ slug }}"
                  class="badge rounded-pill chip text-decoration-none">
                 {{ label }}
@@ -219,3 +220,4 @@
 
 </div>
 {% endblock %}
+

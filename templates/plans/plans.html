@@ -134,7 +134,7 @@
                     sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw"
                     width="{{ im.width }}" height="{{ im.height }}"
                     class="card-img-top plan-thumb"
-                    alt="Front elevation of Plan {{ p.plan_number }}"
+                    alt="Front elevation of Plan {{ p.plan_number|default:'—' }}"
                     loading="lazy" decoding="async">
                 {% endthumbnail %}
               {% endthumbnail %}
@@ -166,7 +166,7 @@
           <li class="page-item {% if not plans.has_previous %}disabled{% endif %}">
             {% if plans.has_previous %}
               <a class="page-link"
-                 href="?page={{ plans.previous_page_number }}{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}{% if filters.min_sqft %}&min_sqft={{ filters.min_sqft }}{% endif %}{% if filters.max_sqft %}&max_sqft={{ filters.max_sqft }}{% endif %}{% if filters.beds %}&beds={{ filters.beds }}{% endif %}{% if filters.baths %}&baths={{ filters.baths }}{% endif %}{% if filters.sort %}&sort={{ filters.sort }}{% endif %}{% if filters.style %}&style={{ filters.style }}{% endif %}">
+                 href="?page={{ plans.previous_page_number }}{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}{% if filters.min_sqft %}&min_sqft={{ filters.min_sqft }}{% endif %}{% if filters.max_sqft %}&max_sqft={{ filters.max_sqft }}{% endif %}{% if filters.beds %}&beds={{ filters.beds }}{% endif %}{% if filters.baths %}&baths={{ filters.baths }}{% endif %}{% if filters.sort %}&sort={{ filters.sort }}{% endif %}{% if filters.style %}&style={{ filters.style|default_if_none:''|urlencode }}{% endif %}">
                 Previous
               </a>
             {% else %}
@@ -180,7 +180,7 @@
             {% elif num >= plans.number|add:'-2' and num <= plans.number|add:'2' %}
               <li class="page-item">
                 <a class="page-link"
-                   href="?page={{ num }}{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}{% if filters.min_sqft %}&min_sqft={{ filters.min_sqft }}{% endif %}{% if filters.max_sqft %}&max_sqft={{ filters.max_sqft }}{% endif %}{% if filters.beds %}&beds={{ filters.beds }}{% endif %}{% if filters.baths %}&baths={{ filters.baths }}{% endif %}{% if filters.sort %}&sort={{ filters.sort }}{% endif %}{% if filters.style %}&style={{ filters.style }}{% endif %}">
+                   href="?page={{ num }}{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}{% if filters.min_sqft %}&min_sqft={{ filters.min_sqft }}{% endif %}{% if filters.max_sqft %}&max_sqft={{ filters.max_sqft }}{% endif %}{% if filters.beds %}&beds={{ filters.beds }}{% endif %}{% if filters.baths %}&baths={{ filters.baths }}{% endif %}{% if filters.sort %}&sort={{ filters.sort }}{% endif %}{% if filters.style %}&style={{ filters.style|default_if_none:''|urlencode }}{% endif %}">
                   {{ num }}
                 </a>
               </li>
@@ -190,7 +190,7 @@
           <li class="page-item {% if not plans.has_next %}disabled{% endif %}">
             {% if plans.has_next %}
               <a class="page-link"
-                 href="?page={{ plans.next_page_number }}{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}{% if filters.min_sqft %}&min_sqft={{ filters.min_sqft }}{% endif %}{% if filters.max_sqft %}&max_sqft={{ filters.max_sqft }}{% endif %}{% if filters.beds %}&beds={{ filters.beds }}{% endif %}{% if filters.baths %}&baths={{ filters.baths }}{% endif %}{% if filters.sort %}&sort={{ filters.sort }}{% endif %}{% if filters.style %}&style={{ filters.style }}{% endif %}">
+                 href="?page={{ plans.next_page_number }}{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}{% if filters.min_sqft %}&min_sqft={{ filters.min_sqft }}{% endif %}{% if filters.max_sqft %}&max_sqft={{ filters.max_sqft }}{% endif %}{% if filters.beds %}&beds={{ filters.beds }}{% endif %}{% if filters.baths %}&baths={{ filters.baths }}{% endif %}{% if filters.sort %}&sort={{ filters.sort }}{% endif %}{% if filters.style %}&style={{ filters.style|default_if_none:''|urlencode }}{% endif %}">
                 Next
               </a>
             {% else %}
@@ -206,3 +206,4 @@
 
 </div>
 {% endblock %}
+
