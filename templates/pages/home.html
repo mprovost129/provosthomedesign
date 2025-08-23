@@ -1,24 +1,16 @@
 {% extends "base.html" %}
-{% load static humanize plans_extras %}
+{% load static humanize plans_extras thumbnail %}
 
 {% block title %}Home • Provost Home Design{% endblock %}
 
 {% block content %}
 <div class="container-lg py-4">
 
-  {# --- Card image sizing (matches plans.html) --- #}
+  {# --- Card image sizing (intrinsic dims via thumbnails) --- #}
   <style>
-    .plan-thumb{
-      width:100%;
-      aspect-ratio:16/10;   /* pick 16/9 if you prefer */
-      object-fit:cover;
-      height:auto;
-      display:block;
-    }
+    .plan-thumb{width:100%;height:auto;display:block}
     .plan-thumb-placeholder{
-      width:100%;
-      aspect-ratio:16/10;
-      display:flex;align-items:center;justify-content:center;
+      width:100%;aspect-ratio:16/10;display:flex;align-items:center;justify-content:center
     }
   </style>
 
@@ -88,10 +80,18 @@
           <div class="col">
             <div class="card h-100 border shadow rounded-3">
               {% if p.main_image %}
-                <img src="{{ p.main_image.url }}"
-                     class="card-img-top plan-thumb"
-                     alt="Plan {{ p.plan_number }}"
-                     loading="lazy" decoding="async">
+                {% thumbnail p.main_image "plan_card" as im %}
+                  {% thumbnail p.main_image "plan_card@2x" as im2 %}
+                    <img
+                      src="{{ im.url }}"
+                      srcset="{{ im.url }} 1x, {{ im2.url }} 2x"
+                      sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw"
+                      width="{{ im.width }}" height="{{ im.height }}"
+                      class="card-img-top plan-thumb"
+                      alt="Front elevation of Plan {{ p.plan_number }}"
+                      loading="lazy" decoding="async">
+                  {% endthumbnail %}
+                {% endthumbnail %}
               {% else %}
                 <div class="bg-body-tertiary text-muted small plan-thumb-placeholder">
                   No image
@@ -134,18 +134,18 @@
   </section>
 
   <section class="mt-5">
-  <div class="bg-white border shadow rounded-3 p-4">
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-      <div>
-        <h2 class="h6 mb-1">What we do</h2>
-        <p class="text-muted mb-0">Custom design, plan modifications, framing plans, and permit sets.</p>
+    <div class="bg-white border shadow rounded-3 p-4">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+          <h2 class="h6 mb-1">What we do</h2>
+          <p class="text-muted mb-0">Custom design, plan modifications, framing plans, and permit sets.</p>
+        </div>
+        <a class="btn btn-outline-primary" href="{% url 'pages:services' %}">
+          View Services
+        </a>
       </div>
-      <a class="btn btn-outline-primary" href="{% url 'pages:services' %}">
-        View Services
-      </a>
     </div>
-  </div>
-</section>
+  </section>
 
   <!-- Recent Testimonials (optional) -->
   {% if recent_testimonials %}

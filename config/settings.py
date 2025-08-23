@@ -26,7 +26,7 @@ CSRF_TRUSTED_ORIGINS = config(
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
-    "django.contrib.humanize",
+    "django.contrib.humanize", "django.contrib.sitemaps",
     "core", "pages", "plans",
 ]
 
@@ -116,7 +116,7 @@ EMAIL_BACKEND = "msgraphbackend.MSGraphBackend"
 # Many backends look for these names on settings.*
 MSGRAPH_USER_ID = config("MSGRAPH_USER_ID", default="")
 
-# Support either MICROSOFT_GRAPH_* or MSGRAPH_* env names
+# Prefer MICROSOFT_GRAPH_* but accept MSGRAPH_* for backwards compat
 MICROSOFT_GRAPH_CLIENT_ID = config(
     "MICROSOFT_GRAPH_CLIENT_ID",
     default=config("MSGRAPH_CLIENT_ID", default="")
@@ -130,9 +130,12 @@ MICROSOFT_GRAPH_TENANT_ID = config(
     default=config("MSGRAPH_TENANT_ID", default="")
 )
 
-# Common defaults some backends expect
-MSGRAPH_SCOPE = config("MSGRAPH_SCOPE", default="https://graph.microsoft.com/.default")
+# Aliases the msgraphbackend package looks for:
+MSGRAPH_CLIENT_ID = MICROSOFT_GRAPH_CLIENT_ID
+MSGRAPH_CLIENT_SECRET = MICROSOFT_GRAPH_CLIENT_SECRET
+MSGRAPH_TENANT_ID = MICROSOFT_GRAPH_TENANT_ID
 
+MSGRAPH_SCOPE = config("MSGRAPH_SCOPE", default="https://graph.microsoft.com/.default")
 EMAIL_BACKEND = "msgraphbackend.MSGraphBackend"
 
 def _graph_is_configured() -> bool:

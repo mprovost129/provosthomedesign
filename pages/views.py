@@ -557,3 +557,11 @@ from django.shortcuts import render
 
 def services(request):
     return render(request, "pages/services.html")
+
+def robots_txt(request):
+    lines = [
+        "User-agent: *",
+        "Allow: /",
+        f"Sitemap: {request.build_absolute_uri(reverse('sitemap'))}",
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain")

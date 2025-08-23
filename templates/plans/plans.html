@@ -128,12 +128,19 @@
           <div class="card h-100 shadow-sm">
 
             {% if p.main_image %}
-              <img
-                src="{{ p.main_image.url }}"
-                class="card-img-top plan-thumb"
-                alt="Plan {{ p.plan_number }}"
-                loading="lazy" decoding="async">
-            {% else %}
+                {% thumbnail p.main_image "plan_card" as im %}
+                  {% thumbnail p.main_image "plan_card@2x" as im2 %}
+                    <img
+                      src="{{ im.url }}"
+                      srcset="{{ im.url }} 1x, {{ im2.url }} 2x"
+                      sizes="(min-width: 992px) 33vw, (min-width: 768px) 50vw, 100vw"
+                      width="{{ im.width }}" height="{{ im.height }}"
+                      class="card-img-top plan-thumb"
+                      alt="Front elevation of Plan {{ p.plan_number }}"
+                      loading="lazy" decoding="async">
+                  {% endthumbnail %}
+                {% endthumbnail %}
+              {% else %}
               <div class="bg-light text-muted small plan-thumb-placeholder">
                 No image
               </div>

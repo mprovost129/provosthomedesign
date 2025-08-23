@@ -12,45 +12,57 @@
     {# ---- SEO & Meta ---- #}
     {% block extra_meta %}{% endblock %}
 
-    {# ---- JSON-LD (sitewide) ---- #}
-    {% block jsonld %}
-      {# SiteNavigationElement: describe primary nav once sitewide #}
-      <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "SiteNavigationElement",
-        "name": ["Home","Plans","About","Get Started","Contact"],
-        "url": [
-          "{{ request.scheme }}://{{ request.get_host }}{% url 'pages:home' %}",
-          "{{ request.scheme }}://{{ request.get_host }}{% url 'plans:plan_list' %}",
-          "{{ request.scheme }}://{{ request.get_host }}{% url 'pages:about' %}",
-          "{{ request.scheme }}://{{ request.get_host }}{% url 'pages:get_started' %}",
-          "{{ request.scheme }}://{{ request.get_host }}{% url 'pages:contact' %}"
-        ]
-      }
-      </script>
+    {# LocalBusiness: richer local/brand details; uses same @id as Organization #}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "@id": "{{ request.scheme }}://{{ request.get_host }}/#org",
+      "name": "{{ COMPANY_NAME|default:'Provost Home Design'|escapejs }}",
+      "url": "{{ request.scheme }}://{{ request.get_host }}/",
+      {% if BRAND_LOGO_STATIC %}
+      "logo": "{{ request.scheme }}://{{ request.get_host }}{% static BRAND_LOGO_STATIC %}",
+      {% else %}
+      "logo": "{{ request.scheme }}://{{ request.get_host }}{% static 'images/phdlogo.svg' %}",
+      {% endif %}
+      "email": "{{ CONTACT_EMAIL|escapejs }}",
+      "telephone": "{{ CONTACT_PHONE|escapejs }}",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "7 Park St, Unit 1",
+        "addressLocality": "Rehoboth",
+        "addressRegion": "MA",
+        "postalCode": "02769",
+        "addressCountry": "US"
+      },
+      "areaServed": ["MA","RI","NH"],
+      "openingHoursSpecification": [
+        {"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday"],"opens":"08:00","closes":"16:00"}
+      ],
+      "sameAs": [
+        "https://www.facebook.com/ProvostHomeDesign",
+        "https://www.instagram.com/provosthomedesign/",
+        "https://www.linkedin.com/in/michael-provost-6077a318/"
+      ]
+    }
+    </script>
 
       {# Organization: lightweight entity info; enrich if globals are present #}
       <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "Organization",
+        "@id": "{{ request.scheme }}://{{ request.get_host }}/#org",
         "name": "{{ COMPANY_NAME|default:'Provost Home Design'|escapejs }}",
         "url": "{{ request.scheme }}://{{ request.get_host }}/",
-        {% if BRAND_LOGO_STATIC %}
-          "logo": "{{ request.scheme }}://{{ request.get_host }}{% static BRAND_LOGO_STATIC %}",
-        {% else %}
-          "logo": "{{ request.scheme }}://{{ request.get_host }}{% static 'images/phdlogo.svg' %}",
-        {% endif %}
-        {% if CONTACT_EMAIL or CONTACT_PHONE or CONTACT_ADDRESS %}
-          "contactPoint": [{
-            "@type": "ContactPoint",
-            {% if CONTACT_PHONE %}"telephone": "{{ CONTACT_PHONE|escapejs }}",{% endif %}
-            {% if CONTACT_EMAIL %}"email": "{{ CONTACT_EMAIL|escapejs }}",{% endif %}
-            "contactType": "customer service",
-            "areaServed": "US"
-          }],
-        {% endif %}
+        "logo": "{{ request.scheme }}://{{ request.get_host }}{% static BRAND_LOGO_STATIC|default:'images/phdlogo.svg' %}",
+        "contactPoint": [{
+          "@type": "ContactPoint",
+          {% if CONTACT_PHONE %}"telephone": "{{ CONTACT_PHONE|escapejs }}",{% endif %}
+          {% if CONTACT_EMAIL %}"email": "{{ CONTACT_EMAIL|escapejs }}",{% endif %}
+          "contactType": "customer service",
+          "areaServed": "US"
+        }],
         "sameAs": [
           "https://www.facebook.com/ProvostHomeDesign",
           "https://www.instagram.com/provosthomedesign/",
