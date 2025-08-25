@@ -292,6 +292,7 @@ class ContactForm(forms.Form):
     phone = forms.CharField(max_length=30, required=False, validators=[phone_validator])
     subject = forms.CharField(max_length=120, required=False)
     message = forms.CharField(widget=forms.Textarea(attrs={"rows": 5}))
+    website = forms.CharField(required=False, widget=forms.HiddenInput)
     terms_accepted = forms.BooleanField(
         required=True,
         label="I agree to the Terms & Conditions",

@@ -1,5 +1,8 @@
 # pages/views.py
 from __future__ import annotations
+from time import time
+from django.core.exceptions import ValidationError
+from django_ratelimit.decorators import ratelimit
 
 import contextlib
 import logging
@@ -116,6 +119,7 @@ def home(request: HttpRequest) -> HttpResponse:
         },
     )
 
+@ratelimit(key="ip", rate="5/m", block=True)
 def contact(request: HttpRequest) -> HttpResponse:
     # Brand/contact settings
     s = SiteSettings.load()
@@ -150,7 +154,7 @@ def contact(request: HttpRequest) -> HttpResponse:
             span = f"{_fmt(h.open_time)} – {_fmt(h.close_time)}"
         else:
             span = "—"
-        hours_display.append({"day": DAY_LABELS.get(h.day, h.day), "span": span}) # type: ignore
+        hours_display.append({"day": DAY_LABELS.get(h.day, h.day), "span": span})  # type: ignore
 
     # Email recipients
     to_emails = (
@@ -167,13 +171,36 @@ def contact(request: HttpRequest) -> HttpResponse:
     is_contact_post = action == "send_message" or any(k.startswith("contact-") for k in request.POST.keys())
     is_testimonial_post = action == "submit_testimonial" or any(k.startswith("testimonial-") for k in request.POST.keys())
 
+    # Seed the timing token on GET
+    if request.method != "POST":
+        request.session["contact_started_ts"] = time()
+
     if request.method == "POST":
+        # 1) Basic per-session throttle
         if _too_many_recent_submissions(request):
             msg = "You're sending messages too quickly. Please wait a minute and try again."
             if _is_htmx(request):
                 return _htmx_status(request, "warning", msg)
             messages.warning(request, msg)
             return redirect("pages:contact")
+
+        # 2) “Too fast” submission (likely bot)
+        started = float(request.session.get("contact_started_ts", 0))
+        if time() - started < 2.0:
+            # reset seed for the next legit attempt
+            request.session["contact_started_ts"] = time()
+            logger.info(
+                "Spam gate tripped: too_fast ip=%s ua=%s",
+                request.META.get("REMOTE_ADDR"),
+                request.META.get("HTTP_USER_AGENT"),
+            )
+            if _is_htmx(request):
+                return _htmx_status(request, "error", "Spam protection triggered. Please try again.")
+            messages.error(request, "Spam protection triggered. Please try again.")
+            return redirect("pages:contact")
+
+        # refresh seed to avoid reusing the same timestamp
+        request.session["contact_started_ts"] = time()
 
         # Contact submission
         if is_contact_post:
@@ -183,8 +210,6 @@ def contact(request: HttpRequest) -> HttpResponse:
             if contact_form.is_valid():
                 cd = contact_form.cleaned_data
                 sub = cd.get("subject") or f"Contact request from {cd['name']}"
-
-                # No ContactMessage model: skip DB save
                 message_id_display = "-"
 
                 ctx = {
@@ -225,7 +250,7 @@ def contact(request: HttpRequest) -> HttpResponse:
                 except Exception as e:
                     logger.exception("Contact email send failed")
                     err = "We couldn't send your message just now. Please try again in a moment."
-                    if settings.DEBUG:  # show real reason in dev
+                    if settings.DEBUG:
                         err += f" ({e.__class__.__name__}: {e})"
                     if _is_htmx(request):
                         return _htmx_status(request, "error", err)
@@ -361,7 +386,6 @@ def contact(request: HttpRequest) -> HttpResponse:
         "hours_struct": hours_struct,
         "hours_display": hours_display,
         "hours": s.business_hours or getattr(settings, "BUSINESS_HOURS", None),
-
         "form": contact_form,
         "tform": tform,
         "approved_testimonials": approved_testimonials,
