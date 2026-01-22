@@ -1,8 +1,8 @@
 {% extends 'billing/base_portal.html' %}
 
-{% block title %}Invoice {{ invoice.invoice_number }}{% endblock %}
+{% block title %}Invoice {{ invoice.invoice_number }}{% endblock portal_content %}
 
-{% block content %}
+{% block portal_content %}
 <div class="mb-4">
     <div class="d-flex justify-content-between align-items-center">
         <div>
@@ -209,4 +209,4 @@
         {% endif %}
     </div>
 </div>
-{% endblock %}
+{% endblock portal_content %}

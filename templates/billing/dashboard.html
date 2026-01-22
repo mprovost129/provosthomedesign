@@ -1,8 +1,8 @@
 {% extends 'billing/base_portal.html' %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Dashboard{% endblock portal_content %}
 
-{% block content %}
+{% block portal_content %}
 <div class="mb-4">
     <h2>Welcome, {{ user.get_full_name|default:user.username }}!</h2>
     <p class="text-muted">Here's an overview of your account</p>
@@ -157,4 +157,4 @@
     </div>
 </div>
 {% endif %}
-{% endblock %}
+{% endblock portal_content %}
