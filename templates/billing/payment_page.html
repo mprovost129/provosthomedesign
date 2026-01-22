@@ -1,0 +1,271 @@
+{% extends 'billing/base_portal.html' %}
+
+{% block title %}Pay Invoice {{ invoice.invoice_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    #card-element {
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        padding: 12px;
+        background-color: white;
+    }
+    #card-errors {
+        color: #dc3545;
+        margin-top: 10px;
+    }
+    .processing-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+    }
+    .processing-overlay.active {
+        display: flex;
+    }
+    .spinner {
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'billing:invoice_detail' invoice.pk %}" class="text-decoration-none mb-2 d-inline-block">
+        <i class="fas fa-arrow-left"></i> Back to Invoice
+    </a>
+    <h2>Pay Invoice {{ invoice.invoice_number }}</h2>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-4">Payment Information</h5>
+                
+                <form id="payment-form">
+                    {% csrf_token %}
+                    
+                    <!-- Card Element -->
+                    <div class="mb-4">
+                        <label for="card-element" class="form-label">Credit or Debit Card</label>
+                        <div id="card-element"></div>
+                        <div id="card-errors" role="alert"></div>
+                    </div>
+                    
+                    <!-- Billing Details -->
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3">
+                            <label for="billing-name" class="form-label">Name on Card</label>
+                            <input type="text" class="form-control" id="billing-name" value="{{ user.get_full_name }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="billing-email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="billing-email" value="{{ user.email }}" required>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" id="submit-payment" class="btn btn-success btn-lg w-100">
+                        <i class="fas fa-lock"></i> Pay ${{ balance_due|floatformat:2 }}
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <div class="card">
+                <div class="card-body">
+                    <h6><i class="fas fa-shield-alt text-success"></i> Secure Payment</h6>
+                    <p class="text-muted small mb-0">
+                        Your payment information is encrypted and secure. We use Stripe for payment processing, 
+                        and we never store your credit card details on our servers.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">Payment Summary</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Invoice Number:</span>
+                        <strong>{{ invoice.invoice_number }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Issue Date:</span>
+                        <span>{{ invoice.issue_date|date:"M d, Y" }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Due Date:</span>
+                        <span>{{ invoice.due_date|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Invoice Total:</span>
+                        <strong>${{ invoice.total|floatformat:2 }}</strong>
+                    </div>
+                    {% if invoice.amount_paid > 0 %}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Amount Paid:</span>
+                        <span class="text-success">${{ invoice.amount_paid|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between">
+                    <strong>Amount to Pay:</strong>
+                    <strong class="text-success">${{ balance_due|floatformat:2 }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Processing Overlay -->
+<div class="processing-overlay" id="processing-overlay">
+    <div class="text-center spinner">
+        <div class="spinner-border mb-3" style="width: 3rem; height: 3rem;" role="status">
+            <span class="visually-hidden">Processing...</span>
+        </div>
+        <h4>Processing Payment...</h4>
+        <p>Please wait, do not close this window.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    // Initialize Stripe
+    const stripe = Stripe('{{ stripe_publishable_key }}');
+    const elements = stripe.elements();
+    
+    // Create card element
+    const cardElement = elements.create('card', {
+        style: {
+            base: {
+                fontSize: '16px',
+                color: '#32325d',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                '::placeholder': {
+                    color: '#aab7c4'
+                }
+            },
+            invalid: {
+                color: '#dc3545',
+                iconColor: '#dc3545'
+            }
+        }
+    });
+    
+    cardElement.mount('#card-element');
+    
+    // Handle card errors
+    cardElement.on('change', function(event) {
+        const displayError = document.getElementById('card-errors');
+        if (event.error) {
+            displayError.textContent = event.error.message;
+        } else {
+            displayError.textContent = '';
+        }
+    });
+    
+    // Handle form submission
+    const form = document.getElementById('payment-form');
+    const submitButton = document.getElementById('submit-payment');
+    const processingOverlay = document.getElementById('processing-overlay');
+    
+    form.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        
+        // Disable submit button
+        submitButton.disabled = true;
+        processingOverlay.classList.add('active');
+        
+        try {
+            // Create PaymentIntent
+            const response = await fetch('{% url "billing:create_payment_intent" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({
+                    invoice_id: {{ invoice.pk }}
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            // Confirm payment with Stripe
+            const {error, paymentIntent} = await stripe.confirmCardPayment(
+                data.clientSecret,
+                {
+                    payment_method: {
+                        card: cardElement,
+                        billing_details: {
+                            name: document.getElementById('billing-name').value,
+                            email: document.getElementById('billing-email').value
+                        }
+                    }
+                }
+            );
+            
+            if (error) {
+                throw new Error(error.message);
+            }
+            
+            // Payment succeeded
+            if (paymentIntent.status === 'succeeded') {
+                // Confirm payment on server
+                const confirmResponse = await fetch('{% url "billing:payment_confirm" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        payment_intent_id: paymentIntent.id
+                    })
+                });
+                
+                const confirmData = await confirmResponse.json();
+                
+                if (confirmData.success) {
+                    // Redirect to invoice
+                    window.location.href = confirmData.redirect_url;
+                } else {
+                    throw new Error('Payment confirmation failed');
+                }
+            }
+            
+        } catch (err) {
+            // Show error
+            document.getElementById('card-errors').textContent = err.message;
+            submitButton.disabled = false;
+            processingOverlay.classList.remove('active');
+        }
+    });
+</script>
+{% endblock %}

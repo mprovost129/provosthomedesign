@@ -1,0 +1,168 @@
+{% extends 'billing/base_portal.html' %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h2>Your Profile</h2>
+    <p class="text-muted">Update your account information</p>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-4">Account Information</h5>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.first_name.label_tag }}
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.first_name.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.last_name.label_tag }}
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.last_name.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.email.label_tag }}
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.email.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.company_name.label_tag }}
+                        {{ form.company_name }}
+                        {% if form.company_name.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.company_name.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.phone.label_tag }}
+                        {{ form.phone }}
+                        {% if form.phone.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.phone.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <h6 class="mt-4 mb-3">Billing Address</h6>
+                    
+                    <div class="mb-3">
+                        {{ form.address_line1.label_tag }}
+                        {{ form.address_line1 }}
+                        {% if form.address_line1.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.address_line1.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.address_line2.label_tag }}
+                        {{ form.address_line2 }}
+                        {% if form.address_line2.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.address_line2.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.city.label_tag }}
+                            {{ form.city }}
+                            {% if form.city.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.city.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            {{ form.state.label_tag }}
+                            {{ form.state }}
+                            {% if form.state.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.state.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            {{ form.zip_code.label_tag }}
+                            {{ form.zip_code }}
+                            {% if form.zip_code.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.zip_code.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <h6 class="card-title">Account Details</h6>
+                <hr>
+                <p class="mb-2">
+                    <strong>Username:</strong><br>
+                    {{ user.username }}
+                </p>
+                <p class="mb-2">
+                    <strong>Email:</strong><br>
+                    {{ user.email }}
+                </p>
+                <p class="mb-0">
+                    <strong>Member Since:</strong><br>
+                    {{ user.date_joined|date:"F Y" }}
+                </p>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h6 class="card-title">Change Password</h6>
+                <p class="text-muted small">To change your password, use the password reset feature.</p>
+                <a href="{% url 'billing:password_reset' %}" class="btn btn-outline-primary btn-sm w-100">
+                    <i class="fas fa-key"></i> Reset Password
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

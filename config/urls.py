@@ -19,6 +19,9 @@ urlpatterns = [
     # Root site pages & plans
     path("", include("pages.urls")),          # requires app_name="pages" in pages/urls.py
     path("plans/", include("plans.urls")),    # requires app_name="plans" in plans/urls.py
+    
+    # Client Portal
+    path("portal/", include("billing.urls")), # requires app_name="billing" in billing/urls.py
 
     # SEO endpoints
     path("robots.txt", robots_txt, name="robots_txt"),

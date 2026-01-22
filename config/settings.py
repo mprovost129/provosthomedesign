@@ -27,7 +27,7 @@ INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
     "django.contrib.humanize", "django.contrib.sitemaps",
-    "core", "pages", "plans"
+    "core", "pages", "plans", "billing"
 ]
 
 # Simple cache + defaults for sorl
@@ -253,5 +253,53 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
+        "billing": {
+            "handlers": ["console"] if DEBUG else ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
+        },
     },
 }
+
+# ======================================================================
+# Authentication & Client Portal
+# ======================================================================
+
+# Login/logout URLs
+LOGIN_URL = '/portal/login/'
+LOGIN_REDIRECT_URL = '/portal/dashboard/'
+LOGOUT_REDIRECT_URL = '/'
+
+# Password validation
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', 'OPTIONS': {'min_length': 8}},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
+
+# Session settings
+SESSION_COOKIE_AGE = 1209600  # 2 weeks
+SESSION_COOKIE_SECURE = not DEBUG  # True in production
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+
+# ======================================================================
+# Stripe Payment Processing
+# ======================================================================
+
+STRIPE_PUBLISHABLE_KEY = config("STRIPE_PUBLISHABLE_KEY", default="")
+STRIPE_SECRET_KEY = config("STRIPE_SECRET_KEY", default="")
+STRIPE_WEBHOOK_SECRET = config("STRIPE_WEBHOOK_SECRET", default="")
+
+# Stripe test mode check (keys starting with pk_test/sk_test are test mode)
+STRIPE_TEST_MODE = STRIPE_PUBLISHABLE_KEY.startswith('pk_test') if STRIPE_PUBLISHABLE_KEY else True
+
+# ======================================================================
+# Company Information (for invoices, emails, etc.)
+# ======================================================================
+
+COMPANY_NAME = config("COMPANY_NAME", default="Provost Home Design")
+CONTACT_EMAIL = config("CONTACT_EMAIL", default=DEFAULT_FROM_EMAIL)
+CONTACT_PHONE = config("CONTACT_PHONE", default="(555) 123-4567")
+CONTACT_ADDRESS = config("CONTACT_ADDRESS", default="123 Main St, Your City, ST 12345")

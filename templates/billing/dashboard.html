@@ -1,0 +1,160 @@
+{% extends 'billing/base_portal.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h2>Welcome, {{ user.get_full_name|default:user.username }}!</h2>
+    <p class="text-muted">Here's an overview of your account</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card card-stat outstanding shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Outstanding Balance</h6>
+                        <h3 class="mb-0">${{ total_outstanding|floatformat:2 }}</h3>
+                    </div>
+                    <div class="text-danger">
+                        <i class="fas fa-exclamation-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card card-stat paid shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Total Paid</h6>
+                        <h3 class="mb-0">${{ total_paid|floatformat:2 }}</h3>
+                    </div>
+                    <div class="text-success">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card card-stat pending shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Pending Invoices</h6>
+                        <h3 class="mb-0">{{ pending_count }}</h3>
+                    </div>
+                    <div class="text-warning">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Invoices -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Recent Invoices</h5>
+            <a href="{% url 'billing:invoice_list' %}" class="btn btn-sm btn-outline-primary">
+                View All <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if invoices %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Issue Date</th>
+                        <th>Due Date</th>
+                        <th>Total</th>
+                        <th>Balance Due</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invoice in invoices %}
+                    <tr>
+                        <td><strong>{{ invoice.invoice_number }}</strong></td>
+                        <td>{{ invoice.issue_date|date:"M d, Y" }}</td>
+                        <td>{{ invoice.due_date|date:"M d, Y" }}</td>
+                        <td>${{ invoice.total|floatformat:2 }}</td>
+                        <td><strong>${{ invoice.get_balance_due|floatformat:2 }}</strong></td>
+                        <td>
+                            <span class="status-badge status-{{ invoice.status }}">
+                                {{ invoice.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'billing:invoice_detail' invoice.pk %}" class="btn btn-sm btn-outline-primary">
+                                View <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-5 text-center text-muted">
+            <i class="fas fa-file-invoice fa-3x mb-3"></i>
+            <p>No invoices found</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recent Payments -->
+{% if recent_payments %}
+<div class="card shadow-sm">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Recent Payments</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Invoice</th>
+                        <th>Amount</th>
+                        <th>Payment Method</th>
+                        <th>Payment ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in recent_payments %}
+                    <tr>
+                        <td>{{ payment.processed_at|date:"M d, Y g:i A" }}</td>
+                        <td>
+                            <a href="{% url 'billing:invoice_detail' payment.invoice.pk %}">
+                                {{ payment.invoice.invoice_number }}
+                            </a>
+                        </td>
+                        <td><strong>${{ payment.amount|floatformat:2 }}</strong></td>
+                        <td>
+                            <i class="fas fa-credit-card"></i>
+                            {{ payment.get_payment_method_display }}
+                        </td>
+                        <td><code>{{ payment.payment_id|slice:":8" }}...</code></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

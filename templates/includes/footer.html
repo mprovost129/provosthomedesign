@@ -62,6 +62,7 @@
                 <li><a href="{% url 'pages:about' %}" class="text-decoration-none text-muted">About Us</a></li>
                 <li><a href="{% url 'pages:privacy' %}" class="text-decoration-none text-muted">Privacy Policy</a></li>
                 <li><a href="{% url 'pages:terms' %}" class="text-decoration-none text-muted">Terms &amp; Conditions</a></li>
+                <li><a href="{% url 'billing:login' %}" class="text-decoration-none text-muted">Client Portal</a></li>
                 {% if request.user.is_authenticated and request.user.is_staff %}
                   <li><a href="{% url 'admin:index' %}" class="text-decoration-none text-muted">Admin</a></li>
                 {% endif %}

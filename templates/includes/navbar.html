@@ -28,8 +28,8 @@
           </a>
         </div>
 
-        {# CENTER: 8/12 at lg+ (menu centered) #}
-        <div class="col-12 col-lg-8 d-flex justify-content-center">
+        {# CENTER: 7/12 at lg+ (menu centered) #}
+        <div class="col-12 col-lg-7 d-flex justify-content-center">
           <ul class="navbar-nav nav-spaced text-uppercase text-center flex-lg-row">
             <li class="nav-item">
               <a class="nav-link {% if m and m.url_name == 'home' %}active{% endif %}"
@@ -64,9 +64,19 @@
           </ul>
         </div>
 
-        {# RIGHT: 2/12 at lg+ (phone, favorites, comparison, socials) #}
-        <div class="col-12 col-lg-2 d-flex justify-content-lg-end justify-content-center mt-2 mt-lg-0">
+        {# RIGHT: 3/12 at lg+ (portal, phone, favorites, comparison, socials) #}
+        <div class="col-12 col-lg-3 d-flex justify-content-lg-end justify-content-center mt-2 mt-lg-0">
           <ul class="navbar-nav align-items-center gap-2 flex-row">
+            {# Client Portal Icon #}
+            <li class="nav-item d-none d-lg-block">
+              <a href="{% url 'billing:login' %}"
+                 class="nav-link px-2 nav-link--icon {% if m and m.namespace == 'billing' %}active{% endif %}"
+                 aria-label="Client Portal"
+                 {% if m and m.namespace == 'billing' %}aria-current="page"{% endif %}>
+                <i class="bi bi-person-circle" aria-hidden="true"></i>
+              </a>
+            </li>
+            
             {# Click-to-Call Phone #}
             <li class="nav-item d-none d-lg-block">
               <a href="tel:+15082437912"
