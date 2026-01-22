@@ -207,6 +207,11 @@ PLAN_CHANGE_RATE_LIMIT = config("PLAN_CHANGE_RATE_LIMIT", "3/h")
 PLAN_CHANGE_MIN_MESSAGE_LEN = int(config("PLAN_CHANGE_MIN_MESSAGE_LEN", "20"))
 
 # --- Logging ---
+# Create logs directory if it doesn't exist
+import os
+LOGS_DIR = BASE_DIR / "logs"
+os.makedirs(LOGS_DIR, exist_ok=True)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -223,27 +228,27 @@ LOGGING = {
         },
         "file": {
             "class": "logging.FileHandler",
-            "filename": BASE_DIR / "logs" / "django.log",
+            "filename": LOGS_DIR / "django.log",
             "formatter": "verbose",
         },
     },
     "root": {
-        "handlers": ["console", "file"] if not DEBUG else ["console"],
+        "handlers": ["console"] if DEBUG else ["console", "file"],
         "level": "INFO",
     },
     "loggers": {
         "django": {
-            "handlers": ["console", "file"] if not DEBUG else ["console"],
+            "handlers": ["console"] if DEBUG else ["console", "file"],
             "level": "INFO",
             "propagate": False,
         },
         "pages": {
-            "handlers": ["console", "file"] if not DEBUG else ["console"],
+            "handlers": ["console"] if DEBUG else ["console", "file"],
             "level": "INFO",
             "propagate": False,
         },
         "plans": {
-            "handlers": ["console", "file"] if not DEBUG else ["console"],
+            "handlers": ["console"] if DEBUG else ["console", "file"],
             "level": "INFO",
             "propagate": False,
         },
