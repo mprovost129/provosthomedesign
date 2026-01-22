@@ -13,7 +13,7 @@ def csv_list(v: str) -> list[str]:
 
 # --- Core ---
 SECRET_KEY = config("SECRET_KEY", default="dev-insecure-change-me")
-DEBUG = config("DEBUG", cast=bool, default=True)  # set False in prod
+DEBUG = config("DEBUG", cast=bool, default=False)  # set False in prod
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="127.0.0.1,localhost", cast=csv_list)
 CSRF_TRUSTED_ORIGINS = config(
@@ -71,10 +71,15 @@ TEMPLATES = [{
 WSGI_APPLICATION = "config.wsgi.application"
 
 # --- Database (SQLite for dev) ---
+# For production, use PostgreSQL via environment variables
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": config("DB_ENGINE", default="django.db.backends.sqlite3"),
+        "NAME": config("DB_NAME", default=str(BASE_DIR / "db.sqlite3")),
+        "USER": config("DB_USER", default=""),
+        "PASSWORD": config("DB_PASSWORD", default=""),
+        "HOST": config("DB_HOST", default=""),
+        "PORT": config("DB_PORT", default=""),
     }
 }
 
@@ -200,3 +205,47 @@ RECAPTCHA_MIN_SCORE = float(config("RECAPTCHA_MIN_SCORE", "0.5"))
 
 PLAN_CHANGE_RATE_LIMIT = config("PLAN_CHANGE_RATE_LIMIT", "3/h")
 PLAN_CHANGE_MIN_MESSAGE_LEN = int(config("PLAN_CHANGE_MIN_MESSAGE_LEN", "20"))
+
+# --- Logging ---
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+        "file": {
+            "class": "logging.FileHandler",
+            "filename": BASE_DIR / "logs" / "django.log",
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "handlers": ["console", "file"] if not DEBUG else ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console", "file"] if not DEBUG else ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "pages": {
+            "handlers": ["console", "file"] if not DEBUG else ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "plans": {
+            "handlers": ["console", "file"] if not DEBUG else ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}

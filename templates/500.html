@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 text-center">
+      <h1 class="display-1 fw-bold text-danger">500</h1>
+      <h2 class="mb-4">Server Error</h2>
+      <p class="lead mb-4">
+        Sorry, something went wrong on our end. We've been notified and are working to fix it.
+      </p>
+      <a href="{% url 'pages:home' %}" class="btn btn-primary">Go to Homepage</a>
+      <a href="{% url 'pages:contact' %}" class="btn btn-outline-primary ms-2">Contact Us</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
