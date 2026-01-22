@@ -96,16 +96,16 @@ def plan_list(request: HttpRequest, house_style_slug: str | None = None) -> Http
     styles = HouseStyleModel.objects.all().order_by("style_name")
     active_style = None
 
-    qs = Plans.objects.filter(is_available=True).select_related("house_style")
+    qs = Plans.objects.filter(is_available=True).prefetch_related("house_styles")
 
     # Allow style filter from querystring first; fall back to /style/<slug>/ route.
     style_q = (request.GET.get("style") or "").strip()
     if style_q:
         active_style = get_object_or_404(HouseStyleModel, slug=style_q)
-        qs = qs.filter(house_style=active_style)
+        qs = qs.filter(house_styles=active_style)
     elif house_style_slug:
         active_style = get_object_or_404(HouseStyleModel, slug=house_style_slug)
-        qs = qs.filter(house_style=active_style)
+        qs = qs.filter(house_styles=active_style)
 
     # Raw query values
     q_raw = (request.GET.get("q") or "").strip()
@@ -178,8 +178,8 @@ def plan_detail(request: HttpRequest, house_style_slug: str, plan_slug: str) -> 
     Single plan detail + gallery + request changes form (no user deps).
     """
     plan = get_object_or_404(
-        Plans.objects.select_related("house_style"),
-        house_style__slug=house_style_slug,
+        Plans.objects.prefetch_related("house_styles"),
+        house_styles__slug=house_style_slug,
         slug=plan_slug,
     )
 
@@ -206,7 +206,7 @@ def plan_detail(request: HttpRequest, house_style_slug: str, plan_slug: str) -> 
 def search(request: HttpRequest) -> HttpResponse:
     """Simple search endpoint; reuses list template with a keyword filter."""
     q_raw = (request.GET.get("q") or "").strip()
-    qs = Plans.objects.filter(is_available=True).select_related("house_style")
+    qs = Plans.objects.filter(is_available=True).prefetch_related("house_styles")
     if q_raw:
         qs = qs.filter(Q(plan_number__icontains=q_raw) | Q(description__icontains=q_raw))
 
@@ -417,7 +417,7 @@ def favorites_list(request: HttpRequest) -> HttpResponse:
     
     if saved_ids:
         # Preserve order from session
-        plans = Plans.objects.filter(id__in=saved_ids, is_available=True).select_related("house_style")
+        plans = Plans.objects.filter(id__in=saved_ids, is_available=True).prefetch_related("house_styles")
         # Sort by session order
         plans_dict = {p.id: p for p in plans}
         plans_ordered = [plans_dict[pid] for pid in saved_ids if pid in plans_dict]
@@ -482,7 +482,7 @@ def compare_plans(request: HttpRequest) -> HttpResponse:
         plans = Plans.objects.filter(
             id__in=comparison_ids,
             is_available=True
-        ).select_related("house_style").prefetch_related("images")
+        ).prefetch_related("house_styles", "images")
         
         # Sort by session order
         plans_dict = {p.id: p for p in plans}

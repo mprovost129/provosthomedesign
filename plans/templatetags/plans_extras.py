@@ -55,5 +55,5 @@ def get_recently_viewed_plans(request):
         return []
     
     # Get plans maintaining order from session
-    plans_dict = {plan.id: plan for plan in Plans.objects.filter(id__in=plan_ids).select_related('house_style')}
+    plans_dict = {plan.id: plan for plan in Plans.objects.filter(id__in=plan_ids).prefetch_related('house_styles')}
     return [plans_dict[plan_id] for plan_id in plan_ids if plan_id in plans_dict]

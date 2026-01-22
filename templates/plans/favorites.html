@@ -19,7 +19,7 @@
             {% for plan in saved_plans %}
                 <div class="col-md-4">
                     <div class="card h-100 shadow-sm plan-card" data-plan-id="{{ plan.id }}">
-                        <a href="{% url 'plans:plan_detail' plan.house_style.slug plan.slug %}">
+                        <a href="{{ plan.get_absolute_url }}">
                             {% if plan.main_image %}
                                 <img src="{{ plan.main_image.url }}" 
                                      class="card-img-top" 
@@ -36,7 +36,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <h5 class="card-title mb-0">
-                                    <a href="{% url 'plans:plan_detail' plan.house_style.slug plan.slug %}" 
+                                    <a href="{{ plan.get_absolute_url }}" 
                                        class="text-decoration-none text-dark">
                                         {{ plan.name }}
                                     </a>
@@ -48,7 +48,11 @@
                                 </button>
                             </div>
                             
-                            <p class="text-muted small mb-2">{{ plan.house_style.name }}</p>
+                            <p class="text-muted small mb-2">
+                                {% for style in plan.house_styles.all %}
+                                    {{ style.style_name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </p>
                             
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <span class="badge bg-primary">{{ plan.square_feet }} sq ft</span>
@@ -60,7 +64,7 @@
                             {% endif %}
                             
                             <div class="btn-group w-100" role="group">
-                                <a href="{% url 'plans:plan_detail' plan.house_style.slug plan.slug %}" 
+                                <a href="{{ plan.get_absolute_url }}" 
                                    class="btn btn-primary btn-sm">
                                     View Details
                                 </a>

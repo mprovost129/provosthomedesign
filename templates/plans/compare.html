@@ -35,7 +35,7 @@
                         <th style="width: 200px;">Feature</th>
                         {% for plan in plans %}
                             <th class="text-center">
-                                <a href="{% url 'plans:plan_detail' plan.house_style.slug plan.slug %}" 
+                                <a href="{{ plan.get_absolute_url }}" 
                                    class="text-decoration-none">
                                     {{ plan.name }}
                                 </a>
@@ -70,7 +70,11 @@
                     <tr>
                         <th>Style</th>
                         {% for plan in plans %}
-                            <td class="text-center">{{ plan.house_style.name }}</td>
+                            <td class="text-center">
+                                {% for style in plan.house_styles.all %}
+                                    {{ style.style_name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </td>
                         {% endfor %}
                     </tr>
                     
@@ -161,7 +165,7 @@
                         <th>Actions</th>
                         {% for plan in plans %}
                             <td class="text-center">
-                                <a href="{% url 'plans:plan_detail' plan.house_style.slug plan.slug %}" 
+                                <a href="{{ plan.get_absolute_url }}" 
                                    class="btn btn-primary btn-sm mb-1">
                                     View Details
                                 </a>
@@ -196,7 +200,14 @@
                         {% endif %}
                         
                         <table class="table table-sm">
-                            <tr><th>Style:</th><td>{{ plan.house_style.name }}</td></tr>
+                            <tr>
+                                <th>Style:</th>
+                                <td>
+                                    {% for style in plan.house_styles.all %}
+                                        {{ style.style_name }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </td>
+                            </tr>
                             <tr><th>Square Feet:</th><td>{{ plan.square_feet }} sq ft</td></tr>
                             <tr><th>Bedrooms:</th><td>{{ plan.bedrooms }}</td></tr>
                             <tr><th>Bathrooms:</th><td>{{ plan.bathrooms }}</td></tr>
@@ -208,7 +219,7 @@
                         </table>
                         
                         <div class="d-grid gap-2">
-                            <a href="{% url 'plans:plan_detail' plan.house_style.slug plan.slug %}" 
+                            <a href="{{ plan.get_absolute_url }}" 
                                class="btn btn-primary">
                                 View Details
                             </a>

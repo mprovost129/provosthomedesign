@@ -93,11 +93,10 @@ def home(request: HttpRequest) -> HttpResponse:
     recent_plans = (
         Plans.objects
         .filter(is_available=True)
-        .select_related("house_style")
+        .prefetch_related("house_styles")
         .only(
             "id", "slug", "plan_number", "plan_price", "square_footage",
-            "bedrooms", "bathrooms", "main_image", "created_date",
-            "house_style__style_name", "house_style__slug"
+            "bedrooms", "bathrooms", "main_image", "created_date"
         )
         .order_by("-created_date")[:3]
     )

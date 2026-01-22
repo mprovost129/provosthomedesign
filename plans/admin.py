@@ -33,7 +33,7 @@ class PlanGalleryInline(admin.TabularInline):
 class PlansAdmin(admin.ModelAdmin):
     list_display = (
         "plan_number",
-        "house_style",
+        "styles_list",
         "square_footage",
         "bedrooms",
         "bathrooms",
@@ -45,16 +45,20 @@ class PlansAdmin(admin.ModelAdmin):
     )
     list_display_links = ("plan_number",)  # keep booleans editable
     list_editable = ("is_available", "is_featured")
-    list_filter = ("house_style", "is_available", "is_featured", "bedrooms", "stories", "garage_stalls")
-    search_fields = ("plan_number", "description", "house_style__style_name")
+    list_filter = ("house_styles", "is_available", "is_featured", "bedrooms", "stories", "garage_stalls")
+    search_fields = ("plan_number", "description", "house_styles__style_name")
     prepopulated_fields = {"slug": ("plan_number",)}
     ordering = ("-is_featured", "-modified_date", "-created_date")
-    list_select_related = ("house_style",)
+    filter_horizontal = ("house_styles",)
     list_per_page = 50
     inlines = [PlanGalleryInline]
     readonly_fields = ("created_date", "modified_date")
 
     actions = ("make_featured", "remove_featured", "make_available", "make_unavailable")
+
+    @admin.display(description="Styles")
+    def styles_list(self, obj):
+        return ", ".join([style.style_name for style in obj.house_styles.all()]) or "—"
 
     @admin.display(description="Price")
     def price(self, obj):

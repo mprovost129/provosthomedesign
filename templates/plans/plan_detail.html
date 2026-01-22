@@ -2,8 +2,8 @@
 {% load static humanize plans_extras %}
 
 {% block title %}
-  {% with style_name=plan.house_style.style_name|default:plan.house_style|default:"" %}
-    Plan {{ plan.plan_number }}{% if style_name %} — {{ style_name }}{% endif %} • Provost Home Design
+  {% with first_style=plan.house_styles.first %}
+    Plan {{ plan.plan_number }}{% if first_style %} — {{ first_style.style_name }}{% endif %} • Provost Home Design
   {% endwith %}
 {% endblock %}
 
@@ -14,8 +14,8 @@
     <meta name="description" content="{{ plan.description|striptags|truncatechars:160 }}">
   {% endif %}
 
-  {% with style_name=plan.house_style.style_name|default:plan.house_style|default:"" %}
-    <meta property="og:title" content="Plan {{ plan.plan_number }}{% if style_name %} — {{ style_name }}{% endif %}">
+  {% with first_style=plan.house_styles.first %}
+    <meta property="og:title" content="Plan {{ plan.plan_number }}{% if first_style %} — {{ first_style.style_name }}{% endif %}">
   {% endwith %}
   <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
 
@@ -33,7 +33,7 @@
 {
   "@context": "https://schema.org",
   "@type": "Product",
-  "name": "Plan {{ plan.plan_number }}{% if plan.house_style %} — {{ plan.house_style.style_name|default:plan.house_style|escape }}{% endif %}",
+  "name": "Plan {{ plan.plan_number }}{% with first_style=plan.house_styles.first %}{% if first_style %} — {{ first_style.style_name|escape }}{% endif %}{% endwith %}",
   "description": "{{ plan.meta_description|default:plan.description|default:''|striptags|truncatechars:300|escapejs }}",
   "image": [
     {% if plan.main_image %}
@@ -93,9 +93,9 @@
     <div class="col-lg-5">
       <h1 class="h3">Plan {{ plan.plan_number }}</h1>
       <p class="text-muted mb-2">
-        {% with style_name=plan.house_style.style_name|default:plan.house_style|default:"" %}
-          {{ style_name }}
-        {% endwith %}
+        {% for style in plan.house_styles.all %}
+          {{ style.style_name }}{% if not forloop.last %}, {% endif %}
+        {% endfor %}
       </p>
 
       <ul class="list-group mb-3">

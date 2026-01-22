@@ -83,7 +83,7 @@ class Plans(models.Model):
     # cover image (front perspective)
     main_image = models.ImageField(upload_to="plans/main", blank=True, null=True)
 
-    house_style = models.ForeignKey(HouseStyle, on_delete=models.PROTECT, related_name="plans")
+    house_styles = models.ManyToManyField(HouseStyle, related_name="plans", blank=True)
 
     is_available = models.BooleanField(default=True)
     # Hand-pick which plans to feature on the home page, etc.
@@ -102,7 +102,6 @@ class Plans(models.Model):
         indexes = [
             models.Index(fields=["slug"]),
             models.Index(fields=["plan_number"]),
-            models.Index(fields=["house_style"]),
             models.Index(fields=["is_available", "created_date"]),
             models.Index(fields=["is_featured", "created_date"]),
         ]
@@ -118,7 +117,12 @@ class Plans(models.Model):
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return reverse("plans:plan_detail", args=[self.house_style.slug, self.slug])
+        """
+        Generate URL using the first house style, or 'general' if no styles assigned.
+        """
+        first_style = self.house_styles.first()
+        style_slug = first_style.slug if first_style else "general"
+        return reverse("plans:plan_detail", args=[style_slug, self.slug])
 
     # ---- Validation ----
     def clean(self):
