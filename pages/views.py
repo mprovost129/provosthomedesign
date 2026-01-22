@@ -21,6 +21,7 @@ from django.templatetags.static import static
 from django.urls import reverse
 from django.utils import timezone
 
+from core.utils import verify_recaptcha_v3
 from .forms import ContactForm, NewHouseForm, TestimonialForm
 from .models import (
     InquiryAttachment,
@@ -205,6 +206,15 @@ def contact(request: HttpRequest) -> HttpResponse:
 
         # Contact submission
         if is_contact_post:
+            # reCAPTCHA v3 verification (enforced if secret is configured)
+            recaptcha_ok, score = verify_recaptcha_v3(request)
+            if not recaptcha_ok:
+                msg = "Spam detection failed. Please try again."
+                if _is_htmx(request):
+                    return _htmx_status(request, "error", msg)
+                messages.error(request, msg)
+                return redirect("pages:contact")
+
             if not request.POST.get(f"{contact_form.prefix}-terms_accepted") and hasattr(contact_form, "fields") and "terms_accepted" in contact_form.fields:
                 contact_form.add_error("terms_accepted", "You must accept the Terms & Conditions.")
 
@@ -390,11 +400,18 @@ def contact(request: HttpRequest) -> HttpResponse:
         "form": contact_form,
         "tform": tform,
         "approved_testimonials": approved_testimonials,
+        "recaptcha_site_key": (getattr(settings, "RECAPTCHA_SITE_KEY", "") or "").strip(),
     }
     return render(request, "pages/contact.html", context)
 
 def get_started(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
+        # reCAPTCHA v3 verification (enforced if secret is configured)
+        recaptcha_ok, score = verify_recaptcha_v3(request)
+        if not recaptcha_ok:
+            messages.error(request, "Spam detection failed. Please try again.")
+            return redirect("pages:get_started")
+
         form = NewHouseForm(request.POST, request.FILES)
         if form.is_valid():
             cd = form.cleaned_data
@@ -500,7 +517,11 @@ def get_started(request: HttpRequest) -> HttpResponse:
     return render(
         request,
         "pages/get_started.html",
-        {"page": {"title": "Get Started", "description": "Tell us about your project."}, "form": form},
+        {
+            "page": {"title": "Get Started", "description": "Tell us about your project."},
+            "form": form,
+            "recaptcha_site_key": (getattr(settings, "RECAPTCHA_SITE_KEY", "") or "").strip(),
+        },
     )
 
 def terms(request: HttpRequest) -> HttpResponse:

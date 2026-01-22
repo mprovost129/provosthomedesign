@@ -15,6 +15,7 @@ from django.views.decorators.http import require_POST
 
 from django_ratelimit.decorators import ratelimit
 
+from core.utils import verify_recaptcha_v3, get_client_ip
 from .models import HouseStyle as HouseStyleModel, Plans, PlanGallery
 from .forms import PlanQuickForm, PlanCommentForm
 
@@ -53,9 +54,8 @@ def _parse_baths(raw: str | None) -> Decimal | None:
 
 
 def _client_ip(request: HttpRequest) -> str:
-    # Best-effort IP; Nginx should set X-Forwarded-For
-    xff = (request.META.get("HTTP_X_FORWARDED_FOR") or "").split(",")[0].strip()
-    return xff or (request.META.get("REMOTE_ADDR") or "")
+    """Deprecated: Use get_client_ip from core.utils instead."""
+    return get_client_ip(request)
 
 
 def _looks_like_gibberish(text: str) -> bool:
@@ -83,48 +83,8 @@ def _looks_like_gibberish(text: str) -> bool:
 
 
 def _verify_recaptcha_v3(request: HttpRequest) -> tuple[bool, float | None]:
-    """
-    Verify reCAPTCHA v3 token. Returns (ok, score).
-    If RECAPTCHA_SECRET_KEY is not configured, treat as "not enforced".
-    """
-    secret = (getattr(settings, "RECAPTCHA_SECRET_KEY", "") or "").strip()
-    if not secret:
-        return True, None  # not enforced if not configured
-
-    token = (request.POST.get("recaptcha_token") or "").strip()
-    if not token:
-        return False, 0.0
-
-    try:
-        import requests  # type: ignore
-    except Exception:
-        # If requests isn't installed, fail closed (spam) when recaptcha is configured
-        return False, 0.0
-
-    try:
-        resp = requests.post(
-            "https://www.google.com/recaptcha/api/siteverify",
-            data={
-                "secret": secret,
-                "response": token,
-                "remoteip": _client_ip(request),
-            },
-            timeout=5,
-        )
-        data: dict[str, Any] = resp.json()
-    except Exception:
-        return False, 0.0
-
-    success = bool(data.get("success"))
-    score = data.get("score")
-    try:
-        score_f = float(score) if score is not None else 0.0
-    except Exception:
-        score_f = 0.0
-
-    min_score = float(getattr(settings, "RECAPTCHA_MIN_SCORE", 0.5))
-    ok = success and score_f >= min_score
-    return ok, score_f
+    """Deprecated: Use verify_recaptcha_v3 from core.utils instead."""
+    return verify_recaptcha_v3(request)
 
 
 def plan_list(request: HttpRequest, house_style_slug: str | None = None) -> HttpResponse:
@@ -373,7 +333,7 @@ def send_plan_comment(request: HttpRequest, plan_id: int) -> HttpResponse:
     # reCAPTCHA v3 verification (enforced if secret is configured)
     recaptcha_ok, score = _verify_recaptcha_v3(request)
     if not recaptcha_ok:
-        messages.success(request, "Thanks! Your request has been emailed. We’ll follow up soon.")
+        messages.error(request, "Spam detection failed. Please try again.")
         return redirect(plan.get_absolute_url())
 
     subject = f"[Plan {plan.plan_number}] Change request"

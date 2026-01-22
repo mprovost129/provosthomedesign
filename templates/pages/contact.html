@@ -211,6 +211,10 @@
               {% endif %}
             </div>
 
+            {% if recaptcha_site_key %}
+              <input type="hidden" name="recaptcha_token" id="contact_recaptcha_token" value="">
+            {% endif %}
+
             <div class="text-end">
               <input type="hidden" name="action" value="send_message">
               <button type="submit" class="btn btn-primary">Send message</button>
@@ -321,4 +325,42 @@
     </section>
   {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if recaptcha_site_key %}
+  <script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}"></script>
+  <script>
+    (function () {
+      function setToken() {
+        return new Promise(function(resolve) {
+          grecaptcha.ready(function () {
+            grecaptcha.execute("{{ recaptcha_site_key }}", {action: "contact_form"}).then(function (token) {
+              var el = document.getElementById("contact_recaptcha_token");
+              if (el) el.value = token;
+              resolve(token);
+            });
+          });
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        setToken();
+
+        var form = document.querySelector('form[action="{% url "pages:contact" %}"]');
+        if (!form) return;
+
+        form.addEventListener("submit", function (e) {
+          var el = document.getElementById("contact_recaptcha_token");
+          if (el && el.value) return;
+
+          e.preventDefault();
+          setToken().then(function () {
+            form.submit();
+          });
+        });
+      });
+    })();
+  </script>
+{% endif %}
 {% endblock %}

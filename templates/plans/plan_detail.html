@@ -124,8 +124,6 @@
 
           <form action="{% url 'plans:send_plan_comment' plan.id %}" method="post" class="vstack gap-3" novalidate>
             {% csrf_token %}
-            <input type="text" name="website" value="" autocomplete="off" tabindex="-1" class="hp-field">
-            <input type="hidden" name="recaptcha_token" id="recaptcha_token">
 
             <div class="row g-3">
               <div class="col-md-6">
@@ -149,6 +147,10 @@
                 I agree to the <a href="{% url 'pages:terms' %}" target="_blank" rel="noopener">Terms &amp; Conditions</a>.
               </label>
             </div>
+
+            {% if recaptcha_site_key %}
+              <input type="hidden" name="recaptcha_token" id="recaptcha_token" value="">
+            {% endif %}
 
             <div class="text-end">
               <button type="submit" class="btn btn-primary">Email my request</button>

@@ -240,6 +240,10 @@
             </div>
           {% endif %}
 
+          {% if recaptcha_site_key %}
+            <input type="hidden" name="recaptcha_token" id="get_started_recaptcha_token" value="">
+          {% endif %}
+
           <div class="ms-md-auto">
             <button type="submit" class="btn btn-primary">Submit request</button>
           </div>
@@ -250,4 +254,42 @@
   </div>
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if recaptcha_site_key %}
+  <script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}"></script>
+  <script>
+    (function () {
+      function setToken() {
+        return new Promise(function(resolve) {
+          grecaptcha.ready(function () {
+            grecaptcha.execute("{{ recaptcha_site_key }}", {action: "get_started"}).then(function (token) {
+              var el = document.getElementById("get_started_recaptcha_token");
+              if (el) el.value = token;
+              resolve(token);
+            });
+          });
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        setToken();
+
+        var form = document.getElementById("get-started-form");
+        if (!form) return;
+
+        form.addEventListener("submit", function (e) {
+          var el = document.getElementById("get_started_recaptcha_token");
+          if (el && el.value) return;
+
+          e.preventDefault();
+          setToken().then(function () {
+            form.submit();
+          });
+        });
+      });
+    })();
+  </script>
+{% endif %}
 {% endblock %}
