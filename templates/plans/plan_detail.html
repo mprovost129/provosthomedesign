@@ -124,15 +124,17 @@
 
           <form action="{% url 'plans:send_plan_comment' plan.id %}" method="post" class="vstack gap-3" novalidate>
             {% csrf_token %}
+            <input type="text" name="website" value="" autocomplete="off" tabindex="-1" class="hp-field">
+            <input type="hidden" name="recaptcha_token" id="recaptcha_token">
 
             <div class="row g-3">
               <div class="col-md-6">
                 <label class="form-label" for="name">Your name</label>
-                <input id="name" type="text" class="form-control" name="name" placeholder="Your name" required>
+                <input id="name" type="text" class="form-control" name="name" placeholder="Your name">
               </div>
               <div class="col-md-6">
                 <label class="form-label" for="email">Your email</label>
-                <input id="email" type="email" class="form-control" name="email" placeholder="you@example.com" required>
+                <input id="email" type="email" class="form-control" name="email" placeholder="you@example.com">
               </div>
             </div>
 
@@ -250,5 +252,43 @@
     });
   });
 </script>
+
+{% if recaptcha_site_key %}
+  <script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}"></script>
+  <script>
+    (function () {
+      function setToken() {
+        return new Promise(function(resolve) {
+          grecaptcha.ready(function () {
+            grecaptcha.execute("{{ recaptcha_site_key }}", {action: "plan_change"}).then(function (token) {
+              var el = document.getElementById("recaptcha_token");
+              if (el) el.value = token;
+              resolve(token);
+            });
+          });
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        setToken();
+
+        var form = document.querySelector('form[action="{% url "plans:send_plan_comment" plan.id %}"]');
+        if (!form) return;
+
+        form.addEventListener("submit", function (e) {
+          var el = document.getElementById("recaptcha_token");
+          if (el && el.value) return;
+
+          e.preventDefault();
+          setToken().then(function () {
+            form.submit();
+          });
+        });
+      });
+    })();
+  </script>
+{% endif %}
+
+
 {% endblock %}
 {% endblock %}

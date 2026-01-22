@@ -5,6 +5,7 @@ cffi==1.17.1
 charset-normalizer==3.4.3
 cssselect2==0.8.0
 Django==5.2.5
+django-ratelimit==4.1.0
 fonttools==4.59.1
 gunicorn==23.0.0
 idna==3.10

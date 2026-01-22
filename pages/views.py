@@ -2,7 +2,8 @@
 from __future__ import annotations
 from time import time
 from django.core.exceptions import ValidationError
-from django_ratelimit.decorators import ratelimit
+from ratelimit.decorators import ratelimit # type: ignore
+
 
 import contextlib
 import logging

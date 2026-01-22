@@ -1,15 +1,19 @@
 from __future__ import annotations
-from decimal import Decimal
 
-from django.core.mail import EmailMessage
+from decimal import Decimal
+from typing import Any
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
+from django.core.mail import EmailMessage
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+
+from ratelimit.decorators import ratelimit # type: ignore
 
 from .models import HouseStyle as HouseStyleModel, Plans, PlanGallery
 from .forms import PlanQuickForm, PlanCommentForm
@@ -46,6 +50,81 @@ def _parse_baths(raw: str | None) -> Decimal | None:
     if not raw:
         return None
     return Decimal("5.0") if raw.strip() == "5+" else _as_decimal(raw)
+
+
+def _client_ip(request: HttpRequest) -> str:
+    # Best-effort IP; Nginx should set X-Forwarded-For
+    xff = (request.META.get("HTTP_X_FORWARDED_FOR") or "").split(",")[0].strip()
+    return xff or (request.META.get("REMOTE_ADDR") or "")
+
+
+def _looks_like_gibberish(text: str) -> bool:
+    """
+    Simple heuristics for bot payloads like: vVbHEmdFhhvJENIU
+    Avoid being overly aggressive to prevent false positives.
+    """
+    t = (text or "").strip()
+    if not t:
+        return True
+    if len(t) < int(getattr(settings, "PLAN_CHANGE_MIN_MESSAGE_LEN", 20)):
+        return True
+
+    # If it's a single "word" with no spaces and mostly mixed-case letters, it's often spam
+    if " " not in t and len(t) >= 12:
+        letters = sum(ch.isalpha() for ch in t)
+        if letters / max(len(t), 1) > 0.8:
+            # Mixed upper/lower heavy
+            upp = sum(ch.isupper() for ch in t)
+            low = sum(ch.islower() for ch in t)
+            if upp >= 3 and low >= 3:
+                return True
+
+    return False
+
+
+def _verify_recaptcha_v3(request: HttpRequest) -> tuple[bool, float | None]:
+    """
+    Verify reCAPTCHA v3 token. Returns (ok, score).
+    If RECAPTCHA_SECRET_KEY is not configured, treat as "not enforced".
+    """
+    secret = (getattr(settings, "RECAPTCHA_SECRET_KEY", "") or "").strip()
+    if not secret:
+        return True, None  # not enforced if not configured
+
+    token = (request.POST.get("recaptcha_token") or "").strip()
+    if not token:
+        return False, 0.0
+
+    try:
+        import requests  # type: ignore
+    except Exception:
+        # If requests isn't installed, fail closed (spam) when recaptcha is configured
+        return False, 0.0
+
+    try:
+        resp = requests.post(
+            "https://www.google.com/recaptcha/api/siteverify",
+            data={
+                "secret": secret,
+                "response": token,
+                "remoteip": _client_ip(request),
+            },
+            timeout=5,
+        )
+        data: dict[str, Any] = resp.json()
+    except Exception:
+        return False, 0.0
+
+    success = bool(data.get("success"))
+    score = data.get("score")
+    try:
+        score_f = float(score) if score is not None else 0.0
+    except Exception:
+        score_f = 0.0
+
+    min_score = float(getattr(settings, "RECAPTCHA_MIN_SCORE", 0.5))
+    ok = success and score_f >= min_score
+    return ok, score_f
 
 
 def plan_list(request: HttpRequest, house_style_slug: str | None = None) -> HttpResponse:
@@ -128,17 +207,12 @@ def plan_list(request: HttpRequest, house_style_slug: str | None = None) -> Http
             "sort": sort,
         },
     }
-    # IMPORTANT: never wrap ctx again (e.g. {"context": ctx}) — can create cycles
     return render(request, "plans/plans.html", ctx)
 
 
 def plan_detail(request: HttpRequest, house_style_slug: str, plan_slug: str) -> HttpResponse:
     """
     Single plan detail + gallery + request changes form (no user deps).
-    Defensive against recursion:
-    - keep context flat/simple
-    - don't pass nested dicts that contain themselves
-    - avoid lazy objects that might capture outer context
     """
     plan = get_object_or_404(
         Plans.objects.select_related("house_style"),
@@ -146,10 +220,7 @@ def plan_detail(request: HttpRequest, house_style_slug: str, plan_slug: str) -> 
         slug=plan_slug,
     )
 
-    # Force a simple list to avoid any odd context-capturing/lazy behavior in templates
     images = list(PlanGallery.objects.filter(plan=plan).order_by("order", "id"))
-
-    # Keep numbers as Decimal where possible; cast only for display in template if needed
     base_price: Decimal = plan.plan_price or Decimal("0")
 
     ctx = {
@@ -158,6 +229,7 @@ def plan_detail(request: HttpRequest, house_style_slug: str, plan_slug: str) -> 
         "base_price": base_price,
         "page": {"title": f"Plan {plan.plan_number}"},
         "comment_form": PlanCommentForm(),
+        "recaptcha_site_key": (getattr(settings, "RECAPTCHA_SITE_KEY", "") or "").strip(),
     }
     return render(request, "plans/plan_detail.html", ctx)
 
@@ -194,24 +266,21 @@ def quick_create_plan(request: HttpRequest) -> HttpResponse:
     form = PlanQuickForm(request.POST, request.FILES)
     if not form.is_valid():
         for field, errs in list(form.errors.items())[:6]:
-            messages.error(request, f"{field}: {', '.join(e for e in errs)}")  # type: ignore
+            messages.error(request, f"{field}: {', '.join(errs)}")  # type: ignore
         return redirect("plans:plan_list")
 
     plan: Plans = form.save(commit=False)
 
-    # Auto-generate slug if missing
     if not getattr(plan, "slug", None):
         from django.utils.text import slugify
         plan.slug = slugify(str(plan.plan_number))
 
-    # Default is_available True if not present
     if "is_available" not in form.cleaned_data:
         plan.is_available = True
 
     plan.save()
     form.save_m2m()
 
-    # Handle gallery images (and set first as cover if none)
     files = form.cleaned_data.get("gallery_images") or []
     first_pg = None
     for f in files:
@@ -266,24 +335,55 @@ def gallery_make_cover(request: HttpRequest, image_id: int) -> HttpResponse:
 
 
 @require_POST
+@ratelimit(key="ip", rate=getattr(settings, "PLAN_CHANGE_RATE_LIMIT", "3/h"), block=False)
 def send_plan_comment(request: HttpRequest, plan_id: int) -> HttpResponse:
-    plan = get_object_or_404(Plans, pk=plan_id)
-    form = PlanCommentForm(request.POST)
+    """
+    Public: send 'change request' email.
 
-    if not form.is_valid():
-        messages.error(request, "Please add your message (and a valid email if you want a reply).")
+    Protections:
+    - Rate limit by IP
+    - Honeypot field
+    - reCAPTCHA v3 score verification
+    - Gibberish / low-quality gate
+    - Silent discard on suspected spam (show generic success)
+    """
+    plan = get_object_or_404(Plans, pk=plan_id)
+
+    # If rate limited, silently discard (looks like success to bots / user)
+    if getattr(request, "limited", False):
+        messages.success(request, "Thanks! Your request has been emailed. We’ll follow up soon.")
         return redirect(plan.get_absolute_url())
 
-    # Guest-friendly: only use submitted fields
-    name = form.cleaned_data.get("name", "")
-    email = form.cleaned_data.get("email", "")
-    message = form.cleaned_data["message"]
+    form = PlanCommentForm(request.POST)
+
+    # If form invalid (including honeypot), silently discard as success
+    if not form.is_valid():
+        messages.success(request, "Thanks! Your request has been emailed. We’ll follow up soon.")
+        return redirect(plan.get_absolute_url())
+
+    name = (form.cleaned_data.get("name") or "").strip()
+    email = (form.cleaned_data.get("email") or "").strip()
+    message = (form.cleaned_data.get("message") or "").strip()
+
+    # Quality heuristics (drop spammy payloads)
+    if _looks_like_gibberish(message):
+        messages.success(request, "Thanks! Your request has been emailed. We’ll follow up soon.")
+        return redirect(plan.get_absolute_url())
+
+    # reCAPTCHA v3 verification (enforced if secret is configured)
+    recaptcha_ok, score = _verify_recaptcha_v3(request)
+    if not recaptcha_ok:
+        messages.success(request, "Thanks! Your request has been emailed. We’ll follow up soon.")
+        return redirect(plan.get_absolute_url())
 
     subject = f"[Plan {plan.plan_number}] Change request"
     lines = [
         f"Plan: {plan.plan_number}",
         f"URL: {request.build_absolute_uri(plan.get_absolute_url())}",
+        f"IP: {_client_ip(request)}",
     ]
+    if score is not None:
+        lines.append(f"reCAPTCHA score: {score:.2f}")
     if name:
         lines.append(f"From: {name}")
     if email:

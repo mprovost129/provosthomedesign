@@ -84,14 +84,13 @@ class PlanQuickForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Populate styles in alphabetical order for the dropdown
-        self.fields["house_style"].queryset = HouseStyle.objects.order_by("style_name") # type: ignore
+        self.fields["house_style"].queryset = HouseStyle.objects.order_by("style_name")  # type: ignore
         if not self.is_bound:
             self.fields["is_available"].initial = True
 
     def clean_plan_number(self) -> str:
         # Normalize plan_number (trim spaces)
-        pn = (self.cleaned_data.get("plan_number") or "").strip()
-        return pn
+        return (self.cleaned_data.get("plan_number") or "").strip()
 
     def clean_gallery_images(self) -> List[UploadedFile]:
         # Return the list of uploaded files from the multi-file field
@@ -99,13 +98,37 @@ class PlanQuickForm(forms.ModelForm):
 
 
 class PlanCommentForm(forms.Form):
+    """
+    Public plan 'change request' form.
+
+    Anti-spam:
+    - website (honeypot): must be empty
+    - recaptcha_token: required when RECAPTCHA keys exist server-side
+    """
     name = forms.CharField(required=False, widget=forms.TextInput(attrs={"class": "form-control"}))
     email = forms.EmailField(required=False, widget=forms.EmailInput(attrs={"class": "form-control"}))
     message = forms.CharField(required=True, widget=forms.Textarea(attrs={"rows": 4, "class": "form-control"}))
 
+    # Honeypot (hidden by CSS in template)
+    website = forms.CharField(required=False, widget=forms.TextInput(attrs={"autocomplete": "off"}))
+
+    # reCAPTCHA v3 token (hidden input in template)
+    recaptcha_token = forms.CharField(required=False, widget=forms.HiddenInput())
+
     def clean(self):
         cleaned = super().clean()
+
+        # Honeypot: if filled, it's almost certainly a bot
+        if (cleaned.get("website") or "").strip():
+            raise forms.ValidationError("Invalid submission.")
+
         msg = (cleaned.get("message") or "").strip()
         if not msg:
             self.add_error("message", "Please enter your message.")
+
+        # Basic quality gate: reject ultra-short nonsense payloads
+        # (We still treat as spam silently in the view; this helps if you render errors)
+        if msg and len(msg) < 10:
+            self.add_error("message", "Please provide a bit more detail.")
+
         return cleaned
