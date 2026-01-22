@@ -188,3 +188,47 @@ class PlanGallery(models.Model):
 
     def __str__(self) -> str:
         return f"{self.plan.plan_number} image #{self.pk}"
+
+
+# -----------------------------
+# Saved Plans (Favorites/Wishlist)
+# -----------------------------
+class SavedPlan(models.Model):
+    """Track user's favorite/saved plans via session"""
+    session_key = models.CharField(max_length=40, db_index=True)
+    plan = models.ForeignKey(Plans, on_delete=models.CASCADE, related_name="saved_by")
+    saved_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ["-saved_at"]
+        unique_together = [["session_key", "plan"]]
+        verbose_name = "saved plan"
+        verbose_name_plural = "saved plans"
+        indexes = [
+            models.Index(fields=["session_key", "-saved_at"]),
+        ]
+    
+    def __str__(self) -> str:
+        return f"{self.session_key[:8]}... saved {self.plan.plan_number}"
+
+
+# -----------------------------
+# Plan Comparison
+# -----------------------------
+class PlanComparison(models.Model):
+    """Track plans user wants to compare"""
+    session_key = models.CharField(max_length=40, db_index=True)
+    plans = models.ManyToManyField(Plans, related_name="in_comparisons")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "plan comparison"
+        verbose_name_plural = "plan comparisons"
+        indexes = [
+            models.Index(fields=["session_key", "-updated_at"]),
+        ]
+    
+    def __str__(self) -> str:
+        count = self.plans.count()
+        return f"{self.session_key[:8]}... comparing {count} plan(s)"

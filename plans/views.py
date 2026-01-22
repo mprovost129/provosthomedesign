@@ -18,6 +18,7 @@ from django_ratelimit.decorators import ratelimit
 from core.utils import verify_recaptcha_v3, get_client_ip
 from .models import HouseStyle as HouseStyleModel, Plans, PlanGallery
 from .forms import PlanQuickForm, PlanCommentForm
+from .session_utils import get_saved_plan_ids, get_comparison_plan_ids
 
 # ----- Filter choice lists -----
 SQFT_CHOICES = [str(n) for n in range(1000, 6001, 100)]
@@ -166,6 +167,8 @@ def plan_list(request: HttpRequest, house_style_slug: str | None = None) -> Http
             "baths": baths_raw,
             "sort": sort,
         },
+        "saved_plan_ids": get_saved_plan_ids(request),
+        "comparison_plan_ids": get_comparison_plan_ids(request),
     }
     return render(request, "plans/plans.html", ctx)
 
@@ -180,6 +183,10 @@ def plan_detail(request: HttpRequest, house_style_slug: str, plan_slug: str) -> 
         slug=plan_slug,
     )
 
+    # Track this plan as recently viewed
+    from . import session_utils
+    session_utils.track_viewed_plan(request, plan.id)
+
     images = list(PlanGallery.objects.filter(plan=plan).order_by("order", "id"))
     base_price: Decimal = plan.plan_price or Decimal("0")
 
@@ -190,6 +197,8 @@ def plan_detail(request: HttpRequest, house_style_slug: str, plan_slug: str) -> 
         "page": {"title": f"Plan {plan.plan_number}"},
         "comment_form": PlanCommentForm(),
         "recaptcha_site_key": (getattr(settings, "RECAPTCHA_SITE_KEY", "") or "").strip(),
+        "is_saved": session_utils.is_plan_saved(request, plan.id),
+        "is_in_comparison": session_utils.is_in_comparison(request, plan.id),
     }
     return render(request, "plans/plan_detail.html", ctx)
 
@@ -362,5 +371,136 @@ def send_plan_comment(request: HttpRequest, plan_id: int) -> HttpResponse:
         reply_to=[email] if email else None,
     ).send(fail_silently=False)
 
-    messages.success(request, "Thanks! Your request has been emailed. We’ll follow up soon.")
+    messages.success(request, "Thanks! Your request has been emailed. We'll follow up soon.")
     return redirect(plan.get_absolute_url())
+
+
+# -----------------------------
+# Favorites/Wishlist Views
+# -----------------------------
+from . import session_utils
+from django.http import JsonResponse
+
+
+@require_POST
+def toggle_favorite(request: HttpRequest, plan_id: int) -> HttpResponse:
+    """Add or remove a plan from favorites."""
+    plan = get_object_or_404(Plans, pk=plan_id, is_available=True)
+    
+    is_saved = session_utils.is_plan_saved(request, plan_id)
+    
+    if is_saved:
+        session_utils.remove_from_saved_plans(request, plan_id)
+        action = "removed"
+        message = f"Plan {plan.plan_number} removed from favorites"
+    else:
+        session_utils.add_to_saved_plans(request, plan_id)
+        action = "added"
+        message = f"Plan {plan.plan_number} added to favorites"
+    
+    # Return JSON for AJAX requests
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse({
+            "success": True,
+            "action": action,
+            "is_saved": not is_saved,
+            "count": len(session_utils.get_saved_plan_ids(request)),
+        })
+    
+    messages.success(request, message)
+    return redirect(request.META.get("HTTP_REFERER", "plans:plan_list"))
+
+
+def favorites_list(request: HttpRequest) -> HttpResponse:
+    """View all saved/favorite plans."""
+    saved_ids = session_utils.get_saved_plan_ids(request)
+    
+    if saved_ids:
+        # Preserve order from session
+        plans = Plans.objects.filter(id__in=saved_ids, is_available=True).select_related("house_style")
+        # Sort by session order
+        plans_dict = {p.id: p for p in plans}
+        plans_ordered = [plans_dict[pid] for pid in saved_ids if pid in plans_dict]
+    else:
+        plans_ordered = []
+    
+    context = {
+        "page": {"title": "My Favorites", "description": "Your saved house plans"},
+        "plans": plans_ordered,
+        "saved_count": len(saved_ids),
+    }
+    return render(request, "plans/favorites.html", context)
+
+
+# -----------------------------
+# Comparison Views
+# -----------------------------
+
+@require_POST
+def toggle_comparison(request: HttpRequest, plan_id: int) -> HttpResponse:
+    """Add or remove a plan from comparison."""
+    plan = get_object_or_404(Plans, pk=plan_id, is_available=True)
+    
+    is_in_comp = session_utils.is_in_comparison(request, plan_id)
+    
+    if is_in_comp:
+        session_utils.remove_from_comparison(request, plan_id)
+        action = "removed"
+        message = f"Plan {plan.plan_number} removed from comparison"
+    else:
+        success, error = session_utils.add_to_comparison(request, plan_id)
+        if success:
+            action = "added"
+            message = f"Plan {plan.plan_number} added to comparison"
+        else:
+            action = "error"
+            message = error or "Could not add plan to comparison"
+    
+    # Return JSON for AJAX requests
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse({
+            "success": action != "error",
+            "action": action,
+            "is_in_comparison": not is_in_comp if action != "error" else is_in_comp,
+            "count": len(session_utils.get_comparison_plan_ids(request)),
+            "message": message,
+        })
+    
+    if action == "error":
+        messages.error(request, message)
+    else:
+        messages.success(request, message)
+    
+    return redirect(request.META.get("HTTP_REFERER", "plans:plan_list"))
+
+
+def compare_plans(request: HttpRequest) -> HttpResponse:
+    """Compare multiple plans side-by-side."""
+    comparison_ids = session_utils.get_comparison_plan_ids(request)
+    
+    if comparison_ids:
+        plans = Plans.objects.filter(
+            id__in=comparison_ids,
+            is_available=True
+        ).select_related("house_style").prefetch_related("images")
+        
+        # Sort by session order
+        plans_dict = {p.id: p for p in plans}
+        plans_ordered = [plans_dict[pid] for pid in comparison_ids if pid in plans_dict]
+    else:
+        plans_ordered = []
+    
+    context = {
+        "page": {"title": "Compare Plans", "description": "Side-by-side plan comparison"},
+        "plans": plans_ordered,
+        "comparison_count": len(comparison_ids),
+    }
+    return render(request, "plans/compare.html", context)
+
+
+@require_POST
+def clear_comparison_view(request: HttpRequest) -> HttpResponse:
+    """Clear all plans from comparison."""
+    session_utils.clear_comparison(request)
+    messages.success(request, "Comparison cleared")
+    return redirect("plans:plan_list")

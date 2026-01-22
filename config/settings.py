@@ -64,6 +64,7 @@ TEMPLATES = [{
             "django.contrib.messages.context_processors.messages",
             "core.context_processors.branding",
             "pages.context_processors.site_analytics",
+            "plans.context_processors.plans_context",
         ],
     },
 }]

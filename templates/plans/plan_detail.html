@@ -116,6 +116,26 @@
         <div class="h5 mb-3">Base plan price: ${{ plan.plan_price|floatformat:2|intcomma }}</div>
       {% endif %}
 
+      {# Action Buttons #}
+      <div class="d-flex gap-2 mb-4">
+        <button class="btn btn-outline-danger flex-fill toggle-favorite" 
+                data-plan-id="{{ plan.id }}">
+          <i class="bi bi-heart{% if is_saved %}-fill{% endif %}"></i>
+          {% if is_saved %}Saved to Favorites{% else %}Save to Favorites{% endif %}
+        </button>
+        
+        <button class="btn btn-outline-success flex-fill toggle-comparison" 
+                data-plan-id="{{ plan.id }}">
+          <i class="bi bi-{% if is_in_comparison %}check-square-fill{% else %}plus-square{% endif %}"></i>
+          {% if is_in_comparison %}Added to Compare{% else %}Add to Compare{% endif %}
+        </button>
+        
+        <a href="{% url 'pages:get_started' %}?plan={{ plan.id }}" 
+           class="btn btn-primary flex-fill">
+          <i class="bi bi-envelope"></i> Get Started
+        </a>
+      </div>
+
       <!-- Request changes (email comment) -->
       <div class="card border-0 shadow-sm">
         <div class="card-body">

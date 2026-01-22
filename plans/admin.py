@@ -3,7 +3,7 @@ from __future__ import annotations
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import HouseStyle, Plans, PlanGallery
+from .models import HouseStyle, Plans, PlanGallery, SavedPlan, PlanComparison
 
 
 @admin.register(HouseStyle)
@@ -79,3 +79,42 @@ class PlansAdmin(admin.ModelAdmin):
     def make_unavailable(self, request, queryset):
         updated = queryset.update(is_available=False)
         self.message_user(request, f"{updated} plan(s) marked unavailable.")
+
+
+@admin.register(SavedPlan)
+class SavedPlanAdmin(admin.ModelAdmin):
+    list_display = ("session_key_short", "plan", "saved_at")
+    list_filter = ("saved_at",)
+    search_fields = ("session_key", "plan__plan_number")
+    readonly_fields = ("session_key", "plan", "saved_at")
+    ordering = ("-saved_at",)
+    list_per_page = 100
+    
+    @admin.display(description="Session")
+    def session_key_short(self, obj):
+        return f"{obj.session_key[:12]}..."
+    
+    def has_add_permission(self, request):
+        return False
+
+
+@admin.register(PlanComparison)
+class PlanComparisonAdmin(admin.ModelAdmin):
+    list_display = ("session_key_short", "plan_count", "created_at", "updated_at")
+    list_filter = ("created_at", "updated_at")
+    search_fields = ("session_key",)
+    readonly_fields = ("session_key", "created_at", "updated_at")
+    filter_horizontal = ("plans",)
+    ordering = ("-updated_at",)
+    list_per_page = 100
+    
+    @admin.display(description="Session")
+    def session_key_short(self, obj):
+        return f"{obj.session_key[:12]}..."
+    
+    @admin.display(description="Plans")
+    def plan_count(self, obj):
+        return obj.plans.count()
+    
+    def has_add_permission(self, request):
+        return False

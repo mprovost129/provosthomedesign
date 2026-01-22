@@ -64,9 +64,51 @@
           </ul>
         </div>
 
-        {# RIGHT: 2/12 at lg+ (socials right; centered on mobile) #}
+        {# RIGHT: 2/12 at lg+ (phone, favorites, comparison, socials) #}
         <div class="col-12 col-lg-2 d-flex justify-content-lg-end justify-content-center mt-2 mt-lg-0">
           <ul class="navbar-nav align-items-center gap-2 flex-row">
+            {# Click-to-Call Phone #}
+            <li class="nav-item d-none d-lg-block">
+              <a href="tel:+15082437912"
+                 class="nav-link px-2 nav-link--icon"
+                 aria-label="Call (508) 243-7912">
+                <i class="bi bi-telephone-fill" aria-hidden="true"></i>
+              </a>
+            </li>
+            
+            {# Favorites with counter #}
+            <li class="nav-item position-relative">
+              <a href="{% url 'plans:favorites_list' %}"
+                 class="nav-link px-2 nav-link--icon"
+                 aria-label="My Favorites">
+                <i class="bi bi-heart{% if saved_plan_count > 0 %}-fill text-danger{% endif %}" aria-hidden="true"></i>
+                {% if saved_plan_count > 0 %}
+                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+                        style="font-size: 0.65rem;">
+                    {{ saved_plan_count }}
+                    <span class="visually-hidden">saved plans</span>
+                  </span>
+                {% endif %}
+              </a>
+            </li>
+            
+            {# Comparison with counter #}
+            <li class="nav-item position-relative">
+              <a href="{% url 'plans:compare_plans' %}"
+                 class="nav-link px-2 nav-link--icon"
+                 aria-label="Compare Plans">
+                <i class="bi bi-bar-chart-fill{% if comparison_count > 0 %} text-success{% endif %}" aria-hidden="true"></i>
+                {% if comparison_count > 0 %}
+                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success" 
+                        style="font-size: 0.65rem;">
+                    {{ comparison_count }}
+                    <span class="visually-hidden">plans to compare</span>
+                  </span>
+                {% endif %}
+              </a>
+            </li>
+            
+            {# Social Icons #}
             <li class="nav-item">
               <a href="https://www.facebook.com/ProvostHomeDesign"
                  class="nav-link px-2 nav-link--icon"

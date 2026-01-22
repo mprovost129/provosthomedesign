@@ -15,6 +15,13 @@ urlpatterns = [
     path("style/<slug:house_style_slug>/", views.plan_list, name="plan_list_by_style"),
     path("search/", views.search, name="search"),
     path("<int:plan_id>/comment/", views.send_plan_comment, name="send_plan_comment"),
+    
+    # ── Favorites & Comparison (BEFORE detail route) ─────────────────────────
+    path("favorites/", views.favorites_list, name="favorites_list"),
+    path("favorite/toggle/<int:plan_id>/", views.toggle_favorite, name="toggle_favorite"),
+    path("compare/", views.compare_plans, name="compare_plans"),
+    path("compare/toggle/<int:plan_id>/", views.toggle_comparison, name="toggle_comparison"),
+    path("compare/clear/", views.clear_comparison_view, name="clear_comparison"),
 
     # ── Detail (MUST be last so it doesn't swallow others) ───────────────────
     path("<slug:house_style_slug>/<slug:plan_slug>/", views.plan_detail, name="plan_detail"),

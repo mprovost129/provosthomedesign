@@ -92,13 +92,30 @@
               {% endif %}
               <div class="card-body">
                 <h3 class="h6 card-title mb-1">
-                  <a href="{{ p.get_absolute_url }}" class="stretched-link text-decoration-none">
+                  <a href="{{ p.get_absolute_url }}" class="text-decoration-none">
                     Plan {{ p.plan_number }}
                   </a>
                 </h3>
                 <p class="text-muted small mb-0">
                   {{ p.square_footage|intcomma }} sq ft • {{ p.bedrooms }} bed • {{ p.bathrooms|bath_label }} bath
                 </p>
+              </div>
+              
+              <div class="card-footer bg-transparent border-0 pt-0">
+                <div class="d-flex gap-2">
+                  <button class="btn btn-sm btn-outline-danger flex-fill toggle-favorite" 
+                          data-plan-id="{{ p.id }}"
+                          title="Save to favorites">
+                    <i class="bi bi-heart{% if p.id in saved_plan_ids %}-fill{% endif %}"></i>
+                    <span class="d-none d-md-inline">Save</span>
+                  </button>
+                  <button class="btn btn-sm btn-outline-success flex-fill toggle-comparison" 
+                          data-plan-id="{{ p.id }}"
+                          title="Add to comparison">
+                    <i class="bi bi-{% if p.id in comparison_plan_ids %}check-square-fill{% else %}plus-square{% endif %}"></i>
+                    <span class="d-none d-md-inline">Compare</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -125,6 +142,49 @@
       </div>
     {% endif %}
   </section>
+
+  {# Recently Viewed Plans Section #}
+  {% get_recently_viewed_plans request as recent_viewed_plans %}
+  {% if recent_viewed_plans %}
+  <section class="mt-5">
+    <div class="d-flex align-items-baseline justify-content-between mb-2">
+      <h2 class="h5 mb-0">
+        <i class="bi bi-clock-history"></i> Recently Viewed Plans
+      </h2>
+      <a href="{% url 'plans:plan_list' %}" class="small text-decoration-none">Browse all</a>
+    </div>
+    
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-3">
+      {% for p in recent_viewed_plans|slice:":5" %}
+      <div class="col">
+        <div class="card h-100 shadow-sm">
+          <a href="{{ p.get_absolute_url }}">
+            {% if p.main_image %}
+            <img src="{{ p.main_image.url }}" 
+                 class="card-img-top plan-thumb" 
+                 alt="Plan {{ p.plan_number }}"
+                 loading="lazy" decoding="async">
+            {% else %}
+            <div class="bg-light plan-thumb-placeholder">
+              <span class="text-muted small">No image</span>
+            </div>
+            {% endif %}
+          </a>
+          
+          <div class="card-body p-2">
+            <h3 class="h6 card-title mb-1 small">
+              <a href="{{ p.get_absolute_url }}" class="text-decoration-none text-dark">
+                Plan {{ p.plan_number }}
+              </a>
+            </h3>
+            <p class="small text-muted mb-0">{{ p.square_footage|intcomma }} sq ft</p>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 
   <section class="mt-5">
     <div class="bg-white border shadow rounded-3 p-4">

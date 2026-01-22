@@ -31,6 +31,7 @@ from .models import (
     SiteSettings,
 )
 from plans.models import Plans, HouseStyle
+from plans.session_utils import get_saved_plan_ids, get_comparison_plan_ids
 from django.core.paginator import Paginator
 from pages.models import Testimonial
 
@@ -117,7 +118,9 @@ def home(request: HttpRequest) -> HttpResponse:
         {
             "recent_plans": recent_plans,
             "recent_testimonials": recent_testimonials,
-            "house_styles": house_styles,  # <- add this
+            "house_styles": house_styles,
+            "saved_plan_ids": get_saved_plan_ids(request),
+            "comparison_plan_ids": get_comparison_plan_ids(request),
         },
     )
 
