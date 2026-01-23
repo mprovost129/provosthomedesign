@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #004080 0%, #002850 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background: #f9f9f9;
+            padding: 30px;
+            border: 1px solid #ddd;
+            border-top: none;
+        }
+        .credentials {
+            background: white;
+            border: 2px solid #004080;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .credentials h3 {
+            margin-top: 0;
+            color: #004080;
+        }
+        .credential-row {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f0f7ff;
+            border-radius: 3px;
+        }
+        .credential-label {
+            font-weight: bold;
+            color: #004080;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #004080;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Welcome to {{ company_name }}!</h1>
+        </div>
+        
+        <div class="content">
+            <p>Hi {{ employee.first_name }},</p>
+            
+            <p>Welcome to the team! We're excited to have you join us{{ employee.job_title|yesno:" as,, " }}{{ employee.job_title }}.</p>
+            
+            <p>Your employee portal account has been created. You can use the portal to access:</p>
+            <ul>
+                <li>Client information and invoices</li>
+                <li>Project management tools</li>
+                <li>Company resources and settings</li>
+            </ul>
+            
+            <div class="credentials">
+                <h3>🔐 Your Portal Access Information</h3>
+                <div class="credential-row">
+                    <span class="credential-label">Portal URL:</span> 
+                    <a href="{{ portal_url }}">{{ portal_url }}</a>
+                </div>
+                <div class="credential-row">
+                    <span class="credential-label">Username:</span> {{ user.username }}
+                </div>
+                <div class="credential-row">
+                    <span class="credential-label">Temporary Password:</span> {{ temp_password }}
+                </div>
+            </div>
+            
+            <p><strong>⚠️ Important Security Steps:</strong></p>
+            <ol>
+                <li>Click the button below to log in to the portal</li>
+                <li><strong>Change your password immediately</strong> after your first login</li>
+                <li>Keep your login credentials secure and don't share them with anyone</li>
+            </ol>
+            
+            <center>
+                <a href="{{ portal_url }}" class="button">Access Employee Portal</a>
+            </center>
+            
+            <p>If you have any questions or need assistance, please don't hesitate to reach out.</p>
+            
+            <p>Best regards,<br>
+            {{ company_name }}</p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated message. Please do not reply to this email.</p>
+            <p>{{ company_name }} | {{ company_email }}</p>
+        </div>
+    </div>
+</body>
+</html>

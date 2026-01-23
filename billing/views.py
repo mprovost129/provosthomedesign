@@ -705,8 +705,78 @@ def add_employee(request):
     if request.method == 'POST':
         form = EmployeeForm(request.POST)
         if form.is_valid():
-            employee = form.save()
-            messages.success(request, f'Employee {employee.get_full_name()} added successfully!')
+            employee = form.save(commit=False)
+            
+            # Create user account if one wasn't selected
+            if not employee.user_id:
+                from django.contrib.auth.models import User
+                import secrets
+                import string
+                
+                # Generate a random temporary password
+                alphabet = string.ascii_letters + string.digits + '!@#$%^&*'
+                temp_password = ''.join(secrets.choice(alphabet) for i in range(12))
+                
+                # Create username from email (before @)
+                username = employee.email.split('@')[0]
+                # Ensure username is unique
+                base_username = username
+                counter = 1
+                while User.objects.filter(username=username).exists():
+                    username = f"{base_username}{counter}"
+                    counter += 1
+                
+                # Create the user
+                user = User.objects.create_user(
+                    username=username,
+                    email=employee.email,
+                    first_name=employee.first_name,
+                    last_name=employee.last_name,
+                    password=temp_password
+                )
+                user.is_staff = True  # Give staff access
+                user.save()
+                
+                employee.user = user
+                employee.save()
+                
+                # Send welcome email with credentials
+                from django.core.mail import EmailMultiAlternatives
+                from django.template.loader import render_to_string
+                from .models import SystemSettings
+                
+                settings_obj = SystemSettings.load()
+                portal_url = request.build_absolute_uri('/portal/login/')
+                
+                context = {
+                    'employee': employee,
+                    'user': user,
+                    'temp_password': temp_password,
+                    'portal_url': portal_url,
+                    'company_name': settings_obj.company_name,
+                    'company_email': settings_obj.company_email,
+                }
+                
+                html_content = render_to_string('billing/emails/employee_welcome_email.html', context)
+                text_content = render_to_string('billing/emails/employee_welcome_email.txt', context)
+                
+                email = EmailMultiAlternatives(
+                    subject=f'Welcome to {settings_obj.company_name} - Portal Access',
+                    body=text_content,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[employee.email],
+                )
+                email.attach_alternative(html_content, "text/html")
+                
+                try:
+                    email.send()
+                    messages.success(request, f'Employee {employee.get_full_name()} added successfully! Welcome email sent to {employee.email}')
+                except Exception as e:
+                    messages.warning(request, f'Employee added, but email failed to send: {str(e)}')
+            else:
+                employee.save()
+                messages.success(request, f'Employee {employee.get_full_name()} added successfully!')
+            
             return redirect('billing:employee_detail', pk=employee.pk)
     else:
         form = EmployeeForm()

@@ -306,6 +306,15 @@ class EmployeeForm(forms.ModelForm):
             # Notes
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Internal notes about this employee...'}),
         }
+        help_texts = {
+            'user': 'Leave blank to auto-create a portal account and send welcome email',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make user field optional - will auto-create if blank
+        self.fields['user'].required = False
+        self.fields['user'].empty_label = "Auto-create portal account"
     
     def clean_email(self):
         """Ensure email is unique."""

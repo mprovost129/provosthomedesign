@@ -1,0 +1,33 @@
+Welcome to {{ company_name }}!
+
+Hi {{ employee.first_name }},
+
+Welcome to the team! We're excited to have you join us{% if employee.job_title %} as {{ employee.job_title }}{% endif %}.
+
+Your employee portal account has been created. You can use the portal to access:
+- Client information and invoices
+- Project management tools
+- Company resources and settings
+
+YOUR PORTAL ACCESS INFORMATION
+===============================
+Portal URL: {{ portal_url }}
+Username: {{ user.username }}
+Temporary Password: {{ temp_password }}
+
+IMPORTANT SECURITY STEPS
+========================
+1. Log in to the portal using the credentials above
+2. CHANGE YOUR PASSWORD IMMEDIATELY after your first login
+3. Keep your login credentials secure and don't share them with anyone
+
+Access the portal here: {{ portal_url }}
+
+If you have any questions or need assistance, please don't hesitate to reach out.
+
+Best regards,
+{{ company_name }}
+
+---
+This is an automated message. Please do not reply to this email.
+{{ company_name }} | {{ company_email }}
