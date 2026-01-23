@@ -403,3 +403,30 @@ class ProjectAdmin(admin.ModelAdmin):
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
 
+
+@admin.register(models.Activity)
+class ActivityAdmin(admin.ModelAdmin):
+    """Admin interface for Activity tracking."""
+    list_display = ('activity_type', 'title', 'client', 'project', 'created_by', 'created_at', 'is_pinned', 'is_internal')
+    list_filter = ('activity_type', 'is_pinned', 'is_internal', 'created_at')
+    search_fields = ('title', 'description', 'client__first_name', 'client__last_name', 'client__company_name')
+    list_per_page = 50
+    date_hierarchy = 'created_at'
+    readonly_fields = ('created_at',)
+    
+    fieldsets = (
+        ('Activity Information', {
+            'fields': ('activity_type', 'title', 'description')
+        }),
+        ('Relationships', {
+            'fields': ('client', 'project', 'proposal', 'invoice')
+        }),
+        ('Settings', {
+            'fields': ('is_pinned', 'is_internal', 'created_by', 'created_at')
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # If creating new activity
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)

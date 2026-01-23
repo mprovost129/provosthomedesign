@@ -983,3 +983,66 @@ class ProposalTemplate(models.Model):
     
     def __str__(self):
         return self.name
+
+
+class Activity(models.Model):
+    """Track all interactions and activities with clients and projects."""
+    
+    ACTIVITY_TYPES = [
+        ('note', 'Note'),
+        ('call', 'Phone Call'),
+        ('email', 'Email'),
+        ('meeting', 'Meeting'),
+        ('site_visit', 'Site Visit'),
+        ('proposal_sent', 'Proposal Sent'),
+        ('proposal_viewed', 'Proposal Viewed'),
+        ('proposal_accepted', 'Proposal Accepted'),
+        ('proposal_rejected', 'Proposal Rejected'),
+        ('invoice_sent', 'Invoice Sent'),
+        ('invoice_viewed', 'Invoice Viewed'),
+        ('payment_received', 'Payment Received'),
+        ('project_started', 'Project Started'),
+        ('project_completed', 'Project Completed'),
+        ('status_change', 'Status Change'),
+        ('other', 'Other'),
+    ]
+    
+    # Relationships
+    client = models.ForeignKey('Client', on_delete=models.CASCADE, related_name='activities',
+                              help_text="Associated client")
+    project = models.ForeignKey('Project', on_delete=models.SET_NULL, null=True, blank=True,
+                               related_name='activities',
+                               help_text="Associated project (optional)")
+    proposal = models.ForeignKey('Proposal', on_delete=models.SET_NULL, null=True, blank=True,
+                                 related_name='activities',
+                                 help_text="Associated proposal (optional)")
+    invoice = models.ForeignKey('Invoice', on_delete=models.SET_NULL, null=True, blank=True,
+                               related_name='activities',
+                               help_text="Associated invoice (optional)")
+    
+    # Activity Details
+    activity_type = models.CharField(max_length=30, choices=ACTIVITY_TYPES, default='note')
+    title = models.CharField(max_length=200, help_text="Brief activity title")
+    description = models.TextField(blank=True, help_text="Detailed notes or description")
+    
+    # Metadata
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                  related_name='activities_created',
+                                  help_text="Staff member who logged this activity")
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    # Optional fields
+    is_pinned = models.BooleanField(default=False, help_text="Pin important activities to top")
+    is_internal = models.BooleanField(default=False, 
+                                     help_text="Internal note (not visible to client)")
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = 'Activities'
+        indexes = [
+            models.Index(fields=['client', '-created_at']),
+            models.Index(fields=['project', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.get_activity_type_display()} - {self.client} - {self.created_at.strftime('%Y-%m-%d')}"
