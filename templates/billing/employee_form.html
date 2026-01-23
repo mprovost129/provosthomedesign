@@ -1,0 +1,170 @@
+{% extends 'billing/base_authenticated.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Portal{% endblock %}
+
+{% block portal_content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-user-plus"></i> {{ title }}</h2>
+            <a href="{% if client %}{% url 'billing:client_detail_view' client.pk %}{% else %}{% url 'billing:client_list' %}{% endif %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> {% if client %}Back to Client{% else %}Back to List{% endif %}
+            </a>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Basic Information -->
+                    <h5 class="mb-3">Basic Information</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="id_first_name" class="form-label">First Name</label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                                <div class="text-danger small">{{ form.first_name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="id_last_name" class="form-label">Last Name</label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                                <div class="text-danger small">{{ form.last_name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="id_company_name" class="form-label">Company Name</label>
+                            {{ form.company_name }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="id_status" class="form-label">Status</label>
+                            {{ form.status }}
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <!-- Contact Information -->
+                    <h5 class="mb-3">Contact Information</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="id_email" class="form-label">Primary Email</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger small">{{ form.email.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_email_secondary" class="form-label">Secondary Email</label>
+                            {{ form.email_secondary }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-5">
+                            <label for="id_phone_1" class="form-label">Phone Number 1</label>
+                            {{ form.phone_1 }}
+                        </div>
+                        <div class="col-md-2">
+                            <label for="id_phone_1_type" class="form-label">Type</label>
+                            {{ form.phone_1_type }}
+                        </div>
+                        <div class="col-md-5">
+                            <label for="id_phone_2" class="form-label">Phone Number 2</label>
+                            {{ form.phone_2 }}
+                        </div>
+                        <div class="col-md-2" style="margin-top: -3.5rem;">
+                            <label for="id_phone_2_type" class="form-label">Type</label>
+                            {{ form.phone_2_type }}
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <!-- Address -->
+                    <h5 class="mb-3">Address</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="id_address_line1" class="form-label">Address Line 1</label>
+                            {{ form.address_line1 }}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_address_line2" class="form-label">Address Line 2</label>
+                            {{ form.address_line2 }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <label for="id_city" class="form-label">City</label>
+                            {{ form.city }}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="id_state" class="form-label">State</label>
+                            {{ form.state }}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="id_zip_code" class="form-label">ZIP Code</label>
+                            {{ form.zip_code }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="id_country" class="form-label">Country</label>
+                            {{ form.country }}
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <!-- Business Information -->
+                    <h5 class="mb-3">Business Information (Optional)</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="id_website" class="form-label">Website</label>
+                            {{ form.website }}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_tax_id" class="form-label">Tax ID / EIN</label>
+                            {{ form.tax_id }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <label for="id_lead_source" class="form-label">Lead Source</label>
+                            {{ form.lead_source }}
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <!-- Notes -->
+                    <h5 class="mb-3">Internal Notes</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <label for="id_notes" class="form-label">Notes</label>
+                            {{ form.notes }}
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% if client %}{% url 'billing:client_detail_view' client.pk %}{% else %}{% url 'billing:client_list' %}{% endif %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Client
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
