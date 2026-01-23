@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordResetForm
 from django.contrib.auth.models import User
-from .models import Client, Employee, Invoice, InvoiceTemplate, InvoiceLineItem
+from .models import Client, Employee, Invoice, InvoiceTemplate, InvoiceLineItem, SystemSettings
 
 
 class ClientRegistrationForm(UserCreationForm):
@@ -302,4 +302,48 @@ class EmployeeForm(forms.ModelForm):
             if qs.exists():
                 raise forms.ValidationError('An employee with this email already exists.')
         return email
+
+
+class SystemSettingsForm(forms.ModelForm):
+    """Form for updating system settings."""
+    
+    class Meta:
+        model = SystemSettings
+        exclude = ['updated_at', 'updated_by']
+        widgets = {
+            # Company Information
+            'company_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Your Company Name'}),
+            'company_email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'contact@company.com'}),
+            'company_phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '(555) 555-5555'}),
+            'company_address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': '123 Main St\nCity, State ZIP'}),
+            
+            # Branding
+            'sidebar_primary_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
+            'sidebar_secondary_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
+            
+            # Portal Settings
+            'portal_title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Client Portal'}),
+            'employee_portal_title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Employee Portal'}),
+            'allow_client_registration': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            
+            # Invoice Settings
+            'invoice_prefix': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'INV'}),
+            'default_payment_terms_days': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 365}),
+            'late_fee_percentage': forms.NumberInput(attrs={'class': 'form-control', 'min': 0, 'max': 100, 'step': '0.01'}),
+            
+            # Email Settings
+            'invoice_email_subject': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Invoice #{invoice_number} from {company_name}'}),
+            'invoice_reminder_days': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 365}),
+            
+            # Notification Settings
+            'notify_on_new_client': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'notify_on_payment': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            
+            # Business Information
+            'business_hours': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Monday - Friday: 9am - 5pm'}),
+            'facebook_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://facebook.com/yourcompany'}),
+            'instagram_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://instagram.com/yourcompany'}),
+            'linkedin_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://linkedin.com/company/yourcompany'}),
+        }
+
 

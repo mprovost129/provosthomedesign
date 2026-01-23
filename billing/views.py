@@ -756,3 +756,30 @@ def delete_employee(request, pk):
     context = {'employee': employee}
     return render(request, 'billing/employee_confirm_delete.html', context)
 
+
+@staff_member_required(login_url='/portal/login/')
+def system_settings(request):
+    """System settings page (staff only)."""
+    from .models import SystemSettings
+    from .forms import SystemSettingsForm
+    
+    settings = SystemSettings.load()
+    
+    if request.method == 'POST':
+        form = SystemSettingsForm(request.POST, instance=settings)
+        if form.is_valid():
+            settings = form.save(commit=False)
+            settings.updated_by = request.user
+            settings.save()
+            messages.success(request, 'System settings updated successfully!')
+            return redirect('billing:system_settings')
+    else:
+        form = SystemSettingsForm(instance=settings)
+    
+    context = {
+        'form': form,
+        'settings': settings,
+    }
+    return render(request, 'billing/system_settings.html', context)
+
+

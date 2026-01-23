@@ -1,0 +1,389 @@
+{% extends 'billing/base_authenticated.html' %}
+{% load static %}
+
+{% block title %}System Settings{% endblock %}
+
+{% block authenticated_content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'billing:dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">System Settings</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4"><i class="fas fa-cog me-2"></i>System Settings</h2>
+
+            <form method="post" class="needs-validation" novalidate>
+                {% csrf_token %}
+
+                <!-- Nav Tabs -->
+                <ul class="nav nav-tabs mb-4" id="settingsTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="company-tab" data-bs-toggle="tab" data-bs-target="#company" type="button" role="tab" aria-controls="company" aria-selected="true">
+                            <i class="fas fa-building me-1"></i> Company Info
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="branding-tab" data-bs-toggle="tab" data-bs-target="#branding" type="button" role="tab" aria-controls="branding" aria-selected="false">
+                            <i class="fas fa-palette me-1"></i> Branding
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="portal-tab" data-bs-toggle="tab" data-bs-target="#portal" type="button" role="tab" aria-controls="portal" aria-selected="false">
+                            <i class="fas fa-desktop me-1"></i> Portal Settings
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="invoice-tab" data-bs-toggle="tab" data-bs-target="#invoice" type="button" role="tab" aria-controls="invoice" aria-selected="false">
+                            <i class="fas fa-file-invoice me-1"></i> Invoice Settings
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="notifications-tab" data-bs-toggle="tab" data-bs-target="#notifications" type="button" role="tab" aria-controls="notifications" aria-selected="false">
+                            <i class="fas fa-bell me-1"></i> Email & Notifications
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="business-tab" data-bs-toggle="tab" data-bs-target="#business" type="button" role="tab" aria-controls="business" aria-selected="false">
+                            <i class="fas fa-info-circle me-1"></i> Business Info
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content" id="settingsTabContent">
+                    <!-- Company Info Tab -->
+                    <div class="tab-pane fade show active" id="company" role="tabpanel" aria-labelledby="company-tab">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3">Company Information</h5>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.company_name.id_for_label }}" class="form-label">Company Name</label>
+                                        {{ form.company_name }}
+                                        {% if form.company_name.help_text %}
+                                            <small class="form-text text-muted">{{ form.company_name.help_text }}</small>
+                                        {% endif %}
+                                        {% if form.company_name.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.company_name.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.company_email.id_for_label }}" class="form-label">Company Email</label>
+                                        {{ form.company_email }}
+                                        {% if form.company_email.help_text %}
+                                            <small class="form-text text-muted">{{ form.company_email.help_text }}</small>
+                                        {% endif %}
+                                        {% if form.company_email.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.company_email.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.company_phone.id_for_label }}" class="form-label">Company Phone</label>
+                                        {{ form.company_phone }}
+                                        {% if form.company_phone.help_text %}
+                                            <small class="form-text text-muted">{{ form.company_phone.help_text }}</small>
+                                        {% endif %}
+                                        {% if form.company_phone.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.company_phone.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.company_address.id_for_label }}" class="form-label">Company Address</label>
+                                        {{ form.company_address }}
+                                        {% if form.company_address.help_text %}
+                                            <small class="form-text text-muted">{{ form.company_address.help_text }}</small>
+                                        {% endif %}
+                                        {% if form.company_address.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.company_address.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Branding Tab -->
+                    <div class="tab-pane fade" id="branding" role="tabpanel" aria-labelledby="branding-tab">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3">Portal Branding</h5>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.sidebar_primary_color.id_for_label }}" class="form-label">Sidebar Primary Color</label>
+                                        <div class="d-flex align-items-center">
+                                            {{ form.sidebar_primary_color }}
+                                            <span class="ms-2 text-muted" id="primary-color-value">{{ settings.sidebar_primary_color }}</span>
+                                        </div>
+                                        {% if form.sidebar_primary_color.help_text %}
+                                            <small class="form-text text-muted">{{ form.sidebar_primary_color.help_text }}</small>
+                                        {% endif %}
+                                        {% if form.sidebar_primary_color.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.sidebar_primary_color.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.sidebar_secondary_color.id_for_label }}" class="form-label">Sidebar Secondary Color</label>
+                                        <div class="d-flex align-items-center">
+                                            {{ form.sidebar_secondary_color }}
+                                            <span class="ms-2 text-muted" id="secondary-color-value">{{ settings.sidebar_secondary_color }}</span>
+                                        </div>
+                                        {% if form.sidebar_secondary_color.help_text %}
+                                            <small class="form-text text-muted">{{ form.sidebar_secondary_color.help_text }}</small>
+                                        {% endif %}
+                                        {% if form.sidebar_secondary_color.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.sidebar_secondary_color.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-1"></i> Color changes will apply to the sidebar gradient after saving.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Portal Settings Tab -->
+                    <div class="tab-pane fade" id="portal" role="tabpanel" aria-labelledby="portal-tab">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3">Portal Configuration</h5>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.portal_title.id_for_label }}" class="form-label">Client Portal Title</label>
+                                        {{ form.portal_title }}
+                                        {% if form.portal_title.help_text %}
+                                            <small class="form-text text-muted">{{ form.portal_title.help_text }}</small>
+                                        {% endif %}
+                                        {% if form.portal_title.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.portal_title.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.employee_portal_title.id_for_label }}" class="form-label">Employee Portal Title</label>
+                                        {{ form.employee_portal_title }}
+                                        {% if form.employee_portal_title.help_text %}
+                                            <small class="form-text text-muted">{{ form.employee_portal_title.help_text }}</small>
+                                        {% endif %}
+                                        {% if form.employee_portal_title.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.employee_portal_title.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <div class="form-check">
+                                            {{ form.allow_client_registration }}
+                                            <label class="form-check-label" for="{{ form.allow_client_registration.id_for_label }}">
+                                                Allow Client Self-Registration
+                                            </label>
+                                            {% if form.allow_client_registration.help_text %}
+                                                <br><small class="form-text text-muted">{{ form.allow_client_registration.help_text }}</small>
+                                            {% endif %}
+                                            {% if form.allow_client_registration.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.allow_client_registration.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Invoice Settings Tab -->
+                    <div class="tab-pane fade" id="invoice" role="tabpanel" aria-labelledby="invoice-tab">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3">Invoice Defaults</h5>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="{{ form.invoice_prefix.id_for_label }}" class="form-label">Invoice Prefix</label>
+                                        {{ form.invoice_prefix }}
+                                        {% if form.invoice_prefix.help_text %}
+                                            <small class="form-text text-muted">{{ form.invoice_prefix.help_text }}</small>
+                                        {% endif %}
+                                        {% if form.invoice_prefix.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.invoice_prefix.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="{{ form.default_payment_terms_days.id_for_label }}" class="form-label">Payment Terms (Days)</label>
+                                        {{ form.default_payment_terms_days }}
+                                        {% if form.default_payment_terms_days.help_text %}
+                                            <small class="form-text text-muted">{{ form.default_payment_terms_days.help_text }}</small>
+                                        {% endif %}
+                                        {% if form.default_payment_terms_days.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.default_payment_terms_days.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="{{ form.late_fee_percentage.id_for_label }}" class="form-label">Late Fee (%)</label>
+                                        {{ form.late_fee_percentage }}
+                                        {% if form.late_fee_percentage.help_text %}
+                                            <small class="form-text text-muted">{{ form.late_fee_percentage.help_text }}</small>
+                                        {% endif %}
+                                        {% if form.late_fee_percentage.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.late_fee_percentage.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Email & Notifications Tab -->
+                    <div class="tab-pane fade" id="notifications" role="tabpanel" aria-labelledby="notifications-tab">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3">Email Settings</h5>
+                                <div class="row">
+                                    <div class="col-md-8 mb-3">
+                                        <label for="{{ form.invoice_email_subject.id_for_label }}" class="form-label">Invoice Email Subject</label>
+                                        {{ form.invoice_email_subject }}
+                                        {% if form.invoice_email_subject.help_text %}
+                                            <small class="form-text text-muted">{{ form.invoice_email_subject.help_text }}</small>
+                                        {% endif %}
+                                        {% if form.invoice_email_subject.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.invoice_email_subject.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="{{ form.invoice_reminder_days.id_for_label }}" class="form-label">Reminder Days Before Due</label>
+                                        {{ form.invoice_reminder_days }}
+                                        {% if form.invoice_reminder_days.help_text %}
+                                            <small class="form-text text-muted">{{ form.invoice_reminder_days.help_text }}</small>
+                                        {% endif %}
+                                        {% if form.invoice_reminder_days.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.invoice_reminder_days.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <h5 class="card-title mb-3 mt-4">Notification Preferences</h5>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-check">
+                                            {{ form.notify_on_new_client }}
+                                            <label class="form-check-label" for="{{ form.notify_on_new_client.id_for_label }}">
+                                                Notify on New Client Registration
+                                            </label>
+                                            {% if form.notify_on_new_client.help_text %}
+                                                <br><small class="form-text text-muted">{{ form.notify_on_new_client.help_text }}</small>
+                                            {% endif %}
+                                            {% if form.notify_on_new_client.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.notify_on_new_client.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-check">
+                                            {{ form.notify_on_payment }}
+                                            <label class="form-check-label" for="{{ form.notify_on_payment.id_for_label }}">
+                                                Notify on Payment Received
+                                            </label>
+                                            {% if form.notify_on_payment.help_text %}
+                                                <br><small class="form-text text-muted">{{ form.notify_on_payment.help_text }}</small>
+                                            {% endif %}
+                                            {% if form.notify_on_payment.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.notify_on_payment.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Business Info Tab -->
+                    <div class="tab-pane fade" id="business" role="tabpanel" aria-labelledby="business-tab">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3">Business Information</h5>
+                                <div class="row">
+                                    <div class="col-12 mb-3">
+                                        <label for="{{ form.business_hours.id_for_label }}" class="form-label">Business Hours</label>
+                                        {{ form.business_hours }}
+                                        {% if form.business_hours.help_text %}
+                                            <small class="form-text text-muted">{{ form.business_hours.help_text }}</small>
+                                        {% endif %}
+                                        {% if form.business_hours.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.business_hours.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <h5 class="card-title mb-3 mt-4">Social Media Links</h5>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="{{ form.facebook_url.id_for_label }}" class="form-label">
+                                            <i class="fab fa-facebook me-1"></i> Facebook URL
+                                        </label>
+                                        {{ form.facebook_url }}
+                                        {% if form.facebook_url.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.facebook_url.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="{{ form.instagram_url.id_for_label }}" class="form-label">
+                                            <i class="fab fa-instagram me-1"></i> Instagram URL
+                                        </label>
+                                        {{ form.instagram_url }}
+                                        {% if form.instagram_url.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.instagram_url.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="{{ form.linkedin_url.id_for_label }}" class="form-label">
+                                            <i class="fab fa-linkedin me-1"></i> LinkedIn URL
+                                        </label>
+                                        {{ form.linkedin_url }}
+                                        {% if form.linkedin_url.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.linkedin_url.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Save Button -->
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Save Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Update color hex values on change
+    document.addEventListener('DOMContentLoaded', function() {
+        const primaryColorInput = document.getElementById('{{ form.sidebar_primary_color.id_for_label }}');
+        const secondaryColorInput = document.getElementById('{{ form.sidebar_secondary_color.id_for_label }}');
+        
+        if (primaryColorInput) {
+            primaryColorInput.addEventListener('input', function() {
+                document.getElementById('primary-color-value').textContent = this.value;
+            });
+        }
+        
+        if (secondaryColorInput) {
+            secondaryColorInput.addEventListener('input', function() {
+                document.getElementById('secondary-color-value').textContent = this.value;
+            });
+        }
+    });
+</script>
+{% endblock %}

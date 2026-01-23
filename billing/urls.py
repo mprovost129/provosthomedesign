@@ -44,5 +44,8 @@ urlpatterns = [
     path('employee/<int:pk>/', views.employee_detail, name='employee_detail'),
     path('employee/<int:pk>/edit/', views.edit_employee, name='edit_employee'),
     path('employee/<int:pk>/delete/', views.delete_employee, name='delete_employee'),
+    
+    # System Settings (Staff Only)
+    path('settings/', views.system_settings, name='system_settings'),
 ]
 

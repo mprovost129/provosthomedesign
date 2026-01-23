@@ -40,6 +40,9 @@
                     <a class="nav-link {% if 'create_invoice' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:create_invoice' %}">
                         <i class="fas fa-file-invoice-dollar"></i> Create Invoice
                     </a>
+                    <a class="nav-link {% if 'system_settings' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:system_settings' %}">
+                        <i class="fas fa-cog"></i> System Settings
+                    </a>
                     {% endif %}
                     
                     <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
