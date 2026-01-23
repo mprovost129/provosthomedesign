@@ -22,29 +22,101 @@
     <div class="position-relative p-4 p-md-5 text-white">
       <div class="d-inline-flex align-items-center gap-2 mb-2 small opacity-75"></div>
 
-      <h1 class="display-6 fw-semibold mb-2">
-        Custom &amp; stock home plans designed for code compliance, with form, function, and style in mind.
+      <h1 class="display-5 fw-bold mb-2">
+        Stock &amp; Custom House Plans
       </h1>
-      <p class="lead mb-4">Browse plans or tell us about your project.</p>
+      <p class="lead mb-4">Designed for code compliance, with form, function, and style in mind.</p>
 
-      <!-- Search to plans -->
-      <form class="row g-2 g-sm-3 mb-3" action="{% url 'plans:plan_list' %}" method="get" role="search" novalidate>
-        <div class="col-12 col-sm-7 col-lg-6">
-          <label for="home-search" class="visually-hidden">Search plans</label>
-          <input id="home-search" name="q" type="search" class="form-control form-control-lg"
-                 placeholder="Search by plan # or keyword…">
+      <!-- Advanced Search Form -->
+      <form class="mb-3" action="{% url 'plans:plan_list' %}" method="get" novalidate>
+        <div class="row g-2 g-sm-3">
+          <!-- Min/Max Square Feet -->
+          <div class="col-6 col-md-3">
+            <label for="home-min-sqft" class="form-label small text-white-50">Min sq ft</label>
+            <select id="home-min-sqft" name="min_sqft" class="form-select">
+              <option value="">Any</option>
+              <option value="1000">1,000</option>
+              <option value="1500">1,500</option>
+              <option value="2000">2,000</option>
+              <option value="2500">2,500</option>
+              <option value="3000">3,000</option>
+              <option value="3500">3,500</option>
+              <option value="4000">4,000</option>
+              <option value="4500">4,500</option>
+              <option value="5000">5,000</option>
+            </select>
+          </div>
+
+          <div class="col-6 col-md-3">
+            <label for="home-max-sqft" class="form-label small text-white-50">Max sq ft</label>
+            <select id="home-max-sqft" name="max_sqft" class="form-select">
+              <option value="">Any</option>
+              <option value="1500">1,500</option>
+              <option value="2000">2,000</option>
+              <option value="2500">2,500</option>
+              <option value="3000">3,000</option>
+              <option value="3500">3,500</option>
+              <option value="4000">4,000</option>
+              <option value="4500">4,500</option>
+              <option value="5000">5,000</option>
+              <option value="6000">6,000</option>
+            </select>
+          </div>
+
+          <!-- Bedrooms -->
+          <div class="col-6 col-md-2">
+            <label for="home-beds" class="form-label small text-white-50">Bedrooms</label>
+            <select id="home-beds" name="beds" class="form-select">
+              <option value="">Any</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6+">6+</option>
+            </select>
+          </div>
+
+          <!-- Bathrooms -->
+          <div class="col-6 col-md-2">
+            <label for="home-baths" class="form-label small text-white-50">Bathrooms</label>
+            <select id="home-baths" name="baths" class="form-select">
+              <option value="">Any</option>
+              <option value="1">1</option>
+              <option value="1.5">1.5</option>
+              <option value="2">2</option>
+              <option value="2.5">2.5</option>
+              <option value="3">3</option>
+              <option value="3.5">3.5</option>
+              <option value="4">4</option>
+              <option value="4.5">4.5</option>
+              <option value="5+">5+</option>
+            </select>
+          </div>
+
+          <!-- Search Button -->
+          <div class="col-12 col-md-2">
+            <label class="form-label small text-white-50 d-none d-md-block">&nbsp;</label>
+            <button type="submit" class="btn btn-primary btn-lg w-100">
+              <i class="bi bi-search me-1"></i> Search Plans
+            </button>
+          </div>
         </div>
-        <div class="col-6 col-sm-auto">
+      </form>
+
+      <!-- Action Buttons Row -->
+      <div class="row g-2 mb-3">
+        <div class="col-6 col-md-auto">
           <a class="btn btn-dark btn-lg w-100" href="{% url 'plans:plan_list' %}">
-            <i class="bi bi-grid me-1"></i> Browse Plans
+            <i class="bi bi-grid me-1"></i> Browse All Plans
           </a>
         </div>
-        <div class="col-6 col-sm-auto">
+        <div class="col-6 col-md-auto">
           <a class="btn btn-dark btn-lg w-100" href="{% url 'pages:get_started' %}">
             <i class="bi bi-pencil-square me-1"></i> Get Started
           </a>
         </div>
-      </form>
+      </div>
 
       <!-- Quick chips -->
       <div class="d-flex flex-wrap gap-2">
