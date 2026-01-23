@@ -53,6 +53,16 @@ urlpatterns = [
     path('project/<int:pk>/edit/', views.edit_project, name='edit_project'),
     path('project/<int:pk>/delete/', views.delete_project, name='delete_project'),
     
+    # Proposal Management (Staff Only)
+    path('proposals/', views.proposal_list, name='proposal_list'),
+    path('proposal/new/', views.create_proposal, name='create_proposal'),
+    path('proposal/<int:pk>/', views.proposal_detail, name='proposal_detail'),
+    path('proposal/<int:pk>/edit/', views.edit_proposal, name='edit_proposal'),
+    path('proposal/<int:pk>/duplicate/', views.duplicate_proposal, name='duplicate_proposal'),
+    path('proposal/<int:pk>/delete/', views.delete_proposal, name='delete_proposal'),
+    path('proposal/<int:pk>/accept/', views.accept_proposal, name='accept_proposal'),
+    path('proposal/<int:pk>/reject/', views.reject_proposal, name='reject_proposal'),
+    
     # System Settings (Staff Only)
     path('settings/', views.system_settings, name='system_settings'),
 ]

@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordResetForm
 from django.contrib.auth.models import User
-from .models import Client, Employee, Invoice, InvoiceTemplate, InvoiceLineItem, SystemSettings, Project
+from .models import (Client, Employee, Invoice, InvoiceTemplate, InvoiceLineItem, 
+                     SystemSettings, Project, Proposal, ProposalLineItem, ProposalTemplate)
 import re
 from datetime import datetime
 
@@ -512,6 +513,98 @@ class ProjectForm(forms.ModelForm):
                 self.add_error('estimated_hours', 'Estimated hours are required for hourly projects.')
         
         return cleaned_data
+
+
+class ProposalForm(forms.ModelForm):
+    """Form for creating and editing proposals"""
+    from .models import Proposal, ProposalTemplate
+    
+    template = forms.ModelChoiceField(
+        queryset=ProposalTemplate.objects.filter(is_active=True),
+        required=False,
+        empty_label="Select a template (optional)",
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'template-select'}),
+        help_text="Load pre-configured proposal settings"
+    )
+    
+    class Meta:
+        model = Proposal
+        fields = ['client', 'project', 'title', 'description', 'issue_date', 'valid_until',
+                  'tax_rate', 'deposit_percentage', 'terms_and_conditions', 'notes']
+        widgets = {
+            'client': forms.Select(attrs={'class': 'form-select'}),
+            'project': forms.Select(attrs={'class': 'form-select'}),
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Proposal title or project name'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 
+                                                 'placeholder': 'Proposal introduction and overview...'}),
+            'issue_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'valid_until': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'tax_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),
+            'deposit_percentage': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),
+            'terms_and_conditions': forms.Textarea(attrs={'class': 'form-control', 'rows': 6,
+                                                          'placeholder': 'Payment terms, conditions, warranties, etc.'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3,
+                                          'placeholder': 'Internal notes (not visible to client)...'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make project optional
+        self.fields['project'].required = False
+        self.fields['project'].empty_label = "No project (optional)"
+        
+        # Filter projects by selected client if editing
+        if self.instance and self.instance.client_id:
+            self.fields['project'].queryset = Project.objects.filter(client=self.instance.client)
+
+
+class ProposalLineItemForm(forms.ModelForm):
+    """Form for individual proposal line items"""
+    
+    class Meta:
+        model = ProposalLineItem
+        fields = ['description', 'quantity', 'rate']
+        widgets = {
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2,
+                                                'placeholder': 'Service or item description'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+        }
+
+
+# Formset for managing multiple proposal line items
+ProposalLineItemFormSet = forms.inlineformset_factory(
+    Proposal,
+    ProposalLineItem,
+    form=ProposalLineItemForm,
+    extra=5,  # Number of empty forms to display
+    can_delete=True,
+    min_num=1,  # Require at least one line item
+    validate_min=True
+)
+
+
+class ProposalTemplateForm(forms.ModelForm):
+    """Form for creating and editing proposal templates"""
+    
+    class Meta:
+        model = ProposalTemplate
+        fields = ['name', 'description', 'default_title', 'default_description', 'default_terms',
+                  'default_valid_days', 'default_tax_rate', 'default_deposit_percentage', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Template name'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2,
+                                                'placeholder': 'Template description...'}),
+            'default_title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Default proposal title'}),
+            'default_description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4,
+                                                        'placeholder': 'Default introduction...'}),
+            'default_terms': forms.Textarea(attrs={'class': 'form-control', 'rows': 6,
+                                                   'placeholder': 'Default terms and conditions...'}),
+            'default_valid_days': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
+            'default_tax_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),
+            'default_deposit_percentage': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
 
 
 

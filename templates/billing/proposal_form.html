@@ -1,0 +1,191 @@
+{% extends 'billing/base_authenticated.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Portal{% endblock %}
+
+{% block authenticated_content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'billing:dashboard' %}"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'billing:proposal_list' %}">Proposals</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-file-signature"></i> {{ title }}</h2>
+            <a href="{% if proposal %}{% url 'billing:proposal_detail' proposal.pk %}{% else %}{% url 'billing:proposal_list' %}{% endif %}" 
+               class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> {% if proposal %}Back to Proposal{% else %}Back to List{% endif %}
+            </a>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Template Selector -->
+                    {% if not proposal %}
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-lightbulb"></i> 
+                        <strong>Tip:</strong> Select a template below to load pre-configured settings and line items.
+                    </div>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="id_template" class="form-label">Template (Optional)</label>
+                            {{ form.template }}
+                            <small class="text-muted">{{ form.template.help_text }}</small>
+                        </div>
+                    </div>
+                    <hr class="my-4">
+                    {% endif %}
+                    
+                    <!-- Basic Information -->
+                    <h5 class="mb-3">Basic Information</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="id_client" class="form-label">Client *</label>
+                            {{ form.client }}
+                            {% if form.client.errors %}
+                                <div class="text-danger small">{{ form.client.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_project" class="form-label">Project (Optional)</label>
+                            {{ form.project }}
+                            <small class="text-muted">Link to existing project or leave blank</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <label for="id_title" class="form-label">Proposal Title *</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="text-danger small">{{ form.title.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <label for="id_description" class="form-label">Description</label>
+                            {{ form.description }}
+                            <small class="text-muted">Introduction and overview of the proposal</small>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <!-- Dates -->
+                    <h5 class="mb-3">Dates</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="id_issue_date" class="form-label">Issue Date *</label>
+                            {{ form.issue_date }}
+                            {% if form.issue_date.errors %}
+                                <div class="text-danger small">{{ form.issue_date.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_valid_until" class="form-label">Valid Until *</label>
+                            {{ form.valid_until }}
+                            {% if form.valid_until.errors %}
+                                <div class="text-danger small">{{ form.valid_until.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <!-- Line Items -->
+                    <h5 class="mb-3">Line Items</h5>
+                    <div class="table-responsive mb-4">
+                        {{ formset.management_form }}
+                        <table class="table table-bordered" id="lineitem-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50%;">Description</th>
+                                    <th style="width: 15%;">Quantity</th>
+                                    <th style="width: 15%;">Rate</th>
+                                    <th style="width: 15%;">Amount</th>
+                                    <th style="width: 5%;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for form in formset %}
+                                <tr class="lineitem-row">
+                                    <td>
+                                        {{ form.description }}
+                                        {{ form.id }}
+                                    </td>
+                                    <td>{{ form.quantity }}</td>
+                                    <td>{{ form.rate }}</td>
+                                    <td class="amount-display">$0.00</td>
+                                    <td class="text-center">
+                                        {{ form.DELETE }}
+                                        <label for="{{ form.DELETE.id_for_label }}" class="text-danger" style="cursor: pointer;">
+                                            <i class="fas fa-trash"></i>
+                                        </label>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <!-- Financial Settings -->
+                    <h5 class="mb-3">Financial Settings</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="id_tax_rate" class="form-label">Tax Rate (%)</label>
+                            {{ form.tax_rate }}
+                            <small class="text-muted">Tax percentage (e.g., 7.5 for 7.5%)</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_deposit_percentage" class="form-label">Deposit (%)</label>
+                            {{ form.deposit_percentage }}
+                            <small class="text-muted">Required deposit percentage</small>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <!-- Terms & Conditions -->
+                    <h5 class="mb-3">Terms & Conditions</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <label for="id_terms_and_conditions" class="form-label">Terms & Conditions</label>
+                            {{ form.terms_and_conditions }}
+                        </div>
+                    </div>
+                    
+                    <!-- Internal Notes -->
+                    <h5 class="mb-3">Internal Notes</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <label for="id_notes" class="form-label">Notes (Internal Only)</label>
+                            {{ form.notes }}
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% if proposal %}{% url 'billing:proposal_detail' proposal.pk %}{% else %}{% url 'billing:proposal_list' %}{% endif %}" 
+                           class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Proposal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

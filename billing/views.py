@@ -10,6 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
+from django.utils import timezone
 from django.template.loader import render_to_string
 from django.core.mail import EmailMessage
 from django.conf import settings
@@ -18,7 +19,7 @@ from decimal import Decimal
 import json
 import logging
 
-from .models import Client, Employee, Invoice, Payment, InvoiceTemplate, InvoiceLineItem
+from .models import Client, Employee, Invoice, Payment, InvoiceTemplate, InvoiceLineItem, ProposalLineItem
 from .forms import (
     ClientRegistrationForm, 
     ClientLoginForm, 
@@ -1087,5 +1088,275 @@ def delete_invoice(request, pk):
     context = {'invoice': invoice}
     return render(request, 'billing/invoice_confirm_delete.html', context)
 
+
+# ============================================================================
+# PROPOSAL VIEWS
+# ============================================================================
+
+@staff_member_required(login_url='/portal/login/')
+def proposal_list(request):
+    """View all proposals (staff only)."""
+    from .models import Proposal
+    from django.db.models import Q
+    
+    proposals = Proposal.objects.select_related('client', 'project').all()
+    
+    # Filter by status
+    status_filter = request.GET.get('status')
+    if status_filter:
+        proposals = proposals.filter(status=status_filter)
+    
+    # Filter by client
+    client_filter = request.GET.get('client')
+    if client_filter:
+        proposals = proposals.filter(client_id=client_filter)
+    
+    # Search
+    search_query = request.GET.get('search')
+    if search_query:
+        proposals = proposals.filter(
+            Q(proposal_number__icontains=search_query) |
+            Q(title__icontains=search_query) |
+            Q(client__first_name__icontains=search_query) |
+            Q(client__last_name__icontains=search_query) |
+            Q(client__company_name__icontains=search_query)
+        )
+    
+    # Get distinct clients for filter dropdown
+    clients = Client.objects.filter(proposals__isnull=False).distinct().order_by('last_name', 'first_name')
+    
+    context = {
+        'proposals': proposals,
+        'clients': clients,
+        'status_filter': status_filter,
+        'client_filter': client_filter,
+        'search_query': search_query,
+    }
+    return render(request, 'billing/proposal_list.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def proposal_detail(request, pk):
+    """View detailed information about a proposal (staff/client)."""
+    from .models import Proposal
+    
+    proposal = get_object_or_404(Proposal, pk=pk)
+    
+    # Staff can view all proposals, clients can only view their own
+    if not request.user.is_staff:
+        if not hasattr(request.user, 'client_profile') or proposal.client != request.user.client_profile:
+            messages.error(request, 'You do not have permission to view this proposal.')
+            return redirect('billing:dashboard')
+    
+    # Track when client views proposal
+    if not request.user.is_staff and proposal.status == 'sent' and not proposal.viewed_date:
+        proposal.status = 'viewed'
+        proposal.viewed_date = timezone.now()
+        proposal.save()
+    
+    context = {'proposal': proposal}
+    return render(request, 'billing/proposal_detail.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def create_proposal(request):
+    """Create a new proposal (staff only)."""
+    from .forms import ProposalForm, ProposalLineItemFormSet
+    from datetime import timedelta
+    
+    if request.method == 'POST':
+        form = ProposalForm(request.POST)
+        formset = ProposalLineItemFormSet(request.POST)
+        
+        if form.is_valid() and formset.is_valid():
+            proposal = form.save(commit=False)
+            proposal.created_by = request.user
+            proposal.save()
+            
+            # Save line items
+            formset.instance = proposal
+            formset.save()
+            
+            # Recalculate totals
+            proposal.calculate_totals()
+            
+            messages.success(request, f'Proposal {proposal.proposal_number} created successfully!')
+            return redirect('billing:proposal_detail', pk=proposal.pk)
+    else:
+        # Set default valid_until to 30 days from now
+        initial_data = {
+            'issue_date': timezone.now().date(),
+            'valid_until': timezone.now().date() + timedelta(days=30)
+        }
+        form = ProposalForm(initial=initial_data)
+        formset = ProposalLineItemFormSet()
+    
+    context = {
+        'form': form,
+        'formset': formset,
+        'title': 'Create New Proposal'
+    }
+    return render(request, 'billing/proposal_form.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def edit_proposal(request, pk):
+    """Edit an existing proposal (staff only)."""
+    from .models import Proposal
+    from .forms import ProposalForm, ProposalLineItemFormSet
+    
+    proposal = get_object_or_404(Proposal, pk=pk)
+    
+    # Don't allow editing accepted or rejected proposals
+    if proposal.status in ['accepted', 'rejected']:
+        messages.warning(request, f'Cannot edit {proposal.get_status_display().lower()} proposals.')
+        return redirect('billing:proposal_detail', pk=proposal.pk)
+    
+    if request.method == 'POST':
+        form = ProposalForm(request.POST, instance=proposal)
+        formset = ProposalLineItemFormSet(request.POST, instance=proposal)
+        
+        if form.is_valid() and formset.is_valid():
+            proposal = form.save()
+            formset.save()
+            
+            # Recalculate totals
+            proposal.calculate_totals()
+            
+            messages.success(request, f'Proposal {proposal.proposal_number} updated successfully!')
+            return redirect('billing:proposal_detail', pk=proposal.pk)
+    else:
+        form = ProposalForm(instance=proposal)
+        formset = ProposalLineItemFormSet(instance=proposal)
+    
+    context = {
+        'form': form,
+        'formset': formset,
+        'proposal': proposal,
+        'title': f'Edit Proposal {proposal.proposal_number}'
+    }
+    return render(request, 'billing/proposal_form.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def duplicate_proposal(request, pk):
+    """Duplicate an existing proposal (staff only)."""
+    from .models import Proposal
+    
+    original = get_object_or_404(Proposal, pk=pk)
+    
+    # Clone the proposal
+    proposal = Proposal()
+    proposal.client = original.client
+    proposal.title = f"Copy of {original.title}"
+    proposal.description = original.description
+    proposal.terms_and_conditions = original.terms_and_conditions
+    proposal.issue_date = timezone.now().date()
+    proposal.valid_until = original.valid_until
+    proposal.tax_rate = original.tax_rate
+    proposal.deposit_percentage = original.deposit_percentage
+    proposal.notes = original.notes
+    proposal.created_by = request.user
+    proposal.save()
+    
+    # Clone line items
+    for item in original.line_items.all():
+        ProposalLineItem.objects.create(
+            proposal=proposal,
+            description=item.description,
+            quantity=item.quantity,
+            rate=item.rate,
+            order=item.order
+        )
+    
+    # Recalculate totals
+    proposal.calculate_totals()
+    
+    messages.success(request, f'Proposal duplicated! New proposal number: {proposal.proposal_number}')
+    return redirect('billing:edit_proposal', pk=proposal.pk)
+
+
+@staff_member_required(login_url='/portal/login/')
+def delete_proposal(request, pk):
+    """Delete a proposal (staff only)."""
+    from .models import Proposal
+    
+    proposal = get_object_or_404(Proposal, pk=pk)
+    
+    # Don't allow deleting accepted proposals
+    if proposal.status == 'accepted':
+        messages.error(request, 'Cannot delete accepted proposals.')
+        return redirect('billing:proposal_detail', pk=proposal.pk)
+    
+    if request.method == 'POST':
+        proposal_number = proposal.proposal_number
+        proposal.delete()
+        messages.success(request, f'Proposal {proposal_number} deleted successfully!')
+        return redirect('billing:proposal_list')
+    
+    context = {'proposal': proposal}
+    return render(request, 'billing/proposal_confirm_delete.html', context)
+
+
+@login_required(login_url='/portal/login/')
+def accept_proposal(request, pk):
+    """Accept a proposal (client only)."""
+    from .models import Proposal
+    
+    proposal = get_object_or_404(Proposal, pk=pk)
+    
+    # Only clients can accept their own proposals
+    if not hasattr(request.user, 'client_profile') or proposal.client != request.user.client_profile:
+        messages.error(request, 'You do not have permission to accept this proposal.')
+        return redirect('billing:dashboard')
+    
+    if proposal.status == 'accepted':
+        messages.info(request, 'This proposal has already been accepted.')
+        return redirect('billing:proposal_detail', pk=proposal.pk)
+    
+    if proposal.is_expired:
+        messages.error(request, 'This proposal has expired.')
+        return redirect('billing:proposal_detail', pk=proposal.pk)
+    
+    if request.method == 'POST':
+        proposal.status = 'accepted'
+        proposal.accepted_date = timezone.now()
+        proposal.accepted_by = proposal.client.get_full_name()
+        proposal.acceptance_ip = request.META.get('REMOTE_ADDR')
+        proposal.save()
+        
+        messages.success(request, f'Proposal {proposal.proposal_number} accepted! We will begin work on your project soon.')
+        return redirect('billing:proposal_detail', pk=proposal.pk)
+    
+    context = {'proposal': proposal}
+    return render(request, 'billing/proposal_accept.html', context)
+
+
+@login_required(login_url='/portal/login/')
+def reject_proposal(request, pk):
+    """Reject a proposal (client only)."""
+    from .models import Proposal
+    
+    proposal = get_object_or_404(Proposal, pk=pk)
+    
+    # Only clients can reject their own proposals
+    if not hasattr(request.user, 'client_profile') or proposal.client != request.user.client_profile:
+        messages.error(request, 'You do not have permission to reject this proposal.')
+        return redirect('billing:dashboard')
+    
+    if proposal.status in ['accepted', 'rejected']:
+        messages.info(request, f'This proposal has already been {proposal.get_status_display().lower()}.')
+        return redirect('billing:proposal_detail', pk=proposal.pk)
+    
+    if request.method == 'POST':
+        proposal.status = 'rejected'
+        proposal.rejected_date = timezone.now()
+        proposal.save()
+        
+        messages.info(request, f'Proposal {proposal.proposal_number} declined.')
+        return redirect('billing:proposal_detail', pk=proposal.pk)
+    
+    context = {'proposal': proposal}
+    return render(request, 'billing/proposal_reject.html', context)
 
 

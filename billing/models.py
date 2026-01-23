@@ -764,3 +764,205 @@ class Project(models.Model):
             return min(100, round(progress, 1))
         return 0
 
+
+class Proposal(models.Model):
+    """Project proposals for clients with line items and acceptance tracking."""
+    
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('sent', 'Sent'),
+        ('viewed', 'Viewed'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+        ('expired', 'Expired'),
+    ]
+    
+    # Identification
+    proposal_number = models.CharField(max_length=50, unique=True, help_text="Format: PROP-YYMM##")
+    title = models.CharField(max_length=255, help_text="Proposal title or project name")
+    
+    # Relationships
+    client = models.ForeignKey('Client', on_delete=models.PROTECT, related_name='proposals',
+                              help_text="Client receiving this proposal")
+    project = models.ForeignKey('Project', on_delete=models.SET_NULL, null=True, blank=True,
+                               related_name='proposals',
+                               help_text="Project created when proposal is accepted")
+    
+    # Status & Dates
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    issue_date = models.DateField(default=timezone.now, help_text="Date proposal was created")
+    valid_until = models.DateField(help_text="Proposal expiration date")
+    sent_date = models.DateTimeField(null=True, blank=True, help_text="When proposal was sent to client")
+    viewed_date = models.DateTimeField(null=True, blank=True, help_text="When client first viewed proposal")
+    accepted_date = models.DateTimeField(null=True, blank=True, help_text="When client accepted proposal")
+    rejected_date = models.DateTimeField(null=True, blank=True, help_text="When client rejected proposal")
+    
+    # Content
+    description = models.TextField(blank=True, help_text="Proposal introduction and overview")
+    terms_and_conditions = models.TextField(blank=True, help_text="Terms, conditions, and payment details")
+    
+    # Financial
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'),
+                                   validators=[MinValueValidator(0), MaxValueValidator(100)],
+                                   help_text="Tax rate as percentage (e.g., 7.5 for 7.5%)")
+    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    
+    # Deposit/Retainer
+    deposit_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'),
+                                            validators=[MinValueValidator(0), MaxValueValidator(100)],
+                                            help_text="Deposit as percentage of total (e.g., 50 for 50%)")
+    deposit_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'),
+                                        help_text="Required deposit/retainer amount")
+    
+    # Acceptance
+    accepted_by = models.CharField(max_length=200, blank=True, help_text="Name of person who accepted")
+    acceptance_signature = models.TextField(blank=True, help_text="Digital signature data (optional)")
+    acceptance_ip = models.GenericIPAddressField(null=True, blank=True, help_text="IP address of acceptance")
+    
+    # Internal
+    notes = models.TextField(blank=True, help_text="Internal notes (not visible to client)")
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                  related_name='proposals_created')
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-issue_date', '-created_at']
+        indexes = [
+            models.Index(fields=['proposal_number']),
+            models.Index(fields=['client', 'status']),
+            models.Index(fields=['status', 'valid_until']),
+        ]
+    
+    def __str__(self):
+        return f"{self.proposal_number} - {self.title}"
+    
+    def save(self, *args, **kwargs):
+        """Auto-generate proposal number if not set"""
+        if not self.proposal_number:
+            self.proposal_number = self.generate_proposal_number()
+        
+        # Calculate tax and total
+        self.tax_amount = (self.subtotal * self.tax_rate) / Decimal('100')
+        self.total = self.subtotal + self.tax_amount
+        
+        # Calculate deposit amount from percentage if set
+        if self.deposit_percentage > 0:
+            self.deposit_amount = (self.total * self.deposit_percentage) / Decimal('100')
+        
+        super().save(*args, **kwargs)
+    
+    @classmethod
+    def generate_proposal_number(cls):
+        """Generate next proposal number in format PROP-YYMM##"""
+        from datetime import datetime
+        
+        now = datetime.now()
+        date_part = now.strftime('%y%m')  # YYMM
+        prefix = f'PROP-{date_part}'
+        
+        # Find last proposal with this prefix
+        last_proposal = cls.objects.filter(
+            proposal_number__startswith=prefix
+        ).order_by('-proposal_number').first()
+        
+        if last_proposal:
+            # Extract number part and increment
+            last_number = int(last_proposal.proposal_number.split('-')[-1])
+            next_number = last_number + 1
+        else:
+            next_number = 1
+        
+        return f"{prefix}{next_number:02d}"
+    
+    def get_absolute_url(self):
+        return reverse('billing:proposal_detail', kwargs={'pk': self.pk})
+    
+    @property
+    def is_expired(self):
+        """Check if proposal has expired"""
+        if self.status in ['accepted', 'rejected']:
+            return False
+        return timezone.now().date() > self.valid_until
+    
+    @property
+    def days_until_expiration(self):
+        """Calculate days until expiration"""
+        if self.is_expired:
+            return 0
+        delta = self.valid_until - timezone.now().date()
+        return delta.days
+    
+    def calculate_totals(self):
+        """Recalculate subtotal from line items"""
+        self.subtotal = sum(item.amount for item in self.line_items.all())
+        self.tax_amount = (self.subtotal * self.tax_rate) / Decimal('100')
+        self.total = self.subtotal + self.tax_amount
+        if self.deposit_percentage > 0:
+            self.deposit_amount = (self.total * self.deposit_percentage) / Decimal('100')
+        self.save()
+
+
+class ProposalLineItem(models.Model):
+    """Individual line items for proposals"""
+    
+    proposal = models.ForeignKey('Proposal', on_delete=models.CASCADE, related_name='line_items')
+    description = models.TextField(help_text="Service or item description")
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('1.00'),
+                                   validators=[MinValueValidator(0)])
+    rate = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'),
+                              validators=[MinValueValidator(0)],
+                              help_text="Price per unit")
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    order = models.PositiveIntegerField(default=0, help_text="Display order")
+    
+    class Meta:
+        ordering = ['order', 'id']
+    
+    def __str__(self):
+        return f"{self.proposal.proposal_number} - {self.description[:50]}"
+    
+    def save(self, *args, **kwargs):
+        """Calculate amount from quantity * rate"""
+        self.amount = self.quantity * self.rate
+        super().save(*args, **kwargs)
+
+
+class ProposalTemplate(models.Model):
+    """Reusable proposal templates with predefined content"""
+    
+    name = models.CharField(max_length=200, unique=True, help_text="Template name")
+    description = models.TextField(blank=True, help_text="Template description")
+    
+    # Default Content
+    default_title = models.CharField(max_length=255, blank=True, help_text="Default proposal title")
+    default_description = models.TextField(blank=True, help_text="Default proposal introduction")
+    default_terms = models.TextField(blank=True, help_text="Default terms and conditions")
+    
+    # Default Settings
+    default_valid_days = models.PositiveIntegerField(default=30, help_text="Days until proposal expires")
+    default_tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'),
+                                          validators=[MinValueValidator(0), MaxValueValidator(100)])
+    default_deposit_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'),
+                                                     validators=[MinValueValidator(0), MaxValueValidator(100)])
+    
+    # Line Items (stored as JSON for flexibility)
+    line_items_json = models.JSONField(default=list, blank=True,
+                                       help_text="Default line items as JSON array")
+    
+    # Status
+    is_active = models.BooleanField(default=True, help_text="Active templates appear in dropdown")
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name

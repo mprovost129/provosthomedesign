@@ -1,0 +1,154 @@
+{% extends 'billing/base_authenticated.html' %}
+{% load static %}
+
+{% block title %}Proposals - Portal{% endblock %}
+
+{% block authenticated_content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'billing:dashboard' %}"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Proposals</li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-file-signature"></i> Proposals</h2>
+            <a href="{% url 'billing:create_proposal' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Proposal
+            </a>
+        </div>
+
+        <!-- Filters -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select name="status" id="status" class="form-select">
+                            <option value="">All Statuses</option>
+                            <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Draft</option>
+                            <option value="sent" {% if status_filter == 'sent' %}selected{% endif %}>Sent</option>
+                            <option value="viewed" {% if status_filter == 'viewed' %}selected{% endif %}>Viewed</option>
+                            <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>Accepted</option>
+                            <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                            <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expired</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="client" class="form-label">Client</label>
+                        <select name="client" id="client" class="form-select">
+                            <option value="">All Clients</option>
+                            {% for client in clients %}
+                            <option value="{{ client.id }}" {% if client_filter == client.id|stringformat:"s" %}selected{% endif %}>
+                                {{ client.get_full_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" name="search" id="search" class="form-control" 
+                               placeholder="Proposal #, title, or client..." value="{{ search_query }}">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-secondary me-2">Filter</button>
+                        <a href="{% url 'billing:proposal_list' %}" class="btn btn-outline-secondary">Clear</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Proposals List -->
+        {% if proposals %}
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Proposal #</th>
+                                <th>Title</th>
+                                <th>Client</th>
+                                <th>Issue Date</th>
+                                <th>Valid Until</th>
+                                <th>Total</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for proposal in proposals %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'billing:proposal_detail' proposal.pk %}">
+                                        <strong>{{ proposal.proposal_number }}</strong>
+                                    </a>
+                                </td>
+                                <td>{{ proposal.title }}</td>
+                                <td>
+                                    {{ proposal.client.get_full_name }}
+                                    {% if proposal.client.company_name %}
+                                    <br><small class="text-muted">{{ proposal.client.company_name }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ proposal.issue_date|date:"M d, Y" }}</td>
+                                <td>
+                                    {{ proposal.valid_until|date:"M d, Y" }}
+                                    {% if proposal.is_expired and proposal.status not in 'accepted,rejected' %}
+                                    <br><small class="text-danger">Expired</small>
+                                    {% endif %}
+                                </td>
+                                <td><strong>${{ proposal.total|floatformat:2 }}</strong></td>
+                                <td class="text-center">
+                                    {% if proposal.status == 'draft' %}
+                                    <span class="badge bg-secondary">Draft</span>
+                                    {% elif proposal.status == 'sent' %}
+                                    <span class="badge bg-info">Sent</span>
+                                    {% elif proposal.status == 'viewed' %}
+                                    <span class="badge bg-primary">Viewed</span>
+                                    {% elif proposal.status == 'accepted' %}
+                                    <span class="badge bg-success">Accepted</span>
+                                    {% elif proposal.status == 'rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                    {% elif proposal.status == 'expired' %}
+                                    <span class="badge bg-warning">Expired</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <a href="{% url 'billing:proposal_detail' proposal.pk %}" 
+                                       class="btn btn-sm btn-outline-primary me-1"
+                                       title="View proposal">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if proposal.status not in 'accepted,rejected' %}
+                                    <a href="{% url 'billing:edit_proposal' proposal.pk %}" 
+                                       class="btn btn-sm btn-outline-secondary me-1"
+                                       title="Edit proposal">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% endif %}
+                                    <a href="{% url 'billing:duplicate_proposal' proposal.pk %}" 
+                                       class="btn btn-sm btn-outline-info"
+                                       title="Duplicate proposal">
+                                        <i class="fas fa-copy"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> 
+            No proposals found. <a href="{% url 'billing:create_proposal' %}">Create your first proposal</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
