@@ -1,49 +1,59 @@
 {% extends 'billing/base_authenticated.html' %}
-{% load static %}
 
-{% block title %}{{ client.get_display_name }} - Portal{% endblock %}
+{% block title %}{{ employee.get_full_name }} - Portal{% endblock %}
 
 {% block portal_content %}
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2><i class="fas fa-user"></i> {{ client.get_display_name }}</h2>
+            <h2><i class="fas fa-user-tie"></i> {{ employee.get_display_name }}</h2>
             <div>
-                <a href="{% url 'billing:edit_client' client.pk %}" class="btn btn-primary">
-                    <i class="fas fa-edit"></i> Edit Client
+                <a href="{% url 'billing:edit_employee' employee.pk %}" class="btn btn-success">
+                    <i class="fas fa-edit"></i> Edit Employee
                 </a>
-                <a href="{% url 'billing:client_list' %}" class="btn btn-outline-secondary">
+                <a href="{% url 'billing:employee_list' %}" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i> Back to List
                 </a>
             </div>
         </div>
 
         <div class="row">
-            <!-- Client Information -->
+            <!-- Employee Information -->
             <div class="col-md-8 mb-4">
                 <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Client Information</h5>
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> Employee Information</h5>
                     </div>
                     <div class="card-body">
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <strong>Full Name:</strong><br>
-                                {{ client.get_full_name }}
+                                {{ employee.get_full_name }}
                             </div>
                             <div class="col-md-6">
                                 <strong>Status:</strong><br>
-                                <span class="badge bg-{% if client.status == 'active' %}success{% elif client.status == 'lead' %}info{% else %}secondary{% endif %}">
-                                    {{ client.get_status_display }}
+                                <span class="badge bg-{% if employee.status == 'active' %}success{% elif employee.status == 'on_leave' %}warning{% else %}secondary{% endif %}">
+                                    {{ employee.get_status_display }}
                                 </span>
                             </div>
                         </div>
                         
-                        {% if client.company_name %}
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Job Title:</strong><br>
+                                {{ employee.job_title|default:"Not specified" }}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Department:</strong><br>
+                                {{ employee.department|default:"Not specified" }}
+                            </div>
+                        </div>
+                        
+                        {% if employee.hire_date %}
                         <div class="row mb-3">
                             <div class="col-12">
-                                <strong>Company:</strong><br>
-                                {{ client.company_name }}
+                                <strong>Hire Date:</strong><br>
+                                {{ employee.hire_date|date:"F j, Y" }}
                             </div>
                         </div>
                         {% endif %}
@@ -52,190 +62,123 @@
                         
                         <h6 class="mb-3">Contact Information</h6>
                         <div class="row mb-2">
-                            <div class="col-md-6">
-                                <strong>Primary Email:</strong><br>
-                                <a href="mailto:{{ client.email }}">{{ client.email }}</a>
+                            <div class="col-12">
+                                <strong>Email:</strong><br>
+                                <a href="mailto:{{ employee.email }}">{{ employee.email }}</a>
                             </div>
-                            {% if client.email_secondary %}
-                            <div class="col-md-6">
-                                <strong>Secondary Email:</strong><br>
-                                <a href="mailto:{{ client.email_secondary }}">{{ client.email_secondary }}</a>
-                            </div>
-                            {% endif %}
                         </div>
                         
                         <div class="row mb-2">
-                            {% if client.phone_1 %}
+                            {% if employee.phone_1 %}
                             <div class="col-md-6">
-                                <strong>Phone 1 ({{ client.get_phone_1_type_display }}):</strong><br>
-                                <a href="tel:{{ client.phone_1 }}">{{ client.phone_1 }}</a>
+                                <strong>Primary Phone ({{ employee.get_phone_1_type_display }}):</strong><br>
+                                <a href="tel:{{ employee.phone_1 }}">{{ employee.phone_1 }}</a>
                             </div>
                             {% endif %}
-                            {% if client.phone_2 %}
+                            {% if employee.phone_2 %}
                             <div class="col-md-6">
-                                <strong>Phone 2 ({{ client.get_phone_2_type_display }}):</strong><br>
-                                <a href="tel:{{ client.phone_2 }}">{{ client.phone_2 }}</a>
+                                <strong>Secondary Phone ({{ employee.get_phone_2_type_display }}):</strong><br>
+                                <a href="tel:{{ employee.phone_2 }}">{{ employee.phone_2 }}</a>
                             </div>
                             {% endif %}
                         </div>
                         
-                        {% if client.address_line1 %}
+                        {% if employee.emergency_contact_name or employee.emergency_contact_phone %}
                         <hr>
-                        <h6 class="mb-3">Address</h6>
-                        <address>
-                            {{ client.address_line1 }}<br>
-                            {% if client.address_line2 %}{{ client.address_line2 }}<br>{% endif %}
-                            {% if client.city %}{{ client.city }}, {% endif %}{% if client.state %}{{ client.state }} {% endif %}{{ client.zip_code }}<br>
-                            {% if client.country %}{{ client.country }}{% endif %}
-                        </address>
-                        {% endif %}
-                        
-                        {% if client.website or client.tax_id %}
-                        <hr>
-                        <h6 class="mb-3">Business Information</h6>
-                        {% if client.website %}
-                        <div class="mb-2">
-                            <strong>Website:</strong><br>
-                            <a href="{{ client.website }}" target="_blank">{{ client.website }}</a>
-                        </div>
-                        {% endif %}
-                        {% if client.tax_id %}
-                        <div class="mb-2">
-                            <strong>Tax ID:</strong> {{ client.tax_id }}
-                        </div>
-                        {% endif %}
-                        {% endif %}
-                        
-                        {% if client.lead_source %}
-                        <hr>
-                        <div>
-                            <strong>Lead Source:</strong> {{ client.lead_source }}
+                        <h6 class="mb-3">Emergency Contact</h6>
+                        <div class="row mb-2">
+                            {% if employee.emergency_contact_name %}
+                            <div class="col-md-6">
+                                <strong>Name:</strong><br>
+                                {{ employee.emergency_contact_name }}
+                            </div>
+                            {% endif %}
+                            {% if employee.emergency_contact_phone %}
+                            <div class="col-md-6">
+                                <strong>Phone:</strong><br>
+                                <a href="tel:{{ employee.emergency_contact_phone }}">{{ employee.emergency_contact_phone }}</a>
+                            </div>
+                            {% endif %}
                         </div>
                         {% endif %}
                         
-                        {% if client.notes %}
+                        <hr>
+                        <h6 class="mb-3">Portal Permissions</h6>
+                        <div class="row mb-2">
+                            <div class="col-12">
+                                {% if employee.user.is_superuser %}
+                                <span class="badge bg-danger">SUPERUSER</span>
+                                {% elif employee.user.is_staff %}
+                                <span class="badge bg-primary">STAFF</span>
+                                {% endif %}
+                                
+                                {% if employee.can_create_invoices %}
+                                <span class="badge bg-info">Can Create Invoices</span>
+                                {% endif %}
+                                {% if employee.can_manage_clients %}
+                                <span class="badge bg-info">Can Manage Clients</span>
+                                {% endif %}
+                                {% if employee.can_view_reports %}
+                                <span class="badge bg-info">Can View Reports</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if employee.notes %}
                         <hr>
                         <h6 class="mb-3">Internal Notes</h6>
                         <div class="bg-light p-3 rounded">
-                            {{ client.notes|linebreaks }}
+                            {{ employee.notes|linebreaks }}
                         </div>
                         {% endif %}
                     </div>
                     <div class="card-footer text-muted small">
-                        Created: {{ client.created_at|date:"F j, Y" }} | Last Updated: {{ client.updated_at|date:"F j, Y g:i A" }}
+                        Created: {{ employee.created_at|date:"F j, Y" }} | Last Updated: {{ employee.updated_at|date:"F j, Y g:i A" }}
                     </div>
                 </div>
             </div>
             
-            <!-- Statistics & Actions -->
+            <!-- Quick Actions -->
             <div class="col-md-4">
-                <!-- Statistics -->
-                <div class="card mb-3">
-                    <div class="card-header bg-success text-white">
-                        <h6 class="mb-0"><i class="fas fa-chart-bar"></i> Statistics</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between">
-                                <span>Total Invoices:</span>
-                                <strong>{{ total_invoices }}</strong>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between">
-                                <span>Total Billed:</span>
-                                <strong class="text-primary">${{ total_billed|floatformat:2 }}</strong>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between">
-                                <span>Total Paid:</span>
-                                <strong class="text-success">${{ total_paid|floatformat:2 }}</strong>
-                            </div>
-                        </div>
-                        <hr>
-                        <div>
-                            <div class="d-flex justify-content-between">
-                                <span>Outstanding:</span>
-                                <strong class="{% if outstanding > 0 %}text-danger{% else %}text-success{% endif %}">
-                                    ${{ outstanding|floatformat:2 }}
-                                </strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Quick Actions -->
                 <div class="card mb-3">
                     <div class="card-header">
                         <h6 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h6>
                     </div>
                     <div class="card-body">
-                        <a href="{% url 'billing:create_invoice' %}?client={{ client.id }}" class="btn btn-primary btn-sm w-100 mb-2">
-                            <i class="fas fa-plus"></i> Create Invoice
-                        </a>
-                        <a href="mailto:{{ client.email }}" class="btn btn-outline-primary btn-sm w-100 mb-2">
+                        <a href="mailto:{{ employee.email }}" class="btn btn-outline-primary btn-sm w-100 mb-2">
                             <i class="fas fa-envelope"></i> Send Email
                         </a>
-                        <a href="{% url 'billing:edit_client' client.pk %}" class="btn btn-outline-secondary btn-sm w-100 mb-2">
-                            <i class="fas fa-edit"></i> Edit Client
+                        <a href="{% url 'billing:edit_employee' employee.pk %}" class="btn btn-outline-secondary btn-sm w-100 mb-2">
+                            <i class="fas fa-edit"></i> Edit Employee
                         </a>
                         <hr>
-                        <a href="{% url 'billing:delete_client' client.pk %}" class="btn btn-danger btn-sm w-100">
-                            <i class="fas fa-trash"></i> Delete Client
+                        <a href="{% url 'billing:delete_employee' employee.pk %}" class="btn btn-danger btn-sm w-100">
+                            <i class="fas fa-trash"></i> Delete Employee
                         </a>
+                    </div>
+                </div>
+                
+                <!-- User Account Info -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-user"></i> User Account</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-1"><strong>Username:</strong></p>
+                        <p class="mb-2">{{ employee.user.username }}</p>
+                        
+                        <p class="mb-1"><strong>Account Status:</strong></p>
+                        <p class="mb-0">
+                            {% if employee.user.is_active %}
+                            <span class="badge bg-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <!-- Recent Invoices -->
-        {% if invoices %}
-        <div class="card mt-4">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-file-invoice"></i> Recent Invoices</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Invoice #</th>
-                                <th>Date</th>
-                                <th>Due Date</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for invoice in invoices %}
-                            <tr>
-                                <td><strong>{{ invoice.invoice_number }}</strong></td>
-                                <td>{{ invoice.issue_date|date:"M j, Y" }}</td>
-                                <td>{{ invoice.due_date|date:"M j, Y" }}</td>
-                                <td>${{ invoice.total|floatformat:2 }}</td>
-                                <td>
-                                    <span class="badge bg-{% if invoice.status == 'paid' %}success{% elif invoice.status == 'overdue' %}danger{% else %}warning{% endif %}">
-                                        {{ invoice.get_status_display }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <a href="{% url 'billing:invoice_detail' invoice.pk %}" class="btn btn-sm btn-outline-primary">
-                                        View
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                <a href="{% url 'billing:invoice_list' %}?client={{ client.id }}" class="btn btn-link">
-                    View All Invoices →
-                </a>
-            </div>
-        </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

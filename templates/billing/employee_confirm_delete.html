@@ -1,43 +1,52 @@
 {% extends 'billing/base_authenticated.html' %}
 
-{% block title %}Delete Client - Portal{% endblock %}
+{% block title %}Delete Employee - Portal{% endblock %}
 
 {% block portal_content %}
 <div class="row justify-content-center">
-    <div class="col-md-6">
+    <div class="col-md-8">
         <div class="card border-danger">
             <div class="card-header bg-danger text-white">
-                <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h4>
+                <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Confirm Employee Deletion</h4>
             </div>
             <div class="card-body">
                 <div class="alert alert-danger">
-                    <strong>Warning!</strong> This action cannot be undone.
+                    <strong>Warning:</strong> This action cannot be undone!
                 </div>
                 
-                <p>Are you sure you want to delete this client?</p>
+                <p class="mb-3">Are you sure you want to delete the following employee?</p>
                 
-                <div class="bg-light p-3 rounded mb-4">
-                    <h5>{{ client.get_display_name }}</h5>
-                    {% if client.company_name %}<p class="mb-1">{{ client.company_name }}</p>{% endif %}
-                    <p class="mb-1"><i class="fas fa-envelope"></i> {{ client.email }}</p>
-                    {% if client.phone_1 %}<p class="mb-0"><i class="fas fa-phone"></i> {{ client.phone_1 }}</p>{% endif %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5>{{ employee.get_full_name }}</h5>
+                        <p class="mb-1"><strong>Job Title:</strong> {{ employee.job_title|default:"Not specified" }}</p>
+                        <p class="mb-1"><strong>Department:</strong> {{ employee.department|default:"Not specified" }}</p>
+                        <p class="mb-1"><strong>Email:</strong> {{ employee.email }}</p>
+                        <p class="mb-0"><strong>Status:</strong> 
+                            <span class="badge bg-{% if employee.status == 'active' %}success{% elif employee.status == 'on_leave' %}warning{% else %}secondary{% endif %}">
+                                {{ employee.get_status_display }}
+                            </span>
+                        </p>
+                    </div>
                 </div>
                 
-                {% if client.invoices.count > 0 %}
                 <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-circle"></i> 
-                    This client has <strong>{{ client.invoices.count }} invoice(s)</strong>. Deleting this client will also delete all associated invoices and payments.
+                    <h6><i class="fas fa-info-circle"></i> What will happen:</h6>
+                    <ul class="mb-0">
+                        <li>The employee record will be permanently deleted from the database</li>
+                        <li>The linked user account ({{ employee.user.username }}) will also be deleted</li>
+                        <li>The employee will lose all portal access immediately</li>
+                    </ul>
                 </div>
-                {% endif %}
                 
                 <form method="post">
                     {% csrf_token %}
                     <div class="d-flex justify-content-between">
-                        <a href="{% url 'billing:client_detail_view' client.pk %}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Cancel
+                        <a href="{% url 'billing:employee_detail' employee.pk %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
                         </a>
                         <button type="submit" class="btn btn-danger">
-                            <i class="fas fa-trash"></i> Delete Client
+                            <i class="fas fa-trash"></i> Yes, Delete Employee
                         </button>
                     </div>
                 </form>

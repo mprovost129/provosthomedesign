@@ -7,9 +7,9 @@
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2><i class="fas fa-user-plus"></i> {{ title }}</h2>
-            <a href="{% if client %}{% url 'billing:client_detail_view' client.pk %}{% else %}{% url 'billing:client_list' %}{% endif %}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> {% if client %}Back to Client{% else %}Back to List{% endif %}
+            <h2><i class="fas fa-user-tie"></i> {{ title }}</h2>
+            <a href="{% if employee %}{% url 'billing:employee_detail' employee.pk %}{% else %}{% url 'billing:employee_list' %}{% endif %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> {% if employee %}Back to Employee{% else %}Back to List{% endif %}
             </a>
         </div>
 
@@ -18,26 +18,36 @@
                 <form method="post">
                     {% csrf_token %}
                     
+                    <!-- User Account -->
+                    <h5 class="mb-3">User Account</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <label for="id_user" class="form-label">Portal User Account</label>
+                            {{ form.user }}
+                            <div class="form-text">Select the user account for portal login</div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
                     <!-- Basic Information -->
                     <h5 class="mb-3">Basic Information</h5>
                     <div class="row mb-3">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label for="id_first_name" class="form-label">First Name</label>
                             {{ form.first_name }}
-                            {% if form.first_name.errors %}
-                                <div class="text-danger small">{{ form.first_name.errors }}</div>
-                            {% endif %}
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label for="id_last_name" class="form-label">Last Name</label>
                             {{ form.last_name }}
-                            {% if form.last_name.errors %}
-                                <div class="text-danger small">{{ form.last_name.errors }}</div>
-                            {% endif %}
                         </div>
-                        <div class="col-md-4">
-                            <label for="id_company_name" class="form-label">Company Name</label>
-                            {{ form.company_name }}
+                        <div class="col-md-3">
+                            <label for="id_job_title" class="form-label">Job Title</label>
+                            {{ form.job_title }}
+                        </div>
+                        <div class="col-md-3">
+                            <label for="id_department" class="form-label">Department</label>
+                            {{ form.department }}
                         </div>
                     </div>
                     
@@ -46,6 +56,10 @@
                             <label for="id_status" class="form-label">Status</label>
                             {{ form.status }}
                         </div>
+                        <div class="col-md-6">
+                            <label for="id_hire_date" class="form-label">Hire Date</label>
+                            {{ form.hire_date }}
+                        </div>
                     </div>
                     
                     <hr class="my-4">
@@ -53,22 +67,15 @@
                     <!-- Contact Information -->
                     <h5 class="mb-3">Contact Information</h5>
                     <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="id_email" class="form-label">Primary Email</label>
+                        <div class="col-md-12">
+                            <label for="id_email" class="form-label">Work Email</label>
                             {{ form.email }}
-                            {% if form.email.errors %}
-                                <div class="text-danger small">{{ form.email.errors }}</div>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-6">
-                            <label for="id_email_secondary" class="form-label">Secondary Email</label>
-                            {{ form.email_secondary }}
                         </div>
                     </div>
                     
                     <div class="row mb-4">
                         <div class="col-md-5">
-                            <label for="id_phone_1" class="form-label">Phone Number 1</label>
+                            <label for="id_phone_1" class="form-label">Primary Phone</label>
                             {{ form.phone_1 }}
                         </div>
                         <div class="col-md-2">
@@ -76,71 +83,54 @@
                             {{ form.phone_1_type }}
                         </div>
                         <div class="col-md-5">
-                            <label for="id_phone_2" class="form-label">Phone Number 2</label>
+                            <label for="id_phone_2" class="form-label">Secondary Phone</label>
                             {{ form.phone_2 }}
                         </div>
-                        <div class="col-md-2" style="margin-top: -3.5rem;">
-                            <label for="id_phone_2_type" class="form-label">Type</label>
-                            {{ form.phone_2_type }}
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <!-- Emergency Contact -->
+                    <h5 class="mb-3">Emergency Contact</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="id_emergency_contact_name" class="form-label">Name</label>
+                            {{ form.emergency_contact_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_emergency_contact_phone" class="form-label">Phone</label>
+                            {{ form.emergency_contact_phone }}
                         </div>
                     </div>
                     
                     <hr class="my-4">
                     
-                    <!-- Address -->
-                    <h5 class="mb-3">Address</h5>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="id_address_line1" class="form-label">Address Line 1</label>
-                            {{ form.address_line1 }}
-                        </div>
-                        <div class="col-md-6">
-                            <label for="id_address_line2" class="form-label">Address Line 2</label>
-                            {{ form.address_line2 }}
-                        </div>
-                    </div>
-                    
+                    <!-- Portal Permissions -->
+                    <h5 class="mb-3">Portal Permissions</h5>
                     <div class="row mb-4">
                         <div class="col-md-4">
-                            <label for="id_city" class="form-label">City</label>
-                            {{ form.city }}
+                            <div class="form-check">
+                                {{ form.can_create_invoices }}
+                                <label class="form-check-label" for="id_can_create_invoices">
+                                    Can Create Invoices
+                                </label>
+                            </div>
                         </div>
                         <div class="col-md-4">
-                            <label for="id_state" class="form-label">State</label>
-                            {{ form.state }}
+                            <div class="form-check">
+                                {{ form.can_manage_clients }}
+                                <label class="form-check-label" for="id_can_manage_clients">
+                                    Can Manage Clients
+                                </label>
+                            </div>
                         </div>
                         <div class="col-md-4">
-                            <label for="id_zip_code" class="form-label">ZIP Code</label>
-                            {{ form.zip_code }}
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <label for="id_country" class="form-label">Country</label>
-                            {{ form.country }}
-                        </div>
-                    </div>
-                    
-                    <hr class="my-4">
-                    
-                    <!-- Business Information -->
-                    <h5 class="mb-3">Business Information (Optional)</h5>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="id_website" class="form-label">Website</label>
-                            {{ form.website }}
-                        </div>
-                        <div class="col-md-6">
-                            <label for="id_tax_id" class="form-label">Tax ID / EIN</label>
-                            {{ form.tax_id }}
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-4">
-                        <div class="col-md-12">
-                            <label for="id_lead_source" class="form-label">Lead Source</label>
-                            {{ form.lead_source }}
+                            <div class="form-check">
+                                {{ form.can_view_reports }}
+                                <label class="form-check-label" for="id_can_view_reports">
+                                    Can View Reports
+                                </label>
+                            </div>
                         </div>
                     </div>
                     
@@ -157,9 +147,9 @@
                     
                     <!-- Submit Buttons -->
                     <div class="d-flex justify-content-between">
-                        <a href="{% if client %}{% url 'billing:client_detail_view' client.pk %}{% else %}{% url 'billing:client_list' %}{% endif %}" class="btn btn-outline-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Save Client
+                        <a href="{% if employee %}{% url 'billing:employee_detail' employee.pk %}{% else %}{% url 'billing:employee_list' %}{% endif %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Save Employee
                         </button>
                     </div>
                 </form>
