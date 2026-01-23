@@ -35,7 +35,7 @@
 </style>
 {% endblock %}
 
-{% block portal_content %}
+{% block authenticated_content %}
 <div class="mb-4">
     <a href="{% url 'billing:invoice_detail' invoice.pk %}" class="text-decoration-none mb-2 d-inline-block">
         <i class="fas fa-arrow-left"></i> Back to Invoice
@@ -148,7 +148,7 @@
         <p>Please wait, do not close this window.</p>
     </div>
 </div>
-{% endblock portal_content %}
+{% endblock authenticated_content %}
 
 {% block extra_js %}
 <script src="https://js.stripe.com/v3/"></script>

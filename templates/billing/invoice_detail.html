@@ -2,7 +2,7 @@
 
 {% block title %}Invoice {{ invoice.invoice_number }}{% endblock %}
 
-{% block portal_content %}
+{% block authenticated_content %}
 <div class="mb-4">
     <div class="d-flex justify-content-between align-items-center">
         <div>
@@ -214,4 +214,4 @@
         {% endif %}
     </div>
 </div>
-{% endblock portal_content %}
+{% endblock authenticated_content %}
