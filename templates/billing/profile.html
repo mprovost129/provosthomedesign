@@ -58,14 +58,46 @@
                         {% endif %}
                     </div>
                     
-                    <div class="mb-3">
-                        {{ form.phone.label_tag }}
-                        {{ form.phone }}
-                        {% if form.phone.errors %}
-                        <div class="invalid-feedback d-block">
-                            {{ form.phone.errors }}
+                    <div class="row mb-3">
+                        <div class="col-md-5">
+                            {{ form.phone_1.label_tag }}
+                            {{ form.phone_1 }}
+                            {% if form.phone_1.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.phone_1.errors }}
+                            </div>
+                            {% endif %}
                         </div>
-                        {% endif %}
+                        <div class="col-md-3">
+                            {{ form.phone_1_type.label_tag }}
+                            {{ form.phone_1_type }}
+                            {% if form.phone_1_type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.phone_1_type.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-5">
+                            {{ form.phone_2.label_tag }}
+                            {{ form.phone_2 }}
+                            {% if form.phone_2.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.phone_2.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            {{ form.phone_2_type.label_tag }}
+                            {{ form.phone_2_type }}
+                            {% if form.phone_2_type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.phone_2_type.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
                     
                     <h6 class="mt-4 mb-3">Billing Address</h6>
