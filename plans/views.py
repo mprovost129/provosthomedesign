@@ -422,8 +422,9 @@ def favorites_list(request: HttpRequest) -> HttpResponse:
     
     context = {
         "page": {"title": "My Favorites", "description": "Your saved house plans"},
-        "plans": plans_ordered,
+        "saved_plans": plans_ordered,  # Template expects 'saved_plans', not 'plans'
         "saved_count": len(saved_ids),
+        "comparison_plan_ids": session_utils.get_comparison_plan_ids(request),
     }
     return render(request, "plans/favorites.html", context)
 

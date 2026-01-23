@@ -23,7 +23,7 @@
                             {% if plan.main_image %}
                                 <img src="{{ plan.main_image.url }}" 
                                      class="card-img-top" 
-                                     alt="{{ plan.name }}"
+                                     alt="Plan {{ plan.plan_number }}"
                                      style="height: 250px; object-fit: cover;">
                             {% else %}
                                 <div class="bg-light d-flex align-items-center justify-content-center" 
@@ -38,7 +38,7 @@
                                 <h5 class="card-title mb-0">
                                     <a href="{{ plan.get_absolute_url }}" 
                                        class="text-decoration-none text-dark">
-                                        {{ plan.name }}
+                                        Plan {{ plan.plan_number }}
                                     </a>
                                 </h5>
                                 <button class="btn btn-sm btn-outline-danger remove-favorite" 
@@ -55,12 +55,12 @@
                             </p>
                             
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <span class="badge bg-primary">{{ plan.square_feet }} sq ft</span>
+                                <span class="badge bg-primary">{{ plan.square_footage|default:"—" }} sq ft</span>
                                 <span class="badge bg-secondary">{{ plan.bedrooms }} bed | {{ plan.bathrooms }} bath</span>
                             </div>
                             
-                            {% if plan.price %}
-                                <p class="h5 text-primary mb-3">${{ plan.price|floatformat:0 }}</p>
+                            {% if plan.plan_price %}
+                                <p class="h5 text-primary mb-3">${{ plan.plan_price|floatformat:2 }}</p>
                             {% endif %}
                             
                             <div class="btn-group w-100" role="group">
