@@ -37,7 +37,7 @@
                             <th class="text-center">
                                 <a href="{{ plan.get_absolute_url }}" 
                                    class="text-decoration-none">
-                                    {{ plan.name }}
+                                    Plan {{ plan.plan_number }}
                                 </a>
                                 <br>
                                 <button class="btn btn-sm btn-outline-danger mt-2 remove-from-comparison" 
@@ -56,7 +56,7 @@
                             <td class="text-center">
                                 {% if plan.main_image %}
                                     <img src="{{ plan.main_image.url }}" 
-                                         alt="{{ plan.name }}"
+                                         alt="Plan {{ plan.plan_number }}"
                                          class="img-fluid rounded"
                                          style="max-height: 200px; object-fit: cover;">
                                 {% else %}
@@ -82,7 +82,7 @@
                     <tr>
                         <th>Square Feet</th>
                         {% for plan in plans %}
-                            <td class="text-center"><strong>{{ plan.square_feet }}</strong> sq ft</td>
+                            <td class="text-center"><strong>{{ plan.square_footage|default:"—" }}</strong>{% if plan.square_footage %} sq ft{% endif %}</td>
                         {% endfor %}
                     </tr>
                     
@@ -106,7 +106,7 @@
                     <tr>
                         <th>Floors</th>
                         {% for plan in plans %}
-                            <td class="text-center">{{ plan.floors|default:"—" }}</td>
+                            <td class="text-center">{{ plan.stories|default:"—" }}</td>
                         {% endfor %}
                     </tr>
                     
@@ -114,37 +114,26 @@
                     <tr>
                         <th>Width</th>
                         {% for plan in plans %}
-                            <td class="text-center">{{ plan.width_feet|default:"—" }}{% if plan.width_feet %} ft{% endif %}</td>
+                            <td class="text-center">{{ plan.house_width_display|default:"—" }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <th>Depth</th>
                         {% for plan in plans %}
-                            <td class="text-center">{{ plan.depth_feet|default:"—" }}{% if plan.depth_feet %} ft{% endif %}</td>
+                            <td class="text-center">{{ plan.house_depth_display|default:"—" }}</td>
                         {% endfor %}
                     </tr>
-                    <tr>
-                        <th>Height</th>
-                        {% for plan in plans %}
-                            <td class="text-center">{{ plan.height_feet|default:"—" }}{% if plan.height_feet %} ft{% endif %}</td>
-                        {% endfor %}
-                    </tr>
+
                     
                     <!-- Garage -->
                     <tr>
                         <th>Garage</th>
                         {% for plan in plans %}
-                            <td class="text-center">{{ plan.garage_bays|default:"—" }}{% if plan.garage_bays %} car{% if plan.garage_bays > 1 %}s{% endif %}{% endif %}</td>
+                            <td class="text-center">{{ plan.garage_stalls|default:"—" }}{% if plan.garage_stalls %} car{% if plan.garage_stalls > 1 %}s{% endif %}{% endif %}</td>
                         {% endfor %}
                     </tr>
                     
-                    <!-- Foundation -->
-                    <tr>
-                        <th>Foundation</th>
-                        {% for plan in plans %}
-                            <td class="text-center">{{ plan.foundation_type|default:"—" }}</td>
-                        {% endfor %}
-                    </tr>
+
                     
                     <!-- Price -->
                     <tr>
@@ -186,7 +175,7 @@
             {% for plan in plans %}
                 <div class="card mb-4 comparison-card" data-plan-id="{{ plan.id }}">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">{{ plan.name }}</h5>
+                        <h5 class="mb-0">Plan {{ plan.plan_number }}</h5>
                         <button class="btn btn-sm btn-outline-danger remove-from-comparison" 
                                 data-plan-id="{{ plan.id }}">
                             <i class="bi bi-x-circle"></i>
@@ -195,7 +184,7 @@
                     <div class="card-body">
                         {% if plan.main_image %}
                             <img src="{{ plan.main_image.url }}" 
-                                 alt="{{ plan.name }}"
+                                 alt="Plan {{ plan.plan_number }}"
                                  class="img-fluid rounded mb-3">
                         {% endif %}
                         
@@ -208,14 +197,13 @@
                                     {% endfor %}
                                 </td>
                             </tr>
-                            <tr><th>Square Feet:</th><td>{{ plan.square_feet }} sq ft</td></tr>
+                            <tr><th>Square Feet:</th><td>{{ plan.square_footage|default:"—" }}{% if plan.square_footage %} sq ft{% endif %}</td></tr>
                             <tr><th>Bedrooms:</th><td>{{ plan.bedrooms }}</td></tr>
                             <tr><th>Bathrooms:</th><td>{{ plan.bathrooms }}</td></tr>
-                            <tr><th>Floors:</th><td>{{ plan.floors|default:"—" }}</td></tr>
-                            <tr><th>Dimensions:</th><td>{{ plan.width_feet|default:"—" }}' × {{ plan.depth_feet|default:"—" }}' × {{ plan.height_feet|default:"—" }}'</td></tr>
-                            <tr><th>Garage:</th><td>{{ plan.garage_bays|default:"—" }}{% if plan.garage_bays %} car{% if plan.garage_bays > 1 %}s{% endif %}{% endif %}</td></tr>
-                            <tr><th>Foundation:</th><td>{{ plan.foundation_type|default:"—" }}</td></tr>
-                            <tr><th>Price:</th><td>{% if plan.price %}${{ plan.price|floatformat:0 }}{% else %}Call for pricing{% endif %}</td></tr>
+                            <tr><th>Floors:</th><td>{{ plan.stories|default:"—" }}</td></tr>
+                            <tr><th>Dimensions:</th><td>{{ plan.house_width_display|default:"—" }} × {{ plan.house_depth_display|default:"—" }}</td></tr>
+                            <tr><th>Garage:</th><td>{{ plan.garage_stalls|default:"—" }}{% if plan.garage_stalls %} car{% if plan.garage_stalls > 1 %}s{% endif %}{% endif %}</td></tr>
+                            <tr><th>Price:</th><td>{% if plan.plan_price %}${{ plan.plan_price|floatformat:0 }}{% else %}Call for pricing{% endif %}</td></tr>
                         </table>
                         
                         <div class="d-grid gap-2">

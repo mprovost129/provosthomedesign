@@ -93,10 +93,50 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Update navbar counters
+    // Update navbar counters via AJAX instead of page reload
     function updateNavbarCounters() {
-        // Reload page to update counters (simple approach)
-        // For a smoother experience, you could fetch counts via AJAX
-        location.reload();
+        // Update favorites count
+        const favBadge = document.querySelector('.nav-link[href*="favorites"] .badge');
+        if (favBadge) {
+            fetch('/plans/favorites/', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newCount = doc.querySelectorAll('.plan-card').length;
+                favBadge.textContent = newCount;
+                if (newCount > 0) {
+                    favBadge.style.display = 'inline-block';
+                } else {
+                    favBadge.style.display = 'none';
+                }
+            })
+            .catch(error => console.error('Error updating favorites count:', error));
+        }
+        
+        // Update comparison count
+        const compBadge = document.querySelector('.nav-link[href*="compare"] .badge');
+        if (compBadge) {
+            fetch('/plans/compare/', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const countText = doc.querySelector('p.text-muted')?.textContent || '';
+                const match = countText.match(/Comparing (\d+)/);
+                const newCount = match ? parseInt(match[1]) : 0;
+                compBadge.textContent = newCount;
+                if (newCount > 0) {
+                    compBadge.style.display = 'inline-block';
+                } else {
+                    compBadge.style.display = 'none';
+                }
+            })
+            .catch(error => console.error('Error updating comparison count:', error));
+        }
     }
 });
