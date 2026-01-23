@@ -136,7 +136,7 @@ class ClientPasswordResetForm(PasswordResetForm):
 
 class InvoiceForm(forms.ModelForm):
     """Form for creating and editing invoices."""
-    from .models import Invoice, InvoiceTemplate
+    from .models import Invoice, InvoiceTemplate, Project
     
     template = forms.ModelChoiceField(
         queryset=InvoiceTemplate.objects.filter(is_active=True),
@@ -147,9 +147,10 @@ class InvoiceForm(forms.ModelForm):
     
     class Meta:
         model = Invoice
-        fields = ['client', 'issue_date', 'due_date', 'description', 'notes', 'tax_rate']
+        fields = ['client', 'project', 'issue_date', 'due_date', 'description', 'notes', 'tax_rate']
         widgets = {
             'client': forms.Select(attrs={'class': 'form-select'}),
+            'project': forms.Select(attrs={'class': 'form-select'}),
             'issue_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'due_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
@@ -157,6 +158,18 @@ class InvoiceForm(forms.ModelForm):
                                           'placeholder': 'Payment terms, additional notes...'}),
             'tax_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filter projects by selected client if editing
+        if self.instance.pk and self.instance.client:
+            self.fields['project'].queryset = Project.objects.filter(client=self.instance.client)
+        else:
+            self.fields['project'].queryset = Project.objects.all()
+        
+        # Make project field optional with better label
+        self.fields['project'].required = False
+        self.fields['project'].empty_label = "No project (optional)"
 
 
 class InvoiceLineItemForm(forms.ModelForm):

@@ -58,6 +58,13 @@
                         {% if client.get_full_address %}
                         <p class="mb-0 small">{{ client.get_full_address|linebreaks }}</p>
                         {% endif %}
+                        {% if invoice.project %}
+                        <p class="mb-0 mt-2">
+                            <span class="badge bg-info text-dark">
+                                <i class="fas fa-project-diagram"></i> Project: {{ invoice.project.job_number }} - {{ invoice.project.job_name }}
+                            </span>
+                        </p>
+                        {% endif %}
                     </div>
                     <div class="col-6">
                         <table class="table table-sm table-borderless">

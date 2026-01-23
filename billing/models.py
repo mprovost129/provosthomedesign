@@ -206,6 +206,9 @@ class Invoice(models.Model):
     invoice_number = models.CharField(max_length=50, unique=True, editable=False)
     
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='invoices')
+    project = models.ForeignKey('Project', on_delete=models.SET_NULL, null=True, blank=True, 
+                                related_name='invoices', 
+                                help_text="Optional: Link to project")
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     

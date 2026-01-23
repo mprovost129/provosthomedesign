@@ -41,23 +41,31 @@
 
                     <hr class="my-4">
 
-                    <!-- Client and Dates -->
+                    <!-- Client, Project and Dates -->
                     <div class="row mb-3">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label for="id_client" class="form-label">Client *</label>
                             {{ form.client }}
                             {% if form.client.errors %}
                                 <div class="text-danger small">{{ form.client.errors }}</div>
                             {% endif %}
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <label for="id_project" class="form-label">Project</label>
+                            {{ form.project }}
+                            <small class="text-muted">Optional</small>
+                            {% if form.project.errors %}
+                                <div class="text-danger small">{{ form.project.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
                             <label for="id_issue_date" class="form-label">Issue Date *</label>
                             {{ form.issue_date }}
                             {% if form.issue_date.errors %}
                                 <div class="text-danger small">{{ form.issue_date.errors }}</div>
                             {% endif %}
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label for="id_due_date" class="form-label">Due Date *</label>
                             {{ form.due_date }}
                             {% if form.due_date.errors %}
