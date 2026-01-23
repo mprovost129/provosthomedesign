@@ -8,7 +8,7 @@
         <div class="col-md-3 col-lg-2 px-0 portal-sidebar">
             <div class="p-4">
                 <h4 class="mb-4"><i class="fas fa-home"></i> Provost Home Design</h4>
-                <p class="small mb-4">Client Portal</p>
+                <p class="small mb-4">{% if user.is_staff %}Employee Portal{% else %}Client Portal{% endif %}</p>
                 
                 <div class="mb-4">
                     <p class="mb-1"><strong>{{ user.get_full_name|default:user.username }}</strong></p>
@@ -27,6 +27,21 @@
                     <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'billing:profile' %}">
                         <i class="fas fa-user"></i> Profile
                     </a>
+                    
+                    {% if user.is_staff %}
+                    <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
+                    <p class="small text-uppercase text-white-50 mb-2 px-3">Staff Tools</p>
+                    <a class="nav-link {% if 'client' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:client_list' %}">
+                        <i class="fas fa-users"></i> Manage Clients
+                    </a>
+                    <a class="nav-link {% if 'employee' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:employee_list' %}">
+                        <i class="fas fa-user-tie"></i> Manage Employees
+                    </a>
+                    <a class="nav-link {% if 'create_invoice' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:create_invoice' %}">
+                        <i class="fas fa-file-invoice-dollar"></i> Create Invoice
+                    </a>
+                    {% endif %}
+                    
                     <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
                     <a class="nav-link" href="{% url 'pages:home' %}">
                         <i class="fas fa-globe"></i> Main Website
