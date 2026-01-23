@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils import timezone
-from .models import Client, Invoice, InvoiceLineItem, Payment
+from . import models
+from .models import Client, Invoice, InvoiceLineItem, Payment, InvoiceTemplate
 
 
 class InvoiceLineItemInline(admin.TabularInline):
@@ -231,3 +232,29 @@ class PaymentAdmin(admin.ModelAdmin):
             color, obj.status.upper()
         )
     status_badge.short_description = 'Status'
+
+
+@admin.register(models.InvoiceTemplate)
+class InvoiceTemplateAdmin(admin.ModelAdmin):
+    """Admin interface for invoice templates."""
+    list_display = ('name', 'description', 'default_tax_rate', 'days_until_due', 'is_active', 'created_at')
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('name', 'description')
+    readonly_fields = ('created_at', 'updated_at')
+    
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'description', 'is_active')
+        }),
+        ('Default Invoice Settings', {
+            'fields': ('default_description', 'default_notes', 'default_tax_rate', 'days_until_due')
+        }),
+        ('Line Items', {
+            'fields': ('default_line_items',),
+            'description': 'Enter line items as JSON: [{"description": "Service name", "quantity": 1, "unit_price": 100.00}, ...]'
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )

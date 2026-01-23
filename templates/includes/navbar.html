@@ -4,11 +4,11 @@
 <a class="visually-hidden-focusable position-absolute top-0 start-0 m-2 px-3 py-2 bg-light border rounded"
    href="#content">Skip to content</a>
 
-<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom sticky-top shadow-sm phd-nav" aria-label="Primary">
+<nav class="navbar navbar-expand-xl navbar-light bg-light border-bottom sticky-top shadow-sm phd-nav" aria-label="Primary">
   <div class="container-lg">
 
-    {# Mobile brand (< lg) so the logo shows when collapsed #}
-    <a class="navbar-brand d-lg-none p-0" href="{% url 'pages:home' %}" rel="home">
+    {# Mobile brand (< xl) so the logo shows when collapsed #}
+    <a class="navbar-brand d-xl-none p-0" href="{% url 'pages:home' %}" rel="home">
       <img src="{% static 'images/phdlogo.svg' %}" alt="Provost Home Design" height="48" loading="lazy" decoding="async">
     </a>
 
@@ -21,16 +21,16 @@
     <div id="mainNav" class="collapse navbar-collapse">
       <div class="row w-100 align-items-center gx-0">
 
-        {# LEFT: 2/12 at lg+ (desktop logo) #}
-        <div class="col-12 col-lg-2 d-none d-lg-flex justify-content-start">
+        {# LEFT: 2/12 at xl+ (desktop logo) #}
+        <div class="col-12 col-xl-2 d-none d-xl-flex justify-content-start">
           <a class="navbar-brand p-0 m-0" href="{% url 'pages:home' %}" rel="home">
             <img src="{% static 'images/phdlogo.svg' %}" alt="Provost Home Design" height="48" loading="lazy" decoding="async">
           </a>
         </div>
 
-        {# CENTER: 7/12 at lg+ (menu centered) #}
-        <div class="col-12 col-lg-7 d-flex justify-content-center">
-          <ul class="navbar-nav nav-spaced text-uppercase text-center flex-lg-row">
+        {# CENTER: 7/12 at xl+ (menu centered) #}
+        <div class="col-12 col-xl-7 d-flex justify-content-center">
+          <ul class="navbar-nav nav-spaced text-uppercase text-center flex-xl-row">
             <li class="nav-item">
               <a class="nav-link {% if m and m.url_name == 'home' %}active{% endif %}"
                  href="{% url 'pages:home' %}"
@@ -64,11 +64,11 @@
           </ul>
         </div>
 
-        {# RIGHT: 3/12 at lg+ (portal, phone, favorites, comparison, socials) #}
-        <div class="col-12 col-lg-3 d-flex justify-content-lg-end justify-content-center mt-2 mt-lg-0">
+        {# RIGHT: 3/12 at xl+ (portal, phone, favorites, comparison, socials) #}
+        <div class="col-12 col-xl-3 d-flex justify-content-xl-end justify-content-center mt-2 mt-xl-0">
           <ul class="navbar-nav align-items-center gap-2 flex-row">
             {# Client Portal Icon #}
-            <li class="nav-item d-none d-lg-block">
+            <li class="nav-item d-none d-xl-block">
               <a href="{% url 'billing:login' %}"
                  class="nav-link px-2 nav-link--icon {% if m and m.namespace == 'billing' %}active{% endif %}"
                  aria-label="Client Portal"
@@ -78,7 +78,7 @@
             </li>
             
             {# Click-to-Call Phone #}
-            <li class="nav-item d-none d-lg-block">
+            <li class="nav-item d-none d-xl-block">
               <a href="tel:+15082437912"
                  class="nav-link px-2 nav-link--icon"
                  aria-label="Call (508) 243-7912">

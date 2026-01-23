@@ -78,6 +78,15 @@ class Invoice(models.Model):
     # Payment tracking
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
     
+    # Public payment link (no login required)  
+    payment_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, db_index=True)
+    
+    # Email tracking
+    email_sent_date = models.DateTimeField(null=True, blank=True, help_text="When invoice was last emailed")
+    email_sent_count = models.PositiveIntegerField(default=0, help_text="Number of times invoice was sent")
+    reminder_sent_count = models.PositiveIntegerField(default=0, help_text="Number of reminder emails sent")
+    last_reminder_date = models.DateTimeField(null=True, blank=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -135,6 +144,27 @@ class Invoice(models.Model):
     
     def get_absolute_url(self):
         return reverse('billing:invoice_detail', kwargs={'pk': self.pk})
+    
+    def get_public_payment_url(self):
+        """Get the public payment URL using token (no login required)."""
+        return reverse('billing:public_payment', kwargs={'token': self.payment_token})
+    
+    def mark_as_sent(self):
+        """Mark invoice as sent and update tracking."""
+        self.status = 'sent'
+        self.email_sent_date = timezone.now()
+        self.email_sent_count += 1
+        self.save()
+    
+    def mark_as_paid(self, amount=None, payment_date=None):
+        """Mark invoice as paid."""
+        if amount is None:
+            amount = self.get_balance_due()
+        self.amount_paid += amount
+        if self.is_paid():
+            self.status = 'paid'
+            self.paid_date = payment_date or timezone.now().date()
+        self.save()
 
 
 class InvoiceLineItem(models.Model):
@@ -243,3 +273,64 @@ class Payment(models.Model):
                     self.invoice.paid_date = timezone.now().date()
             
             self.invoice.save()
+
+
+class InvoiceTemplate(models.Model):
+    """Predefined invoice templates for quick invoice creation."""
+    name = models.CharField(max_length=100, unique=True, 
+                           help_text="Template name (e.g., 'Custom Home Design')")
+    description = models.TextField(help_text="What this template is for")
+    
+    # Default values for invoices created from this template
+    default_description = models.TextField(blank=True, 
+                                          help_text="Default invoice description")
+    default_notes = models.TextField(blank=True, 
+                                    help_text="Default payment terms/notes")
+    default_tax_rate = models.DecimalField(max_digits=5, decimal_places=2, 
+                                          default=Decimal('0.00'),
+                                          help_text="Default tax rate (e.g., 6.25 for 6.25%)")
+    days_until_due = models.PositiveIntegerField(default=30, 
+                                                 help_text="Default payment terms in days")
+    
+    # Store line items as JSON
+    # Format: [{"description": "...", "quantity": 1, "unit_price": 100.00}, ...]
+    default_line_items = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Default line items for this template"
+    )
+    
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+    
+    def create_invoice_from_template(self, client):
+        """Create a new invoice from this template."""
+        from datetime import timedelta
+        
+        invoice = Invoice.objects.create(
+            client=client,
+            description=self.default_description,
+            notes=self.default_notes,
+            tax_rate=self.default_tax_rate,
+            due_date=timezone.now().date() + timedelta(days=self.days_until_due)
+        )
+        
+        # Create line items
+        for item_data in self.default_line_items:
+            InvoiceLineItem.objects.create(
+                invoice=invoice,
+                description=item_data.get('description', ''),
+                quantity=Decimal(str(item_data.get('quantity', 1))),
+                unit_price=Decimal(str(item_data.get('unit_price', 0)))
+            )
+        
+        # Calculate totals
+        invoice.calculate_totals()
+        return invoice

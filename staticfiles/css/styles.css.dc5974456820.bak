@@ -1,38 +1,13 @@
 /* 2 / 8 / 2 is handled by the grid above; this is spacing + hover */
 .phd-nav .nav-spaced{ gap:1rem; }
-/* Responsive spacing - tighter on smaller desktops, more generous on larger screens */
-@media (min-width:1200px){ .phd-nav .nav-spaced{ gap:0.75rem; } }
-@media (min-width:1300px){ .phd-nav .nav-spaced{ gap:1.25rem; } }
-@media (min-width:1400px){ .phd-nav .nav-spaced{ gap:1.75rem; } }
-@media (min-width:1600px){ .phd-nav .nav-spaced{ gap:2.25rem; } }
+@media (min-width:992px){ .phd-nav .nav-spaced{ gap:1.75rem; } }
+@media (min-width:1200px){ .phd-nav .nav-spaced{ gap:2.25rem; } }
 
 /* pill hover + underline */
 .phd-nav .navbar-nav .nav-link{
   font-weight:600; letter-spacing:.02em;
   padding:.55rem .9rem; border-radius:999px; position:relative;
   transition:background-color .2s,color .2s,box-shadow .2s;
-  /* Responsive text sizing */
-  font-size:0.875rem;
-}
-/* Compact sizing on medium desktops (like Chromebooks) */
-@media (min-width:1200px) and (max-width:1399px){
-  .phd-nav .navbar-nav .nav-link{
-    padding:.5rem .75rem;
-    font-size:0.875rem;
-    letter-spacing:.01em;
-  }
-}
-/* Normal sizing on larger screens */
-@media (min-width:1400px){
-  .phd-nav .navbar-nav .nav-link{
-    padding:.55rem .9rem;
-    font-size:0.95rem;
-  }
-}
-@media (min-width:1600px){
-  .phd-nav .navbar-nav .nav-link{
-    font-size:1rem;
-  }
 }
 .phd-nav .navbar-nav .nav-link:hover,
 .phd-nav .navbar-nav .nav-link:focus-visible{
@@ -104,52 +79,4 @@
   width: 1px !important;
   height: 1px !important;
   overflow: hidden !important;
-}
-/* ===== Favorite/Compare Feature Animations ===== */
-
-/* Button hover effects */
-.toggle-favorite, .toggle-comparison {
-  transition: all 0.3s ease;
-}
-
-.toggle-favorite:hover,
-.toggle-comparison:hover {
-  transform: scale(1.05);
-}
-
-/* Heartbeat animation for filled hearts */
-.toggle-favorite .bi-heart-fill {
-  color: #dc3545;
-  animation: heartbeat 0.3s ease;
-}
-
-@keyframes heartbeat {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
-}
-
-/* Badge fade-in animation */
-.navbar .badge {
-  animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.8); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-/* Card hover effects */
-.card.shadow-sm {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.card.shadow-sm:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15) !important;
-}
-
-/* Smooth transitions for all icons */
-.bi {
-  transition: all 0.2s ease;
 }
