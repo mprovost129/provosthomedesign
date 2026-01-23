@@ -873,7 +873,7 @@ class Proposal(models.Model):
         from datetime import datetime
         
         now = datetime.now()
-        date_part = now.strftime('%y%m')  # YYMM
+        date_part = now.strftime('%y%m')  # YYMM (e.g., "2601" for January 2026)
         prefix = f'PROP-{date_part}'
         
         # Find last proposal with this prefix
@@ -882,9 +882,15 @@ class Proposal(models.Model):
         ).order_by('-proposal_number').first()
         
         if last_proposal:
-            # Extract number part and increment
-            last_number = int(last_proposal.proposal_number.split('-')[-1])
-            next_number = last_number + 1
+            # Extract only the last 2 digits after PROP-YYMM
+            # Format is PROP-YYMM##, so we want characters after position 9
+            try:
+                number_part = last_proposal.proposal_number[9:]  # Get everything after "PROP-YYMM"
+                last_number = int(number_part)
+                next_number = last_number + 1
+            except (ValueError, IndexError):
+                # If parsing fails, start from 1
+                next_number = 1
         else:
             next_number = 1
         
