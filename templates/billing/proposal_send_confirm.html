@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Send Proposal - {{ proposal.proposal_number }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-send"></i> Send Proposal to Client</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Confirm Email Notification</strong>
+                        <p class="mb-0 mt-2">This will send an email notification to the client with a link to view and respond to the proposal.</p>
+                    </div>
+
+                    <h5>Proposal Details</h5>
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="text-muted" style="width: 150px;">Proposal Number:</td>
+                            <td><strong>{{ proposal.proposal_number }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Title:</td>
+                            <td>{{ proposal.title }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Client:</td>
+                            <td>{{ proposal.client.get_full_name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Email Address:</td>
+                            <td><strong>{{ proposal.client.email }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Total Amount:</td>
+                            <td><strong>${{ proposal.total|floatformat:2 }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Valid Until:</td>
+                            <td>{{ proposal.valid_until|date:"F j, Y" }}</td>
+                        </tr>
+                    </table>
+
+                    <hr>
+
+                    <h5>Email Preview</h5>
+                    <div class="bg-light p-3 rounded">
+                        <p><strong>Subject:</strong> Proposal {{ proposal.proposal_number }} - {{ proposal.title }}</p>
+                        <p><strong>To:</strong> {{ proposal.client.email }}</p>
+                        <p><strong>From:</strong> {{ request.user.email|default:"no-reply@provosthomedesign.com" }}</p>
+                        <p class="mb-0"><strong>Content:</strong> Professional proposal notification with accept/decline buttons</p>
+                    </div>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'billing:proposal_detail' proposal.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send"></i> Send Email to Client
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

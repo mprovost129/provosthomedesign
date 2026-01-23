@@ -1,0 +1,34 @@
+Hi {{ client.first_name }},
+
+You have received a new proposal from {{ company_name }}.
+
+Proposal Details:
+-----------------
+Proposal Number: {{ proposal.proposal_number }}
+Title: {{ proposal.title }}
+Issue Date: {{ proposal.issue_date|date:"F j, Y" }}
+Valid Until: {{ proposal.valid_until|date:"F j, Y" }}
+Total Amount: ${{ proposal.total|floatformat:2 }}
+{% if proposal.deposit_amount > 0 %}Deposit Required: ${{ proposal.deposit_amount|floatformat:2 }} ({{ proposal.deposit_percentage }}%){% endif %}
+
+View and Respond:
+-----------------
+Please review the full proposal and respond by clicking the link below:
+
+{{ proposal_url }}
+
+You can accept or decline the proposal directly from your client portal.
+
+Questions?
+----------
+If you have any questions about this proposal, please contact us:
+Email: {{ contact_email }}
+Phone: {{ contact_phone }}
+
+Thank you for considering {{ company_name }} for your project!
+
+Best regards,
+{{ company_name }}
+
+---
+This is an automated message. Please do not reply directly to this email.

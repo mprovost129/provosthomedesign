@@ -1,0 +1,353 @@
+{% extends 'base.html' %}
+
+{% block title %}Proposal {{ proposal.proposal_number }} - Portal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'billing:dashboard' %}">Dashboard</a></li>
+            {% if request.user.is_staff %}
+            <li class="breadcrumb-item"><a href="{% url 'billing:proposal_list' %}">Proposals</a></li>
+            {% endif %}
+            <li class="breadcrumb-item active" aria-current="page">{{ proposal.proposal_number }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header with Status -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="bi bi-file-earmark-text"></i> Proposal {{ proposal.proposal_number }}</h2>
+            <p class="text-muted mb-0">{{ proposal.title }}</p>
+        </div>
+        <div>
+            {% if proposal.status == 'draft' %}
+            <span class="badge bg-secondary fs-6">Draft</span>
+            {% elif proposal.status == 'sent' %}
+            <span class="badge bg-info fs-6">Sent</span>
+            {% elif proposal.status == 'viewed' %}
+            <span class="badge bg-primary fs-6">Viewed</span>
+            {% elif proposal.status == 'accepted' %}
+            <span class="badge bg-success fs-6">✓ Accepted</span>
+            {% elif proposal.status == 'rejected' %}
+            <span class="badge bg-danger fs-6">✗ Rejected</span>
+            {% elif proposal.status == 'expired' %}
+            <span class="badge bg-warning fs-6">Expired</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Action Buttons (Staff Only) -->
+    {% if request.user.is_staff %}
+    <div class="mb-4">
+        <div class="btn-group" role="group">
+            {% if proposal.status not in 'accepted,rejected' %}
+            <a href="{% url 'billing:edit_proposal' proposal.pk %}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i> Edit
+            </a>
+            {% endif %}
+            
+            {% if proposal.status == 'draft' %}
+            <a href="{% url 'billing:send_proposal' proposal.pk %}" class="btn btn-primary">
+                <i class="bi bi-send"></i> Send to Client
+            </a>
+            {% elif proposal.status in 'sent,viewed' %}
+            <a href="{% url 'billing:send_proposal' proposal.pk %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-repeat"></i> Resend
+            </a>
+            {% endif %}
+            
+            <a href="{% url 'billing:duplicate_proposal' proposal.pk %}" class="btn btn-outline-secondary">
+                <i class="bi bi-files"></i> Duplicate
+            </a>
+            
+            {% if proposal.status not in 'accepted,rejected' %}
+            <a href="{% url 'billing:delete_proposal' proposal.pk %}" class="btn btn-outline-danger">
+                <i class="bi bi-trash"></i> Delete
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Client Action Buttons -->
+    {% if not request.user.is_staff and proposal.status in 'sent,viewed' and not proposal.is_expired %}
+    <div class="alert alert-info mb-4">
+        <h5><i class="bi bi-info-circle"></i> Please Review and Respond</h5>
+        <p class="mb-3">Please review this proposal and let us know your decision.</p>
+        <div class="d-flex gap-2">
+            <a href="{% url 'billing:accept_proposal' proposal.pk %}" class="btn btn-success">
+                <i class="bi bi-check-circle"></i> Accept Proposal
+            </a>
+            <a href="{% url 'billing:reject_proposal' proposal.pk %}" class="btn btn-outline-danger">
+                <i class="bi bi-x-circle"></i> Decline Proposal
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Expired Warning -->
+    {% if proposal.is_expired and proposal.status not in 'accepted,rejected' %}
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i> <strong>This proposal has expired</strong> ({{ proposal.valid_until|date:"F j, Y" }})
+    </div>
+    {% endif %}
+
+    <!-- Status Timeline (Staff Only) -->
+    {% if request.user.is_staff %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-clock-history"></i> Status Timeline</h5>
+        </div>
+        <div class="card-body">
+            <div class="timeline">
+                <div class="timeline-item">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                    <strong>Created:</strong> {{ proposal.created_at|date:"M d, Y g:i A" }}
+                    {% if proposal.created_by %} by {{ proposal.created_by.get_full_name }}{% endif %}
+                </div>
+                
+                {% if proposal.sent_date %}
+                <div class="timeline-item">
+                    <i class="bi bi-send-fill text-info"></i>
+                    <strong>Sent:</strong> {{ proposal.sent_date|date:"M d, Y g:i A" }}
+                </div>
+                {% endif %}
+                
+                {% if proposal.viewed_date %}
+                <div class="timeline-item">
+                    <i class="bi bi-eye-fill text-primary"></i>
+                    <strong>First Viewed:</strong> {{ proposal.viewed_date|date:"M d, Y g:i A" }}
+                </div>
+                {% endif %}
+                
+                {% if proposal.accepted_date %}
+                <div class="timeline-item">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                    <strong>Accepted:</strong> {{ proposal.accepted_date|date:"M d, Y g:i A" }}
+                    {% if proposal.accepted_by %} by {{ proposal.accepted_by }}{% endif %}
+                    {% if proposal.acceptance_ip %}<br><small class="text-muted">IP: {{ proposal.acceptance_ip }}</small>{% endif %}
+                </div>
+                {% endif %}
+                
+                {% if proposal.rejected_date %}
+                <div class="timeline-item">
+                    <i class="bi bi-x-circle-fill text-danger"></i>
+                    <strong>Rejected:</strong> {{ proposal.rejected_date|date:"M d, Y g:i A" }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Proposal Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Proposal Details</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td class="text-muted" style="width: 150px;">Proposal Number:</td>
+                            <td><strong>{{ proposal.proposal_number }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Title:</td>
+                            <td>{{ proposal.title }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Client:</td>
+                            <td>
+                                <a href="{% url 'billing:client_detail' proposal.client.pk %}">{{ proposal.client.get_full_name }}</a>
+                                {% if proposal.client.company_name %}<br><small class="text-muted">{{ proposal.client.company_name }}</small>{% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Issue Date:</td>
+                            <td>{{ proposal.issue_date|date:"F j, Y" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Valid Until:</td>
+                            <td>
+                                {{ proposal.valid_until|date:"F j, Y" }}
+                                {% if not proposal.is_expired and proposal.status not in 'accepted,rejected' %}
+                                <span class="badge bg-warning text-dark">{{ proposal.days_until_expiration }} days remaining</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+
+                    {% if proposal.description %}
+                    <hr>
+                    <h6>Description</h6>
+                    <p style="white-space: pre-wrap;">{{ proposal.description }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Line Items -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Line Items</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th class="text-end">Quantity</th>
+                                    <th class="text-end">Rate</th>
+                                    <th class="text-end">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in proposal.line_items.all %}
+                                <tr>
+                                    <td>{{ item.description }}</td>
+                                    <td class="text-end">{{ item.quantity }}</td>
+                                    <td class="text-end">${{ item.rate|floatformat:2 }}</td>
+                                    <td class="text-end"><strong>${{ item.amount|floatformat:2 }}</strong></td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">No line items</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-light">
+                                    <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
+                                    <td class="text-end"><strong>${{ proposal.subtotal|floatformat:2 }}</strong></td>
+                                </tr>
+                                {% if proposal.tax_rate > 0 %}
+                                <tr class="table-light">
+                                    <td colspan="3" class="text-end">Tax ({{ proposal.tax_rate }}%):</td>
+                                    <td class="text-end">${{ proposal.tax_amount|floatformat:2 }}</td>
+                                </tr>
+                                {% endif %}
+                                <tr class="table-primary">
+                                    <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                                    <td class="text-end"><h5 class="mb-0">${{ proposal.total|floatformat:2 }}</h5></td>
+                                </tr>
+                                {% if proposal.deposit_amount > 0 %}
+                                <tr class="table-info">
+                                    <td colspan="3" class="text-end"><strong>Deposit Required ({{ proposal.deposit_percentage }}%):</strong></td>
+                                    <td class="text-end"><strong>${{ proposal.deposit_amount|floatformat:2 }}</strong></td>
+                                </tr>
+                                {% endif %}
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Terms & Conditions -->
+            {% if proposal.terms_and_conditions %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Terms & Conditions</h5>
+                </div>
+                <div class="card-body">
+                    <p style="white-space: pre-wrap;">{{ proposal.terms_and_conditions }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Quick Actions for Client -->
+            {% if not request.user.is_staff and proposal.status in 'sent,viewed' and not proposal.is_expired %}
+            <div class="card mb-4 border-success">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="bi bi-hand-thumbs-up"></i> Ready to Accept?</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">Accepting this proposal will:</p>
+                    <ul class="small">
+                        <li>Confirm your agreement to the terms</li>
+                        <li>Allow us to begin work on your project</li>
+                        <li>Generate an invoice for the deposit (if required)</li>
+                    </ul>
+                    <a href="{% url 'billing:accept_proposal' proposal.pk %}" class="btn btn-success w-100">
+                        <i class="bi bi-check-circle"></i> Accept Now
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Summary Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Summary</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Status:</span>
+                        <strong>{{ proposal.get_status_display }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Total:</span>
+                        <strong>${{ proposal.total|floatformat:2 }}</strong>
+                    </div>
+                    {% if proposal.deposit_amount > 0 %}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Deposit:</span>
+                        <strong>${{ proposal.deposit_amount|floatformat:2 }}</strong>
+                    </div>
+                    {% endif %}
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Expires:</span>
+                        <span>{{ proposal.valid_until|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Internal Notes (Staff Only) -->
+            {% if request.user.is_staff and proposal.notes %}
+            <div class="card mb-4 border-warning">
+                <div class="card-header bg-warning">
+                    <h6 class="mb-0"><i class="bi bi-sticky"></i> Internal Notes</h6>
+                </div>
+                <div class="card-body">
+                    <p style="white-space: pre-wrap;" class="mb-0">{{ proposal.notes }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+.timeline-item {
+    position: relative;
+    padding-bottom: 20px;
+    padding-left: 10px;
+}
+.timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: -22px;
+    top: 24px;
+    height: calc(100% - 4px);
+    width: 2px;
+    background-color: #dee2e6;
+}
+.timeline-item i {
+    position: absolute;
+    left: -30px;
+    top: 2px;
+    font-size: 20px;
+}
+</style>
+{% endblock %}

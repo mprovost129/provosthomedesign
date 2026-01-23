@@ -53,6 +53,7 @@ urlpatterns = [
     path('project/<int:pk>/edit/', views.edit_project, name='edit_project'),
     path('project/<int:pk>/delete/', views.delete_project, name='delete_project'),
     
+    
     # Proposal Management (Staff Only)
     path('proposals/', views.proposal_list, name='proposal_list'),
     path('proposal/new/', views.create_proposal, name='create_proposal'),
@@ -60,6 +61,7 @@ urlpatterns = [
     path('proposal/<int:pk>/edit/', views.edit_proposal, name='edit_proposal'),
     path('proposal/<int:pk>/duplicate/', views.duplicate_proposal, name='duplicate_proposal'),
     path('proposal/<int:pk>/delete/', views.delete_proposal, name='delete_proposal'),
+    path('proposal/<int:pk>/send/', views.send_proposal, name='send_proposal'),
     path('proposal/<int:pk>/accept/', views.accept_proposal, name='accept_proposal'),
     path('proposal/<int:pk>/reject/', views.reject_proposal, name='reject_proposal'),
     

@@ -1360,3 +1360,68 @@ def reject_proposal(request, pk):
     return render(request, 'billing/proposal_reject.html', context)
 
 
+@staff_member_required(login_url='/portal/login/')
+def send_proposal(request, pk):
+    """Send proposal email to client (staff only)."""
+    from .models import Proposal
+    from django.core.mail import EmailMultiAlternatives
+    from django.urls import reverse
+    
+    proposal = get_object_or_404(Proposal, pk=pk)
+    
+    if proposal.status == 'accepted':
+        messages.warning(request, 'This proposal has already been accepted.')
+        return redirect('billing:proposal_detail', pk=proposal.pk)
+    
+    if proposal.status == 'rejected':
+        messages.warning(request, 'This proposal has already been rejected.')
+        return redirect('billing:proposal_detail', pk=proposal.pk)
+    
+    if request.method == 'POST':
+        try:
+            # Build proposal URL
+            proposal_url = request.build_absolute_uri(
+                reverse('billing:proposal_detail', kwargs={'pk': proposal.pk})
+            )
+            
+            # Prepare email context
+            email_context = {
+                'proposal': proposal,
+                'client': proposal.client,
+                'proposal_url': proposal_url,
+                'company_name': settings.COMPANY_NAME,
+                'contact_email': settings.CONTACT_EMAIL,
+                'contact_phone': settings.CONTACT_PHONE,
+            }
+            
+            # Render email templates
+            subject = f'Proposal {proposal.proposal_number} - {proposal.title}'
+            text_content = render_to_string('billing/emails/proposal_notification.txt', email_context)
+            html_content = render_to_string('billing/emails/proposal_notification.html', email_context)
+            
+            # Create email
+            email = EmailMultiAlternatives(
+                subject=subject,
+                body=text_content,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[proposal.client.email],
+                reply_to=[settings.CONTACT_EMAIL]
+            )
+            email.attach_alternative(html_content, "text/html")
+            email.send()
+            
+            # Update proposal status
+            proposal.status = 'sent'
+            proposal.sent_date = timezone.now()
+            proposal.save()
+            
+            messages.success(request, f'Proposal {proposal.proposal_number} sent to {proposal.client.email}')
+            return redirect('billing:proposal_detail', pk=proposal.pk)
+            
+        except Exception as e:
+            logger.error(f"Failed to send proposal {proposal.proposal_number}: {str(e)}")
+            messages.error(request, f'Failed to send proposal email: {str(e)}')
+            return redirect('billing:proposal_detail', pk=proposal.pk)
+    
+    context = {'proposal': proposal}
+    return render(request, 'billing/proposal_send_confirm.html', context)
