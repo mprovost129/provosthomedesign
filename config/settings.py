@@ -201,10 +201,11 @@ USE_X_FORWARDED_HOST = True
 GA_MEASUREMENT_ID = config("GA_MEASUREMENT_ID", "")
 
 # --- Google reCAPTCHA ---
-RECAPTCHA_PUBLIC_KEY = config("RECAPTCHA_PUBLIC_KEY", default="")
-RECAPTCHA_PRIVATE_KEY = config("RECAPTCHA_PRIVATE_KEY", default="")
+# Support both v2 and v3 key naming conventions
+RECAPTCHA_PUBLIC_KEY = config("RECAPTCHA_PUBLIC_KEY", default=config("RECAPTCHA_SITE_KEY", default=""))
+RECAPTCHA_PRIVATE_KEY = config("RECAPTCHA_PRIVATE_KEY", default=config("RECAPTCHA_SECRET_KEY", default=""))
 # Use reCAPTCHA v2 Checkbox
-RECAPTCHA_REQUIRED_SCORE = 0.85  # Not used for v2, but kept for future v3 upgrade
+RECAPTCHA_REQUIRED_SCORE = config("RECAPTCHA_MIN_SCORE", cast=float, default=0.85)
 SILENCED_SYSTEM_CHECKS = ['django_recaptcha.recaptcha_test_key_error']  # Only for dev
 
 # --- Spam / form protection ---
