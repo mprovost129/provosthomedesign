@@ -567,6 +567,9 @@ class ProposalForm(forms.ModelForm):
         # Filter projects by selected client if editing
         if self.instance and self.instance.client_id:
             self.fields['project'].queryset = Project.objects.filter(client=self.instance.client)
+        else:
+            # When creating a new proposal, don't show any projects until client is selected
+            self.fields['project'].queryset = Project.objects.none()
 
 
 class ProposalLineItemForm(forms.ModelForm):
