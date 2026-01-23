@@ -19,6 +19,7 @@ from decimal import Decimal
 import json
 import logging
 
+from core.utils import verify_recaptcha_v3
 from .models import Client, Employee, Invoice, Payment, InvoiceTemplate, InvoiceLineItem, ProposalLineItem, Project, Proposal
 from .forms import (
     ClientRegistrationForm, 
@@ -154,18 +155,29 @@ def client_register(request):
         return redirect('billing:dashboard')
     
     if request.method == 'POST':
-        form = ClientRegistrationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, 'Registration successful! Welcome to your client portal.')
-            return redirect('billing:dashboard')
+        # reCAPTCHA v3 verification (enforced if secret is configured)
+        recaptcha_ok, score = verify_recaptcha_v3(request)
+        if not recaptcha_ok:
+            messages.error(request, 'Security verification failed. Please try again.')
+            form = ClientRegistrationForm(request.POST)
         else:
-            messages.error(request, 'Please correct the errors below.')
+            form = ClientRegistrationForm(request.POST)
+            if form.is_valid():
+                user = form.save()
+                login(request, user)
+                messages.success(request, 'Registration successful! Welcome to your client portal.')
+                return redirect('billing:dashboard')
+            else:
+                messages.error(request, 'Please correct the errors below.')
     else:
         form = ClientRegistrationForm()
     
-    return render(request, 'billing/register.html', {'form': form})
+    # Pass reCAPTCHA site key to template
+    recaptcha_site_key = (getattr(settings, 'RECAPTCHA_SITE_KEY', '') or '').strip()
+    return render(request, 'billing/register.html', {
+        'form': form,
+        'recaptcha_site_key': recaptcha_site_key
+    })
 
 
 def password_reset_request(request):

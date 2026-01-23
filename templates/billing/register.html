@@ -33,6 +33,10 @@
                 <form method="post">
                     {% csrf_token %}
                     
+                    {% if recaptcha_site_key %}
+                    <input type="hidden" name="recaptcha_token" id="register_recaptcha_token" value="">
+                    {% endif %}
+                    
                     <div class="row mb-3">
                         <div class="col-md-6">
                             {{ form.first_name.label_tag }}
@@ -138,12 +142,35 @@
         </div>
     </div>
 </div>
-{% endblock portal_content %}
-    </div>
-    
+
     <div class="text-center mt-5">
         <a href="{% url 'pages:home' %}" class="text-decoration-none">
             <i class="fas fa-arrow-left"></i> Back to Main Website
         </a>
     </div>
 </div>
+
+{% endblock portal_content %}
+
+{% block extra_js %}
+{% if recaptcha_site_key %}
+  <script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.querySelector('form');
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          grecaptcha.ready(function () {
+            grecaptcha.execute("{{ recaptcha_site_key }}", {action: "register"}).then(function (token) {
+              var el = document.getElementById("register_recaptcha_token");
+              if (el) el.value = token;
+              form.submit();
+            });
+          });
+        });
+      }
+    });
+  </script>
+{% endif %}
+{% endblock %}
