@@ -46,18 +46,22 @@
                             {% for client in clients %}
                             <tr>
                                 <td>
-                                    <strong>{{ client.user.get_full_name|default:client.user.username }}</strong>
+                                    <strong>{{ client.get_full_name }}</strong>
                                     {% if client.company_name %}
                                     <br>
                                     <small class="text-muted">{{ client.company_name }}</small>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <a href="mailto:{{ client.user.email }}">{{ client.user.email }}</a>
+                                    {% if client.email %}
+                                    <a href="mailto:{{ client.email }}">{{ client.email }}</a>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
                                 </td>
                                 <td>
-                                    {% if client.phone %}
-                                    <a href="tel:{{ client.phone }}">{{ client.phone }}</a>
+                                    {% if client.phone_1 %}
+                                    <a href="tel:{{ client.phone_1 }}">{{ client.phone_1 }}</a>
                                     {% else %}
                                     <span class="text-muted">-</span>
                                     {% endif %}
