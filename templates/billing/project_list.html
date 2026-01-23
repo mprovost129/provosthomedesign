@@ -1,0 +1,160 @@
+{% extends 'billing/base_authenticated.html' %}
+{% load static %}
+
+{% block title %}Projects{% endblock %}
+
+{% block authenticated_content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'billing:dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Projects</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-project-diagram me-2"></i>Projects</h2>
+        <a href="{% url 'billing:create_project' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> New Project
+        </a>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ search_query }}" placeholder="Job number, name, or client...">
+                </div>
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">All Statuses</option>
+                        {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="billing_type" class="form-label">Billing Type</label>
+                    <select class="form-select" id="billing_type" name="billing_type">
+                        <option value="">All Types</option>
+                        {% for value, label in billing_type_choices %}
+                        <option value="{{ value }}" {% if billing_type_filter == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search me-1"></i> Filter
+                    </button>
+                    <a href="{% url 'billing:project_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i> Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Projects Table -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            {% if projects %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Job #</th>
+                            <th>Project Name</th>
+                            <th>Client</th>
+                            <th>Status</th>
+                            <th>Billing</th>
+                            <th>Estimated</th>
+                            <th>Due Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in projects %}
+                        <tr>
+                            <td>
+                                <strong>{{ project.job_number }}</strong>
+                            </td>
+                            <td>
+                                <a href="{% url 'billing:project_detail' project.pk %}" class="text-decoration-none">
+                                    {{ project.job_name }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if project.client.company_name %}
+                                    {{ project.client.company_name }}
+                                {% else %}
+                                    {{ project.client.get_full_name }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if project.status == 'quoted' %}
+                                    <span class="badge bg-secondary">Quoted</span>
+                                {% elif project.status == 'approved' %}
+                                    <span class="badge bg-info">Approved</span>
+                                {% elif project.status == 'in_progress' %}
+                                    <span class="badge bg-primary">In Progress</span>
+                                {% elif project.status == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                {% elif project.status == 'on_hold' %}
+                                    <span class="badge bg-warning">On Hold</span>
+                                {% elif project.status == 'cancelled' %}
+                                    <span class="badge bg-danger">Cancelled</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if project.billing_type == 'flat_rate' %}
+                                    <i class="fas fa-dollar-sign me-1"></i> Flat Rate
+                                {% else %}
+                                    <i class="fas fa-clock me-1"></i> Hourly
+                                {% endif %}
+                            </td>
+                            <td>
+                                ${{ project.estimated_total|floatformat:2 }}
+                            </td>
+                            <td>
+                                {% if project.due_date %}
+                                    {{ project.due_date|date:"M d, Y" }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'billing:project_detail' project.pk %}" 
+                                   class="btn btn-sm btn-outline-primary" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'billing:edit_project' project.pk %}" 
+                                   class="btn btn-sm btn-outline-secondary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-project-diagram fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No projects found.</p>
+                <a href="{% url 'billing:create_project' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i> Create Your First Project
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

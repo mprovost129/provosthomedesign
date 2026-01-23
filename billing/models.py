@@ -605,3 +605,159 @@ class SystemSettings(models.Model):
     
     def __str__(self):
         return f"System Settings - {self.company_name}"
+
+
+class Project(models.Model):
+    """Project management with job tracking and billing."""
+    
+    STATUS_CHOICES = [
+        ('quoted', 'Quoted'),
+        ('approved', 'Approved'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('on_hold', 'On Hold'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    BILLING_TYPE_CHOICES = [
+        ('flat_rate', 'Flat Rate'),
+        ('hourly', 'Hourly Rate'),
+    ]
+    
+    # Job identification
+    job_number = models.CharField(
+        max_length=10, 
+        unique=True, 
+        help_text="Job number in YYMMDD format (e.g., 260101 for Jan 1, 2026)"
+    )
+    job_name = models.CharField(max_length=200, help_text="Project name or title")
+    description = models.TextField(blank=True, help_text="Detailed project description")
+    
+    # Client relationship
+    client = models.ForeignKey(
+        Client, 
+        on_delete=models.PROTECT, 
+        related_name='projects',
+        help_text="Client for this project"
+    )
+    
+    # Project timeline
+    start_date = models.DateField(null=True, blank=True, help_text="Project start date")
+    due_date = models.DateField(null=True, blank=True, help_text="Project due date")
+    completed_date = models.DateField(null=True, blank=True, help_text="Actual completion date")
+    
+    # Billing information
+    billing_type = models.CharField(
+        max_length=20, 
+        choices=BILLING_TYPE_CHOICES, 
+        default='flat_rate',
+        help_text="How this project is billed"
+    )
+    fixed_price = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Fixed price for flat rate projects"
+    )
+    hourly_rate = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Hourly rate for hourly projects"
+    )
+    estimated_hours = models.DecimalField(
+        max_digits=8, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Estimated hours for completion"
+    )
+    actual_hours = models.DecimalField(
+        max_digits=8, 
+        decimal_places=2, 
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Actual hours worked"
+    )
+    
+    # Project status
+    status = models.CharField(
+        max_length=20, 
+        choices=STATUS_CHOICES, 
+        default='quoted',
+        help_text="Current project status"
+    )
+    
+    # Notes and metadata
+    notes = models.TextField(blank=True, help_text="Internal notes about the project")
+    created_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        related_name='projects_created',
+        help_text="Staff member who created this project"
+    )
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-job_number']  # Most recent jobs first
+        indexes = [
+            models.Index(fields=['job_number']),
+            models.Index(fields=['client', 'status']),
+            models.Index(fields=['-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.job_number} - {self.job_name}"
+    
+    def get_absolute_url(self):
+        return reverse('billing:project_detail', kwargs={'pk': self.pk})
+    
+    @property
+    def estimated_total(self):
+        """Calculate estimated project total based on billing type"""
+        if self.billing_type == 'flat_rate' and self.fixed_price:
+            return self.fixed_price
+        elif self.billing_type == 'hourly' and self.hourly_rate and self.estimated_hours:
+            return self.hourly_rate * self.estimated_hours
+        return Decimal('0.00')
+    
+    @property
+    def actual_total(self):
+        """Calculate actual project total based on billing type"""
+        if self.billing_type == 'flat_rate' and self.fixed_price:
+            return self.fixed_price
+        elif self.billing_type == 'hourly' and self.hourly_rate:
+            return self.hourly_rate * self.actual_hours
+        return Decimal('0.00')
+    
+    @property
+    def is_overbudget(self):
+        """Check if project is over estimated hours/budget"""
+        if self.billing_type == 'hourly' and self.estimated_hours:
+            return self.actual_hours > self.estimated_hours
+        return False
+    
+    @property
+    def hours_remaining(self):
+        """Calculate remaining hours for hourly projects"""
+        if self.estimated_hours:
+            return max(Decimal('0.00'), self.estimated_hours - self.actual_hours)
+        return None
+    
+    @property
+    def progress_percentage(self):
+        """Calculate project progress based on hours"""
+        if self.estimated_hours and self.estimated_hours > 0:
+            progress = (self.actual_hours / self.estimated_hours) * 100
+            return min(100, round(progress, 1))
+        return 0
+

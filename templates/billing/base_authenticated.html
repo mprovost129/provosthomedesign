@@ -31,6 +31,9 @@
                     {% if user.is_staff %}
                     <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
                     <p class="small text-uppercase text-white-50 mb-2 px-3">Staff Tools</p>
+                    <a class="nav-link {% if 'project' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:project_list' %}">
+                        <i class="fas fa-project-diagram"></i> Projects
+                    </a>
                     <a class="nav-link {% if 'client' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:client_list' %}">
                         <i class="fas fa-users"></i> Manage Clients
                     </a>

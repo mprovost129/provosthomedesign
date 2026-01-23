@@ -369,3 +369,37 @@ class InvoiceTemplateAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+
+@admin.register(models.Project)
+class ProjectAdmin(admin.ModelAdmin):
+    """Admin interface for Project management."""
+    list_display = ('job_number', 'job_name', 'client', 'status', 'billing_type', 
+                    'estimated_total', 'due_date', 'created_at')
+    list_filter = ('status', 'billing_type', 'created_at')
+    search_fields = ('job_number', 'job_name', 'client__first_name', 'client__last_name', 
+                     'client__company_name', 'description')
+    readonly_fields = ('created_at', 'updated_at', 'created_by')
+    date_hierarchy = 'created_at'
+    ordering = ['-job_number']
+    
+    fieldsets = (
+        ('Project Identification', {
+            'fields': ('job_number', 'job_name', 'description', 'client')
+        }),
+        ('Timeline', {
+            'fields': ('start_date', 'due_date', 'completed_date', 'status')
+        }),
+        ('Billing Information', {
+            'fields': ('billing_type', 'fixed_price', 'hourly_rate', 'estimated_hours', 'actual_hours')
+        }),
+        ('Notes & Metadata', {
+            'fields': ('notes', 'created_by', 'created_at', 'updated_at')
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # If creating new project
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+

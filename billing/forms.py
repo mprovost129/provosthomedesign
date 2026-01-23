@@ -1,7 +1,9 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordResetForm
 from django.contrib.auth.models import User
-from .models import Client, Employee, Invoice, InvoiceTemplate, InvoiceLineItem, SystemSettings
+from .models import Client, Employee, Invoice, InvoiceTemplate, InvoiceLineItem, SystemSettings, Project
+import re
+from datetime import datetime
 
 
 class ClientRegistrationForm(UserCreationForm):
@@ -345,5 +347,126 @@ class SystemSettingsForm(forms.ModelForm):
             'instagram_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://instagram.com/yourcompany'}),
             'linkedin_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://linkedin.com/company/yourcompany'}),
         }
+
+
+class ProjectForm(forms.ModelForm):
+    """Form for creating and editing projects."""
+    
+    class Meta:
+        model = Project
+        fields = [
+            'job_number', 'job_name', 'description', 'client',
+            'start_date', 'due_date', 'billing_type', 
+            'fixed_price', 'hourly_rate', 'estimated_hours',
+            'status', 'notes'
+        ]
+        widgets = {
+            'job_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'YYMMDD (e.g., 260101)',
+                'pattern': '[0-9]{6}',
+                'maxlength': '6'
+            }),
+            'job_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Project name or title'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Detailed project description...'
+            }),
+            'client': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'start_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'due_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'billing_type': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'id_billing_type'
+            }),
+            'fixed_price': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': '0.00'
+            }),
+            'hourly_rate': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0',
+                'placeholder': '0.00'
+            }),
+            'estimated_hours': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.25',
+                'min': '0',
+                'placeholder': '0.00'
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Internal notes...'
+            }),
+        }
+    
+    def clean_job_number(self):
+        """Validate job number format (YYMMDD)"""
+        job_number = self.cleaned_data.get('job_number')
+        
+        if not job_number:
+            raise forms.ValidationError('Job number is required.')
+        
+        # Check format
+        if not re.match(r'^\d{6}$', job_number):
+            raise forms.ValidationError('Job number must be 6 digits in YYMMDD format (e.g., 260101).')
+        
+        # Validate as a real date
+        try:
+            year = int('20' + job_number[0:2])
+            month = int(job_number[2:4])
+            day = int(job_number[4:6])
+            datetime(year, month, day)
+        except ValueError:
+            raise forms.ValidationError('Job number must be a valid date in YYMMDD format.')
+        
+        # Check uniqueness (excluding current instance if editing)
+        qs = Project.objects.filter(job_number=job_number)
+        if self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise forms.ValidationError('A project with this job number already exists.')
+        
+        return job_number
+    
+    def clean(self):
+        """Validate billing-specific fields"""
+        cleaned_data = super().clean()
+        billing_type = cleaned_data.get('billing_type')
+        fixed_price = cleaned_data.get('fixed_price')
+        hourly_rate = cleaned_data.get('hourly_rate')
+        estimated_hours = cleaned_data.get('estimated_hours')
+        
+        if billing_type == 'flat_rate':
+            if not fixed_price:
+                self.add_error('fixed_price', 'Fixed price is required for flat rate projects.')
+        
+        elif billing_type == 'hourly':
+            if not hourly_rate:
+                self.add_error('hourly_rate', 'Hourly rate is required for hourly projects.')
+            if not estimated_hours:
+                self.add_error('estimated_hours', 'Estimated hours are required for hourly projects.')
+        
+        return cleaned_data
+
 
 

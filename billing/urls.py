@@ -45,6 +45,13 @@ urlpatterns = [
     path('employee/<int:pk>/edit/', views.edit_employee, name='edit_employee'),
     path('employee/<int:pk>/delete/', views.delete_employee, name='delete_employee'),
     
+    # Project Management (Staff Only)
+    path('projects/', views.project_list, name='project_list'),
+    path('project/new/', views.create_project, name='create_project'),
+    path('project/<int:pk>/', views.project_detail, name='project_detail'),
+    path('project/<int:pk>/edit/', views.edit_project, name='edit_project'),
+    path('project/<int:pk>/delete/', views.delete_project, name='delete_project'),
+    
     # System Settings (Staff Only)
     path('settings/', views.system_settings, name='system_settings'),
 ]

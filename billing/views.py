@@ -783,3 +783,122 @@ def system_settings(request):
     return render(request, 'billing/system_settings.html', context)
 
 
+# ==================== PROJECT MANAGEMENT VIEWS ====================
+
+@staff_member_required(login_url='/portal/login/')
+def project_list(request):
+    """List all projects with filtering and search (staff only)."""
+    from .models import Project
+    
+    projects = Project.objects.select_related('client', 'created_by').all()
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        projects = projects.filter(
+            models.Q(job_number__icontains=search_query) |
+            models.Q(job_name__icontains=search_query) |
+            models.Q(client__first_name__icontains=search_query) |
+            models.Q(client__last_name__icontains=search_query) |
+            models.Q(client__company_name__icontains=search_query)
+        )
+    
+    # Status filter
+    status_filter = request.GET.get('status', '')
+    if status_filter:
+        projects = projects.filter(status=status_filter)
+    
+    # Billing type filter
+    billing_type_filter = request.GET.get('billing_type', '')
+    if billing_type_filter:
+        projects = projects.filter(billing_type=billing_type_filter)
+    
+    # Client filter
+    client_filter = request.GET.get('client', '')
+    if client_filter:
+        projects = projects.filter(client_id=client_filter)
+    
+    context = {
+        'projects': projects,
+        'search_query': search_query,
+        'status_filter': status_filter,
+        'billing_type_filter': billing_type_filter,
+        'client_filter': client_filter,
+        'status_choices': Project.STATUS_CHOICES,
+        'billing_type_choices': Project.BILLING_TYPE_CHOICES,
+    }
+    return render(request, 'billing/project_list.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def project_detail(request, pk):
+    """View detailed information about a project (staff only)."""
+    from .models import Project
+    project = get_object_or_404(Project, pk=pk)
+    
+    context = {'project': project}
+    return render(request, 'billing/project_detail.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def create_project(request):
+    """Create a new project (staff only)."""
+    from .forms import ProjectForm
+    
+    if request.method == 'POST':
+        form = ProjectForm(request.POST)
+        if form.is_valid():
+            project = form.save(commit=False)
+            project.created_by = request.user
+            project.save()
+            messages.success(request, f'Project {project.job_number} created successfully!')
+            return redirect('billing:project_detail', pk=project.pk)
+    else:
+        form = ProjectForm()
+    
+    context = {'form': form, 'title': 'New Project'}
+    return render(request, 'billing/project_form.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def edit_project(request, pk):
+    """Edit an existing project (staff only)."""
+    from .models import Project
+    from .forms import ProjectForm
+    
+    project = get_object_or_404(Project, pk=pk)
+    
+    if request.method == 'POST':
+        form = ProjectForm(request.POST, instance=project)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Project {project.job_number} updated successfully!')
+            return redirect('billing:project_detail', pk=project.pk)
+    else:
+        form = ProjectForm(instance=project)
+    
+    context = {
+        'form': form,
+        'project': project,
+        'title': f'Edit Project {project.job_number}'
+    }
+    return render(request, 'billing/project_form.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def delete_project(request, pk):
+    """Delete a project (staff only)."""
+    from .models import Project
+    project = get_object_or_404(Project, pk=pk)
+    
+    if request.method == 'POST':
+        job_number = project.job_number
+        project.delete()
+        messages.success(request, f'Project {job_number} deleted successfully!')
+        return redirect('billing:project_list')
+    
+    context = {'project': project}
+    return render(request, 'billing/project_confirm_delete.html', context)
+
+
+

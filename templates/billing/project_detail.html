@@ -1,0 +1,255 @@
+{% extends 'billing/base_authenticated.html' %}
+{% load static %}
+
+{% block title %}Project {{ project.job_number }}{% endblock %}
+
+{% block authenticated_content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'billing:dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'billing:project_list' %}">Projects</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ project.job_number }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-project-diagram me-2"></i>{{ project.job_name }}</h2>
+        <div>
+            <a href="{% url 'billing:edit_project' project.pk %}" class="btn btn-outline-primary">
+                <i class="fas fa-edit me-1"></i> Edit
+            </a>
+            <a href="{% url 'billing:delete_project' project.pk %}" class="btn btn-outline-danger">
+                <i class="fas fa-trash me-1"></i> Delete
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column -->
+        <div class="col-lg-8">
+            <!-- Project Information -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Project Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Job Number:</strong>
+                            <p class="mb-0">{{ project.job_number }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Status:</strong>
+                            <p class="mb-0">
+                                {% if project.status == 'quoted' %}
+                                    <span class="badge bg-secondary">Quoted</span>
+                                {% elif project.status == 'approved' %}
+                                    <span class="badge bg-info">Approved</span>
+                                {% elif project.status == 'in_progress' %}
+                                    <span class="badge bg-primary">In Progress</span>
+                                {% elif project.status == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                {% elif project.status == 'on_hold' %}
+                                    <span class="badge bg-warning">On Hold</span>
+                                {% elif project.status == 'cancelled' %}
+                                    <span class="badge bg-danger">Cancelled</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <strong>Client:</strong>
+                            <p class="mb-0">
+                                <a href="{% url 'billing:client_detail_view' project.client.pk %}">
+                                    {% if project.client.company_name %}
+                                        {{ project.client.company_name }}
+                                    {% else %}
+                                        {{ project.client.get_full_name }}
+                                    {% endif %}
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Start Date:</strong>
+                            <p class="mb-0">
+                                {% if project.start_date %}
+                                    {{ project.start_date|date:"M d, Y" }}
+                                {% else %}
+                                    <span class="text-muted">Not set</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Due Date:</strong>
+                            <p class="mb-0">
+                                {% if project.due_date %}
+                                    {{ project.due_date|date:"M d, Y" }}
+                                {% else %}
+                                    <span class="text-muted">Not set</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    {% if project.description %}
+                    <div class="row">
+                        <div class="col-12">
+                            <strong>Description:</strong>
+                            <p class="mb-0">{{ project.description|linebreaks }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Billing Information -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Billing Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Billing Type:</strong>
+                            <p class="mb-0">
+                                {% if project.billing_type == 'flat_rate' %}
+                                    <i class="fas fa-dollar-sign me-1"></i> Flat Rate
+                                {% else %}
+                                    <i class="fas fa-clock me-1"></i> Hourly Rate
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Estimated Total:</strong>
+                            <p class="mb-0 fs-5 text-primary">${{ project.estimated_total|floatformat:2 }}</p>
+                        </div>
+                    </div>
+
+                    {% if project.billing_type == 'flat_rate' %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Fixed Price:</strong>
+                            <p class="mb-0">${{ project.fixed_price|floatformat:2 }}</p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Hourly Rate:</strong>
+                            <p class="mb-0">${{ project.hourly_rate|floatformat:2 }}/hr</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Estimated Hours:</strong>
+                            <p class="mb-0">{{ project.estimated_hours|floatformat:2 }} hrs</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Actual Hours:</strong>
+                            <p class="mb-0">
+                                {{ project.actual_hours|floatformat:2 }} hrs
+                                {% if project.is_overbudget %}
+                                    <span class="badge bg-warning ms-2">Over Budget</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Hours Remaining:</strong>
+                            <p class="mb-0">
+                                {% if project.hours_remaining is not None %}
+                                    {{ project.hours_remaining|floatformat:2 }} hrs
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <strong>Progress:</strong>
+                            <div class="progress mt-2" style="height: 25px;">
+                                <div class="progress-bar {% if project.progress_percentage > 100 %}bg-danger{% elif project.progress_percentage > 90 %}bg-warning{% else %}bg-primary{% endif %}" 
+                                     role="progressbar" 
+                                     style="width: {% if project.progress_percentage > 100 %}100{% else %}{{ project.progress_percentage }}{% endif %}%;" 
+                                     aria-valuenow="{{ project.progress_percentage }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    {{ project.progress_percentage }}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Notes -->
+            {% if project.notes %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Notes</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ project.notes|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-lg-4">
+            <!-- Project Summary -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted">Actual Total</small>
+                        <h3 class="mb-0">${{ project.actual_total|floatformat:2 }}</h3>
+                    </div>
+                    {% if project.billing_type == 'hourly' %}
+                    <div class="mb-3">
+                        <small class="text-muted">Hours Logged</small>
+                        <h4 class="mb-0">{{ project.actual_hours|floatformat:2 }}</h4>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Metadata -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Metadata</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <strong>Created:</strong><br>
+                        {{ project.created_at|date:"M d, Y g:i A" }}
+                    </p>
+                    {% if project.created_by %}
+                    <p class="mb-2">
+                        <strong>Created By:</strong><br>
+                        {{ project.created_by.get_full_name|default:project.created_by.username }}
+                    </p>
+                    {% endif %}
+                    <p class="mb-0">
+                        <strong>Last Updated:</strong><br>
+                        {{ project.updated_at|date:"M d, Y g:i A" }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
