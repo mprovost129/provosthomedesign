@@ -163,7 +163,7 @@
                         <tr>
                             <td class="text-muted">Client:</td>
                             <td>
-                                <a href="{% url 'billing:client_detail' proposal.client.pk %}">{{ proposal.client.get_full_name }}</a>
+                                <a href="{% url 'billing:client_detail_view' proposal.client.pk %}">{{ proposal.client.get_full_name }}</a>
                                 {% if proposal.client.company_name %}<br><small class="text-muted">{{ proposal.client.company_name }}</small>{% endif %}
                             </td>
                         </tr>
