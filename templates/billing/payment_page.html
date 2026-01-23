@@ -1,6 +1,6 @@
 {% extends 'billing/base_authenticated.html' %}
 
-{% block title %}Pay Invoice {{ invoice.invoice_number }}{% endblock authenticated_content %}
+{% block title %}Pay Invoice {{ invoice.invoice_number }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -33,9 +33,9 @@
         color: white;
     }
 </style>
-{% endblock authenticated_content %}
+{% endblock %}
 
-{% block authenticated_content %}
+{% block portal_content %}
 <div class="mb-4">
     <a href="{% url 'billing:invoice_detail' invoice.pk %}" class="text-decoration-none mb-2 d-inline-block">
         <i class="fas fa-arrow-left"></i> Back to Invoice
