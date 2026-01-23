@@ -17,29 +17,42 @@ class InvoiceLineItemInline(admin.TabularInline):
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
-    """Admin interface for Client management."""
-    list_display = ('user_display', 'company_name', 'phone', 'city', 'state', 
-                    'total_invoices', 'total_outstanding', 'created_at')
-    list_filter = ('state', 'created_at')
-    search_fields = ('user__username', 'user__email', 'user__first_name', 'user__last_name',
-                     'company_name', 'phone')
+    """Comprehensive CRM-style admin interface for Client management."""
+    list_display = ('display_name', 'company_name', 'email', 'phone_1_display', 
+                    'city', 'state', 'status', 'total_invoices', 'total_outstanding', 'created_at')
+    list_filter = ('status', 'state', 'phone_1_type', 'lead_source', 'created_at')
+    search_fields = ('first_name', 'last_name', 'email', 'email_secondary', 'company_name', 
+                     'phone_1', 'phone_2', 'user__username')
+    list_per_page = 50
+    date_hierarchy = 'created_at'
     
     fieldsets = (
-        ('User Account', {
-            'fields': ('user',)
+        ('Basic Information', {
+            'fields': ('first_name', 'last_name', 'company_name', 'status')
         }),
-        ('Company Information', {
-            'fields': ('company_name', 'phone')
+        ('Primary Contact', {
+            'fields': (('email', 'email_secondary'),
+                      ('phone_1', 'phone_1_type'),
+                      ('phone_2', 'phone_2_type'))
         }),
         ('Address', {
-            'fields': ('address_line1', 'address_line2', 'city', 'state', 'zip_code')
+            'fields': ('address_line1', 'address_line2', 
+                      ('city', 'state', 'zip_code'), 'country')
+        }),
+        ('Business Information', {
+            'fields': ('website', 'tax_id'),
+            'classes': ('collapse',)
+        }),
+        ('CRM Information', {
+            'fields': ('lead_source', 'notes')
+        }),
+        ('Portal Access', {
+            'fields': ('user',),
+            'classes': ('collapse',),
+            'description': 'Optional: Link to a user account for portal login'
         }),
         ('Payment Integration', {
             'fields': ('stripe_customer_id',),
-            'classes': ('collapse',)
-        }),
-        ('Internal Notes', {
-            'fields': ('notes',),
             'classes': ('collapse',)
         }),
         ('Timestamps', {
@@ -50,16 +63,28 @@ class ClientAdmin(admin.ModelAdmin):
     
     readonly_fields = ('created_at', 'updated_at')
     
-    def user_display(self, obj):
-        return obj.user.get_full_name() or obj.user.username
-    user_display.short_description = 'Client Name'
+    def display_name(self, obj):
+        """Display client name with link."""
+        name = obj.get_full_name()
+        if obj.user:
+            return format_html('{} <span style="color: #27ae60;">●</span>', name)
+        return name
+    display_name.short_description = 'Client Name'
+    display_name.admin_order_field = 'last_name'
+    
+    def phone_1_display(self, obj):
+        """Display primary phone with type."""
+        if obj.phone_1:
+            return f"{obj.phone_1} ({obj.get_phone_1_type_display()})"
+        return '-'
+    phone_1_display.short_description = 'Primary Phone'
     
     def total_invoices(self, obj):
         count = obj.invoices.count()
         if count:
             url = reverse('admin:billing_invoice_changelist') + f'?client__id__exact={obj.id}'
-            return format_html('<a href="{}">{} invoices</a>', url, count)
-        return '0 invoices'
+            return format_html('<a href="{}">{} invoice{}</a>', url, count, 's' if count != 1 else '')
+        return '0'
     total_invoices.short_description = 'Invoices'
     
     def total_outstanding(self, obj):
@@ -68,8 +93,8 @@ class ClientAdmin(admin.ModelAdmin):
         for inv in obj.invoices.exclude(status='paid'):
             outstanding += inv.get_balance_due()
         if outstanding > 0:
-            return format_html('<span style="color: #d63031;">${:,.2f}</span>', outstanding)
-        return '$0.00'
+            return format_html('<span style="color: #d63031; font-weight: bold;">${:,.2f}</span>', outstanding)
+        return format_html('<span style="color: #27ae60;">$0.00</span>')
     total_outstanding.short_description = 'Outstanding'
 
 

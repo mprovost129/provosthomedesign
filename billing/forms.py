@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordResetForm
 from django.contrib.auth.models import User
-from .models import Client
+from .models import Client, Invoice, InvoiceTemplate, InvoiceLineItem
 
 
 class ClientRegistrationForm(UserCreationForm):
@@ -79,23 +79,21 @@ class ClientLoginForm(AuthenticationForm):
 
 class ClientProfileForm(forms.ModelForm):
     """Form for clients to update their profile."""
-    first_name = forms.CharField(max_length=30, widget=forms.TextInput(attrs={
-        'class': 'form-control'
-    }))
-    last_name = forms.CharField(max_length=30, widget=forms.TextInput(attrs={
-        'class': 'form-control'
-    }))
-    email = forms.EmailField(widget=forms.EmailInput(attrs={
-        'class': 'form-control'
-    }))
     
     class Meta:
         model = Client
-        fields = ('company_name', 'phone', 'address_line1', 'address_line2', 
-                  'city', 'state', 'zip_code')
+        fields = ('first_name', 'last_name', 'email', 'company_name', 
+                  'phone_1', 'phone_1_type', 'phone_2', 'phone_2_type',
+                  'address_line1', 'address_line2', 'city', 'state', 'zip_code')
         widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'company_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone_1': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone_1_type': forms.Select(attrs={'class': 'form-select'}),
+            'phone_2': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone_2_type': forms.Select(attrs={'class': 'form-select'}),
             'address_line1': forms.TextInput(attrs={'class': 'form-control'}),
             'address_line2': forms.TextInput(attrs={'class': 'form-control'}),
             'city': forms.TextInput(attrs={'class': 'form-control'}),
@@ -106,13 +104,15 @@ class ClientProfileForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        if self.user:
+        # Sync with user account if exists
+        if self.user and self.instance and not self.instance.pk:
             self.fields['first_name'].initial = self.user.first_name
             self.fields['last_name'].initial = self.user.last_name
             self.fields['email'].initial = self.user.email
     
     def save(self, commit=True):
         client = super().save(commit=False)
+        # Sync user account fields if user exists
         if self.user:
             self.user.first_name = self.cleaned_data['first_name']
             self.user.last_name = self.cleaned_data['last_name']
@@ -126,7 +126,7 @@ class ClientProfileForm(forms.ModelForm):
 
 class ClientPasswordResetForm(PasswordResetForm):
     """Password reset form with Bootstrap styling."""
-    email = forms.EmailInput(widget=forms.EmailInput(attrs={
+    email = forms.EmailField(widget=forms.EmailInput(attrs={
         'class': 'form-control',
         'placeholder': 'Email address'
     }))
@@ -174,7 +174,6 @@ class InvoiceLineItemForm(forms.ModelForm):
 
 # Formset for managing multiple line items
 from django.forms import inlineformset_factory
-from .models import Invoice, InvoiceLineItem
 
 InvoiceLineItemFormSet = inlineformset_factory(
     Invoice,
@@ -185,3 +184,61 @@ InvoiceLineItemFormSet = inlineformset_factory(
     min_num=1,
     validate_min=True
 )
+
+
+class ClientForm(forms.ModelForm):
+    """Comprehensive form for adding/editing clients in the CRM."""
+    
+    class Meta:
+        model = Client
+        fields = [
+            'first_name', 'last_name', 'company_name', 'status',
+            'email', 'email_secondary', 
+            'phone_1', 'phone_1_type', 'phone_2', 'phone_2_type',
+            'address_line1', 'address_line2', 'city', 'state', 'zip_code', 'country',
+            'website', 'tax_id', 'lead_source', 'notes'
+        ]
+        widgets = {
+            # Basic Information
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First name'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last name'}),
+            'company_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Company or business name (optional)'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            
+            # Contact Information
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'primary@email.com'}),
+            'email_secondary': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'secondary@email.com (optional)'}),
+            'phone_1': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '(555) 123-4567'}),
+            'phone_1_type': forms.Select(attrs={'class': 'form-select'}),
+            'phone_2': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '(555) 987-6543 (optional)'}),
+            'phone_2_type': forms.Select(attrs={'class': 'form-select'}),
+            
+            # Address
+            'address_line1': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Street address'}),
+            'address_line2': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Apt, suite, unit, etc. (optional)'}),
+            'city': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'City'}),
+            'state': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'State/Province'}),
+            'zip_code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ZIP/Postal code'}),
+            'country': forms.TextInput(attrs={'class': 'form-control'}),
+            
+            # Business Information
+            'website': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://www.example.com'}),
+            'tax_id': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Tax ID or EIN (optional)'}),
+            
+            # CRM
+            'lead_source': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'How did they find you?'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Internal notes about this client...'}),
+        }
+    
+    def clean_email(self):
+        """Ensure email is unique."""
+        email = self.cleaned_data.get('email')
+        if email:
+            # Check if email already exists (excluding current instance if editing)
+            qs = Client.objects.filter(email=email)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise forms.ValidationError('A client with this email already exists.')
+        return email
+

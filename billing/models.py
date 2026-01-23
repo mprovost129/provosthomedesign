@@ -7,32 +7,93 @@ import uuid
 
 
 class Client(models.Model):
-    """Extended user profile for clients with billing information."""
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='client_profile')
-    company_name = models.CharField(max_length=200, blank=True)
-    phone = models.CharField(max_length=20, blank=True)
-    address_line1 = models.CharField(max_length=255, blank=True)
-    address_line2 = models.CharField(max_length=255, blank=True)
+    """Comprehensive customer database for CRM functionality."""
+    
+    PHONE_TYPE_CHOICES = [
+        ('mobile', 'Mobile'),
+        ('work', 'Work'),
+        ('home', 'Home'),
+        ('fax', 'Fax'),
+    ]
+    
+    # User account (optional - clients can exist without portal access)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='client_profile', 
+                                null=True, blank=True, 
+                                help_text="Portal login account (optional)")
+    
+    # Basic Information
+    first_name = models.CharField(max_length=100, blank=True, help_text="Client's first name")
+    last_name = models.CharField(max_length=100, blank=True, help_text="Client's last name")
+    company_name = models.CharField(max_length=200, blank=True, help_text="Company or business name")
+    
+    # Contact Information - Primary
+    email = models.EmailField(blank=True, help_text="Primary email address")
+    phone_1 = models.CharField(max_length=20, blank=True, verbose_name="Phone Number 1")
+    phone_1_type = models.CharField(max_length=10, choices=PHONE_TYPE_CHOICES, default='mobile',
+                                    verbose_name="Phone 1 Type")
+    
+    # Contact Information - Secondary
+    phone_2 = models.CharField(max_length=20, blank=True, verbose_name="Phone Number 2")
+    phone_2_type = models.CharField(max_length=10, choices=PHONE_TYPE_CHOICES, default='work',
+                                    blank=True, verbose_name="Phone 2 Type")
+    email_secondary = models.EmailField(blank=True, verbose_name="Secondary Email",
+                                       help_text="Alternative email address")
+    
+    # Address Information
+    address_line1 = models.CharField(max_length=255, blank=True, verbose_name="Address Line 1")
+    address_line2 = models.CharField(max_length=255, blank=True, verbose_name="Address Line 2",
+                                    help_text="Apt, suite, unit, building, floor, etc.")
     city = models.CharField(max_length=100, blank=True)
     state = models.CharField(max_length=50, blank=True)
-    zip_code = models.CharField(max_length=20, blank=True)
+    zip_code = models.CharField(max_length=20, blank=True, verbose_name="ZIP Code")
+    country = models.CharField(max_length=100, blank=True, default='United States')
+    
+    # Business Information
+    website = models.URLField(blank=True, help_text="Company website")
+    tax_id = models.CharField(max_length=50, blank=True, verbose_name="Tax ID/EIN",
+                             help_text="Business tax ID or EIN")
     
     # Stripe customer ID for payment processing
     stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
     
-    # Client notes (admin only)
+    # CRM Fields
+    lead_source = models.CharField(max_length=100, blank=True, 
+                                   help_text="How did they find you? (referral, website, etc.)")
+    status = models.CharField(max_length=20, default='active', choices=[
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+        ('lead', 'Lead'),
+        ('archived', 'Archived'),
+    ])
     notes = models.TextField(blank=True, help_text="Internal notes about this client")
     
+    # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['user__last_name', 'user__first_name']
+        ordering = ['last_name', 'first_name']
+        indexes = [
+            models.Index(fields=['last_name', 'first_name']),
+            models.Index(fields=['email']),
+            models.Index(fields=['company_name']),
+        ]
     
     def __str__(self):
+        name = f"{self.first_name} {self.last_name}".strip()
         if self.company_name:
-            return f"{self.company_name} ({self.user.get_full_name() or self.user.username})"
-        return self.user.get_full_name() or self.user.username
+            return f"{self.company_name} ({name})" if name else self.company_name
+        return name or self.email
+    
+    def get_display_name(self):
+        """Return the best display name for the client."""
+        if self.company_name:
+            return self.company_name
+        return f"{self.first_name} {self.last_name}".strip() or self.email
+    
+    def get_full_name(self):
+        """Return full name."""
+        return f"{self.first_name} {self.last_name}".strip()
     
     def get_full_address(self):
         """Return formatted address."""
