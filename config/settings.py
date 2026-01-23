@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
     "django.contrib.humanize", "django.contrib.sitemaps",
+    "django_recaptcha",
     "core", "pages", "plans", "billing"
 ]
 
@@ -198,6 +199,13 @@ X_FRAME_OPTIONS = "DENY"
 USE_X_FORWARDED_HOST = True
 
 GA_MEASUREMENT_ID = config("GA_MEASUREMENT_ID", "")
+
+# --- Google reCAPTCHA ---
+RECAPTCHA_PUBLIC_KEY = config("RECAPTCHA_PUBLIC_KEY", default="")
+RECAPTCHA_PRIVATE_KEY = config("RECAPTCHA_PRIVATE_KEY", default="")
+# Use reCAPTCHA v2 Checkbox
+RECAPTCHA_REQUIRED_SCORE = 0.85  # Not used for v2, but kept for future v3 upgrade
+SILENCED_SYSTEM_CHECKS = ['django_recaptcha.recaptcha_test_key_error']  # Only for dev
 
 # --- Spam / form protection ---
 RECAPTCHA_SITE_KEY = config("RECAPTCHA_SITE_KEY", "")

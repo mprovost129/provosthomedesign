@@ -2,6 +2,8 @@ from __future__ import annotations
 from django import forms
 from django.core.validators import RegexValidator
 from django.forms.widgets import ClearableFileInput
+from django_recaptcha.fields import ReCaptchaField
+from django_recaptcha.widgets import ReCaptchaV2Checkbox
 
 # dynamic styles from admin
 from plans.models import HouseStyle
@@ -293,6 +295,7 @@ class ContactForm(forms.Form):
     subject = forms.CharField(max_length=120, required=False)
     message = forms.CharField(widget=forms.Textarea(attrs={"rows": 5}))
     website = forms.CharField(required=False, widget=forms.HiddenInput)
+    captcha = ReCaptchaField(widget=ReCaptchaV2Checkbox())
     terms_accepted = forms.BooleanField(
         required=True,
         label="I agree to the Terms & Conditions",
