@@ -327,6 +327,11 @@ def invoice_detail(request, pk):
     
     invoice = get_object_or_404(Invoice, pk=pk, client=client)
     
+    # Track when client views invoice (only track first view)
+    if not request.user.is_staff and invoice.status == 'sent' and not invoice.viewed_date:
+        invoice.viewed_date = timezone.now()
+        invoice.save()
+    
     # Get payments for this invoice
     payments = invoice.payments.filter(status='succeeded').order_by('-processed_at')
     
@@ -680,15 +685,79 @@ def client_list(request):
 @staff_member_required(login_url='/portal/login/')
 def send_invoice_email(request, pk):
     """Send invoice via email (staff only)."""
+    from django.core.mail import EmailMultiAlternatives
+    from django.urls import reverse
+    
     invoice = get_object_or_404(Invoice, pk=pk)
     
-    if request.method == 'POST':
-        # TODO: Implement email sending in next phase
-        invoice.mark_as_sent()
-        messages.success(request, f'Invoice {invoice.invoice_number} sent to {invoice.client.email}')
+    if invoice.status == 'paid':
+        messages.warning(request, 'This invoice has already been paid.')
         return redirect('billing:invoice_detail', pk=invoice.pk)
     
-    context = {'invoice': invoice}
+    if invoice.status == 'cancelled':
+        messages.warning(request, 'This invoice has been cancelled.')
+        return redirect('billing:invoice_detail', pk=invoice.pk)
+    
+    if request.method == 'POST':
+        try:
+            # Build invoice and payment URLs
+            invoice_url = request.build_absolute_uri(
+                reverse('billing:invoice_detail', kwargs={'pk': invoice.pk})
+            )
+            payment_url = request.build_absolute_uri(
+                invoice.get_public_payment_url()
+            )
+            
+            # Prepare email context
+            email_context = {
+                'invoice': invoice,
+                'client': invoice.client,
+                'invoice_url': invoice_url,
+                'payment_url': payment_url,
+                'company_name': settings.COMPANY_NAME,
+                'contact_email': settings.CONTACT_EMAIL,
+                'contact_phone': settings.CONTACT_PHONE,
+                'is_reminder': invoice.email_sent_count > 0,
+            }
+            
+            # Render email templates
+            if invoice.email_sent_count > 0:
+                subject = f'Reminder: Invoice {invoice.invoice_number} - Payment Due'
+            else:
+                subject = f'Invoice {invoice.invoice_number} from {settings.COMPANY_NAME}'
+            
+            text_content = render_to_string('billing/emails/invoice_notification.txt', email_context)
+            html_content = render_to_string('billing/emails/invoice_notification.html', email_context)
+            
+            # Create email
+            email = EmailMultiAlternatives(
+                subject=subject,
+                body=text_content,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[invoice.client.email],
+                reply_to=[settings.CONTACT_EMAIL]
+            )
+            email.attach_alternative(html_content, "text/html")
+            email.send()
+            
+            # Update invoice status
+            invoice.mark_as_sent()
+            
+            if invoice.email_sent_count == 1:
+                messages.success(request, f'Invoice {invoice.invoice_number} sent to {invoice.client.email}')
+            else:
+                messages.success(request, f'Reminder sent for invoice {invoice.invoice_number} to {invoice.client.email}')
+            return redirect('billing:invoice_detail', pk=invoice.pk)
+            
+        except Exception as e:
+            logger.error(f"Failed to send invoice {invoice.invoice_number}: {str(e)}")
+            messages.error(request, f'Failed to send invoice email: {str(e)}')
+            return redirect('billing:invoice_detail', pk=invoice.pk)
+    
+    context = {
+        'invoice': invoice,
+        'is_reminder': invoice.email_sent_count > 0,
+    }
     return render(request, 'billing/confirm_send_invoice.html', context)
 
 

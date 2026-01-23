@@ -247,6 +247,7 @@ class Invoice(models.Model):
     # Email tracking
     email_sent_date = models.DateTimeField(null=True, blank=True, help_text="When invoice was last emailed")
     email_sent_count = models.PositiveIntegerField(default=0, help_text="Number of times invoice was sent")
+    viewed_date = models.DateTimeField(null=True, blank=True, help_text="When client first viewed invoice")
     reminder_sent_count = models.PositiveIntegerField(default=0, help_text="Number of reminder emails sent")
     last_reminder_date = models.DateTimeField(null=True, blank=True)
     

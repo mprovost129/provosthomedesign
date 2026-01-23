@@ -1,0 +1,33 @@
+{% if is_reminder %}INVOICE REMINDER{% else %}NEW INVOICE{% endif %}
+
+Dear {{ client.first_name }},
+
+{% if is_reminder %}This is a friendly reminder that you have an invoice due for payment.{% else %}You have received a new invoice from {{ company_name }}.{% endif %}
+
+Invoice Details:
+Invoice Number: {{ invoice.invoice_number }}
+Invoice Date: {{ invoice.invoice_date|date:"F j, Y" }}
+Due Date: {{ invoice.due_date|date:"F j, Y" }}
+Amount Due: ${{ invoice.total_amount }}
+{% if invoice.project %}Project: {{ invoice.project.job_number }} - {{ invoice.project.name }}{% endif %}
+
+{% if invoice.notes %}
+Notes:
+{{ invoice.notes }}
+{% endif %}
+
+View Invoice:
+{{ invoice_url }}
+
+Make Payment:
+{{ payment_url }}
+
+If you have any questions about this invoice, please don't hesitate to contact us at {{ contact_email }} or {{ contact_phone }}.
+
+Thank you for your business!
+
+Best regards,
+{{ company_name }}
+
+---
+This is an automated email. Please do not reply directly to this message.

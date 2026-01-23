@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if is_reminder %}Invoice Reminder{% else %}New Invoice{% endif %}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #2c3e50;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 28px;
+        }
+        .header .subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .content {
+            margin: 20px 0;
+        }
+        .greeting {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .invoice-details {
+            background-color: #ecf0f1;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .invoice-details h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            font-size: 18px;
+        }
+        .invoice-details table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .invoice-details td {
+            padding: 8px 0;
+            border-bottom: 1px solid #bdc3c7;
+        }
+        .invoice-details td:first-child {
+            font-weight: bold;
+            color: #34495e;
+            width: 40%;
+        }
+        .invoice-details td:last-child {
+            color: #555;
+        }
+        .invoice-details tr:last-child td {
+            border-bottom: none;
+        }
+        .amount-due {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .amount-due .label {
+            color: #856404;
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .amount-due .amount {
+            color: #2c3e50;
+            font-size: 32px;
+            font-weight: bold;
+        }
+        .notes {
+            background-color: #e8f4f8;
+            border-left: 4px solid #17a2b8;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .notes h3 {
+            margin-top: 0;
+            color: #0c5460;
+            font-size: 16px;
+        }
+        .notes p {
+            margin: 0;
+            color: #555;
+            white-space: pre-wrap;
+        }
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 14px 32px;
+            margin: 10px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .button-primary {
+            background-color: #27ae60;
+            color: white;
+        }
+        .button-primary:hover {
+            background-color: #229954;
+        }
+        .button-secondary {
+            background-color: #3498db;
+            color: white;
+        }
+        .button-secondary:hover {
+            background-color: #2980b9;
+        }
+        .footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 2px solid #ecf0f1;
+            margin-top: 30px;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+        .reminder-badge {
+            background-color: #ffc107;
+            color: #856404;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+        @media only screen and (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .email-container {
+                padding: 20px;
+            }
+            .button {
+                display: block;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>{{ company_name }}</h1>
+            <div class="subtitle">Professional Home Design Services</div>
+        </div>
+
+        {% if is_reminder %}
+        <div style="text-align: center;">
+            <span class="reminder-badge">⏰ Payment Reminder</span>
+        </div>
+        {% endif %}
+
+        <div class="content">
+            <p class="greeting">Dear {{ client.first_name }},</p>
+
+            {% if is_reminder %}
+            <p>This is a friendly reminder that you have an invoice due for payment.</p>
+            {% else %}
+            <p>You have received a new invoice from {{ company_name }}. Please review the details below and submit your payment at your earliest convenience.</p>
+            {% endif %}
+
+            <div class="invoice-details">
+                <h2>Invoice Details</h2>
+                <table>
+                    <tr>
+                        <td>Invoice Number:</td>
+                        <td><strong>{{ invoice.invoice_number }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Invoice Date:</td>
+                        <td>{{ invoice.invoice_date|date:"F j, Y" }}</td>
+                    </tr>
+                    <tr>
+                        <td>Due Date:</td>
+                        <td><strong>{{ invoice.due_date|date:"F j, Y" }}</strong></td>
+                    </tr>
+                    {% if invoice.project %}
+                    <tr>
+                        <td>Project:</td>
+                        <td>{{ invoice.project.job_number }} - {{ invoice.project.name }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+
+            <div class="amount-due">
+                <div class="label">Amount Due</div>
+                <div class="amount">${{ invoice.total_amount }}</div>
+            </div>
+
+            {% if invoice.notes %}
+            <div class="notes">
+                <h3>Invoice Notes</h3>
+                <p>{{ invoice.notes }}</p>
+            </div>
+            {% endif %}
+
+            <div class="button-container">
+                <a href="{{ payment_url }}" class="button button-primary">💳 Make Payment</a>
+                <a href="{{ invoice_url }}" class="button button-secondary">📄 View Full Invoice</a>
+            </div>
+
+            <p>If you have any questions about this invoice, please don't hesitate to contact us.</p>
+        </div>
+
+        <div class="footer">
+            <p><strong>{{ company_name }}</strong></p>
+            <p>📧 {{ contact_email }} | 📞 {{ contact_phone }}</p>
+            <p style="margin-top: 15px; font-size: 12px; color: #95a5a6;">
+                This is an automated email. Please do not reply directly to this message.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
