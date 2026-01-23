@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             const planId = this.dataset.planId;
             const icon = this.querySelector('i');
+            const button = this;
             
             fetch(`/plans/favorite/toggle/${planId}/`, {
                 method: 'POST',
@@ -36,13 +37,23 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Update icon
+                    // Update icon and text
                     if (data.is_saved) {
                         icon.classList.add('bi-heart-fill');
                         icon.classList.remove('bi-heart');
+                        // Update button text if it exists
+                        const textNode = Array.from(button.childNodes).find(node => node.nodeType === 3);
+                        if (textNode) {
+                            textNode.textContent = 'Saved to Favorites';
+                        }
                     } else {
                         icon.classList.add('bi-heart');
                         icon.classList.remove('bi-heart-fill');
+                        // Update button text if it exists
+                        const textNode = Array.from(button.childNodes).find(node => node.nodeType === 3);
+                        if (textNode) {
+                            textNode.textContent = 'Save to Favorites';
+                        }
                     }
                     
                     // Update navbar counter
@@ -60,6 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             const planId = this.dataset.planId;
             const icon = this.querySelector('i');
+            const button = this;
             
             fetch(`/plans/compare/toggle/${planId}/`, {
                 method: 'POST',
@@ -71,11 +83,21 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Update icon
+                    // Update icon and text
                     if (data.in_comparison) {
                         icon.className = 'bi bi-check-square-fill';
+                        // Update button text if it exists
+                        const textNode = Array.from(button.childNodes).find(node => node.nodeType === 3);
+                        if (textNode) {
+                            textNode.textContent = 'Added to Compare';
+                        }
                     } else {
                         icon.className = 'bi bi-plus-square';
+                        // Update button text if it exists
+                        const textNode = Array.from(button.childNodes).find(node => node.nodeType === 3);
+                        if (textNode) {
+                            textNode.textContent = 'Add to Compare';
+                        }
                     }
                     
                     // Update navbar counter

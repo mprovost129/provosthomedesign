@@ -398,17 +398,13 @@ def toggle_favorite(request: HttpRequest, plan_id: int) -> HttpResponse:
         action = "added"
         message = f"Plan {plan.plan_number} added to favorites"
     
-    # Return JSON for AJAX requests
-    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        return JsonResponse({
-            "success": True,
-            "action": action,
-            "is_saved": not is_saved,
-            "count": len(session_utils.get_saved_plan_ids(request)),
-        })
-    
-    messages.success(request, message)
-    return redirect(request.META.get("HTTP_REFERER", "plans:plan_list"))
+    # Always return JSON for POST requests (AJAX)
+    return JsonResponse({
+        "success": True,
+        "action": action,
+        "is_saved": not is_saved,
+        "count": len(session_utils.get_saved_plan_ids(request)),
+    })
 
 
 def favorites_list(request: HttpRequest) -> HttpResponse:
@@ -447,6 +443,7 @@ def toggle_comparison(request: HttpRequest, plan_id: int) -> HttpResponse:
         session_utils.remove_from_comparison(request, plan_id)
         action = "removed"
         message = f"Plan {plan.plan_number} removed from comparison"
+        success = True
     else:
         success, error = session_utils.add_to_comparison(request, plan_id)
         if success:
@@ -456,22 +453,15 @@ def toggle_comparison(request: HttpRequest, plan_id: int) -> HttpResponse:
             action = "error"
             message = error or "Could not add plan to comparison"
     
-    # Return JSON for AJAX requests
-    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-        return JsonResponse({
-            "success": action != "error",
-            "action": action,
-            "is_in_comparison": not is_in_comp if action != "error" else is_in_comp,
-            "count": len(session_utils.get_comparison_plan_ids(request)),
-            "message": message,
-        })
-    
-    if action == "error":
-        messages.error(request, message)
-    else:
-        messages.success(request, message)
-    
-    return redirect(request.META.get("HTTP_REFERER", "plans:plan_list"))
+    # Always return JSON for POST requests (AJAX)
+    return JsonResponse({
+        "success": success,
+        "action": action,
+        "in_comparison": not is_in_comp if success else is_in_comp,
+        "count": len(session_utils.get_comparison_plan_ids(request)),
+        "message": message,
+        "error": None if success else message,
+    })
 
 
 def compare_plans(request: HttpRequest) -> HttpResponse:
