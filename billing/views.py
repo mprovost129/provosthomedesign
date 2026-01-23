@@ -698,7 +698,7 @@ def send_invoice_email(request, pk):
 def add_client(request):
     """Add a new client to the database (staff only)."""
     if request.method == 'POST':
-        form = ClientForm(request.POST)
+        form = ClientForm(request.POST, request.FILES)
         if form.is_valid():
             client = form.save()
             
@@ -726,7 +726,7 @@ def edit_client(request, pk):
     client = get_object_or_404(Client, pk=pk)
     
     if request.method == 'POST':
-        form = ClientForm(request.POST, instance=client)
+        form = ClientForm(request.POST, request.FILES, instance=client)
         if form.is_valid():
             client = form.save()
             
@@ -806,7 +806,7 @@ def employee_list(request):
 def add_employee(request):
     """Add a new employee (staff only)."""
     if request.method == 'POST':
-        form = EmployeeForm(request.POST)
+        form = EmployeeForm(request.POST, request.FILES)
         if form.is_valid():
             employee = form.save(commit=False)
             
@@ -894,7 +894,7 @@ def edit_employee(request, pk):
     employee = get_object_or_404(Employee, pk=pk)
     
     if request.method == 'POST':
-        form = EmployeeForm(request.POST, instance=employee)
+        form = EmployeeForm(request.POST, request.FILES, instance=employee)
         if form.is_valid():
             employee = form.save()
             messages.success(request, f'Employee {employee.get_full_name()} updated successfully!')

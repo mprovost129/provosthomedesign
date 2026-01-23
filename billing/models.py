@@ -69,6 +69,11 @@ class Client(models.Model):
     ])
     notes = models.TextField(blank=True, help_text="Internal notes about this client")
     
+    # Profile Picture
+    profile_picture = models.ImageField(upload_to='profile_pictures/', 
+                                       null=True, blank=True,
+                                       help_text="Optional profile picture")
+    
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -161,6 +166,11 @@ class Employee(models.Model):
     
     # Internal Notes
     notes = models.TextField(blank=True, help_text="Internal notes about this employee")
+    
+    # Profile Picture
+    profile_picture = models.ImageField(upload_to='profile_pictures/', 
+                                       null=True, blank=True,
+                                       help_text="Optional profile picture")
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

@@ -224,7 +224,7 @@ class ClientForm(forms.ModelForm):
             'email', 'email_secondary', 
             'phone_1', 'phone_1_type', 'phone_2', 'phone_2_type',
             'address_line1', 'address_line2', 'city', 'state', 'zip_code', 'country',
-            'website', 'tax_id', 'lead_source', 'notes'
+            'website', 'tax_id', 'lead_source', 'notes', 'profile_picture'
         ]
         widgets = {
             # Basic Information
@@ -256,6 +256,9 @@ class ClientForm(forms.ModelForm):
             # CRM
             'lead_source': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'How did they find you?'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Internal notes about this client...'}),
+            
+            # Profile Picture
+            'profile_picture': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
     
     def __init__(self, *args, **kwargs):
@@ -288,7 +291,8 @@ class EmployeeForm(forms.ModelForm):
             'email', 'phone_1', 'phone_1_type', 'phone_2', 'phone_2_type',
             'address_line1', 'address_line2', 'city', 'state', 'zip_code',
             'hire_date', 'emergency_contact_name', 'emergency_contact_phone',
-            'can_create_invoices', 'can_manage_clients', 'can_view_reports', 'notes'
+            'can_create_invoices', 'can_manage_clients', 'can_view_reports', 'notes',
+            'profile_picture'
         ]
         widgets = {
             # User & Basic Information
@@ -325,6 +329,9 @@ class EmployeeForm(forms.ModelForm):
             
             # Notes
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Internal notes about this employee...'}),
+            
+            # Profile Picture
+            'profile_picture': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
         help_texts = {
             'user': 'Leave blank to auto-create a portal account and send welcome email',
