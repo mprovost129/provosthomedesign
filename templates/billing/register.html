@@ -1,6 +1,11 @@
 {% extends 'billing/base_portal.html' %}
+{% load recaptcha %}
 
 {% block title %}Register{% endblock %}
+
+{% block extra_head %}
+{{ form.media }}
+{% endblock %}
 
 {% block portal_content %}
 <!-- Public Layout (Login/Register Pages) -->
