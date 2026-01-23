@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordResetForm
 from django.contrib.auth.models import User
-from .models import Client, Invoice, InvoiceTemplate, InvoiceLineItem
+from .models import Client, Employee, Invoice, InvoiceTemplate, InvoiceLineItem
 
 
 class ClientRegistrationForm(UserCreationForm):
@@ -240,5 +240,66 @@ class ClientForm(forms.ModelForm):
                 qs = qs.exclude(pk=self.instance.pk)
             if qs.exists():
                 raise forms.ValidationError('A client with this email already exists.')
+        return email
+
+
+class EmployeeForm(forms.ModelForm):
+    """Form for adding/editing employees."""
+    
+    class Meta:
+        model = Employee
+        fields = [
+            'user', 'first_name', 'last_name', 'job_title', 'department', 'status',
+            'email', 'phone_1', 'phone_1_type', 'phone_2', 'phone_2_type',
+            'address_line1', 'address_line2', 'city', 'state', 'zip_code',
+            'hire_date', 'emergency_contact_name', 'emergency_contact_phone',
+            'can_create_invoices', 'can_manage_clients', 'can_view_reports', 'notes'
+        ]
+        widgets = {
+            # User & Basic Information
+            'user': forms.Select(attrs={'class': 'form-select'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First name'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last name'}),
+            'job_title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Position/Title'}),
+            'department': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Department'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            
+            # Contact Information
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'work@email.com'}),
+            'phone_1': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '(555) 123-4567'}),
+            'phone_1_type': forms.Select(attrs={'class': 'form-select'}),
+            'phone_2': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '(555) 987-6543 (optional)'}),
+            'phone_2_type': forms.Select(attrs={'class': 'form-select'}),
+            
+            # Address
+            'address_line1': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Street address'}),
+            'address_line2': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Apt, suite, etc. (optional)'}),
+            'city': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'City'}),
+            'state': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'State'}),
+            'zip_code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ZIP code'}),
+            
+            # Employment
+            'hire_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'emergency_contact_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Emergency contact name'}),
+            'emergency_contact_phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Emergency phone'}),
+            
+            # Permissions
+            'can_create_invoices': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'can_manage_clients': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'can_view_reports': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            
+            # Notes
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Internal notes about this employee...'}),
+        }
+    
+    def clean_email(self):
+        """Ensure email is unique."""
+        email = self.cleaned_data.get('email')
+        if email:
+            qs = Employee.objects.filter(email=email)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise forms.ValidationError('An employee with this email already exists.')
         return email
 

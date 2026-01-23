@@ -27,8 +27,22 @@ urlpatterns = [
     path('payment/confirm/', views.payment_confirm, name='payment_confirm'),
     path('webhook/stripe/', views.stripe_webhook, name='stripe_webhook'),
     
-    # Employee Features (Staff Only)
+    # Employee Features (Staff Only) - Invoices
     path('create-invoice/', views.create_invoice, name='create_invoice'),
-    path('clients/', views.client_list, name='client_list'),
     path('invoice/<int:pk>/send/', views.send_invoice_email, name='send_invoice'),
+    
+    # Client Management (Staff Only)
+    path('clients/', views.client_list, name='client_list'),
+    path('client/add/', views.add_client, name='add_client'),
+    path('client/<int:pk>/', views.client_detail_view, name='client_detail_view'),
+    path('client/<int:pk>/edit/', views.edit_client, name='edit_client'),
+    path('client/<int:pk>/delete/', views.delete_client, name='delete_client'),
+    
+    # Employee Management (Staff Only)
+    path('employees/', views.employee_list, name='employee_list'),
+    path('employee/add/', views.add_employee, name='add_employee'),
+    path('employee/<int:pk>/', views.employee_detail, name='employee_detail'),
+    path('employee/<int:pk>/edit/', views.edit_employee, name='edit_employee'),
+    path('employee/<int:pk>/delete/', views.delete_employee, name='delete_employee'),
 ]
+

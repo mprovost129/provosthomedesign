@@ -27,11 +27,16 @@
                     
                     {% if user.is_staff %}
                     <!-- Employee-only features -->
+                    <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
+                    <p class="small text-uppercase mb-2" style="color: rgba(255,255,255,0.6);">Staff Tools</p>
                     <a class="nav-link {% if request.resolver_match.url_name == 'create_invoice' %}active{% endif %}" href="{% url 'billing:create_invoice' %}">
                         <i class="fas fa-plus-circle"></i> Create Invoice
                     </a>
-                    <a class="nav-link {% if request.resolver_match.url_name == 'client_list' %}active{% endif %}" href="{% url 'billing:client_list' %}">
-                        <i class="fas fa-users"></i> All Clients
+                    <a class="nav-link {% if 'client' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:client_list' %}">
+                        <i class="fas fa-users"></i> Customers
+                    </a>
+                    <a class="nav-link {% if 'employee' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:employee_list' %}">
+                        <i class="fas fa-user-tie"></i> Employees
                     </a>
                     {% endif %}
                     

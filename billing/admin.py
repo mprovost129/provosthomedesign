@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from django.urls import reverse
 from django.utils import timezone
 from . import models
-from .models import Client, Invoice, InvoiceLineItem, Payment, InvoiceTemplate
+from .models import Client, Employee, Invoice, InvoiceLineItem, Payment, InvoiceTemplate
 
 
 class InvoiceLineItemInline(admin.TabularInline):
@@ -96,6 +96,92 @@ class ClientAdmin(admin.ModelAdmin):
             return format_html('<span style="color: #d63031; font-weight: bold;">${:,.2f}</span>', outstanding)
         return format_html('<span style="color: #27ae60;">$0.00</span>')
     total_outstanding.short_description = 'Outstanding'
+
+
+@admin.register(Employee)
+class EmployeeAdmin(admin.ModelAdmin):
+    """Admin interface for Employee management."""
+    list_display = ('display_name', 'job_title', 'department', 'email', 'phone_1_display',
+                    'status', 'hire_date', 'permissions_display', 'created_at')
+    list_filter = ('status', 'department', 'can_create_invoices', 'can_manage_clients', 
+                   'can_view_reports', 'hire_date')
+    search_fields = ('first_name', 'last_name', 'email', 'phone_1', 'phone_2', 
+                     'user__username', 'job_title', 'department')
+    list_per_page = 50
+    date_hierarchy = 'hire_date'
+    
+    fieldsets = (
+        ('User Account', {
+            'fields': ('user',),
+            'description': 'Link to user account for portal login'
+        }),
+        ('Basic Information', {
+            'fields': ('first_name', 'last_name', 'job_title', 'department', 'status')
+        }),
+        ('Contact Information', {
+            'fields': (('email',),
+                      ('phone_1', 'phone_1_type'),
+                      ('phone_2', 'phone_2_type'))
+        }),
+        ('Address', {
+            'fields': ('address_line1', 'address_line2', 
+                      ('city', 'state', 'zip_code')),
+            'classes': ('collapse',)
+        }),
+        ('Employment Details', {
+            'fields': ('hire_date', ('emergency_contact_name', 'emergency_contact_phone'))
+        }),
+        ('Portal Permissions', {
+            'fields': ('can_create_invoices', 'can_manage_clients', 'can_view_reports'),
+            'description': 'Additional permissions beyond standard staff access'
+        }),
+        ('Internal Notes', {
+            'fields': ('notes',),
+            'classes': ('collapse',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    readonly_fields = ('created_at', 'updated_at')
+    
+    def display_name(self, obj):
+        """Display employee name with active indicator."""
+        name = obj.get_full_name()
+        if obj.status == 'active':
+            return format_html('{} <span style="color: #27ae60;">●</span>', name)
+        elif obj.status == 'on_leave':
+            return format_html('{} <span style="color: #f39c12;">●</span>', name)
+        else:
+            return format_html('{} <span style="color: #95a5a6;">●</span>', name)
+    display_name.short_description = 'Employee Name'
+    display_name.admin_order_field = 'last_name'
+    
+    def phone_1_display(self, obj):
+        """Display primary phone with type."""
+        if obj.phone_1:
+            return f"{obj.phone_1} ({obj.get_phone_1_type_display()})"
+        return '-'
+    phone_1_display.short_description = 'Primary Phone'
+    
+    def permissions_display(self, obj):
+        """Display active permissions as badges."""
+        perms = []
+        if obj.can_create_invoices:
+            perms.append('Invoices')
+        if obj.can_manage_clients:
+            perms.append('Clients')
+        if obj.can_view_reports:
+            perms.append('Reports')
+        if obj.user.is_superuser:
+            return format_html('<span style="color: #d63031; font-weight: bold;">SUPERUSER</span>')
+        elif obj.user.is_staff:
+            return format_html('<span style="color: #0984e3;">Staff{}</span>', 
+                             f' + {", ".join(perms)}' if perms else '')
+        return ', '.join(perms) if perms else '-'
+    permissions_display.short_description = 'Permissions'
 
 
 class PaymentInline(admin.TabularInline):

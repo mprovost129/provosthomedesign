@@ -102,6 +102,93 @@ class Client(models.Model):
         return '\n'.join([p for p in parts if p])
 
 
+class Employee(models.Model):
+    """Employee database separate from clients for staff management."""
+    
+    PHONE_TYPE_CHOICES = [
+        ('mobile', 'Mobile'),
+        ('work', 'Work'),
+        ('home', 'Home'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+        ('on_leave', 'On Leave'),
+    ]
+    
+    # User account for portal access
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='employee_profile',
+                                help_text="Portal login account")
+    
+    # Basic Information
+    first_name = models.CharField(max_length=100, help_text="Employee's first name")
+    last_name = models.CharField(max_length=100, help_text="Employee's last name")
+    job_title = models.CharField(max_length=100, blank=True, help_text="Job title or position")
+    department = models.CharField(max_length=100, blank=True, help_text="Department")
+    
+    # Contact Information
+    email = models.EmailField(help_text="Work email address")
+    phone_1 = models.CharField(max_length=20, blank=True, verbose_name="Primary Phone")
+    phone_1_type = models.CharField(max_length=10, choices=PHONE_TYPE_CHOICES, default='mobile',
+                                    verbose_name="Phone Type")
+    phone_2 = models.CharField(max_length=20, blank=True, verbose_name="Secondary Phone")
+    phone_2_type = models.CharField(max_length=10, choices=PHONE_TYPE_CHOICES, default='work',
+                                    blank=True, verbose_name="Phone 2 Type")
+    
+    # Address Information
+    address_line1 = models.CharField(max_length=255, blank=True, verbose_name="Address Line 1")
+    address_line2 = models.CharField(max_length=255, blank=True, verbose_name="Address Line 2")
+    city = models.CharField(max_length=100, blank=True)
+    state = models.CharField(max_length=50, blank=True)
+    zip_code = models.CharField(max_length=20, blank=True, verbose_name="ZIP Code")
+    
+    # Employment Information
+    hire_date = models.DateField(null=True, blank=True, help_text="Date of hire")
+    status = models.CharField(max_length=20, default='active', choices=STATUS_CHOICES)
+    emergency_contact_name = models.CharField(max_length=200, blank=True)
+    emergency_contact_phone = models.CharField(max_length=20, blank=True)
+    
+    # Permissions & Access
+    can_create_invoices = models.BooleanField(default=False, 
+                                             help_text="Can create and manage invoices")
+    can_manage_clients = models.BooleanField(default=False,
+                                            help_text="Can add/edit client information")
+    can_view_reports = models.BooleanField(default=False,
+                                          help_text="Can access financial reports")
+    
+    # Internal Notes
+    notes = models.TextField(blank=True, help_text="Internal notes about this employee")
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['last_name', 'first_name']
+        indexes = [
+            models.Index(fields=['last_name', 'first_name']),
+            models.Index(fields=['status']),
+        ]
+    
+    def __str__(self):
+        name = f"{self.first_name} {self.last_name}".strip()
+        if self.job_title:
+            return f"{name} ({self.job_title})"
+        return name
+    
+    def get_full_name(self):
+        """Return full name."""
+        return f"{self.first_name} {self.last_name}".strip()
+    
+    def get_display_name(self):
+        """Return display name with title."""
+        name = self.get_full_name()
+        if self.job_title:
+            return f"{name} - {self.job_title}"
+        return name
+
+
 class Invoice(models.Model):
     """Client invoices for architectural services."""
     

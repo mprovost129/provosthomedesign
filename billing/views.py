@@ -18,14 +18,16 @@ from decimal import Decimal
 import json
 import logging
 
-from .models import Client, Invoice, Payment, InvoiceTemplate, InvoiceLineItem
+from .models import Client, Employee, Invoice, Payment, InvoiceTemplate, InvoiceLineItem
 from .forms import (
     ClientRegistrationForm, 
     ClientLoginForm, 
     ClientProfileForm, 
     ClientPasswordResetForm,
     InvoiceForm,
-    InvoiceLineItemFormSet
+    InvoiceLineItemFormSet,
+    ClientForm,
+    EmployeeForm
 )
 
 logger = logging.getLogger(__name__)
@@ -591,6 +593,7 @@ def client_list(request):
     return render(request, 'billing/client_list.html', context)
 
 
+
 @staff_member_required(login_url='/portal/login/')
 def send_invoice_email(request, pk):
     """Send invoice via email (staff only)."""
@@ -599,8 +602,157 @@ def send_invoice_email(request, pk):
     if request.method == 'POST':
         # TODO: Implement email sending in next phase
         invoice.mark_as_sent()
-        messages.success(request, f'Invoice {invoice.invoice_number} sent to {invoice.client.user.email}')
+        messages.success(request, f'Invoice {invoice.invoice_number} sent to {invoice.client.email}')
         return redirect('billing:invoice_detail', pk=invoice.pk)
     
     context = {'invoice': invoice}
     return render(request, 'billing/confirm_send_invoice.html', context)
+
+
+# ==================== Client Management Views (Staff Only) ====================
+
+@staff_member_required(login_url='/portal/login/')
+def add_client(request):
+    """Add a new client to the database (staff only)."""
+    if request.method == 'POST':
+        form = ClientForm(request.POST)
+        if form.is_valid():
+            client = form.save()
+            messages.success(request, f'Client {client.get_full_name()} added successfully!')
+            return redirect('billing:client_detail_view', pk=client.pk)
+    else:
+        form = ClientForm()
+    
+    context = {'form': form, 'title': 'Add New Client'}
+    return render(request, 'billing/client_form.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def edit_client(request, pk):
+    """Edit an existing client (staff only)."""
+    client = get_object_or_404(Client, pk=pk)
+    
+    if request.method == 'POST':
+        form = ClientForm(request.POST, instance=client)
+        if form.is_valid():
+            client = form.save()
+            messages.success(request, f'Client {client.get_full_name()} updated successfully!')
+            return redirect('billing:client_detail_view', pk=client.pk)
+    else:
+        form = ClientForm(instance=client)
+    
+    context = {'form': form, 'client': client, 'title': 'Edit Client'}
+    return render(request, 'billing/client_form.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def client_detail_view(request, pk):
+    """View detailed information about a client (staff only)."""
+    from django.db.models import Sum, Count
+    
+    client = get_object_or_404(Client, pk=pk)
+    
+    # Get invoice statistics
+    invoices = client.invoices.all().order_by('-issue_date')
+    stats = client.invoices.aggregate(
+        total_invoices=Count('id'),
+        total_billed=Sum('total'),
+        total_paid=Sum('amount_paid')
+    )
+    
+    outstanding = (stats['total_billed'] or Decimal('0.00')) - (stats['total_paid'] or Decimal('0.00'))
+    
+    context = {
+        'client': client,
+        'invoices': invoices[:10],  # Last 10 invoices
+        'total_invoices': stats['total_invoices'] or 0,
+        'total_billed': stats['total_billed'] or Decimal('0.00'),
+        'total_paid': stats['total_paid'] or Decimal('0.00'),
+        'outstanding': outstanding,
+    }
+    return render(request, 'billing/client_detail.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def delete_client(request, pk):
+    """Delete a client (staff only)."""
+    client = get_object_or_404(Client, pk=pk)
+    
+    if request.method == 'POST':
+        client_name = client.get_full_name()
+        client.delete()
+        messages.success(request, f'Client {client_name} deleted successfully!')
+        return redirect('billing:client_list')
+    
+    context = {'client': client}
+    return render(request, 'billing/client_confirm_delete.html', context)
+
+
+# ==================== Employee Management Views (Staff Only) ====================
+
+@staff_member_required(login_url='/portal/login/')
+def employee_list(request):
+    """View all employees (staff only)."""
+    employees = Employee.objects.all().order_by('status', 'last_name', 'first_name')
+    
+    context = {'employees': employees}
+    return render(request, 'billing/employee_list.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def add_employee(request):
+    """Add a new employee (staff only)."""
+    if request.method == 'POST':
+        form = EmployeeForm(request.POST)
+        if form.is_valid():
+            employee = form.save()
+            messages.success(request, f'Employee {employee.get_full_name()} added successfully!')
+            return redirect('billing:employee_detail', pk=employee.pk)
+    else:
+        form = EmployeeForm()
+    
+    context = {'form': form, 'title': 'Add New Employee'}
+    return render(request, 'billing/employee_form.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def edit_employee(request, pk):
+    """Edit an existing employee (staff only)."""
+    employee = get_object_or_404(Employee, pk=pk)
+    
+    if request.method == 'POST':
+        form = EmployeeForm(request.POST, instance=employee)
+        if form.is_valid():
+            employee = form.save()
+            messages.success(request, f'Employee {employee.get_full_name()} updated successfully!')
+            return redirect('billing:employee_detail', pk=employee.pk)
+    else:
+        form = EmployeeForm(instance=employee)
+    
+    context = {'form': form, 'employee': employee, 'title': 'Edit Employee'}
+    return render(request, 'billing/employee_form.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def employee_detail(request, pk):
+    """View detailed information about an employee (staff only)."""
+    employee = get_object_or_404(Employee, pk=pk)
+    
+    context = {'employee': employee}
+    return render(request, 'billing/employee_detail.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def delete_employee(request, pk):
+    """Delete an employee (staff only)."""
+    employee = get_object_or_404(Employee, pk=pk)
+    
+    if request.method == 'POST':
+        employee_name = employee.get_full_name()
+        employee.delete()
+        messages.success(request, f'Employee {employee_name} deleted successfully!')
+        return redirect('billing:employee_list')
+    
+    context = {'employee': employee}
+    return render(request, 'billing/employee_confirm_delete.html', context)
+
