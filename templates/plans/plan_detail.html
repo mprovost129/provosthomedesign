@@ -125,13 +125,13 @@
         <button class="btn btn-outline-danger flex-fill toggle-favorite" 
                 data-plan-id="{{ plan.id }}">
           <i class="bi bi-heart{% if is_saved %}-fill{% endif %}"></i>
-          {% if is_saved %}Saved to Favorites{% else %}Save to Favorites{% endif %}
+          Save
         </button>
         
         <button class="btn btn-outline-success flex-fill toggle-comparison" 
                 data-plan-id="{{ plan.id }}">
           <i class="bi bi-{% if is_in_comparison %}check-square-fill{% else %}plus-square{% endif %}"></i>
-          {% if is_in_comparison %}Added to Compare{% else %}Add to Compare{% endif %}
+          Compare
         </button>
         
         <a href="{% url 'pages:get_started' %}?plan={{ plan.id }}" 
