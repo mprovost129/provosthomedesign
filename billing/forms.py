@@ -91,7 +91,7 @@ class ClientProfileForm(forms.ModelForm):
         model = Client
         fields = ('first_name', 'last_name', 'email', 'company_name', 
                   'phone_1', 'phone_1_type', 'phone_2', 'phone_2_type',
-                  'address_line1', 'address_line2', 'city', 'state', 'zip_code')
+                  'address_line1', 'address_line2', 'city', 'state', 'zip_code', 'profile_picture')
         widgets = {
             'first_name': forms.TextInput(attrs={'class': 'form-control'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control'}),
@@ -106,6 +106,7 @@ class ClientProfileForm(forms.ModelForm):
             'city': forms.TextInput(attrs={'class': 'form-control'}),
             'state': forms.TextInput(attrs={'class': 'form-control'}),
             'zip_code': forms.TextInput(attrs={'class': 'form-control'}),
+            'profile_picture': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
     
     def __init__(self, *args, **kwargs):

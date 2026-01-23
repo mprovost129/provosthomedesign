@@ -282,7 +282,7 @@ def profile(request):
         client = Client.objects.create(user=request.user)
     
     if request.method == 'POST':
-        form = ClientProfileForm(request.POST, instance=client, user=request.user)
+        form = ClientProfileForm(request.POST, request.FILES, instance=client, user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, 'Profile updated successfully!')
