@@ -205,7 +205,7 @@ class InvoiceAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Invoice Information', {
-            'fields': ('invoice_number', 'client', 'status')
+            'fields': ('invoice_number', 'client', 'project', 'status')
         }),
         ('Dates', {
             'fields': ('issue_date', 'due_date', 'paid_date')

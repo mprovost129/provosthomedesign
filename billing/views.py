@@ -901,4 +901,19 @@ def delete_project(request, pk):
     return render(request, 'billing/project_confirm_delete.html', context)
 
 
+@staff_member_required(login_url='/portal/login/')
+def delete_invoice(request, pk):
+    """Delete an invoice (staff only)."""
+    invoice = get_object_or_404(Invoice, pk=pk)
+    
+    if request.method == 'POST':
+        invoice_number = invoice.invoice_number
+        invoice.delete()
+        messages.success(request, f'Invoice {invoice_number} deleted successfully!')
+        return redirect('billing:invoice_list')
+    
+    context = {'invoice': invoice}
+    return render(request, 'billing/invoice_confirm_delete.html', context)
+
+
 

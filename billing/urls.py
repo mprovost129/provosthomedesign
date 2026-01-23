@@ -28,6 +28,7 @@ urlpatterns = [
     path('webhook/stripe/', views.stripe_webhook, name='stripe_webhook'),
     
     # Employee Features (Staff Only) - Invoices
+    path('invoice/<int:pk>/delete/', views.delete_invoice, name='delete_invoice'),
     path('create-invoice/', views.create_invoice, name='create_invoice'),
     path('invoice/<int:pk>/send/', views.send_invoice_email, name='send_invoice'),
     
