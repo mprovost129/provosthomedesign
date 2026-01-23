@@ -58,11 +58,15 @@ class ClientRegistrationForm(UserCreationForm):
         
         if commit:
             user.save()
-            # Create client profile
+            # Create client profile with correct field names
             Client.objects.create(
                 user=user,
+                first_name=self.cleaned_data['first_name'],
+                last_name=self.cleaned_data['last_name'],
+                email=self.cleaned_data['email'],
                 company_name=self.cleaned_data.get('company_name', ''),
-                phone=self.cleaned_data.get('phone', '')
+                phone_1=self.cleaned_data.get('phone', ''),
+                phone_1_type='mobile'
             )
         return user
 
@@ -204,6 +208,14 @@ InvoiceLineItemFormSet = inlineformset_factory(
 class ClientForm(forms.ModelForm):
     """Comprehensive form for adding/editing clients in the CRM."""
     
+    send_welcome_email = forms.BooleanField(
+        required=False,
+        initial=False,
+        label='Send Welcome Email & Create Portal Access',
+        help_text='Check this box to create a portal account and email login credentials to the client',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    
     class Meta:
         model = Client
         fields = [
@@ -244,6 +256,13 @@ class ClientForm(forms.ModelForm):
             'lead_source': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'How did they find you?'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Internal notes about this client...'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # If editing existing client with user, show checkbox to resend
+        if self.instance.pk and self.instance.user:
+            self.fields['send_welcome_email'].label = 'Resend Portal Access Email'
+            self.fields['send_welcome_email'].help_text = 'Check to resend portal login credentials to client'
     
     def clean_email(self):
         """Ensure email is unique."""

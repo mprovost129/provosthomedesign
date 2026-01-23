@@ -167,6 +167,25 @@
                         </div>
                     </div>
                     
+                    <hr class="my-4">
+                    
+                    <!-- Portal Access -->
+                    <h5 class="mb-3">Portal Access</h5>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Optional:</strong> Check the box below to create a portal account and email login credentials to this client.
+                        {% if client.user %}
+                        <br><small class="text-muted">This client already has portal access. Checking this will generate a new password and resend the welcome email.</small>
+                        {% endif %}
+                    </div>
+                    <div class="form-check mb-4">
+                        {{ form.send_welcome_email }}
+                        <label class="form-check-label" for="id_send_welcome_email">
+                            <strong>{{ form.send_welcome_email.label }}</strong>
+                            <br><small class="text-muted">{{ form.send_welcome_email.help_text }}</small>
+                        </label>
+                    </div>
+                    
                     <!-- Submit Buttons -->
                     <div class="d-flex justify-content-between">
                         <a href="{% if client %}{% url 'billing:client_detail_view' client.pk %}{% else %}{% url 'billing:client_list' %}{% endif %}" class="btn btn-outline-secondary">Cancel</a>

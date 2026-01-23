@@ -1,0 +1,38 @@
+Welcome to {{ company_name }}!
+
+Hi {{ client.first_name }},
+
+Thank you for choosing {{ company_name }}! We're excited to work with you{% if client.company_name %} and {{ client.company_name }}{% endif %}.
+
+Your client portal account has been created. Through the portal, you can:
+
+✓ View Invoices - See all your invoices and payment history
+✓ Make Payments - Pay invoices securely online with Stripe
+✓ Track Projects - Monitor the progress of your projects
+✓ Update Profile - Keep your contact information current
+✓ 24/7 Access - Access your information anytime, anywhere
+
+YOUR PORTAL LOGIN INFORMATION
+==============================
+Portal URL: {{ portal_url }}
+Username: {{ user.username }}
+Temporary Password: {{ temp_password }}
+
+IMPORTANT FIRST STEPS
+=====================
+1. Access your portal using the link above
+2. CHANGE YOUR PASSWORD after logging in for the first time
+3. Update your profile information if needed
+
+Access the portal here: {{ portal_url }}
+
+If you have any questions or need assistance, please don't hesitate to contact us at {{ company_email }}{% if company_phone %} or {{ company_phone }}{% endif %}.
+
+We look forward to working with you!
+
+Best regards,
+The Team at {{ company_name }}
+
+---
+This is an automated message. Please do not reply to this email.
+{{ company_name }} | {{ company_email }}{% if company_phone %} | {{ company_phone }}{% endif %}

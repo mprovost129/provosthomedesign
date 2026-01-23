@@ -32,6 +32,88 @@ from .forms import (
 
 logger = logging.getLogger(__name__)
 
+
+def send_client_welcome_email(request, client):
+    """
+    Create portal account for client and send welcome email with credentials.
+    Returns True if successful, False otherwise.
+    """
+    try:
+        from django.contrib.auth.models import User
+        from django.core.mail import EmailMultiAlternatives
+        from .models import SystemSettings
+        import secrets
+        import string
+        
+        # Check if client already has a user account
+        if client.user:
+            # Resend with existing credentials (generate new temp password)
+            user = client.user
+            alphabet = string.ascii_letters + string.digits + '!@#$%^&*'
+            temp_password = ''.join(secrets.choice(alphabet) for i in range(12))
+            user.set_password(temp_password)
+            user.save()
+        else:
+            # Create new user account
+            alphabet = string.ascii_letters + string.digits + '!@#$%^&*'
+            temp_password = ''.join(secrets.choice(alphabet) for i in range(12))
+            
+            # Generate username from email (before @)
+            username = client.email.split('@')[0]
+            # Ensure username is unique
+            base_username = username
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}{counter}"
+                counter += 1
+            
+            # Create the user
+            user = User.objects.create_user(
+                username=username,
+                email=client.email,
+                first_name=client.first_name,
+                last_name=client.last_name,
+                password=temp_password
+            )
+            user.save()
+            
+            # Link user to client
+            client.user = user
+            client.save()
+        
+        # Send welcome email
+        settings_obj = SystemSettings.load()
+        portal_url = request.build_absolute_uri('/portal/login/')
+        
+        context = {
+            'client': client,
+            'user': user,
+            'temp_password': temp_password,
+            'portal_url': portal_url,
+            'company_name': settings_obj.company_name,
+            'company_email': settings_obj.company_email,
+            'company_phone': settings_obj.company_phone,
+        }
+        
+        html_content = render_to_string('billing/emails/client_welcome_email.html', context)
+        text_content = render_to_string('billing/emails/client_welcome_email.txt', context)
+        
+        email = EmailMultiAlternatives(
+            subject=f'Welcome to {settings_obj.company_name} - Your Client Portal Access',
+            body=text_content,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[client.email],
+        )
+        email.attach_alternative(html_content, "text/html")
+        email.send()
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to send client welcome email: {str(e)}")
+        return False
+
+
 # ==================== Authentication Views ====================
 
 def client_login(request):
@@ -618,7 +700,17 @@ def add_client(request):
         form = ClientForm(request.POST)
         if form.is_valid():
             client = form.save()
-            messages.success(request, f'Client {client.get_full_name()} added successfully!')
+            
+            # Check if welcome email should be sent
+            if form.cleaned_data.get('send_welcome_email'):
+                success = send_client_welcome_email(request, client)
+                if success:
+                    messages.success(request, f'Client {client.get_full_name()} added successfully! Welcome email sent to {client.email}')
+                else:
+                    messages.warning(request, f'Client {client.get_full_name()} added successfully, but welcome email failed to send.')
+            else:
+                messages.success(request, f'Client {client.get_full_name()} added successfully!')
+            
             return redirect('billing:client_detail_view', pk=client.pk)
     else:
         form = ClientForm()
@@ -636,7 +728,17 @@ def edit_client(request, pk):
         form = ClientForm(request.POST, instance=client)
         if form.is_valid():
             client = form.save()
-            messages.success(request, f'Client {client.get_full_name()} updated successfully!')
+            
+            # Check if welcome email should be sent/resent
+            if form.cleaned_data.get('send_welcome_email'):
+                success = send_client_welcome_email(request, client)
+                if success:
+                    messages.success(request, f'Client {client.get_full_name()} updated successfully! Portal access email sent to {client.email}')
+                else:
+                    messages.warning(request, f'Client {client.get_full_name()} updated successfully, but email failed to send.')
+            else:
+                messages.success(request, f'Client {client.get_full_name()} updated successfully!')
+            
             return redirect('billing:client_detail_view', pk=client.pk)
     else:
         form = ClientForm(instance=client)
