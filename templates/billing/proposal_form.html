@@ -188,4 +188,61 @@
         </div>
     </div>
 </div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Calculate line item amounts
+    function calculateAmount(row) {
+        const quantityInput = row.querySelector('input[name$="-quantity"]');
+        const rateInput = row.querySelector('input[name$="-rate"]');
+        const amountCell = row.querySelector('.amount-display');
+        
+        if (quantityInput && rateInput && amountCell) {
+            const quantity = parseFloat(quantityInput.value) || 0;
+            const rate = parseFloat(rateInput.value) || 0;
+            const amount = quantity * rate;
+            amountCell.textContent = '$' + amount.toFixed(2);
+        }
+    }
+    
+    // Update all amounts on page load
+    document.querySelectorAll('.lineitem-row').forEach(function(row) {
+        calculateAmount(row);
+    });
+    
+    // Update amount when quantity or rate changes
+    document.querySelectorAll('input[name$="-quantity"], input[name$="-rate"]').forEach(function(input) {
+        input.addEventListener('input', function() {
+            const row = this.closest('.lineitem-row');
+            calculateAmount(row);
+        });
+    });
+    
+    // Dynamic project filtering by client
+    const clientSelect = document.getElementById('id_client');
+    const projectSelect = document.getElementById('id_project');
+    
+    if (clientSelect && projectSelect) {
+        // Store all project options
+        const allOptions = Array.from(projectSelect.options);
+        
+        clientSelect.addEventListener('change', function() {
+            const clientId = this.value;
+            
+            // Clear current options except the empty option
+            projectSelect.innerHTML = '<option value="">No project (optional)</option>';
+            
+            if (clientId) {
+                // Filter and add matching projects
+                allOptions.forEach(function(option) {
+                    if (option.value && option.dataset.clientId === clientId) {
+                        projectSelect.appendChild(option.cloneNode(true));
+                    }
+                });
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

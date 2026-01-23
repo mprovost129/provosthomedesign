@@ -1240,6 +1240,11 @@ def create_proposal(request):
         if form.is_valid() and formset.is_valid():
             proposal = form.save(commit=False)
             proposal.created_by = request.user
+            
+            # Handle optional project field - set to None if empty
+            if not proposal.project_id:
+                proposal.project = None
+            
             proposal.save()
             
             # Save line items
@@ -1251,6 +1256,16 @@ def create_proposal(request):
             
             messages.success(request, f'Proposal {proposal.proposal_number} created successfully!')
             return redirect('billing:proposal_detail', pk=proposal.pk)
+        else:
+            # Debug form errors
+            if not form.is_valid():
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        messages.error(request, f'{field}: {error}')
+            if not formset.is_valid():
+                for i, form_errors in enumerate(formset.errors):
+                    if form_errors:
+                        messages.error(request, f'Line item {i+1}: {form_errors}')
     else:
         # Set default valid_until to 30 days from now
         initial_data = {
