@@ -19,7 +19,7 @@ from decimal import Decimal
 import json
 import logging
 
-from .models import Client, Employee, Invoice, Payment, InvoiceTemplate, InvoiceLineItem, ProposalLineItem
+from .models import Client, Employee, Invoice, Payment, InvoiceTemplate, InvoiceLineItem, ProposalLineItem, Project, Proposal
 from .forms import (
     ClientRegistrationForm, 
     ClientLoginForm, 
