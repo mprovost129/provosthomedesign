@@ -1257,15 +1257,18 @@ def create_proposal(request):
             messages.success(request, f'Proposal {proposal.proposal_number} created successfully!')
             return redirect('billing:proposal_detail', pk=proposal.pk)
         else:
-            # Debug form errors
+            # Display form errors
             if not form.is_valid():
                 for field, errors in form.errors.items():
+                    field_name = form.fields[field].label if field in form.fields else field
                     for error in errors:
-                        messages.error(request, f'{field}: {error}')
+                        messages.error(request, f'{field_name}: {error}')
             if not formset.is_valid():
                 for i, form_errors in enumerate(formset.errors):
                     if form_errors:
-                        messages.error(request, f'Line item {i+1}: {form_errors}')
+                        for field, errors in form_errors.items():
+                            if field != '__all__':
+                                messages.error(request, f'Line item {i+1} - {field}: {errors[0] if isinstance(errors, list) else errors}')
     else:
         # Set default valid_until to 30 days from now
         initial_data = {
