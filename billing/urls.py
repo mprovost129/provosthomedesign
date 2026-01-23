@@ -26,4 +26,9 @@ urlpatterns = [
     path('payment/create-intent/', views.create_payment_intent, name='create_payment_intent'),
     path('payment/confirm/', views.payment_confirm, name='payment_confirm'),
     path('webhook/stripe/', views.stripe_webhook, name='stripe_webhook'),
+    
+    # Employee Features (Staff Only)
+    path('create-invoice/', views.create_invoice, name='create_invoice'),
+    path('clients/', views.client_list, name='client_list'),
+    path('invoice/<int:pk>/send/', views.send_invoice_email, name='send_invoice'),
 ]

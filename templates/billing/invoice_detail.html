@@ -15,7 +15,12 @@
             <a href="{% url 'billing:invoice_pdf' invoice.pk %}" class="btn btn-outline-secondary me-2">
                 <i class="fas fa-file-pdf"></i> Download PDF
             </a>
-            {% if balance_due > 0 %}
+            {% if user.is_staff and invoice.status != 'paid' %}
+            <a href="{% url 'billing:send_invoice' invoice.pk %}" class="btn btn-primary me-2">
+                <i class="fas fa-paper-plane"></i> Send Invoice
+            </a>
+            {% endif %}
+            {% if balance_due > 0 and not user.is_staff %}
             <a href="{% url 'billing:payment_page' invoice.pk %}" class="btn btn-success">
                 <i class="fas fa-credit-card"></i> Pay Now
             </a>

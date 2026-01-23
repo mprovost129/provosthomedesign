@@ -126,7 +126,62 @@ class ClientProfileForm(forms.ModelForm):
 
 class ClientPasswordResetForm(PasswordResetForm):
     """Password reset form with Bootstrap styling."""
-    email = forms.EmailField(widget=forms.EmailInput(attrs={
+    email = forms.EmailInput(widget=forms.EmailInput(attrs={
         'class': 'form-control',
         'placeholder': 'Email address'
     }))
+
+
+class InvoiceForm(forms.ModelForm):
+    """Form for creating and editing invoices."""
+    from .models import Invoice, InvoiceTemplate
+    
+    template = forms.ModelChoiceField(
+        queryset=InvoiceTemplate.objects.filter(is_active=True),
+        required=False,
+        empty_label="Select a template (optional)",
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'template-select'})
+    )
+    
+    class Meta:
+        model = Invoice
+        fields = ['client', 'issue_date', 'due_date', 'description', 'notes', 'tax_rate']
+        widgets = {
+            'client': forms.Select(attrs={'class': 'form-select'}),
+            'issue_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'due_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 
+                                          'placeholder': 'Payment terms, additional notes...'}),
+            'tax_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+        }
+
+
+class InvoiceLineItemForm(forms.ModelForm):
+    """Form for invoice line items."""
+    from .models import InvoiceLineItem
+    
+    class Meta:
+        model = InvoiceLineItem
+        fields = ['description', 'quantity', 'unit_price', 'related_plan']
+        widgets = {
+            'description': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Service description'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'value': '1'}),
+            'unit_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'related_plan': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+
+# Formset for managing multiple line items
+from django.forms import inlineformset_factory
+from .models import Invoice, InvoiceLineItem
+
+InvoiceLineItemFormSet = inlineformset_factory(
+    Invoice,
+    InvoiceLineItem,
+    form=InvoiceLineItemForm,
+    extra=3,
+    can_delete=True,
+    min_num=1,
+    validate_min=True
+)

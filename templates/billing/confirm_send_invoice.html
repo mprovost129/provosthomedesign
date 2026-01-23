@@ -1,0 +1,139 @@
+{% extends 'billing/base_authenticated.html' %}
+{% load static %}
+
+{% block title %}Send Invoice - Portal{% endblock %}
+
+{% block portal_content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-paper-plane"></i> Send Invoice</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-4">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Ready to send invoice #{{ invoice.id }} to {{ invoice.client.user.get_full_name|default:invoice.client.user.username }}</strong>
+                </div>
+
+                <!-- Invoice Summary -->
+                <div class="mb-4">
+                    <h5>Invoice Details</h5>
+                    <table class="table table-sm">
+                        <tr>
+                            <th style="width: 30%;">Invoice Number:</th>
+                            <td>{{ invoice.id }}</td>
+                        </tr>
+                        <tr>
+                            <th>Client:</th>
+                            <td>
+                                {{ invoice.client.user.get_full_name|default:invoice.client.user.username }}
+                                {% if invoice.client.company_name %}
+                                <br><small class="text-muted">{{ invoice.client.company_name }}</small>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Email Address:</th>
+                            <td><strong>{{ invoice.client.user.email }}</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Issue Date:</th>
+                            <td>{{ invoice.issue_date }}</td>
+                        </tr>
+                        <tr>
+                            <th>Due Date:</th>
+                            <td>
+                                {{ invoice.due_date }}
+                                {% if invoice.is_overdue %}
+                                <span class="badge bg-danger">Overdue</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Total Amount:</th>
+                            <td><strong class="text-primary">${{ invoice.total|floatformat:2 }}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- Email Preview -->
+                <div class="mb-4">
+                    <h5>Email Preview</h5>
+                    <div class="border rounded p-3 bg-light">
+                        <p><strong>Subject:</strong> Invoice #{{ invoice.id }} from Provost Home Design</p>
+                        <hr>
+                        <p>Hello {{ invoice.client.user.get_full_name|default:invoice.client.user.username }},</p>
+                        <p>Please find your invoice attached. The total amount due is <strong>${{ invoice.total|floatformat:2 }}</strong>, 
+                        which is due by {{ invoice.due_date|date:"F j, Y" }}.</p>
+                        
+                        {% if invoice.description %}
+                        <p><strong>Description:</strong> {{ invoice.description }}</p>
+                        {% endif %}
+                        
+                        <p>You can view and pay your invoice online using the secure link below:</p>
+                        <p><a href="{{ invoice.get_public_payment_url }}">View & Pay Invoice</a></p>
+                        
+                        {% if invoice.notes %}
+                        <hr>
+                        <p><strong>Notes:</strong></p>
+                        <p>{{ invoice.notes|linebreaks }}</p>
+                        {% endif %}
+                        
+                        <p>Thank you for your business!</p>
+                        <p>Provost Home Design</p>
+                    </div>
+                    <small class="text-muted">
+                        <i class="fas fa-paperclip"></i> Attachment: Invoice_{{ invoice.id }}.pdf
+                    </small>
+                </div>
+
+                <!-- Send History -->
+                {% if invoice.email_sent_count > 0 %}
+                <div class="mb-4">
+                    <h5>Send History</h5>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        This invoice has been sent {{ invoice.email_sent_count }} time{{ invoice.email_sent_count|pluralize }}.
+                        Last sent: {{ invoice.email_sent_date|date:"F j, Y g:i A" }}
+                    </div>
+                </div>
+                {% endif %}
+
+                <hr>
+
+                <!-- Confirmation Form -->
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="confirm" required>
+                        <label class="form-check-label" for="confirm">
+                            I confirm that I want to send this invoice to <strong>{{ invoice.client.user.email }}</strong>
+                        </label>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'billing:invoice_detail' invoice.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Invoice
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Send Invoice Now
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Additional Info -->
+        <div class="alert alert-info mt-3">
+            <h6><i class="fas fa-info-circle"></i> What happens next?</h6>
+            <ul class="mb-0">
+                <li>An email will be sent to {{ invoice.client.user.email }} with the invoice PDF attached</li>
+                <li>The client will receive a secure payment link they can use without logging in</li>
+                <li>You'll be notified when the client views or pays the invoice</li>
+                <li>The invoice status will automatically update when payment is received</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

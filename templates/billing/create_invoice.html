@@ -1,0 +1,209 @@
+{% extends 'billing/base_authenticated.html' %}
+{% load static %}
+
+{% block title %}Create Invoice - Portal{% endblock %}
+
+{% block portal_content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-plus-circle"></i> Create New Invoice</h2>
+            <a href="{% url 'billing:invoice_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Invoices
+            </a>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="post" id="invoice-form">
+                    {% csrf_token %}
+                    
+                    <!-- Template Selection -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> 
+                                <strong>Quick Start:</strong> Select a template to pre-fill common invoice details, or create from scratch.
+                            </div>
+                            <label for="id_template" class="form-label">Use Template</label>
+                            {{ form.template }}
+                            <div class="form-text">Optional: Select a template to populate default values</div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Client and Dates -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="id_client" class="form-label">Client *</label>
+                            {{ form.client }}
+                            {% if form.client.errors %}
+                                <div class="text-danger small">{{ form.client.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="id_issue_date" class="form-label">Issue Date *</label>
+                            {{ form.issue_date }}
+                            {% if form.issue_date.errors %}
+                                <div class="text-danger small">{{ form.issue_date.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="id_due_date" class="form-label">Due Date *</label>
+                            {{ form.due_date }}
+                            {% if form.due_date.errors %}
+                                <div class="text-danger small">{{ form.due_date.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Description and Notes -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="id_description" class="form-label">Description</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger small">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_notes" class="form-label">Notes / Payment Terms</label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="text-danger small">{{ form.notes.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Tax Rate -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <label for="id_tax_rate" class="form-label">Tax Rate (%)</label>
+                            {{ form.tax_rate }}
+                            <div class="form-text">E.g., 6.25 for 6.25%</div>
+                            {% if form.tax_rate.errors %}
+                                <div class="text-danger small">{{ form.tax_rate.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Line Items -->
+                    <h4 class="mb-3">Line Items</h4>
+                    
+                    {{ formset.management_form }}
+                    <div id="line-items">
+                        {% for form in formset %}
+                        <div class="line-item-row card mb-3">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-5">
+                                        <label class="form-label">Description *</label>
+                                        {{ form.description }}
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Quantity *</label>
+                                        {{ form.quantity }}
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Unit Price *</label>
+                                        {{ form.unit_price }}
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Related Plan</label>
+                                        {{ form.related_plan }}
+                                    </div>
+                                    <div class="col-md-1 d-flex align-items-end">
+                                        {% if not forloop.first %}
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="removeLineItem(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                        {{ form.DELETE }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <button type="button" class="btn btn-outline-primary mb-4" onclick="addLineItem()">
+                        <i class="fas fa-plus"></i> Add Line Item
+                    </button>
+
+                    <hr class="my-4">
+
+                    <!-- Submit Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'billing:invoice_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Create Invoice
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Template auto-fill
+document.getElementById('id_template').addEventListener('change', function() {
+    const templateId = this.value;
+    if (!templateId) return;
+    
+    // In production, you'd fetch template data via AJAX
+    // For now, just show a message
+    if (confirm('Load template defaults? This will overwrite any current values.')) {
+        // TODO: Implement AJAX template loading
+        alert('Template loading will be implemented in next phase.');
+    }
+});
+
+// Line item management
+let lineItemCount = {{ formset.total_form_count }};
+
+function addLineItem() {
+    const container = document.getElementById('line-items');
+    const newForm = container.children[0].cloneNode(true);
+    
+    // Update form index
+    const formRegex = RegExp(`form-(\\d){1}-`,'g');
+    newForm.innerHTML = newForm.innerHTML.replace(formRegex, `form-${lineItemCount}-`);
+    
+    // Clear values
+    newForm.querySelectorAll('input, select, textarea').forEach(input => {
+        if (input.type === 'checkbox') {
+            input.checked = false;
+        } else {
+            input.value = '';
+        }
+    });
+    
+    container.appendChild(newForm);
+    lineItemCount++;
+    
+    // Update management form
+    document.getElementById('id_form-TOTAL_FORMS').value = lineItemCount;
+}
+
+function removeLineItem(button) {
+    const row = button.closest('.line-item-row');
+    const deleteCheckbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+    if (deleteCheckbox) {
+        deleteCheckbox.checked = true;
+        row.style.display = 'none';
+    }
+}
+</script>
+
+<style>
+.line-item-row {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}

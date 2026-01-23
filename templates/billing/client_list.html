@@ -1,0 +1,141 @@
+{% extends 'billing/base_authenticated.html' %}
+{% load static %}
+
+{% block title %}All Clients - Portal{% endblock %}
+
+{% block portal_content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-users"></i> All Clients</h2>
+            <div>
+                <a href="{% url 'billing:create_invoice' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> New Invoice
+                </a>
+            </div>
+        </div>
+
+        {% if clients %}
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Client Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th class="text-center">Total Invoices</th>
+                                <th class="text-end">Total Billed</th>
+                                <th class="text-end">Outstanding</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for client in clients %}
+                            <tr>
+                                <td>
+                                    <strong>{{ client.user.get_full_name|default:client.user.username }}</strong>
+                                    {% if client.company_name %}
+                                    <br>
+                                    <small class="text-muted">{{ client.company_name }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="mailto:{{ client.user.email }}">{{ client.user.email }}</a>
+                                </td>
+                                <td>
+                                    {% if client.phone %}
+                                    <a href="tel:{{ client.phone }}">{{ client.phone }}</a>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-info">{{ client.invoice_count }}</span>
+                                </td>
+                                <td class="text-end">
+                                    <strong>${{ client.total_billed|floatformat:2 }}</strong>
+                                </td>
+                                <td class="text-end">
+                                    {% if client.outstanding > 0 %}
+                                    <span class="text-danger">
+                                        <strong>${{ client.outstanding|floatformat:2 }}</strong>
+                                    </span>
+                                    {% else %}
+                                    <span class="text-success">$0.00</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <a href="{% url 'billing:invoice_list' %}?client={{ client.id }}" 
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="View client invoices">
+                                        <i class="fas fa-file-invoice"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-light">
+                                <td colspan="3"><strong>Totals</strong></td>
+                                <td class="text-center">
+                                    <strong>{{ clients|length }}</strong> client{{ clients|length|pluralize }}
+                                </td>
+                                <td class="text-end">
+                                    <strong>${{ total_billed|floatformat:2 }}</strong>
+                                </td>
+                                <td class="text-end">
+                                    <strong>${{ total_outstanding|floatformat:2 }}</strong>
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="text-muted">Total Clients</h6>
+                        <h2 class="mb-0">{{ clients|length }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="text-muted">Total Revenue</h6>
+                        <h2 class="mb-0 text-success">${{ total_billed|floatformat:2 }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="text-muted">Outstanding Balance</h6>
+                        <h2 class="mb-0 text-danger">${{ total_outstanding|floatformat:2 }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                <h4>No Clients Yet</h4>
+                <p class="text-muted">Clients will appear here once you create invoices for them.</p>
+                <a href="{% url 'billing:create_invoice' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create First Invoice
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

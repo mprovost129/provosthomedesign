@@ -3,6 +3,7 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth.tokens import default_token_generator
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -17,8 +18,15 @@ from decimal import Decimal
 import json
 import logging
 
-from .models import Client, Invoice, Payment
-from .forms import ClientRegistrationForm, ClientLoginForm, ClientProfileForm, ClientPasswordResetForm
+from .models import Client, Invoice, Payment, InvoiceTemplate, InvoiceLineItem
+from .forms import (
+    ClientRegistrationForm, 
+    ClientLoginForm, 
+    ClientProfileForm, 
+    ClientPasswordResetForm,
+    InvoiceForm,
+    InvoiceLineItemFormSet
+)
 
 logger = logging.getLogger(__name__)
 
@@ -510,3 +518,89 @@ def stripe_webhook(request):
             logger.warning(f'Payment not found for intent: {payment_intent["id"]}')
     
     return HttpResponse(status=200)
+
+
+# ==================== Employee Portal Views (Staff Only) ====================
+
+@staff_member_required(login_url='/portal/login/')
+def create_invoice(request):
+    """Create a new invoice (staff only)."""
+    if request.method == 'POST':
+        form = InvoiceForm(request.POST)
+        formset = InvoiceLineItemFormSet(request.POST)
+        
+        if form.is_valid() and formset.is_valid():
+            invoice = form.save(commit=False)
+            
+            # If a template was selected, populate from template
+            template = form.cleaned_data.get('template')
+            if template and not invoice.description:
+                invoice.description = template.default_description
+                invoice.notes = template.default_notes
+                invoice.tax_rate = template.default_tax_rate
+            
+            invoice.save()
+            
+            # Save line items
+            formset.instance = invoice
+            line_items = formset.save(commit=False)
+            for item in line_items:
+                item.total = item.quantity * item.unit_price
+                item.save()
+            
+            # Calculate totals
+            invoice.calculate_totals()
+            
+            messages.success(request, f'Invoice {invoice.invoice_number} created successfully!')
+            return redirect('billing:invoice_detail', pk=invoice.pk)
+    else:
+        form = InvoiceForm()
+        formset = InvoiceLineItemFormSet()
+    
+    context = {
+        'form': form,
+        'formset': formset,
+        'templates': InvoiceTemplate.objects.filter(is_active=True),
+    }
+    return render(request, 'billing/create_invoice.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def client_list(request):
+    """View all clients (staff only)."""
+    from django.db.models import Sum, Count, Q
+    
+    clients = Client.objects.annotate(
+        invoice_count=Count('invoices'),
+        total_billed=Sum('invoices__total'),
+        total_paid=Sum('invoices__amount_paid'),
+        outstanding=Sum('invoices__total') - Sum('invoices__amount_paid')
+    ).order_by('-created_at')
+    
+    # Calculate overall totals
+    totals = Client.objects.aggregate(
+        total_billed=Sum('invoices__total'),
+        total_outstanding=Sum('invoices__total') - Sum('invoices__amount_paid')
+    )
+    
+    context = {
+        'clients': clients,
+        'total_billed': totals['total_billed'] or Decimal('0.00'),
+        'total_outstanding': totals['total_outstanding'] or Decimal('0.00'),
+    }
+    return render(request, 'billing/client_list.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def send_invoice_email(request, pk):
+    """Send invoice via email (staff only)."""
+    invoice = get_object_or_404(Invoice, pk=pk)
+    
+    if request.method == 'POST':
+        # TODO: Implement email sending in next phase
+        invoice.mark_as_sent()
+        messages.success(request, f'Invoice {invoice.invoice_number} sent to {invoice.client.user.email}')
+        return redirect('billing:invoice_detail', pk=invoice.pk)
+    
+    context = {'invoice': invoice}
+    return render(request, 'billing/confirm_send_invoice.html', context)
