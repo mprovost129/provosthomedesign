@@ -31,7 +31,8 @@ class ClientRegistrationForm(UserCreationForm):
         'class': 'form-control',
         'placeholder': 'Phone number (optional)'
     }))
-    captcha = ReCaptchaField(widget=ReCaptchaV2Checkbox())
+    # Temporarily disabled until reCAPTCHA is properly configured
+    # captcha = ReCaptchaField(widget=ReCaptchaV2Checkbox())
     
     class Meta:
         model = User

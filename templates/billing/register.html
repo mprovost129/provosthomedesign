@@ -120,15 +120,6 @@
                         {% endif %}
                     </div>
                     
-                    <div class="mb-4">
-                        {{ form.captcha }}
-                        {% if form.captcha.errors %}
-                        <div class="invalid-feedback d-block">
-                            {{ form.captcha.errors }}
-                        </div>
-                        {% endif %}
-                    </div>
-                    
                     {% if form.non_field_errors %}
                     <div class="alert alert-danger">
                         {{ form.non_field_errors }}
