@@ -34,7 +34,7 @@
                                     Job Number <span class="text-danger">*</span>
                                 </label>
                                 {{ form.job_number }}
-                                <small class="form-text text-muted">Format: YYMMDD (e.g., 260101)</small>
+                                <small class="form-text text-muted">Format: YYMM## (e.g., 260123 = Jan 2026, Job #23)</small>
                                 {% if form.job_number.errors %}
                                     <div class="invalid-feedback d-block">{{ form.job_number.errors }}</div>
                                 {% endif %}
@@ -187,7 +187,7 @@
                 <div class="card-body">
                     <h5 class="card-title">Tips</h5>
                     <ul class="mb-0">
-                        <li class="mb-2"><strong>Job Number:</strong> Use YYMMDD format (e.g., 260101 for January 1, 2026)</li>
+                        <li class="mb-2"><strong>Job Number:</strong> Use YYMM## format (e.g., 260123 = Year 26, Month 01, Job #23)</li>
                         <li class="mb-2"><strong>Flat Rate:</strong> Enter a fixed price for the entire project</li>
                         <li class="mb-2"><strong>Hourly:</strong> Set your hourly rate and estimated hours</li>
                         <li><strong>Status:</strong> Track project progress from quoted to completed</li>

@@ -363,7 +363,7 @@ class ProjectForm(forms.ModelForm):
         widgets = {
             'job_number': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'YYMMDD (e.g., 260101)',
+                'placeholder': 'YYMM## (e.g., 260123)',
                 'pattern': '[0-9]{6}',
                 'maxlength': '6'
             }),
@@ -420,7 +420,7 @@ class ProjectForm(forms.ModelForm):
         }
     
     def clean_job_number(self):
-        """Validate job number format (YYMMDD)"""
+        """Validate job number format (YYMM## where ## is the job number)"""
         job_number = self.cleaned_data.get('job_number')
         
         if not job_number:
@@ -428,16 +428,20 @@ class ProjectForm(forms.ModelForm):
         
         # Check format
         if not re.match(r'^\d{6}$', job_number):
-            raise forms.ValidationError('Job number must be 6 digits in YYMMDD format (e.g., 260101).')
+            raise forms.ValidationError('Job number must be 6 digits in YYMM## format (e.g., 260123).')
         
-        # Validate as a real date
+        # Validate year and month portions
         try:
             year = int('20' + job_number[0:2])
             month = int(job_number[2:4])
-            day = int(job_number[4:6])
-            datetime(year, month, day)
-        except ValueError:
-            raise forms.ValidationError('Job number must be a valid date in YYMMDD format.')
+            if month < 1 or month > 12:
+                raise ValueError('Invalid month')
+            # Job number portion (last 2 digits) can be any number 01-99
+            job_num = int(job_number[4:6])
+            if job_num < 1:
+                raise ValueError('Job number must be at least 01')
+        except ValueError as e:
+            raise forms.ValidationError('Job number must have valid year/month (YYMM) followed by job number (01-99).')
         
         # Check uniqueness (excluding current instance if editing)
         qs = Project.objects.filter(job_number=job_number)

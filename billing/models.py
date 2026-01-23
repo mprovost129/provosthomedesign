@@ -628,7 +628,7 @@ class Project(models.Model):
     job_number = models.CharField(
         max_length=10, 
         unique=True, 
-        help_text="Job number in YYMMDD format (e.g., 260101 for Jan 1, 2026)"
+        help_text="Job number in YYMM## format (e.g., 260123 = Year 26, Month 01, Job #23)"
     )
     job_name = models.CharField(max_length=200, help_text="Project name or title")
     description = models.TextField(blank=True, help_text="Detailed project description")
