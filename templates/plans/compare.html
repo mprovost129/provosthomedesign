@@ -55,10 +55,12 @@
                         {% for plan in plans %}
                             <td class="text-center">
                                 {% if plan.main_image %}
-                                    <img src="{{ plan.main_image.url }}" 
-                                         alt="Plan {{ plan.plan_number }}"
-                                         class="img-fluid rounded"
-                                         style="max-height: 200px; object-fit: cover;">
+                                    <a href="{{ plan.get_absolute_url }}" class="d-inline-block">
+                                        <img src="{{ plan.main_image.url }}" 
+                                             alt="Plan {{ plan.plan_number }}"
+                                             class="img-fluid rounded"
+                                             style="max-height: 200px; object-fit: cover; cursor: pointer;">
+                                    </a>
                                 {% else %}
                                     <div class="bg-light p-4 text-muted">No image</div>
                                 {% endif %}
@@ -137,16 +139,22 @@
                     
                     <!-- Price -->
                     <tr>
-                        <th>Price</th>
+                        <th>Base Price</th>
                         {% for plan in plans %}
                             <td class="text-center">
-                                {% if plan.price %}
-                                    <strong class="text-primary">${{ plan.price|floatformat:0 }}</strong>
+                                {% if plan.plan_price %}
+                                    <strong class="text-primary">${{ plan.plan_price|floatformat:2 }}</strong>
                                 {% else %}
                                     <span class="text-muted">Call for pricing</span>
                                 {% endif %}
                             </td>
                         {% endfor %}
+                    </tr>
+                    <tr>
+                        <td colspan="{{ plans|length|add:1 }}" class="table-light small text-muted text-center">
+                            <i class="bi bi-info-circle"></i> 
+                            Pricing is for the plan as shown. Any modifications will be quoted separately and charged in addition to the base plan price.
+                        </td>
                     </tr>
                     
                     <!-- Actions -->
@@ -183,9 +191,12 @@
                     </div>
                     <div class="card-body">
                         {% if plan.main_image %}
-                            <img src="{{ plan.main_image.url }}" 
-                                 alt="Plan {{ plan.plan_number }}"
-                                 class="img-fluid rounded mb-3">
+                            <a href="{{ plan.get_absolute_url }}" class="d-block mb-3">
+                                <img src="{{ plan.main_image.url }}" 
+                                     alt="Plan {{ plan.plan_number }}"
+                                     class="img-fluid rounded"
+                                     style="cursor: pointer;">
+                            </a>
                         {% endif %}
                         
                         <table class="table table-sm">
@@ -203,8 +214,13 @@
                             <tr><th>Floors:</th><td>{{ plan.stories|default:"—" }}</td></tr>
                             <tr><th>Dimensions:</th><td>{{ plan.house_width_display|default:"—" }} × {{ plan.house_depth_display|default:"—" }}</td></tr>
                             <tr><th>Garage:</th><td>{{ plan.garage_stalls|default:"—" }}{% if plan.garage_stalls %} car{% if plan.garage_stalls > 1 %}s{% endif %}{% endif %}</td></tr>
-                            <tr><th>Price:</th><td>{% if plan.plan_price %}${{ plan.plan_price|floatformat:0 }}{% else %}Call for pricing{% endif %}</td></tr>
+                            <tr><th>Base Price:</th><td>{% if plan.plan_price %}${{ plan.plan_price|floatformat:2 }}{% else %}Call for pricing{% endif %}</td></tr>
                         </table>
+                        
+                        <div class="alert alert-info small mb-3">
+                            <i class="bi bi-info-circle"></i> 
+                            Pricing is for the plan as shown. Modifications quoted separately.
+                        </div>
                         
                         <div class="d-grid gap-2">
                             <a href="{{ plan.get_absolute_url }}" 

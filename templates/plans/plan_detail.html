@@ -113,7 +113,11 @@
       {% endif %}
 
       {% if plan.plan_price %}
-        <div class="h5 mb-3">Base plan price: ${{ plan.plan_price|floatformat:2|intcomma }}</div>
+        <div class="h5 mb-2">Base plan price: ${{ plan.plan_price|floatformat:2|intcomma }}</div>
+        <p class="text-muted small mb-3">
+          <i class="bi bi-info-circle"></i> 
+          Pricing is for the plan as shown. Any modifications will be quoted separately and charged in addition to the base plan price.
+        </p>
       {% endif %}
 
       {# Action Buttons #}

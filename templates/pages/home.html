@@ -79,17 +79,20 @@
         {% for p in recent_plans %}
           <div class="col">
             <div class="card h-100 border shadow rounded-3">
-              {% if p.main_image %}
-                <img
-                  src="{{ p.main_image.url }}"
-                  class="card-img-top plan-thumb"
-                  alt="Front elevation of Plan {{ p.plan_number|default:'—' }}"
-                  loading="lazy" decoding="async">
-              {% else %}
-                <div class="bg-body-tertiary text-muted small plan-thumb-placeholder">
-                  No image
-                </div>
-              {% endif %}
+              <a href="{{ p.get_absolute_url }}" class="d-block">
+                {% if p.main_image %}
+                  <img
+                    src="{{ p.main_image.url }}"
+                    class="card-img-top plan-thumb"
+                    alt="Front elevation of Plan {{ p.plan_number|default:'—' }}"
+                    loading="lazy" decoding="async"
+                    style="cursor: pointer;">
+                {% else %}
+                  <div class="bg-body-tertiary text-muted small plan-thumb-placeholder">
+                    No image
+                  </div>
+                {% endif %}
+              </a>
               <div class="card-body">
                 <h3 class="h6 card-title mb-1">
                   <a href="{{ p.get_absolute_url }}" class="text-decoration-none">
