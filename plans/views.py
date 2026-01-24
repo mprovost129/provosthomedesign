@@ -385,6 +385,7 @@ from django.http import JsonResponse
 @require_POST
 def toggle_favorite(request: HttpRequest, plan_id: int) -> HttpResponse:
     """Add or remove a plan from favorites."""
+    session_utils.ensure_session_key(request)
     plan = get_object_or_404(Plans, pk=plan_id, is_available=True)
     
     is_saved = session_utils.is_plan_saved(request, plan_id)
@@ -435,7 +436,8 @@ def favorites_list(request: HttpRequest) -> HttpResponse:
 
 @require_POST
 def toggle_comparison(request: HttpRequest, plan_id: int) -> HttpResponse:
-    """Add or remove a plan from comparison."""
+    """Add or remove a plan from comparison list."""
+    session_utils.ensure_session_key(request)
     plan = get_object_or_404(Plans, pk=plan_id, is_available=True)
     
     is_in_comp = session_utils.is_in_comparison(request, plan_id)
