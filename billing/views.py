@@ -20,7 +20,7 @@ import json
 import logging
 
 from core.utils import verify_recaptcha_v3
-from .models import Client, Employee, Invoice, Payment, InvoiceTemplate, InvoiceLineItem, ProposalLineItem, Project, Proposal
+from .models import Client, Employee, Invoice, Payment, InvoiceTemplate, InvoiceLineItem, ProposalLineItem, Project, Proposal, ClientPlanFile
 from .forms import (
     ClientRegistrationForm, 
     ClientLoginForm, 
@@ -29,7 +29,8 @@ from .forms import (
     InvoiceForm,
     InvoiceLineItemFormSet,
     ClientForm,
-    EmployeeForm
+    EmployeeForm,
+    ClientPlanFileForm
 )
 
 logger = logging.getLogger(__name__)
@@ -326,6 +327,79 @@ def plan_files(request):
     }
     
     return render(request, 'billing/plan_files.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def upload_plan_file(request):
+    """Staff view to upload plan files for clients."""
+    if request.method == 'POST':
+        form = ClientPlanFileForm(request.POST)
+        if form.is_valid():
+            plan_file = form.save(commit=False)
+            plan_file.uploaded_by = request.user
+            plan_file.save()
+            
+            # Send email notification if requested
+            if form.cleaned_data.get('send_email_notification'):
+                _send_plan_file_email(plan_file, request.user)
+            
+            messages.success(request, f'Plan file "{plan_file.file_name}" uploaded successfully!')
+            return redirect('billing:upload_plan_file')
+    else:
+        form = ClientPlanFileForm()
+    
+    # Get recent uploads for display
+    recent_uploads = ClientPlanFile.objects.select_related(
+        'client', 'project', 'uploaded_by'
+    ).order_by('-uploaded_at')[:10]
+    
+    context = {
+        'form': form,
+        'recent_uploads': recent_uploads,
+    }
+    
+    return render(request, 'billing/upload_plan_file.html', context)
+
+
+def _send_plan_file_email(plan_file, uploaded_by):
+    """Helper function to send plan file notification email."""
+    from django.core.mail import EmailMultiAlternatives
+    from django.template.loader import render_to_string
+    from django.conf import settings
+    
+    client = plan_file.client
+    
+    # Get client email - try user email first, then client profile email
+    to_email = None
+    if client.user and client.user.email:
+        to_email = client.user.email
+    elif client.email:
+        to_email = client.email
+    
+    if not to_email:
+        return  # Can't send email without an address
+    
+    context = {
+        'plan_file': plan_file,
+        'client': client,
+        'uploaded_by': uploaded_by,
+        'portal_url': settings.PORTAL_URL if hasattr(settings, 'PORTAL_URL') else 'https://provosthomedesign.com/portal/',
+    }
+    
+    html_content = render_to_string('billing/emails/plan_file_notification.html', context)
+    text_content = render_to_string('billing/emails/plan_file_notification.txt', context)
+    
+    subject = f'New Plan File Available: {plan_file.file_name}'
+    
+    msg = EmailMultiAlternatives(
+        subject=subject,
+        body=text_content,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[to_email],
+        reply_to=[settings.DEFAULT_FROM_EMAIL],
+    )
+    msg.attach_alternative(html_content, 'text/html')
+    msg.send(fail_silently=True)
 
 
 @login_required(login_url='/portal/login/')

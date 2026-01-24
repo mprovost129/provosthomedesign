@@ -1,0 +1,169 @@
+{% extends 'billing/base_authenticated.html' %}
+
+{% block title %}Upload Plan File{% endblock %}
+
+{% block authenticated_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>Upload Plan File</h2>
+        <p class="text-muted">Add a new plan file for a client</p>
+    </div>
+    <a href="{% url 'billing:dashboard' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+
+<!-- Upload Form -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-cloud-upload-alt me-2"></i>Upload New File</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Client Selection -->
+                    <div class="mb-3">
+                        <label for="{{ form.client.id_for_label }}" class="form-label">Client *</label>
+                        {{ form.client }}
+                        {% if form.client.errors %}
+                            <div class="invalid-feedback d-block">{{ form.client.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Project Selection -->
+                    <div class="mb-3">
+                        <label for="{{ form.project.id_for_label }}" class="form-label">Project (Optional)</label>
+                        {{ form.project }}
+                        <small class="form-text text-muted">Associate this file with a specific project</small>
+                        {% if form.project.errors %}
+                            <div class="invalid-feedback d-block">{{ form.project.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- File Information -->
+                    <hr class="my-4">
+                    <h6 class="mb-3">File Information</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="{{ form.file_name.id_for_label }}" class="form-label">File Name *</label>
+                            {{ form.file_name }}
+                            {% if form.file_name.errors %}
+                                <div class="invalid-feedback d-block">{{ form.file_name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.file_type.id_for_label }}" class="form-label">File Type *</label>
+                            {{ form.file_type }}
+                            {% if form.file_type.errors %}
+                                <div class="invalid-feedback d-block">{{ form.file_type.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.version.id_for_label }}" class="form-label">Version</label>
+                        {{ form.version }}
+                        {% if form.version.errors %}
+                            <div class="invalid-feedback d-block">{{ form.version.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">{{ form.description.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Dropbox Link -->
+                    <hr class="my-4">
+                    <h6 class="mb-3">Dropbox Link</h6>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.dropbox_link.id_for_label }}" class="form-label">Dropbox Shared Link *</label>
+                        {{ form.dropbox_link }}
+                        <small class="form-text text-muted">{{ form.dropbox_link.help_text }}</small>
+                        {% if form.dropbox_link.errors %}
+                            <div class="invalid-feedback d-block">{{ form.dropbox_link.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Notification Options -->
+                    <hr class="my-4">
+                    <h6 class="mb-3">Notification</h6>
+                    
+                    <div class="form-check mb-3">
+                        {{ form.send_email_notification }}
+                        <label class="form-check-label" for="{{ form.send_email_notification.id_for_label }}">
+                            {{ form.send_email_notification.label }}
+                        </label>
+                        <small class="form-text text-muted d-block ms-4">{{ form.send_email_notification.help_text }}</small>
+                    </div>
+                    
+                    <!-- Visibility -->
+                    <hr class="my-4">
+                    <h6 class="mb-3">Visibility</h6>
+                    
+                    <div class="form-check mb-4">
+                        {{ form.is_active }}
+                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                            File is active (visible to client)
+                        </label>
+                    </div>
+                    
+                    <!-- Submit Buttons -->
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload me-2"></i>Upload File
+                        </button>
+                        <a href="{% url 'billing:dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Uploads Sidebar -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="fas fa-history me-2"></i>Recent Uploads</h6>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_uploads %}
+                    <div class="list-group list-group-flush">
+                        {% for file in recent_uploads %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ file.file_name }}</h6>
+                                    <p class="mb-1 small text-muted">
+                                        <i class="fas fa-user me-1"></i>{{ file.client.get_full_name }}
+                                    </p>
+                                    <p class="mb-0 small text-muted">
+                                        <i class="fas fa-clock me-1"></i>{{ file.uploaded_at|timesince }} ago
+                                    </p>
+                                </div>
+                                {% if not file.is_active %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <i class="fas fa-inbox fa-2x mb-2"></i>
+                        <p class="mb-0">No recent uploads</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock authenticated_content %}

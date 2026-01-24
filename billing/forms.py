@@ -2,7 +2,8 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordResetForm
 from django.contrib.auth.models import User
 from .models import (Client, Employee, Invoice, InvoiceTemplate, InvoiceLineItem, 
-                     SystemSettings, Project, Proposal, ProposalLineItem, ProposalTemplate)
+                     SystemSettings, Project, Proposal, ProposalLineItem, ProposalTemplate,
+                     ClientPlanFile)
 import re
 from datetime import datetime
 from django_recaptcha.fields import ReCaptchaField
@@ -623,6 +624,50 @@ class ProposalTemplateForm(forms.ModelForm):
             'default_deposit_percentage': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'max': '100'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
+
+class ClientPlanFileForm(forms.ModelForm):
+    """Form for staff to upload client plan files"""
+    
+    send_email_notification = forms.BooleanField(
+        required=False,
+        initial=True,
+        label='Send email notification to client',
+        help_text='Email the client to notify them about this plan file',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    
+    class Meta:
+        model = ClientPlanFile
+        fields = ['client', 'project', 'file_name', 'file_type', 'version', 
+                  'description', 'dropbox_link', 'is_active']
+        widgets = {
+            'client': forms.Select(attrs={'class': 'form-select'}),
+            'project': forms.Select(attrs={'class': 'form-select'}),
+            'file_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Main Floor Plan.pdf'
+            }),
+            'file_type': forms.Select(attrs={'class': 'form-select'}),
+            'version': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Rev 3, v2.1'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Optional description or notes about this file'
+            }),
+            'dropbox_link': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Paste Dropbox shared link here'
+            }),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        help_texts = {
+            'dropbox_link': 'Paste the Dropbox shared link. It will be automatically formatted for download.',
+        }
+
 
 
 

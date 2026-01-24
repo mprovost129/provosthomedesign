@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #001a33 0%, #004080 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+        .content {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 0 0 8px 8px;
+        }
+        .file-details {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #004080;
+        }
+        .file-details h3 {
+            margin-top: 0;
+            color: #004080;
+        }
+        .detail-row {
+            margin: 10px 0;
+        }
+        .label {
+            font-weight: bold;
+            color: #666;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #004080;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .button:hover {
+            background: #003366;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 style="margin: 0;">New Plan File Available</h1>
+    </div>
+    
+    <div class="content">
+        <p>Hello {{ client.first_name|default:"there" }},</p>
+        
+        <p>A new plan file has been uploaded to your client portal and is now available for download.</p>
+        
+        <div class="file-details">
+            <h3>{{ plan_file.file_name }}</h3>
+            
+            {% if plan_file.file_type %}
+            <div class="detail-row">
+                <span class="label">Type:</span> {{ plan_file.get_file_type_display }}
+            </div>
+            {% endif %}
+            
+            {% if plan_file.version %}
+            <div class="detail-row">
+                <span class="label">Version:</span> {{ plan_file.version }}
+            </div>
+            {% endif %}
+            
+            {% if plan_file.project %}
+            <div class="detail-row">
+                <span class="label">Project:</span> {{ plan_file.project.job_name }}
+            </div>
+            {% endif %}
+            
+            {% if plan_file.description %}
+            <div class="detail-row">
+                <span class="label">Description:</span><br>
+                {{ plan_file.description|linebreaks }}
+            </div>
+            {% endif %}
+        </div>
+        
+        <p style="text-align: center;">
+            <a href="{{ portal_url }}" class="button">View in Client Portal</a>
+        </p>
+        
+        <p>You can access this file and all your project documents by logging into your client portal.</p>
+        
+        <p>If you have any questions about this file, please don't hesitate to reach out.</p>
+        
+        <p>Best regards,<br>
+        {{ uploaded_by.get_full_name|default:"Provost Home Design Team" }}<br>
+        Provost Home Design</p>
+    </div>
+    
+    <div class="footer">
+        <p>This is an automated notification from Provost Home Design.<br>
+        If you have any questions, please contact us.</p>
+    </div>
+</body>
+</html>

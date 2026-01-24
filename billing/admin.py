@@ -454,6 +454,10 @@ class ClientPlanFileAdmin(admin.ModelAdmin):
             'fields': ('dropbox_link',),
             'description': 'Paste the Dropbox shared link here. It will be automatically formatted for download.'
         }),
+        ('Notification', {
+            'fields': ('send_email_notification',),
+            'description': 'Check to send an email notification to the client about this plan file.'
+        }),
         ('Visibility', {
             'fields': ('is_active',)
         }),
@@ -463,9 +467,67 @@ class ClientPlanFileAdmin(admin.ModelAdmin):
         }),
     )
     
+    def get_form(self, request, obj=None, **kwargs):
+        """Add send_email_notification checkbox to the form."""
+        form = super().get_form(request, obj, **kwargs)
+        # Add send_email_notification field
+        from django import forms
+        form.base_fields['send_email_notification'] = forms.BooleanField(
+            required=False,
+            initial=True,
+            label='Send email notification to client',
+            help_text='Email the client to notify them about this plan file'
+        )
+        return form
+    
     def save_model(self, request, obj, form, change):
-        """Auto-set uploaded_by on creation."""
+        """Auto-set uploaded_by on creation and send email if requested."""
         if not change:  # If creating new plan file
             obj.uploaded_by = request.user
+        
         super().save_model(request, obj, form, change)
+        
+        # Send email notification if checkbox was checked
+        if form.cleaned_data.get('send_email_notification', False):
+            self._send_plan_file_notification(obj, request.user)
+    
+    def _send_plan_file_notification(self, plan_file, uploaded_by):
+        """Send email notification to client about new plan file."""
+        from django.core.mail import EmailMultiAlternatives
+        from django.template.loader import render_to_string
+        from django.conf import settings
+        
+        client = plan_file.client
+        
+        # Get client email - try user email first, then client profile email
+        to_email = None
+        if client.user and client.user.email:
+            to_email = client.user.email
+        elif client.email:
+            to_email = client.email
+        
+        if not to_email:
+            return  # Can't send email without an address
+        
+        context = {
+            'plan_file': plan_file,
+            'client': client,
+            'uploaded_by': uploaded_by,
+            'portal_url': settings.PORTAL_URL if hasattr(settings, 'PORTAL_URL') else 'https://provosthomedesign.com/portal/',
+        }
+        
+        html_content = render_to_string('billing/emails/plan_file_notification.html', context)
+        text_content = render_to_string('billing/emails/plan_file_notification.txt', context)
+        
+        subject = f'New Plan File Available: {plan_file.file_name}'
+        
+        msg = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[to_email],
+            reply_to=[settings.DEFAULT_FROM_EMAIL],
+        )
+        msg.attach_alternative(html_content, 'text/html')
+        msg.send(fail_silently=True)
 

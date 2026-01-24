@@ -1,0 +1,29 @@
+NEW PLAN FILE AVAILABLE
+========================
+
+Hello {{ client.first_name|default:"there" }},
+
+A new plan file has been uploaded to your client portal and is now available for download.
+
+FILE DETAILS:
+{{ plan_file.file_name }}
+{% if plan_file.file_type %}Type: {{ plan_file.get_file_type_display }}{% endif %}
+{% if plan_file.version %}Version: {{ plan_file.version }}{% endif %}
+{% if plan_file.project %}Project: {{ plan_file.project.job_name }}{% endif %}
+
+{% if plan_file.description %}Description:
+{{ plan_file.description }}
+{% endif %}
+
+You can access this file by logging into your client portal:
+{{ portal_url }}
+
+If you have any questions about this file, please don't hesitate to reach out.
+
+Best regards,
+{{ uploaded_by.get_full_name|default:"Provost Home Design Team" }}
+Provost Home Design
+
+---
+This is an automated notification from Provost Home Design.
+If you have any questions, please contact us.

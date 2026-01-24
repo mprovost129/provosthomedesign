@@ -16,6 +16,7 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
     path('profile/', views.profile, name='profile'),
     path('plan-files/', views.plan_files, name='plan_files'),
+    path('plan-files/upload/', views.upload_plan_file, name='upload_plan_file'),  # Staff only
     
     # Invoices
     path('invoices/', views.invoice_list, name='invoice_list'),

@@ -48,6 +48,9 @@
                     <a class="nav-link {% if 'project' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:project_list' %}">
                         <i class="fas fa-project-diagram"></i> Projects
                     </a>
+                    <a class="nav-link {% if 'upload_plan_file' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:upload_plan_file' %}">
+                        <i class="fas fa-cloud-upload-alt"></i> Upload Plan File
+                    </a>
                     <a class="nav-link {% if 'client' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:client_list' %}">
                         <i class="fas fa-users"></i> Manage Clients
                     </a>
