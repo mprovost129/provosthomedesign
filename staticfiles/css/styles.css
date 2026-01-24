@@ -117,9 +117,33 @@
   transform: scale(1.05);
 }
 
-/* Heartbeat animation for filled hearts */
+/* Fix for mobile: prevent button background fill on active/pressed state */
+.toggle-favorite:active,
+.toggle-favorite:focus,
+.toggle-favorite.active {
+  background-color: transparent !important;
+  border-color: #dc3545 !important;
+  color: #dc3545 !important;
+}
+
+.toggle-comparison:active,
+.toggle-comparison:focus,
+.toggle-comparison.active {
+  background-color: transparent !important;
+  border-color: #198754 !important;
+  color: #198754 !important;
+}
+
+/* Heart icon styling - always visible */
+.toggle-favorite .bi-heart {
+  color: #dc3545;
+  font-size: 1.1em;
+}
+
+/* Filled heart with heartbeat animation */
 .toggle-favorite .bi-heart-fill {
   color: #dc3545;
+  font-size: 1.1em;
   animation: heartbeat 0.3s ease;
 }
 
