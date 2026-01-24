@@ -10,6 +10,9 @@
         <a href="{% url 'timetracking:time_dashboard' %}" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left"></i> Back to Dashboard
         </a>
+        <a href="{% url 'timetracking:add_to_invoice' %}" class="btn btn-success">
+            <i class="fas fa-file-invoice-dollar"></i> Add to Invoice
+        </a>
         <a href="{% url 'timetracking:create_entry' %}" class="btn btn-primary">
             <i class="fas fa-plus"></i> Add Entry
         </a>
@@ -104,6 +107,7 @@
                         <th>Duration</th>
                         <th>Description</th>
                         <th>Billable</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -137,6 +141,15 @@
                             <span class="badge bg-success">Yes</span>
                             {% else %}
                             <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if entry.invoiced %}
+                            <span class="badge bg-info" title="Invoice #{{ entry.invoice.invoice_number }}">
+                                <i class="fas fa-check"></i> Invoiced
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">Unbilled</span>
                             {% endif %}
                         </td>
                         <td>

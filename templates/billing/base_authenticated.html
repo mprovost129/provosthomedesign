@@ -45,6 +45,9 @@
                     <a class="nav-link {% if 'time' in request.resolver_match.url_name or 'timetracking' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'timetracking:time_dashboard' %}">
                         <i class="fas fa-clock"></i> Time Tracking
                     </a>
+                    <a class="nav-link {% if 'portal_plan' in request.resolver_match.url_name or 'portal_style' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'plans:portal_plan_list' %}">
+                        <i class="fas fa-home"></i> Manage Plans
+                    </a>
                     <a class="nav-link {% if 'proposal' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:proposal_list' %}">
                         <i class="fas fa-file-signature"></i> Proposals
                     </a>
@@ -69,6 +72,9 @@
                     {% endif %}
                     
                     <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
+                    <a class="nav-link {% if 'help' in request.resolver_match.app_name %}active{% endif %}" href="{% url 'help:help_center' %}">
+                        <i class="fas fa-question-circle"></i> Help Center
+                    </a>
                     <a class="nav-link" href="{% url 'pages:home' %}">
                         <i class="fas fa-globe"></i> Main Website
                     </a>

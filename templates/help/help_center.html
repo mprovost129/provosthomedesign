@@ -1,0 +1,168 @@
+{% extends 'billing/base_authenticated.html' %}
+
+{% block title %}Help Center{% endblock %}
+
+{% block authenticated_content %}
+<div class="mb-4">
+    <h1><i class="fas fa-question-circle text-primary"></i> Help Center</h1>
+    <p class="lead text-muted">Find answers and learn how to use the portal</p>
+</div>
+
+<!-- Search Bar -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" action="{% url 'help:help_center' %}">
+            <div class="input-group input-group-lg">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input type="text" name="q" class="form-control" placeholder="Search for help articles..." 
+                       value="{{ search_query }}" autofocus>
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Search Results -->
+{% if search_query %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Search Results for "{{ search_query }}"</h5>
+    </div>
+    <div class="card-body">
+        {% if search_results %}
+        <div class="list-group list-group-flush">
+            {% for article in search_results %}
+            <a href="{% url 'help:article_detail' article.slug %}" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">{{ article.title }}</h6>
+                    <small class="text-muted">{{ article.category.name }}</small>
+                </div>
+                <p class="mb-1 text-muted">{{ article.summary }}</p>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">No articles found matching "{{ search_query }}". Try different keywords.</p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Featured Articles -->
+{% if featured_articles and not search_query %}
+<div class="mb-4">
+    <h3 class="mb-3"><i class="fas fa-star text-warning"></i> Featured Articles</h3>
+    <div class="row">
+        {% for article in featured_articles %}
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <span class="badge bg-primary mb-2">{{ article.category.name }}</span>
+                    <h5 class="card-title">{{ article.title }}</h5>
+                    <p class="card-text text-muted">{{ article.summary }}</p>
+                    <a href="{% url 'help:article_detail' article.slug %}" class="btn btn-outline-primary btn-sm">
+                        Read More <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Categories -->
+<div class="mb-4">
+    <h3 class="mb-3"><i class="fas fa-folder-open"></i> Browse by Category</h3>
+    <div class="row">
+        {% for category in categories %}
+        <div class="col-md-6 col-lg-4 mb-3">
+            <a href="{% url 'help:category_detail' category.slug %}" class="text-decoration-none">
+                <div class="card shadow-sm h-100 hover-shadow">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas {{ category.icon|default:'fa-folder' }} text-primary"></i>
+                            {{ category.name }}
+                        </h5>
+                        <p class="card-text text-muted">{{ category.description|truncatewords:15 }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                {{ category.articles.count }} article{{ category.articles.count|pluralize }}
+                            </small>
+                            <i class="fas fa-arrow-right text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Quick Links -->
+<div class="row mb-4">
+    <!-- Popular Articles -->
+    <div class="col-md-6 mb-3">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-fire text-danger"></i> Popular Articles</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for article in popular_articles %}
+                <a href="{% url 'help:article_detail' article.slug %}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <small>{{ article.title }}</small>
+                        <small class="text-muted">
+                            <i class="fas fa-eye"></i> {{ article.views }}
+                        </small>
+                    </div>
+                </a>
+                {% empty %}
+                <div class="list-group-item">
+                    <small class="text-muted">No articles yet</small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Articles -->
+    <div class="col-md-6 mb-3">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-clock text-info"></i> Recent Articles</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for article in recent_articles %}
+                <a href="{% url 'help:article_detail' article.slug %}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <small>{{ article.title }}</small>
+                        <small class="text-muted">{{ article.created_at|timesince }} ago</small>
+                    </div>
+                </a>
+                {% empty %}
+                <div class="list-group-item">
+                    <small class="text-muted">No articles yet</small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FAQ Link -->
+<div class="text-center mb-4">
+    <a href="{% url 'help:faq_list' %}" class="btn btn-lg btn-outline-primary">
+        <i class="fas fa-question-circle"></i> View Frequently Asked Questions
+    </a>
+</div>
+
+<style>
+.hover-shadow {
+    transition: box-shadow 0.3s ease;
+}
+.hover-shadow:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+</style>
+{% endblock %}

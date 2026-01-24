@@ -50,6 +50,27 @@ class TimeEntry(models.Model):
         help_text="Whether this time should be billed to client"
     )
     
+    # Invoice tracking
+    invoiced = models.BooleanField(
+        default=False,
+        help_text="Whether this time entry has been added to an invoice"
+    )
+    invoice = models.ForeignKey(
+        'billing.Invoice',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='time_entries',
+        help_text="Invoice this time entry was added to"
+    )
+    hourly_rate = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Hourly rate used when invoiced"
+    )
+    
     # Tracking metadata
     created_via_timer = models.BooleanField(
         default=False,

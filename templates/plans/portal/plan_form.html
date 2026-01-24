@@ -1,0 +1,230 @@
+{% extends 'billing/base_authenticated.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block authenticated_content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'plans:portal_plan_list' %}">Plans</a></li>
+        <li class="breadcrumb-item active">{{ title }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-lg-10 offset-lg-1">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h4 class="mb-0">{{ title }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <!-- Basic Information -->
+                    <div class="mb-4">
+                        <h5 class="border-bottom pb-2 mb-3">Basic Information</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.plan_number.id_for_label }}" class="form-label">
+                                    Plan Number *
+                                </label>
+                                {{ form.plan_number }}
+                                {% if form.plan_number.errors %}
+                                <div class="text-danger small mt-1">{{ form.plan_number.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.sku.id_for_label }}" class="form-label">
+                                    SKU
+                                </label>
+                                {{ form.sku }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Specifications -->
+                    <div class="mb-4">
+                        <h5 class="border-bottom pb-2 mb-3">Specifications</h5>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.square_footage.id_for_label }}" class="form-label">
+                                    Square Footage *
+                                </label>
+                                {{ form.square_footage }}
+                                {% if form.square_footage.errors %}
+                                <div class="text-danger small mt-1">{{ form.square_footage.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.bedrooms.id_for_label }}" class="form-label">
+                                    Bedrooms *
+                                </label>
+                                {{ form.bedrooms }}
+                                {% if form.bedrooms.errors %}
+                                <div class="text-danger small mt-1">{{ form.bedrooms.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.bathrooms.id_for_label }}" class="form-label">
+                                    Bathrooms *
+                                </label>
+                                {{ form.bathrooms }}
+                                <small class="text-muted d-block">{{ form.bathrooms.help_text }}</small>
+                                {% if form.bathrooms.errors %}
+                                <div class="text-danger small mt-1">{{ form.bathrooms.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.stories.id_for_label }}" class="form-label">
+                                    Stories *
+                                </label>
+                                {{ form.stories }}
+                                {% if form.stories.errors %}
+                                <div class="text-danger small mt-1">{{ form.stories.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.garage_stalls.id_for_label }}" class="form-label">
+                                    Garage Stalls *
+                                </label>
+                                {{ form.garage_stalls }}
+                                {% if form.garage_stalls.errors %}
+                                <div class="text-danger small mt-1">{{ form.garage_stalls.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Dimensions -->
+                    <div class="mb-4">
+                        <h5 class="border-bottom pb-2 mb-3">Dimensions</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.house_width_in.id_for_label }}" class="form-label">
+                                    House Width (inches) *
+                                </label>
+                                {{ form.house_width_in }}
+                                <small class="text-muted d-block">{{ form.house_width_in.help_text }}</small>
+                                {% if form.house_width_in.errors %}
+                                <div class="text-danger small mt-1">{{ form.house_width_in.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.house_depth_in.id_for_label }}" class="form-label">
+                                    House Depth (inches) *
+                                </label>
+                                {{ form.house_depth_in }}
+                                <small class="text-muted d-block">{{ form.house_depth_in.help_text }}</small>
+                                {% if form.house_depth_in.errors %}
+                                <div class="text-danger small mt-1">{{ form.house_depth_in.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Description & SEO -->
+                    <div class="mb-4">
+                        <h5 class="border-bottom pb-2 mb-3">Description & SEO</h5>
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                Description
+                            </label>
+                            {{ form.description }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.meta_description.id_for_label }}" class="form-label">
+                                Meta Description
+                            </label>
+                            {{ form.meta_description }}
+                            <small class="text-muted d-block">{{ form.meta_description.help_text }}</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Pricing & Images -->
+                    <div class="mb-4">
+                        <h5 class="border-bottom pb-2 mb-3">Pricing & Images</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.plan_price.id_for_label }}" class="form-label">
+                                    Plan Price
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.plan_price }}
+                                </div>
+                                {% if form.plan_price.errors %}
+                                <div class="text-danger small mt-1">{{ form.plan_price.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.main_image.id_for_label }}" class="form-label">
+                                    Main Image (Cover)
+                                </label>
+                                {{ form.main_image }}
+                                {% if plan and plan.main_image %}
+                                <small class="text-muted d-block mt-1">
+                                    Current: <a href="{{ plan.main_image.url }}" target="_blank">View image</a>
+                                </small>
+                                {% endif %}
+                                {% if form.main_image.errors %}
+                                <div class="text-danger small mt-1">{{ form.main_image.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- House Styles -->
+                    <div class="mb-4">
+                        <h5 class="border-bottom pb-2 mb-3">House Styles</h5>
+                        <div class="row">
+                            {% for style in form.house_styles %}
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check">
+                                    {{ style.tag }}
+                                    <label class="form-check-label" for="{{ style.id_for_label }}">
+                                        {{ style.choice_label }}
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Status -->
+                    <div class="mb-4">
+                        <h5 class="border-bottom pb-2 mb-3">Status</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    {{ form.is_available }}
+                                    <label class="form-check-label" for="{{ form.is_available.id_for_label }}">
+                                        Available for public viewing
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    {{ form.is_featured }}
+                                    <label class="form-check-label" for="{{ form.is_featured.id_for_label }}">
+                                        Featured on homepage
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Buttons -->
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save"></i> {{ button_text }}
+                        </button>
+                        <a href="{% url 'plans:portal_plan_list' %}" class="btn btn-outline-secondary btn-lg">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

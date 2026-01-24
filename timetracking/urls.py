@@ -18,6 +18,9 @@ urlpatterns = [
     path('timer/stop/', views.stop_timer, name='stop_timer'),
     path('timer/status/', views.get_timer_status, name='timer_status'),
     
+    # Invoice Integration
+    path('add-to-invoice/', views.add_to_invoice, name='add_to_invoice'),
+    
     # Project View
     path('project/<int:project_id>/', views.project_time_entries, name='project_entries'),
 ]

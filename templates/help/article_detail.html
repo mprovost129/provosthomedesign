@@ -1,0 +1,144 @@
+{% extends 'billing/base_authenticated.html' %}
+
+{% block title %}{{ article.title }} - Help{% endblock %}
+
+{% block authenticated_content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'help:help_center' %}">Help Center</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'help:category_detail' article.category.slug %}">{{ article.category.name }}</a></li>
+        <li class="breadcrumb-item active">{{ article.title }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-lg-9">
+        <!-- Article -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="mb-3">
+                    <span class="badge bg-primary">{{ article.category.name }}</span>
+                    <small class="text-muted ms-2">
+                        <i class="fas fa-eye"></i> {{ article.views }} views
+                    </small>
+                    <small class="text-muted ms-2">
+                        <i class="fas fa-clock"></i> Updated {{ article.updated_at|date:"M d, Y" }}
+                    </small>
+                </div>
+                
+                <h1 class="mb-3">{{ article.title }}</h1>
+                
+                <div class="article-content">
+                    {{ article.content|safe }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Related Articles -->
+        {% if related_articles %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="fas fa-book"></i> Related Articles</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for related in related_articles %}
+                <a href="{% url 'help:article_detail' related.slug %}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">{{ related.title }}</h6>
+                        <small class="text-muted"><i class="fas fa-arrow-right"></i></small>
+                    </div>
+                    <p class="mb-1 text-muted small">{{ related.summary|truncatewords:15 }}</p>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="mt-4">
+            <a href="{% url 'help:category_detail' article.category.slug %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to {{ article.category.name }}
+            </a>
+            <a href="{% url 'help:help_center' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-home"></i> Help Center
+            </a>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-3">
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <h6 class="card-title">Need More Help?</h6>
+                <p class="card-text small text-muted">
+                    Can't find what you're looking for?
+                </p>
+                <a href="{% url 'help:help_center' %}" class="btn btn-sm btn-primary w-100 mb-2">
+                    <i class="fas fa-search"></i> Search Help
+                </a>
+                <a href="{% url 'help:faq_list' %}" class="btn btn-sm btn-outline-primary w-100">
+                    <i class="fas fa-question-circle"></i> View FAQs
+                </a>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h6 class="card-title">Was this helpful?</h6>
+                <p class="card-text small text-muted">
+                    Let us know if this article helped you.
+                </p>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-sm btn-success" onclick="alert('Thank you for your feedback!')">
+                        <i class="fas fa-thumbs-up"></i> Yes
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="alert('Thank you for your feedback! We\'ll improve this article.')">
+                        <i class="fas fa-thumbs-down"></i> No
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.article-content {
+    line-height: 1.8;
+}
+.article-content h3 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    color: #333;
+}
+.article-content p {
+    margin-bottom: 1rem;
+}
+.article-content ul, .article-content ol {
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+}
+.article-content li {
+    margin-bottom: 0.5rem;
+}
+.article-content code {
+    background-color: #f4f4f4;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+.article-content pre {
+    background-color: #f4f4f4;
+    padding: 1rem;
+    border-radius: 5px;
+    overflow-x: auto;
+}
+.article-content strong {
+    font-weight: 600;
+}
+.article-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 5px;
+    margin: 1rem 0;
+}
+</style>
+{% endblock %}

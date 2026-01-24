@@ -1,0 +1,73 @@
+{% extends 'billing/base_authenticated.html' %}
+
+{% block title %}Delete Style - {{ style.style_name }}{% endblock %}
+
+{% block authenticated_content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'plans:portal_style_list' %}">House Styles</a></li>
+        <li class="breadcrumb-item active">Delete {{ style.style_name }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card shadow-sm border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <strong>Warning!</strong> You are about to delete this house style:
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                {% if style.style_image %}
+                                <img src="{{ style.style_image.url }}" alt="{{ style.style_name }}" 
+                                     class="img-fluid rounded">
+                                {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                     style="height: 150px;">
+                                    <i class="fas fa-palette fa-3x text-muted"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-8">
+                                <h5>{{ style.style_name }}</h5>
+                                <p class="text-muted mb-2">{{ style.description|default:"No description" }}</p>
+                                <p class="mb-0">
+                                    <strong>Associated Plans:</strong> {{ style.plans.count }} plan{{ style.plans.count|pluralize }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-danger">
+                    <strong>This action cannot be undone!</strong><br>
+                    {% if style.plans.count > 0 %}
+                    Note: Plans using this style will not be deleted, but will no longer be associated with this style.
+                    {% else %}
+                    This style is not currently associated with any plans.
+                    {% endif %}
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a href="{% url 'plans:portal_style_list' %}" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger btn-lg">
+                            <i class="fas fa-trash"></i> Yes, Delete Style
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

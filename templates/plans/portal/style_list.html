@@ -1,0 +1,87 @@
+{% extends 'billing/base_authenticated.html' %}
+
+{% block title %}Manage House Styles{% endblock %}
+
+{% block authenticated_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-palette"></i> Manage House Styles</h2>
+    <div class="d-flex gap-2">
+        <a href="{% url 'plans:portal_plan_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Plans
+        </a>
+        <a href="{% url 'plans:portal_style_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create New Style
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">House Styles ({{ styles.count }})</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if styles %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Image</th>
+                        <th>Style Name</th>
+                        <th>Slug</th>
+                        <th>Order</th>
+                        <th>Plans</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for style in styles %}
+                    <tr>
+                        <td>
+                            {% if style.style_image %}
+                            <img src="{{ style.style_image.url }}" alt="{{ style.style_name }}" 
+                                 style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">
+                            {% else %}
+                            <div style="width: 60px; height: 60px; background: #f0f0f0; border-radius: 4px; 
+                                        display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-palette text-muted"></i>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong>{{ style.style_name }}</strong>
+                            {% if style.description %}
+                            <br><small class="text-muted">{{ style.description|truncatewords:10 }}</small>
+                            {% endif %}
+                        </td>
+                        <td><code>{{ style.slug }}</code></td>
+                        <td>{{ style.order }}</td>
+                        <td>{{ style.plans.count }} plan{{ style.plans.count|pluralize }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'plans:portal_style_edit' style.pk %}" 
+                                   class="btn btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'plans:portal_style_delete' style.pk %}" 
+                                   class="btn btn-outline-danger">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-5 text-center text-muted">
+            <i class="fas fa-palette fa-3x mb-3"></i>
+            <p>No house styles created yet.</p>
+            <a href="{% url 'plans:portal_style_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create Your First Style
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

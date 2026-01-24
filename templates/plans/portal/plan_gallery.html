@@ -1,0 +1,111 @@
+{% extends 'billing/base_authenticated.html' %}
+
+{% block title %}Manage Gallery - {{ plan.plan_number }}{% endblock %}
+
+{% block authenticated_content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'plans:portal_plan_list' %}">Plans</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'plans:portal_plan_detail' plan.pk %}">{{ plan.plan_number }}</a></li>
+        <li class="breadcrumb-item active">Gallery</li>
+    </ol>
+</nav>
+
+<div class="mb-4">
+    <h2><i class="fas fa-images"></i> Manage Gallery Images - {{ plan.plan_number }}</h2>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Gallery Images</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ formset.management_form }}
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                Add or edit gallery images below. Check the "Delete" box to remove an image.
+            </div>
+            
+            {% for form in formset %}
+            <div class="card mb-3 {% if form.instance.pk %}border-primary{% endif %}">
+                <div class="card-body">
+                    <div class="row align-items-start">
+                        <!-- Preview -->
+                        <div class="col-md-3">
+                            {% if form.instance.image %}
+                            <img src="{{ form.instance.image.url }}" class="img-fluid rounded mb-2" 
+                                 style="max-height: 150px; object-fit: cover;">
+                            <small class="text-muted d-block">Existing image</small>
+                            {% else %}
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center mb-2" 
+                                 style="height: 150px;">
+                                <i class="fas fa-image fa-3x text-muted"></i>
+                            </div>
+                            <small class="text-muted d-block">New image</small>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Form Fields -->
+                        <div class="col-md-9">
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Image</label>
+                                    {{ form.image }}
+                                    {% if form.image.errors %}
+                                    <div class="text-danger small">{{ form.image.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Type</label>
+                                    {{ form.kind }}
+                                    {% if form.kind.errors %}
+                                    <div class="text-danger small">{{ form.kind.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Caption</label>
+                                    {{ form.caption }}
+                                    {% if form.caption.errors %}
+                                    <div class="text-danger small">{{ form.caption.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                    <label class="form-label">Order</label>
+                                    {{ form.order }}
+                                    {% if form.order.errors %}
+                                    <div class="text-danger small">{{ form.order.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                {% if form.instance.pk %}
+                                <div class="col-md-12">
+                                    <div class="form-check">
+                                        {{ form.DELETE }}
+                                        <label class="form-check-label text-danger" for="{{ form.DELETE.id_for_label }}">
+                                            Delete this image
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {{ form.id }}
+                </div>
+            </div>
+            {% endfor %}
+            
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-save"></i> Save Gallery
+                </button>
+                <a href="{% url 'plans:portal_plan_detail' plan.pk %}" class="btn btn-outline-secondary btn-lg">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

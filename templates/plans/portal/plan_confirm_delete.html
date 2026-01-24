@@ -1,0 +1,79 @@
+{% extends 'billing/base_authenticated.html' %}
+
+{% block title %}Delete Plan - {{ plan.plan_number }}{% endblock %}
+
+{% block authenticated_content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'plans:portal_plan_list' %}">Plans</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'plans:portal_plan_detail' plan.pk %}">{{ plan.plan_number }}</a></li>
+        <li class="breadcrumb-item active">Delete</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card shadow-sm border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <strong>Warning!</strong> You are about to delete this plan:
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                {% if plan.main_image %}
+                                <img src="{{ plan.main_image.url }}" alt="{{ plan.plan_number }}" 
+                                     class="img-fluid rounded">
+                                {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                     style="height: 150px;">
+                                    <i class="fas fa-home fa-3x text-muted"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-8">
+                                <h5>{{ plan.plan_number }}</h5>
+                                <ul class="mb-0">
+                                    <li>{{ plan.square_footage|floatformat:0 }} sq ft</li>
+                                    <li>{{ plan.bedrooms }} bed / {{ plan.bathrooms }} bath</li>
+                                    <li>{{ plan.stories }} story / {{ plan.garage_stalls }} car</li>
+                                    {% if plan.house_styles.all %}
+                                    <li>Styles: {% for style in plan.house_styles.all %}{{ style.style_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-danger">
+                    <strong>This action cannot be undone!</strong> This will permanently delete:
+                    <ul class="mb-0 mt-2">
+                        <li>The plan record</li>
+                        <li>All gallery images ({{ plan.images.count }} image{{ plan.images.count|pluralize }})</li>
+                        <li>All saved/favorited references</li>
+                        <li>All comparison references</li>
+                    </ul>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a href="{% url 'plans:portal_plan_detail' plan.pk %}" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger btn-lg">
+                            <i class="fas fa-trash"></i> Yes, Delete Plan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

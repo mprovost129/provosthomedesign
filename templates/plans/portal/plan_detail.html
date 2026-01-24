@@ -1,0 +1,182 @@
+{% extends 'billing/base_authenticated.html' %}
+
+{% block title %}{{ plan.plan_number }} - Plan Details{% endblock %}
+
+{% block authenticated_content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'plans:portal_plan_list' %}">Plans</a></li>
+        <li class="breadcrumb-item active">{{ plan.plan_number }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>{{ plan.plan_number }}</h2>
+    <div class="d-flex gap-2">
+        <a href="{{ plan.get_absolute_url }}" class="btn btn-outline-primary" target="_blank">
+            <i class="fas fa-external-link-alt"></i> View on Website
+        </a>
+        <a href="{% url 'plans:portal_plan_edit' plan.pk %}" class="btn btn-primary">
+            <i class="fas fa-edit"></i> Edit Plan
+        </a>
+        <a href="{% url 'plans:portal_plan_gallery' plan.pk %}" class="btn btn-info">
+            <i class="fas fa-images"></i> Manage Gallery
+        </a>
+        <a href="{% url 'plans:portal_plan_delete' plan.pk %}" class="btn btn-danger">
+            <i class="fas fa-trash"></i> Delete
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Image -->
+    <div class="col-md-5 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Main Image</h5>
+            </div>
+            <div class="card-body text-center">
+                {% if plan.main_image %}
+                <img src="{{ plan.main_image.url }}" alt="{{ plan.plan_number }}" 
+                     class="img-fluid rounded" style="max-height: 400px;">
+                {% else %}
+                <div class="py-5 text-muted">
+                    <i class="fas fa-home fa-5x mb-3"></i>
+                    <p>No main image uploaded</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Plan Details -->
+    <div class="col-md-7 mb-4">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Specifications</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <strong>Square Footage:</strong><br>
+                        {{ plan.square_footage|floatformat:0 }} sq ft
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong>Bedrooms:</strong><br>
+                        {{ plan.bedrooms }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong>Bathrooms:</strong><br>
+                        {{ plan.bathrooms }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong>Stories:</strong><br>
+                        {{ plan.stories }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong>Garage Stalls:</strong><br>
+                        {{ plan.garage_stalls }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong>Dimensions:</strong><br>
+                        {{ plan.house_width_display }} × {{ plan.house_depth_display }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Additional Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>SKU:</strong> {{ plan.sku|default:"—" }}
+                </div>
+                <div class="mb-3">
+                    <strong>Price:</strong>
+                    {% if plan.plan_price %}
+                    ${{ plan.plan_price|floatformat:2 }}
+                    {% else %}
+                    <span class="text-muted">Not set</span>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <strong>House Styles:</strong><br>
+                    {% for style in plan.house_styles.all %}
+                    <span class="badge bg-secondary">{{ style.style_name }}</span>
+                    {% empty %}
+                    <span class="text-muted">No styles assigned</span>
+                    {% endfor %}
+                </div>
+                <div class="mb-3">
+                    <strong>Status:</strong><br>
+                    {% if plan.is_featured %}
+                    <span class="badge bg-warning text-dark"><i class="fas fa-star"></i> Featured</span>
+                    {% endif %}
+                    {% if plan.is_available %}
+                    <span class="badge bg-success">Available</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Unavailable</span>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <strong>Created:</strong> {{ plan.created_date|date:"M d, Y g:i A" }}<br>
+                    <strong>Last Modified:</strong> {{ plan.modified_date|date:"M d, Y g:i A" }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Description -->
+{% if plan.description %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Description</h5>
+    </div>
+    <div class="card-body">
+        {{ plan.description|linebreaks }}
+    </div>
+</div>
+{% endif %}
+
+<!-- Gallery Images -->
+<div class="card shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Gallery Images ({{ gallery_images.count }})</h5>
+        <a href="{% url 'plans:portal_plan_gallery' plan.pk %}" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus"></i> Add Images
+        </a>
+    </div>
+    <div class="card-body">
+        {% if gallery_images %}
+        <div class="row">
+            {% for image in gallery_images %}
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <img src="{{ image.image.url }}" alt="{{ image.caption }}" 
+                         class="card-img-top" style="height: 200px; object-fit: cover;">
+                    <div class="card-body p-2">
+                        <small>
+                            <strong>{{ image.get_kind_display }}</strong><br>
+                            {% if image.caption %}{{ image.caption }}{% else %}<span class="text-muted">No caption</span>{% endif %}<br>
+                            <span class="text-muted">Order: {{ image.order }}</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-4">
+            <i class="fas fa-images fa-3x mb-3"></i>
+            <p>No gallery images yet</p>
+            <a href="{% url 'plans:portal_plan_gallery' plan.pk %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Images
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

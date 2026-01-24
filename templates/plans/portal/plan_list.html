@@ -1,0 +1,167 @@
+{% extends 'billing/base_authenticated.html' %}
+
+{% block title %}Manage Plans{% endblock %}
+
+{% block authenticated_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-home"></i> Manage Plans</h2>
+    <div class="d-flex gap-2">
+        <a href="{% url 'plans:portal_style_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-palette"></i> Manage Styles
+        </a>
+        <a href="{% url 'plans:portal_plan_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create New Plan
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <h6 class="mb-0"><i class="fas fa-filter"></i> Filters</h6>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="search" class="form-label">Search</label>
+                <input type="text" name="q" id="search" class="form-control" 
+                       value="{{ search_query }}" placeholder="Plan number, SKU, description...">
+            </div>
+            <div class="col-md-4">
+                <label for="style" class="form-label">House Style</label>
+                <select name="style" id="style" class="form-select">
+                    <option value="">All Styles</option>
+                    {% for style in styles %}
+                    <option value="{{ style.slug }}" {% if style_filter == style.slug %}selected{% endif %}>
+                        {{ style.style_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="status" class="form-label">Status</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="">All Plans</option>
+                    <option value="available" {% if status_filter == 'available' %}selected{% endif %}>Available Only</option>
+                    <option value="unavailable" {% if status_filter == 'unavailable' %}selected{% endif %}>Unavailable Only</option>
+                    <option value="featured" {% if status_filter == 'featured' %}selected{% endif %}>Featured Only</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Apply Filters
+                </button>
+                <a href="{% url 'plans:portal_plan_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Plans List -->
+<div class="card shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Plans ({{ plans.count }})</h5>
+    </div>
+    <div class="card-body p-0">
+        {% if plans %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Image</th>
+                        <th>Plan Number</th>
+                        <th>Styles</th>
+                        <th>Specs</th>
+                        <th>Price</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for plan in plans %}
+                    <tr>
+                        <td>
+                            {% if plan.main_image %}
+                            <img src="{{ plan.main_image.url }}" alt="{{ plan.plan_number }}" 
+                                 style="width: 80px; height: 60px; object-fit: cover; border-radius: 4px;">
+                            {% else %}
+                            <div style="width: 80px; height: 60px; background: #f0f0f0; border-radius: 4px; 
+                                        display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-home text-muted"></i>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'plans:portal_plan_detail' plan.pk %}" class="text-decoration-none">
+                                <strong>{{ plan.plan_number }}</strong>
+                            </a>
+                            {% if plan.sku %}
+                            <br><small class="text-muted">SKU: {{ plan.sku }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% for style in plan.house_styles.all %}
+                            <span class="badge bg-secondary">{{ style.style_name }}</span>
+                            {% empty %}
+                            <span class="text-muted">—</span>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            <small>
+                                {{ plan.square_footage|floatformat:0 }} sq ft<br>
+                                {{ plan.bedrooms }} bed / {{ plan.bathrooms }} bath<br>
+                                {{ plan.stories }} story / {{ plan.garage_stalls }} car
+                            </small>
+                        </td>
+                        <td>
+                            {% if plan.plan_price %}
+                            ${{ plan.plan_price|floatformat:2 }}
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if plan.is_featured %}
+                            <span class="badge bg-warning text-dark"><i class="fas fa-star"></i> Featured</span>
+                            {% endif %}
+                            {% if plan.is_available %}
+                            <span class="badge bg-success">Available</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Unavailable</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'plans:portal_plan_detail' plan.pk %}" 
+                                   class="btn btn-outline-primary" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'plans:portal_plan_edit' plan.pk %}" 
+                                   class="btn btn-outline-secondary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'plans:portal_plan_gallery' plan.pk %}" 
+                                   class="btn btn-outline-info" title="Gallery">
+                                    <i class="fas fa-images"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-5 text-center text-muted">
+            <i class="fas fa-home fa-3x mb-3"></i>
+            <p>No plans found.</p>
+            <a href="{% url 'plans:portal_plan_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create Your First Plan
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

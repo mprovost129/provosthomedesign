@@ -1,0 +1,96 @@
+{% extends 'billing/base_authenticated.html' %}
+
+{% block title %}{{ category.name }} - Help{% endblock %}
+
+{% block authenticated_content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'help:help_center' %}">Help Center</a></li>
+        <li class="breadcrumb-item active">{{ category.name }}</li>
+    </ol>
+</nav>
+
+<div class="mb-4">
+    <h1>
+        <i class="fas {{ category.icon|default:'fa-folder' }} text-primary"></i>
+        {{ category.name }}
+    </h1>
+    {% if category.description %}
+    <p class="lead text-muted">{{ category.description }}</p>
+    {% endif %}
+</div>
+
+<!-- Articles -->
+{% if articles %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="fas fa-book"></i> Articles</h5>
+    </div>
+    <div class="list-group list-group-flush">
+        {% for article in articles %}
+        <a href="{% url 'help:article_detail' article.slug %}" class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between align-items-start">
+                <div>
+                    <h6 class="mb-1">{{ article.title }}</h6>
+                    <p class="mb-1 text-muted">{{ article.summary }}</p>
+                </div>
+                <div class="text-end ms-3">
+                    <small class="text-muted d-block">
+                        <i class="fas fa-eye"></i> {{ article.views }}
+                    </small>
+                    <small class="text-muted d-block">
+                        {{ article.updated_at|date:"M d, Y" }}
+                    </small>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- FAQs -->
+{% if faqs %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="fas fa-question-circle"></i> Frequently Asked Questions</h5>
+    </div>
+    <div class="card-body">
+        <div class="accordion" id="faqAccordion">
+            {% for faq in faqs %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="faq-heading-{{ faq.id }}">
+                    <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" 
+                            type="button" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#faq-collapse-{{ faq.id }}">
+                        {{ faq.question }}
+                    </button>
+                </h2>
+                <div id="faq-collapse-{{ faq.id }}" 
+                     class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" 
+                     data-bs-parent="#faqAccordion">
+                    <div class="accordion-body">
+                        {{ faq.answer|linebreaks }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if not articles and not faqs %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i>
+    No content available in this category yet.
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{% url 'help:help_center' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Help Center
+    </a>
+</div>
+{% endblock %}

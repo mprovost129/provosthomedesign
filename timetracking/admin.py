@@ -7,8 +7,8 @@ class TimeEntryAdmin(admin.ModelAdmin):
     """Admin interface for time entries."""
     
     list_display = ('project', 'user', 'start_time', 'end_time', 'get_duration_display', 
-                   'is_billable', 'created_via_timer')
-    list_filter = ('is_billable', 'created_via_timer', 'user', 'project', 'start_time')
+                   'is_billable', 'invoiced', 'created_via_timer')
+    list_filter = ('is_billable', 'invoiced', 'created_via_timer', 'user', 'project', 'start_time')
     search_fields = ('description', 'project__job_name', 'user__username', 
                     'user__first_name', 'user__last_name')
     readonly_fields = ('duration', 'created_at', 'updated_at', 'get_duration_decimal')
@@ -20,6 +20,10 @@ class TimeEntryAdmin(admin.ModelAdmin):
         }),
         ('Details', {
             'fields': ('description', 'is_billable', 'created_via_timer')
+        }),
+        ('Invoice Information', {
+            'fields': ('invoiced', 'invoice', 'hourly_rate'),
+            'classes': ('collapse',)
         }),
         ('Metadata', {
             'fields': ('created_at', 'updated_at'),

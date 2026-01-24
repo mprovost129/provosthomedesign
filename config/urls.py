@@ -25,6 +25,9 @@ urlpatterns = [
     
     # Time Tracking
     path("time/", include("timetracking.urls")), # requires app_name="timetracking" in timetracking/urls.py
+    
+    # Help Center
+    path("help/", include("help.urls")), # requires app_name="help" in help/urls.py
 
     # SEO endpoints
     path("robots.txt", robots_txt, name="robots_txt"),

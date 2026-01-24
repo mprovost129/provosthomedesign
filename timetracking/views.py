@@ -11,7 +11,8 @@ import json
 
 from .models import TimeEntry, ActiveTimer
 from .forms import TimeEntryForm, QuickTimerForm
-from billing.models import Project
+from billing.models import Project, Invoice, InvoiceLineItem
+from decimal import Decimal
 
 
 @staff_member_required(login_url='/portal/login/')
@@ -283,3 +284,116 @@ def project_time_entries(request, project_id):
     
     return render(request, 'timetracking/project_entries.html', context)
 
+
+@staff_member_required(login_url='/portal/login/')
+def add_to_invoice(request):
+    """View to add selected time entries to an invoice."""
+    if request.method == 'POST':
+        entry_ids = request.POST.getlist('time_entries')
+        invoice_id = request.POST.get('invoice_id')
+        hourly_rate = request.POST.get('hourly_rate')
+        
+        if not entry_ids:
+            messages.error(request, 'Please select at least one time entry.')
+            return redirect('timetracking:entries_list')
+        
+        if not hourly_rate:
+            messages.error(request, 'Please enter an hourly rate.')
+            return redirect('timetracking:entries_list')
+        
+        try:
+            hourly_rate = Decimal(hourly_rate)
+        except:
+            messages.error(request, 'Invalid hourly rate.')
+            return redirect('timetracking:entries_list')
+        
+        # Get entries
+        entries = TimeEntry.objects.filter(
+            id__in=entry_ids,
+            user=request.user,
+            invoiced=False,
+            is_billable=True
+        )
+        
+        if not entries:
+            messages.error(request, 'No valid time entries found.')
+            return redirect('timetracking:entries_list')
+        
+        # Create or get invoice
+        if invoice_id and invoice_id != 'new':
+            invoice = get_object_or_404(Invoice, pk=invoice_id)
+        else:
+            # Create new invoice
+            # Get client from first entry's project
+            first_entry = entries.first()
+            client = first_entry.project.client
+            
+            if not client:
+                messages.error(request, 'Project must have a client to create an invoice.')
+                return redirect('timetracking:entries_list')
+            
+            invoice = Invoice.objects.create(
+                client=client,
+                project=first_entry.project,
+                invoice_number=Invoice.objects.generate_invoice_number(),
+                issue_date=timezone.now().date(),
+                due_date=timezone.now().date() + timedelta(days=30),
+                status='draft'
+            )
+        
+        # Add entries as line items
+        total_added = 0
+        for entry in entries:
+            hours = entry.get_duration_decimal()
+            description = f"{entry.start_time.strftime('%m/%d/%Y')} - {entry.description or 'Time worked'}"
+            
+            InvoiceLineItem.objects.create(
+                invoice=invoice,
+                description=description,
+                quantity=hours,
+                unit_price=hourly_rate,
+                total=hours * hourly_rate
+            )
+            
+            # Mark entry as invoiced
+            entry.invoiced = True
+            entry.invoice = invoice
+            entry.hourly_rate = hourly_rate
+            entry.save()
+            
+            total_added += 1
+        
+        # Update invoice totals
+        invoice.calculate_totals()
+        
+        messages.success(request, f'Added {total_added} time entries to invoice #{invoice.invoice_number}')
+        return redirect('billing:invoice_detail', pk=invoice.pk)
+    
+    # GET request - show selection page
+    # Get unbilled, billable entries for the user
+    entries = TimeEntry.objects.filter(
+        user=request.user,
+        invoiced=False,
+        is_billable=True,
+        end_time__isnull=False  # Only completed entries
+    ).select_related('project').order_by('-start_time')
+    
+    # Get open/draft invoices
+    invoices = Invoice.objects.filter(
+        status__in=['draft', 'sent']
+    ).order_by('-created_at')[:20]
+    
+    # Get projects with unbilled time
+    projects = Project.objects.filter(
+        time_entries__invoiced=False,
+        time_entries__is_billable=True,
+        time_entries__user=request.user
+    ).distinct().order_by('job_name')
+    
+    context = {
+        'entries': entries,
+        'invoices': invoices,
+        'projects': projects,
+    }
+    
+    return render(request, 'timetracking/add_to_invoice.html', context)

@@ -1,9 +1,23 @@
 from django.urls import path
-from . import views
+from . import views, portal_views
 
 app_name = "plans"
 
 urlpatterns = [
+    # ── Portal Management (staff-only) ────────────────────────────────────────
+    path("portal/", portal_views.portal_plan_list, name="portal_plan_list"),
+    path("portal/create/", portal_views.portal_plan_create, name="portal_plan_create"),
+    path("portal/<int:pk>/", portal_views.portal_plan_detail, name="portal_plan_detail"),
+    path("portal/<int:pk>/edit/", portal_views.portal_plan_edit, name="portal_plan_edit"),
+    path("portal/<int:pk>/gallery/", portal_views.portal_plan_gallery, name="portal_plan_gallery"),
+    path("portal/<int:pk>/delete/", portal_views.portal_plan_delete, name="portal_plan_delete"),
+    
+    # ── House Styles Management ───────────────────────────────────────────────
+    path("portal/styles/", portal_views.portal_style_list, name="portal_style_list"),
+    path("portal/styles/create/", portal_views.portal_style_create, name="portal_style_create"),
+    path("portal/styles/<int:pk>/edit/", portal_views.portal_style_edit, name="portal_style_edit"),
+    path("portal/styles/<int:pk>/delete/", portal_views.portal_style_delete, name="portal_style_delete"),
+    
     # ── Staff/admin endpoints (keep BEFORE slug routes) ───────────────────────
     path("admin/quick-create/", views.quick_create_plan, name="quick_create_plan"),
     path("admin/gallery/upload/<int:plan_id>/", views.gallery_upload, name="gallery_upload"),
