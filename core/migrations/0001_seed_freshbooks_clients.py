@@ -9,6 +9,7 @@ from django.db import migrations
 def seed_freshbooks_clients(apps, schema_editor):
     """Import clients from Freshbooks CSV export."""
     User = apps.get_model('auth', 'User')
+    Client = apps.get_model('billing', 'Client')
     
     # Path to CSV file (in project root)
     csv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'Freshbooks Client Export.csv')
@@ -63,6 +64,15 @@ def seed_freshbooks_clients(apps, schema_editor):
             )
             user.set_unusable_password()
             user.save()
+            
+            # Create corresponding Client record
+            Client.objects.create(
+                user=user,
+                first_name=first_name,
+                last_name=last_name,
+                email=email
+            )
+            
             created_count += 1
     
     print(f"✅ Freshbooks client import complete:")

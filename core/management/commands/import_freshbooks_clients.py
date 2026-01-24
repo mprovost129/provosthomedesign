@@ -6,6 +6,7 @@ import csv
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import User
 from django.db import transaction
+from billing.models import Client
 
 
 class Command(BaseCommand):
@@ -129,6 +130,14 @@ class Command(BaseCommand):
                                     # Set unusable password - users will need to reset
                                     user.set_unusable_password()
                                     user.save()
+                                    
+                                    # Create corresponding Client record
+                                    Client.objects.create(
+                                        user=user,
+                                        first_name=first_name,
+                                        last_name=last_name,
+                                        email=email
+                                    )
                                     
                                     self.stdout.write(
                                         self.style.SUCCESS(
