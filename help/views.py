@@ -16,10 +16,10 @@ def help_center(request):
     else:
         audience_filter = Q(audience__in=['client', 'both'])
     
-    # Get categories
+    # Get all active categories (don't filter by audience - show all categories that have relevant articles)
     categories = HelpCategory.objects.filter(
         is_active=True
-    ).filter(audience_filter).prefetch_related('articles', 'faqs')
+    ).prefetch_related('articles', 'faqs').order_by('order')
     
     # Get featured articles
     featured_articles = HelpArticle.objects.filter(
@@ -48,8 +48,16 @@ def help_center(request):
             is_active=True
         ).filter(audience_filter).select_related('category')[:10]
     
+    # Filter categories to only show those with articles for this audience
+    categories_with_articles = []
+    for category in categories:
+        article_count = category.articles.filter(is_active=True).filter(audience_filter).count()
+        if article_count > 0:
+            category.filtered_article_count = article_count
+            categories_with_articles.append(category)
+    
     context = {
-        'categories': categories,
+        'categories': categories_with_articles,
         'featured_articles': featured_articles,
         'popular_articles': popular_articles,
         'recent_articles': recent_articles,
