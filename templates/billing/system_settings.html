@@ -138,6 +138,37 @@
                                     </div>
                                 </div>
                                 
+                                <!-- Logo Area Colors -->
+                                <h6 class="mt-4 mb-3">Logo Area Colors</h6>
+                                <div class="row mb-4">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.logo_background_color.id_for_label }}" class="form-label">Logo Background Color</label>
+                                        <div class="d-flex align-items-center">
+                                            {{ form.logo_background_color }}
+                                            <span class="ms-2 text-muted" id="logo-bg-color-value">{{ settings.logo_background_color }}</span>
+                                        </div>
+                                        {% if form.logo_background_color.help_text %}
+                                            <small class="form-text text-muted">{{ form.logo_background_color.help_text }}</small>
+                                        {% endif %}
+                                        {% if form.logo_background_color.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.logo_background_color.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.company_name_color.id_for_label }}" class="form-label">Company Name Text Color</label>
+                                        <div class="d-flex align-items-center">
+                                            {{ form.company_name_color }}
+                                            <span class="ms-2 text-muted" id="company-name-color-value">{{ settings.company_name_color }}</span>
+                                        </div>
+                                        {% if form.company_name_color.help_text %}
+                                            <small class="form-text text-muted">{{ form.company_name_color.help_text }}</small>
+                                        {% endif %}
+                                        {% if form.company_name_color.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.company_name_color.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
                                 <!-- Sidebar Colors -->
                                 <h6 class="mt-4 mb-3">Sidebar Colors</h6>
                                 <div class="row">

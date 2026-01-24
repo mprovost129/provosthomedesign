@@ -524,6 +524,18 @@ class SystemSettings(models.Model):
         help_text="Hex color for sidebar gradient (e.g., #002850)"
     )
     
+    # Branding - Logo Area
+    logo_background_color = models.CharField(
+        max_length=7,
+        default="#FFFFFF",
+        help_text="Background color for logo area (e.g., #FFFFFF for white)"
+    )
+    company_name_color = models.CharField(
+        max_length=7,
+        default="#004080",
+        help_text="Color for company name text below logo (e.g., #004080)"
+    )
+    
     # Branding - Logo
     portal_logo = models.ImageField(
         upload_to='brand/',

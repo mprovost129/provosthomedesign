@@ -8,13 +8,13 @@
         <!-- Sidebar -->
         <div class="col-md-3 col-lg-2 px-0 portal-sidebar">
             <div class="p-4">
-                <div class="text-center mb-4">
+                <div class="text-center mb-4" style="background-color: {{ system_settings.logo_background_color }}; padding: 1rem; border-radius: 8px; margin: -0.5rem -0.5rem 1rem -0.5rem;">
                     {% if system_settings.portal_logo %}
                         <img src="{{ system_settings.portal_logo.url }}" alt="{{ system_settings.company_name }} Logo" style="max-width: 120px; height: auto;" class="mb-2">
                     {% else %}
                         <img src="{% static 'images/phdlogo.svg' %}" alt="{{ system_settings.company_name }} Logo" style="max-width: 120px; height: auto;" class="mb-2">
                     {% endif %}
-                    <h5 class="mb-0 text-white">{{ system_settings.company_name }}</h5>
+                    <h5 class="mb-0" style="color: {{ system_settings.company_name_color }};">{{ system_settings.company_name }}</h5>
                 </div>
                 <p class="small mb-4 text-center">{% if user.is_staff %}{{ system_settings.employee_portal_title }}{% else %}{{ system_settings.portal_title }}{% endif %}</p>
                 
