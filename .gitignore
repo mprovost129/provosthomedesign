@@ -22,9 +22,12 @@ env.bak/
 *.pyc
 *.sqlite3
 db.sqlite3
-media/           # user uploads (don’t track)
-staticfiles/     # collected static files (don’t track)
+media/           # user uploads (don't track)
+staticfiles/     # collected static files (don't track)
 *.mo
+
+# Client data (keep private)
+*.csv
 
 # Local settings
 .env
