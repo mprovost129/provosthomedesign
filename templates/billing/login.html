@@ -7,9 +7,13 @@
 <!-- Public Layout (Login/Register Pages) -->
 <div class="container py-5">
     <div class="text-center mb-4">
-        <img src="{% static 'images/phdlogo.svg' %}" alt="Provost Home Design Logo" style="max-width: 150px; height: auto;" class="mb-3">
-        <h2>Provost Home Design</h2>
-        <p class="text-muted">Employee & Client Portal</p>
+        {% if system_settings.portal_logo %}
+            <img src="{{ system_settings.portal_logo.url }}" alt="{{ system_settings.company_name }} Logo" style="max-width: 150px; height: auto;" class="mb-3">
+        {% else %}
+            <img src="{% static 'images/phdlogo.svg' %}" alt="{{ system_settings.company_name }} Logo" style="max-width: 150px; height: auto;" class="mb-3">
+        {% endif %}
+        <h2>{{ system_settings.company_name }}</h2>
+        <p class="text-muted">{{ system_settings.employee_portal_title }}</p>
     </div>
     
     <!-- Messages -->

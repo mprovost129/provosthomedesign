@@ -376,6 +376,7 @@ class SystemSettingsForm(forms.ModelForm):
             # Branding
             'sidebar_primary_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
             'sidebar_secondary_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
+            'portal_logo': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
             
             # Portal Settings
             'portal_title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Client Portal'}),

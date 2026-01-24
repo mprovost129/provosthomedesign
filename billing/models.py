@@ -524,6 +524,14 @@ class SystemSettings(models.Model):
         help_text="Hex color for sidebar gradient (e.g., #002850)"
     )
     
+    # Branding - Logo
+    portal_logo = models.ImageField(
+        upload_to='brand/',
+        null=True,
+        blank=True,
+        help_text="Portal logo (displayed in sidebar and login pages). Falls back to phdlogo.svg if not set."
+    )
+    
     # Portal Settings
     portal_title = models.CharField(max_length=100, default="Client Portal")
     employee_portal_title = models.CharField(max_length=100, default="Employee Portal")

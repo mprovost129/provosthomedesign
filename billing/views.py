@@ -1054,7 +1054,7 @@ def system_settings(request):
     settings = SystemSettings.load()
     
     if request.method == 'POST':
-        form = SystemSettingsForm(request.POST, instance=settings)
+        form = SystemSettingsForm(request.POST, request.FILES, instance=settings)
         if form.is_valid():
             settings = form.save(commit=False)
             settings.updated_by = request.user

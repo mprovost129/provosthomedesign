@@ -66,6 +66,7 @@ TEMPLATES = [{
             "core.context_processors.branding",
             "pages.context_processors.site_analytics",
             "plans.context_processors.plans_context",
+            "billing.context_processors.system_settings",
         ],
     },
 }]
