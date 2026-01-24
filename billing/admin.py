@@ -430,3 +430,42 @@ class ActivityAdmin(admin.ModelAdmin):
         if not change:  # If creating new activity
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
+
+
+@admin.register(models.ClientPlanFile)
+class ClientPlanFileAdmin(admin.ModelAdmin):
+    """Admin interface for client plan files."""
+    
+    list_display = ('file_name', 'client', 'project', 'file_type', 'version', 
+                   'is_active', 'uploaded_by', 'uploaded_at')
+    list_filter = ('file_type', 'is_active', 'uploaded_at', 'client')
+    search_fields = ('file_name', 'description', 'client__first_name', 
+                    'client__last_name', 'project__job_name')
+    readonly_fields = ('uploaded_at',)
+    
+    fieldsets = (
+        ('File Information', {
+            'fields': ('file_name', 'file_type', 'version', 'description')
+        }),
+        ('Relationships', {
+            'fields': ('client', 'project')
+        }),
+        ('Dropbox Link', {
+            'fields': ('dropbox_link',),
+            'description': 'Paste the Dropbox shared link here. It will be automatically formatted for download.'
+        }),
+        ('Visibility', {
+            'fields': ('is_active',)
+        }),
+        ('Metadata', {
+            'fields': ('uploaded_by', 'uploaded_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        """Auto-set uploaded_by on creation."""
+        if not change:  # If creating new plan file
+            obj.uploaded_by = request.user
+        super().save_model(request, obj, form, change)
+

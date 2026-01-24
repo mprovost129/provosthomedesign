@@ -24,6 +24,9 @@
                     <a class="nav-link {% if request.resolver_match.url_name == 'invoice_list' %}active{% endif %}" href="{% url 'billing:invoice_list' %}">
                         <i class="fas fa-file-invoice"></i> Invoices
                     </a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'plan_files' %}active{% endif %}" href="{% url 'billing:plan_files' %}">
+                        <i class="fas fa-file-alt"></i> My Plan Files
+                    </a>
                     <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'billing:profile' %}">
                         <i class="fas fa-user"></i> Profile
                     </a>

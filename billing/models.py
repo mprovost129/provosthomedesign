@@ -1046,3 +1046,109 @@ class Activity(models.Model):
     
     def __str__(self):
         return f"{self.get_activity_type_display()} - {self.client} - {self.created_at.strftime('%Y-%m-%d')}"
+
+
+class ClientPlanFile(models.Model):
+    """
+    Dropbox-linked plan files for clients.
+    Stores Dropbox shared links instead of uploading files to avoid storage costs.
+    """
+    
+    FILE_TYPE_CHOICES = [
+        ('floor_plan', 'Floor Plan'),
+        ('elevation', 'Elevation'),
+        ('site_plan', 'Site Plan'),
+        ('structural', 'Structural Drawing'),
+        ('electrical', 'Electrical Plan'),
+        ('plumbing', 'Plumbing Plan'),
+        ('rendering', '3D Rendering'),
+        ('other', 'Other'),
+    ]
+    
+    # Relationships
+    client = models.ForeignKey(
+        Client,
+        on_delete=models.CASCADE,
+        related_name='plan_files',
+        help_text="Client who can access this file"
+    )
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='plan_files',
+        null=True,
+        blank=True,
+        help_text="Associated project (optional)"
+    )
+    
+    # File information
+    file_name = models.CharField(
+        max_length=255,
+        help_text="Display name for the file (e.g., 'Main Floor Plan.pdf')"
+    )
+    file_type = models.CharField(
+        max_length=20,
+        choices=FILE_TYPE_CHOICES,
+        default='other',
+        help_text="Type of plan file"
+    )
+    description = models.TextField(
+        blank=True,
+        help_text="Optional description or notes about this file"
+    )
+    
+    # Dropbox link
+    dropbox_link = models.URLField(
+        max_length=500,
+        help_text="Dropbox shared link (use direct download link: ?dl=1)"
+    )
+    
+    # Metadata
+    version = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Version number or revision (e.g., 'Rev 3', 'v2.1')"
+    )
+    uploaded_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='plan_files_uploaded',
+        help_text="Staff member who added this file"
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    # Visibility
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Uncheck to hide from client (useful for outdated versions)"
+    )
+    
+    class Meta:
+        ordering = ['-uploaded_at']
+        verbose_name = 'Client Plan File'
+        verbose_name_plural = 'Client Plan Files'
+        indexes = [
+            models.Index(fields=['client', 'is_active', '-uploaded_at']),
+            models.Index(fields=['project', 'is_active']),
+        ]
+    
+    def __str__(self):
+        return f"{self.file_name} - {self.client}"
+    
+    def get_direct_download_link(self):
+        """Convert Dropbox link to direct download format"""
+        if '?dl=0' in self.dropbox_link:
+            return self.dropbox_link.replace('?dl=0', '?dl=1')
+        elif '?dl=' not in self.dropbox_link:
+            return f"{self.dropbox_link}?dl=1"
+        return self.dropbox_link
+    
+    def get_preview_link(self):
+        """Get Dropbox preview link (for viewing in browser)"""
+        if '?dl=1' in self.dropbox_link:
+            return self.dropbox_link.replace('?dl=1', '?dl=0')
+        elif '?dl=0' not in self.dropbox_link:
+            return f"{self.dropbox_link}?dl=0"
+        return self.dropbox_link
+

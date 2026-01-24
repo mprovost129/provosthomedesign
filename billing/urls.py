@@ -15,6 +15,7 @@ urlpatterns = [
     # Client Dashboard
     path('dashboard/', views.dashboard, name='dashboard'),
     path('profile/', views.profile, name='profile'),
+    path('plan-files/', views.plan_files, name='plan_files'),
     
     # Invoices
     path('invoices/', views.invoice_list, name='invoice_list'),

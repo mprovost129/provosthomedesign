@@ -286,6 +286,40 @@ def dashboard(request):
 
 
 @login_required(login_url='/portal/login/')
+def plan_files(request):
+    """View for clients to see and download their plan files from Dropbox."""
+    try:
+        client = request.user.client_profile
+    except Client.DoesNotExist:
+        messages.error(request, 'Client profile not found.')
+        return redirect('billing:dashboard')
+    
+    # Get all active plan files for this client, organized by project
+    from billing.models import ClientPlanFile
+    
+    plan_files = ClientPlanFile.objects.filter(
+        client=client,
+        is_active=True
+    ).select_related('project', 'uploaded_by').order_by('-uploaded_at')
+    
+    # Group files by project
+    files_by_project = {}
+    for file in plan_files:
+        project_key = file.project.job_name if file.project else 'General Files'
+        if project_key not in files_by_project:
+            files_by_project[project_key] = []
+        files_by_project[project_key].append(file)
+    
+    context = {
+        'client': client,
+        'plan_files': plan_files,
+        'files_by_project': files_by_project,
+    }
+    
+    return render(request, 'billing/plan_files.html', context)
+
+
+@login_required(login_url='/portal/login/')
 def profile(request):
     """Client profile edit page."""
     try:

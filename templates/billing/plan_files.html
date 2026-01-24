@@ -1,0 +1,106 @@
+{% extends 'billing/base_portal.html' %}
+
+{% block title %}My Plan Files{% endblock %}
+
+{% block portal_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-file-alt me-2"></i>My Plan Files</h2>
+            <p class="text-muted mb-0">View and download your project plans and documents</p>
+        </div>
+    </div>
+
+    {% if plan_files %}
+        {% for project_name, files in files_by_project.items %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-folder-open me-2"></i>{{ project_name }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>File Name</th>
+                                <th>Type</th>
+                                <th>Version</th>
+                                <th>Description</th>
+                                <th>Uploaded</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for file in files %}
+                            <tr>
+                                <td>
+                                    <i class="fas fa-file-pdf text-danger me-2"></i>
+                                    <strong>{{ file.file_name }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ file.get_file_type_display }}</span>
+                                </td>
+                                <td>
+                                    {% if file.version %}
+                                        <span class="badge bg-info">{{ file.version }}</span>
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ file.description|truncatewords:10|default:"—" }}</small>
+                                </td>
+                                <td>
+                                    <small>{{ file.uploaded_at|date:"M d, Y" }}</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ file.get_preview_link }}" 
+                                           target="_blank" 
+                                           class="btn btn-outline-primary"
+                                           title="Preview in browser">
+                                            <i class="fas fa-eye"></i> Preview
+                                        </a>
+                                        <a href="{{ file.get_direct_download_link }}" 
+                                           class="btn btn-outline-success"
+                                           title="Download file">
+                                            <i class="fas fa-download"></i> Download
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No Plan Files Available</h5>
+                <p class="text-muted mb-0">
+                    Your plan files will appear here once they're uploaded by our team.
+                    <br>
+                    <small>Please contact us if you have questions about your plans.</small>
+                </p>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="alert alert-info mt-4">
+        <h6><i class="fas fa-info-circle me-2"></i>About Your Plan Files</h6>
+        <ul class="mb-0 small">
+            <li>Click <strong>Preview</strong> to view files in your browser without downloading</li>
+            <li>Click <strong>Download</strong> to save files to your computer</li>
+            <li>All files are securely stored in our Dropbox account</li>
+            <li>Files are organized by project for easy access</li>
+            <li>Contact us if you need additional files or have questions</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
