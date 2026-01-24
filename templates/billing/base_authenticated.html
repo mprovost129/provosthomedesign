@@ -42,6 +42,9 @@
                     {% if user.is_staff %}
                     <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
                     <p class="small text-uppercase text-white-50 mb-2 px-3">Staff Tools</p>
+                    <a class="nav-link {% if 'time' in request.resolver_match.url_name or 'timetracking' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'timetracking:time_dashboard' %}">
+                        <i class="fas fa-clock"></i> Time Tracking
+                    </a>
                     <a class="nav-link {% if 'proposal' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:proposal_list' %}">
                         <i class="fas fa-file-signature"></i> Proposals
                     </a>

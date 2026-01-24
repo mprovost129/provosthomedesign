@@ -22,6 +22,9 @@ urlpatterns = [
     
     # Client Portal
     path("portal/", include("billing.urls")), # requires app_name="billing" in billing/urls.py
+    
+    # Time Tracking
+    path("time/", include("timetracking.urls")), # requires app_name="timetracking" in timetracking/urls.py
 
     # SEO endpoints
     path("robots.txt", robots_txt, name="robots_txt"),
