@@ -1,4 +1,5 @@
 {% extends 'billing/base_portal.html' %}
+{% load static %}
 
 {% block portal_content %}
 <!-- Portal Layout with Sidebar -->
@@ -7,8 +8,11 @@
         <!-- Sidebar -->
         <div class="col-md-3 col-lg-2 px-0 portal-sidebar">
             <div class="p-4">
-                <h4 class="mb-4"><i class="fas fa-home"></i> Provost Home Design</h4>
-                <p class="small mb-4">{% if user.is_staff %}Employee Portal{% else %}Client Portal{% endif %}</p>
+                <div class="text-center mb-4">
+                    <img src="{% static 'images/phdlogo.svg' %}" alt="Provost Home Design Logo" style="max-width: 120px; height: auto;" class="mb-2">
+                    <h5 class="mb-0 text-white">Provost Home Design</h5>
+                </div>
+                <p class="small mb-4 text-center">{% if user.is_staff %}Employee Portal{% else %}Client Portal{% endif %}</p>
                 
                 <div class="mb-4">
                     <p class="mb-1"><strong>{{ user.get_full_name|default:user.username }}</strong></p>
