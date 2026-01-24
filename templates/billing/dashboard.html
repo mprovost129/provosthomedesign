@@ -157,4 +157,109 @@
     </div>
 </div>
 {% endif %}
+
+<!-- Recent Proposals -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Recent Proposals</h5>
+            <a href="{% url 'billing:proposal_list' %}" class="btn btn-sm btn-outline-primary">
+                View All <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if recent_proposals %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Proposal #</th>
+                        <th>Title</th>
+                        <th>Date</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for proposal in recent_proposals %}
+                    <tr>
+                        <td><strong>{{ proposal.proposal_number }}</strong></td>
+                        <td>{{ proposal.title }}</td>
+                        <td>{{ proposal.created_at|date:"M d, Y" }}</td>
+                        <td>${{ proposal.total|floatformat:2 }}</td>
+                        <td>
+                            <span class="status-badge status-{{ proposal.status }}">
+                                {{ proposal.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'billing:proposal_detail' proposal.pk %}" class="btn btn-sm btn-outline-primary">
+                                View <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-5 text-center text-muted">
+            <i class="fas fa-file-contract fa-3x mb-3"></i>
+            <p>No proposals found</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recent Plan Files -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Recent Plan Files</h5>
+            <a href="{% url 'billing:plan_files' %}" class="btn btn-sm btn-outline-primary">
+                View All <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        {% if recent_plan_files %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Description</th>
+                        <th>Uploaded</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in recent_plan_files %}
+                    <tr>
+                        <td>
+                            <i class="fas fa-file-pdf text-danger me-2"></i>
+                            <strong>{{ file.file_name }}</strong>
+                        </td>
+                        <td>{{ file.description|truncatewords:10 }}</td>
+                        <td>{{ file.uploaded_at|date:"M d, Y" }}</td>
+                        <td>
+                            <a href="{{ file.dropbox_link }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-download"></i> Download
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-5 text-center text-muted">
+            <i class="fas fa-folder-open fa-3x mb-3"></i>
+            <p>No plan files available</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
 {% endblock authenticated_content %}

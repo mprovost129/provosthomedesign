@@ -273,6 +273,13 @@ def dashboard(request):
     # Count invoices by status
     pending_count = client.invoices.filter(status__in=['sent', 'overdue']).count()
     
+    # Recent proposals
+    recent_proposals = Proposal.objects.filter(client=client).order_by('-created_at')[:5]
+    
+    # Recent plan files
+    from .models import ClientPlanFile
+    recent_plan_files = ClientPlanFile.objects.filter(client=client).order_by('-uploaded_at')[:5]
+    
     context = {
         'client': client,
         'invoices': invoices,
@@ -280,6 +287,8 @@ def dashboard(request):
         'total_paid': total_paid,
         'recent_payments': recent_payments,
         'pending_count': pending_count,
+        'recent_proposals': recent_proposals,
+        'recent_plan_files': recent_plan_files,
     }
     
     return render(request, 'billing/dashboard.html', context)
