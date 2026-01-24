@@ -15,10 +15,13 @@ FILE DETAILS:
 {{ plan_file.description }}
 {% endif %}
 
-You can access this file by logging into your client portal:
+DOWNLOAD FILE:
+{{ plan_file.dropbox_link }}
+
+Or view all your files in the client portal:
 {{ portal_url }}
 
-If you have any questions about this file, please don't hesitate to reach out.
+You can download the file directly using the link above, or access all your project documents by logging into your client portal.
 
 Best regards,
 {{ uploaded_by.get_full_name|default:"Provost Home Design Team" }}
