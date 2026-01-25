@@ -165,6 +165,9 @@
               <textarea id="message" name="message" rows="4" class="form-control" placeholder="Tell us what you’d like to change… (e.g., mirror plan, add a bedroom, move garage)" required></textarea>
             </div>
 
+            {# Honeypot field - must be empty (hidden by CSS) #}
+            <input type="text" name="website" value="" style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;" tabindex="-1" autocomplete="off" aria-hidden="true">
+
             <div class="form-check">
               <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
               <label class="form-check-label small text-muted" for="terms">
