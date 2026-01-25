@@ -79,12 +79,14 @@ def _htmx_status(request: HttpRequest, level: str, message: str) -> HttpResponse
 
 THROTTLE_WINDOW_SECONDS = 60
 
-def _too_many_recent_submissions(request: HttpRequest) -> bool:
-    last = request.session.get("last_contact_submission_ts")
+def _too_many_recent_submissions(request: HttpRequest, form_type: str = "contact") -> bool:
+    """Check and update throttle for a specific form type (contact or testimonial)."""
+    key = f"last_{form_type}_submission_ts"
+    last = request.session.get(key)
     now = timezone.now().timestamp()
     if last and (now - last) < THROTTLE_WINDOW_SECONDS:
         return True
-    request.session["last_contact_submission_ts"] = now
+    request.session[key] = now
     return False
 
 # ----- Views ----------------------------------------------------------------
@@ -182,9 +184,10 @@ def contact(request: HttpRequest) -> HttpResponse:
         contact_form = ContactForm(prefix="contact")
         tform = TestimonialForm(prefix="testimonial")
 
-    # Seed the timing token on GET
+    # Seed the timing token on GET for contact form
     if request.method != "POST":
         request.session["contact_started_ts"] = time()
+        request.session["testimonial_started_ts"] = time()
 
     if request.method == "POST":
         # 1) Basic per-session throttle
@@ -329,6 +332,32 @@ def contact(request: HttpRequest) -> HttpResponse:
 
         # Testimonial submission
         if is_testimonial_post:
+            # 1) Testimonial-specific throttle
+            if _too_many_recent_submissions(request, "testimonial"):
+                msg = "You're sending testimonials too quickly. Please wait a minute and try again."
+                if _is_htmx(request):
+                    return _htmx_status(request, "warning", msg)
+                messages.warning(request, msg)
+                return redirect("pages:contact")
+
+            # 2) "Too fast" submission (likely bot)
+            started = float(request.session.get("testimonial_started_ts", 0))
+            if time() - started < 2.0:
+                # reset seed for the next legit attempt
+                request.session["testimonial_started_ts"] = time()
+                logger.info(
+                    "Testimonial spam gate tripped: too_fast ip=%s ua=%s",
+                    request.META.get("REMOTE_ADDR"),
+                    request.META.get("HTTP_USER_AGENT"),
+                )
+                if _is_htmx(request):
+                    return _htmx_status(request, "error", "Spam protection triggered. Please try again.")
+                messages.error(request, "Spam protection triggered. Please try again.")
+                return redirect("pages:contact")
+
+            # refresh seed to avoid reusing the same timestamp
+            request.session["testimonial_started_ts"] = time()
+
             if not request.POST.get(f"{tform.prefix}-terms_accepted") and hasattr(tform, "fields") and "terms_accepted" in tform.fields:
                 tform.add_error("terms_accepted", "You must accept the Terms & Conditions.")
             if tform.is_valid():
@@ -395,7 +424,7 @@ def contact(request: HttpRequest) -> HttpResponse:
                 return redirect("pages:contact")
 
             # invalid testimonial form
-            request.session["contact_started_ts"] = time()  # Reset timer for retry
+            request.session["testimonial_started_ts"] = time()  # Reset timer for retry
             if _is_htmx(request):
                 return _htmx_status(request, "error", "Please correct the errors in the testimonial form.")
             if "terms_accepted" in tform.errors:
