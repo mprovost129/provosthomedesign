@@ -319,6 +319,7 @@ def contact(request: HttpRequest) -> HttpResponse:
                 return redirect("pages:contact")
 
             # invalid
+            request.session["contact_started_ts"] = time()  # Reset timer for retry
             if _is_htmx(request):
                 return _htmx_status(request, "error", "Please correct the errors below and resubmit.")
             if "terms_accepted" in contact_form.errors:
@@ -375,6 +376,8 @@ def contact(request: HttpRequest) -> HttpResponse:
                 messages.success(request, "Thanks! Your testimonial was submitted and will appear once approved.")
                 return redirect("pages:contact")
 
+            # invalid testimonial form
+            request.session["contact_started_ts"] = time()  # Reset timer for retry
             if _is_htmx(request):
                 return _htmx_status(request, "error", "Please correct the errors in the testimonial form.")
             if "terms_accepted" in tform.errors:
