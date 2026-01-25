@@ -28,7 +28,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
     "django.contrib.humanize", "django.contrib.sitemaps",
     "django_recaptcha",
-    "core", "pages", "plans", "billing", "timetracking", "help"
+    "core", "pages", "plans", "billing", "timetracking", "help", "crm"
 ]
 
 # Simple cache + defaults for sorl
