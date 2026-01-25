@@ -3,6 +3,8 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Any
 
+import logging
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
@@ -20,6 +22,7 @@ from .models import HouseStyle as HouseStyleModel, Plans, PlanGallery
 from .forms import PlanQuickForm, PlanCommentForm
 from .session_utils import get_saved_plan_ids, get_comparison_plan_ids
 
+logger = logging.getLogger(__name__)
 # ----- Filter choice lists -----
 SQFT_CHOICES = [str(n) for n in range(1000, 6001, 100)]
 BED_FILTER_CHOICES = ["1", "2", "3", "4", "5", "6+"]  # interpret 6+ as >=6
@@ -59,22 +62,25 @@ def _client_ip(request: HttpRequest) -> str:
     return get_client_ip(request)
 
 
+def _ensure_list(value: Any) -> list[str]:
+    """Normalize settings values to a list of emails."""
+    if not value:
+        return []
+    if isinstance(value, (list, tuple, set)):
+        return [str(v).strip() for v in value if str(v).strip()]
+    return [str(value).strip()]
+
+
 def _looks_like_gibberish(text: str) -> bool:
-    """
-    Simple heuristics for bot payloads like: vVbHEmdFhhvJENIU
-    Avoid being overly aggressive to prevent false positives.
-    """
+    """Lightweight heuristic for obvious bot payloads like vVbHEmdFhhvJENIU."""
     t = (text or "").strip()
     if not t:
-        return True
-    if len(t) < int(getattr(settings, "PLAN_CHANGE_MIN_MESSAGE_LEN", 20)):
         return True
 
     # If it's a single "word" with no spaces and mostly mixed-case letters, it's often spam
     if " " not in t and len(t) >= 12:
         letters = sum(ch.isalpha() for ch in t)
         if letters / max(len(t), 1) > 0.8:
-            # Mixed upper/lower heavy
             upp = sum(ch.isupper() for ch in t)
             low = sum(ch.islower() for ch in t)
             if upp >= 3 and low >= 3:
@@ -304,7 +310,6 @@ def gallery_make_cover(request: HttpRequest, image_id: int) -> HttpResponse:
 
 
 @require_POST
-@ratelimit(key="ip", rate=getattr(settings, "PLAN_CHANGE_RATE_LIMIT", "3/h"), block=False)
 def send_plan_comment(request: HttpRequest, plan_id: int) -> HttpResponse:
     """
     Public: send 'change request' email.
@@ -316,101 +321,126 @@ def send_plan_comment(request: HttpRequest, plan_id: int) -> HttpResponse:
     - Gibberish / low-quality gate
     - Silent discard on suspected spam (show generic success)
     """
-    plan = get_object_or_404(Plans, pk=plan_id)
+    try:
+        plan = get_object_or_404(Plans, pk=plan_id)
 
-    # If rate limited, silently discard (looks like success to bots / user)
-    if getattr(request, "limited", False):
-        messages.success(request, "Thanks! Your request has been emailed. We’ll follow up soon.")
-        return redirect(plan.get_absolute_url())
+        # If rate limited, tell the user instead of silently succeeding
+        if getattr(request, "limited", False):
+            messages.error(request, "You've sent a few requests recently. Please wait a bit and try again.")
+            return redirect(plan.get_absolute_url())
 
-    form = PlanCommentForm(request.POST)
+        form = PlanCommentForm(request.POST)
 
-    # If form invalid - check if it's spam or real validation error
-    if not form.is_valid():
-        # If honeypot was filled or terms not checked, treat as spam (silent success)
-        if form.data.get("website") or not form.data.get("terms"):
-            messages.success(request, "Thanks! Your request has been emailed. We'll follow up soon.")
+        # If form invalid - check if it's spam or real validation error
+        if not form.is_valid():
+            # If honeypot was filled or terms not checked, treat as spam (silent success)
+            if form.data.get("website") or not form.data.get("terms"):
+                messages.success(request, "Thanks! Your request has been emailed. We'll follow up soon.")
+                return redirect(plan.get_absolute_url())
+            
+            # Otherwise show actual validation errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, error)
+            return redirect(plan.get_absolute_url())
+
+        name = (form.cleaned_data.get("name") or "").strip()
+        email = (form.cleaned_data.get("email") or "").strip()
+        message = (form.cleaned_data.get("message") or "").strip()
+
+        # Require a reasonable message length and reject obvious gibberish with a clear error
+        min_len = int(getattr(settings, "PLAN_CHANGE_MIN_MESSAGE_LEN", 10))
+        if len(message) < min_len:
+            messages.error(request, f"Please provide a bit more detail (at least {min_len} characters).")
+            return redirect(plan.get_absolute_url())
+
+        if _looks_like_gibberish(message):
+            messages.error(request, "That message looks like spam. Please rephrase and try again.")
+            return redirect(plan.get_absolute_url())
+
+        # reCAPTCHA v3 verification (enforced if secret is configured)
+        recaptcha_ok, score = _verify_recaptcha_v3(request)
+        if not recaptcha_ok:
+            messages.error(request, "Spam detection failed. Please try again.")
+            return redirect(plan.get_absolute_url())
+
+        subject = f"[Plan {plan.plan_number}] Change request"
+        lines = [
+            f"Plan: {plan.plan_number}",
+            f"URL: {request.build_absolute_uri(plan.get_absolute_url())}",
+            f"IP: {_client_ip(request)}",
+        ]
+        if score is not None:
+            lines.append(f"reCAPTCHA score: {score:.2f}")
+        if name:
+            lines.append(f"From: {name}")
+        if email:
+            lines.append(f"Email: {email}")
+        lines.extend(("", "Message:", message))
+        body = "\n".join(lines)
+
+        to_emails = _ensure_list(getattr(settings, "CONTACT_TO_EMAILS", None)) or _ensure_list(getattr(settings, "DEFAULT_FROM_EMAIL", None))
+        from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None) or (to_emails[0] if to_emails else None)
+
+        if not to_emails:
+            messages.error(request, "Email configuration is missing. Please contact us directly.")
+            return redirect(plan.get_absolute_url())
+
+        try:
+            EmailMessage(
+                subject=subject,
+                body=body,
+                from_email=from_email,
+                to=to_emails,
+                reply_to=[email] if email else None,
+            ).send(fail_silently=False)
+
+        except Exception:
+            messages.error(request, "Sorry, there was an error sending your message. Please try again or contact us directly.")
             return redirect(plan.get_absolute_url())
         
-        # Otherwise show actual validation errors
-        for field, errors in form.errors.items():
-            for error in errors:
-                messages.error(request, error)
+        # Send auto-ack to submitter if they provided email
+        if email:
+            try:
+                ack_text = (
+                    f"Hi{' ' + name if name else ''},\n\n"
+                    f"Thanks for your interest in plan {plan.plan_number}! "
+                    "We received your change request and will get back to you shortly with details.\n\n"
+                    f"Your request: {message[:200]}{'...' if len(message) > 200 else ''}\n\n"
+                    "We'll be in touch soon.\n\n"
+                    "— Provost Home Design"
+                )
+                from django.core.mail import EmailMultiAlternatives
+                ack = EmailMultiAlternatives(
+                    subject=f"Thanks for your interest in plan {plan.plan_number}",
+                    body=ack_text,
+                    from_email=(
+                        getattr(settings, "AUTO_ACK_FROM_EMAIL", None)
+                        or getattr(settings, "DEFAULT_FROM_EMAIL", None)
+                        or (to_emails[0] if to_emails else None)
+                    ),
+                    to=[email],
+                )
+                ack.send(fail_silently=True)
+            except Exception:
+                pass  # Silent fail for ack
+
+        messages.success(request, "Thanks! Your request has been emailed. We'll follow up soon.")
         return redirect(plan.get_absolute_url())
 
-    name = (form.cleaned_data.get("name") or "").strip()
-    email = (form.cleaned_data.get("email") or "").strip()
-    message = (form.cleaned_data.get("message") or "").strip()
-
-    # Quality heuristics (drop spammy payloads)
-    if _looks_like_gibberish(message):
-        messages.success(request, "Thanks! Your request has been emailed. We’ll follow up soon.")
-        return redirect(plan.get_absolute_url())
-
-    # reCAPTCHA v3 verification (enforced if secret is configured)
-    recaptcha_ok, score = _verify_recaptcha_v3(request)
-    if not recaptcha_ok:
-        messages.error(request, "Spam detection failed. Please try again.")
-        return redirect(plan.get_absolute_url())
-
-    subject = f"[Plan {plan.plan_number}] Change request"
-    lines = [
-        f"Plan: {plan.plan_number}",
-        f"URL: {request.build_absolute_uri(plan.get_absolute_url())}",
-        f"IP: {_client_ip(request)}",
-    ]
-    if score is not None:
-        lines.append(f"reCAPTCHA score: {score:.2f}")
-    if name:
-        lines.append(f"From: {name}")
-    if email:
-        lines.append(f"Email: {email}")
-    lines.extend(("", "Message:", message))
-    body = "\n".join(lines)
-
-    to_emails = getattr(settings, "CONTACT_TO_EMAILS", None) or [getattr(settings, "DEFAULT_FROM_EMAIL", "")]
-    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
-
-    try:
-        EmailMessage(
-            subject=subject,
-            body=body,
-            from_email=from_email,
-            to=to_emails,
-            reply_to=[email] if email else None,
-        ).send(fail_silently=False)
-        
-        logger.info(f"Plan change request email sent: Plan {plan.plan_number}, From: {email or 'anonymous'}, To: {to_emails}")
-        
-    except Exception as e:
-        logger.error(f"Failed to send plan change request email: {e}", exc_info=True)
-        messages.error(request, "Sorry, there was an error sending your message. Please try again or contact us directly.")
-        return redirect(plan.get_absolute_url())
-    
-    # Send auto-ack to submitter if they provided email
-    if email:
+    except Exception:
+        safe_url = "/"  # default fallback
         try:
-            ack_text = (
-                f"Hi{' ' + name if name else ''},\n\n"
-                f"Thanks for your interest in plan {plan.plan_number}! "
-                "We received your change request and will get back to you shortly with details.\n\n"
-                f"Your request: {message[:200]}{'...' if len(message) > 200 else ''}\n\n"
-                "We'll be in touch soon.\n\n"
-                "— Provost Home Design"
-            )
-            from django.core.mail import EmailMultiAlternatives
-            ack = EmailMultiAlternatives(
-                subject=f"Thanks for your interest in plan {plan.plan_number}",
-                body=ack_text,
-                from_email=getattr(settings, "AUTO_ACK_FROM_EMAIL", getattr(settings, "DEFAULT_FROM_EMAIL", None)),
-                to=[email],
-            )
-            ack.send(fail_silently=True)
+            plan = Plans.objects.filter(pk=plan_id).first()
+            if plan:
+                safe_url = plan.get_absolute_url()
         except Exception:
-            pass  # Don't fail the whole request if ack fails
-
-    messages.success(request, "Thanks! Your request has been emailed. We'll follow up soon.")
-    return redirect(plan.get_absolute_url())
+            pass
+        try:
+            messages.error(request, "We hit a server error. Please try again or contact us directly.")
+        except Exception:
+            pass
+        return redirect(safe_url)
 
 
 # -----------------------------
