@@ -167,13 +167,20 @@ def contact(request: HttpRequest) -> HttpResponse:
     )
     bcc_emails = _as_list(getattr(settings, "CONTACT_BCC_EMAILS", None))
 
-    # Forms
-    contact_form = ContactForm(request.POST or None, prefix="contact")
-    tform = TestimonialForm(request.POST or None, prefix="testimonial")
-
     action = request.POST.get("action", "").strip().lower() if request.method == "POST" else ""
     is_contact_post = action == "send_message" or any(k.startswith("contact-") for k in request.POST.keys())
     is_testimonial_post = action == "submit_testimonial" or any(k.startswith("testimonial-") for k in request.POST.keys())
+
+    # Forms - only bind the form that's being submitted
+    if request.method == "POST" and is_contact_post:
+        contact_form = ContactForm(request.POST, prefix="contact")
+        tform = TestimonialForm(prefix="testimonial")
+    elif request.method == "POST" and is_testimonial_post:
+        contact_form = ContactForm(prefix="contact")
+        tform = TestimonialForm(request.POST, prefix="testimonial")
+    else:
+        contact_form = ContactForm(prefix="contact")
+        tform = TestimonialForm(prefix="testimonial")
 
     # Seed the timing token on GET
     if request.method != "POST":
