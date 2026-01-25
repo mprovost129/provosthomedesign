@@ -20,6 +20,11 @@
                 <i class="fas fa-paper-plane"></i> Send Invoice
             </a>
             {% endif %}
+            {% if user.is_staff and invoice.linked_proposal %}
+            <a href="{% url 'billing:proposal_detail' invoice.linked_proposal.pk %}" class="btn btn-outline-info me-2">
+                <i class="fas fa-file-signature"></i> View Proposal
+            </a>
+            {% endif %}
             {% if user.is_staff %}
             <a href="{% url 'billing:delete_invoice' invoice.pk %}" class="btn btn-outline-danger me-2">
                 <i class="fas fa-trash"></i> Delete

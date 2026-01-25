@@ -818,6 +818,10 @@ class Proposal(models.Model):
     project = models.ForeignKey('Project', on_delete=models.SET_NULL, null=True, blank=True,
                                related_name='proposals',
                                help_text="Project created when proposal is accepted")
+    # Backlink to the invoice created from this proposal (if any)
+    linked_invoice = models.OneToOneField('Invoice', on_delete=models.SET_NULL, null=True, blank=True,
+                                         related_name='linked_proposal',
+                                         help_text="Invoice generated from this proposal")
     
     # Status & Dates
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')

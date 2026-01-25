@@ -173,7 +173,94 @@
   box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15) !important;
 }
 
-/* Smooth transitions for all icons */
-.bi {
-  transition: all 0.2s ease;
+/* Dashboard card enhancements */
+.card-stat {
+  border: none;
 }
+
+.card-stat.outstanding,
+.card-stat.paid,
+.card-stat.pending {
+  transition: all 0.3s ease;
+}
+
+.card-stat.outstanding:hover,
+.card-stat.paid:hover,
+.card-stat.pending:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0.75rem 1.5rem rgba(0,0,0,0.12) !important;
+}
+
+/* Status badges */
+.status-badge {
+  display: inline-block;
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.status-badge.status-sent,
+.status-badge.status-viewed {
+  background-color: #e3f2fd;
+  color: #0d47a1;
+}
+
+.status-badge.status-draft {
+  background-color: #f5f5f5;
+  color: #616161;
+}
+
+.status-badge.status-accepted,
+.status-badge.status-paid {
+  background-color: #e8f5e9;
+  color: #1b5e20;
+}
+
+.status-badge.status-overdue {
+  background-color: #ffebee;
+  color: #b71c1c;
+}
+
+.status-badge.status-rejected,
+.status-badge.status-cancelled {
+  background-color: #fce4ec;
+  color: #880e4f;
+}
+
+/* Alert styling */
+.alert-sm {
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0;
+  font-size: 0.875rem;
+}
+
+/* Min-width for truncation */
+.min-width-0 {
+  min-width: 0;
+}
+
+/* Table enhancements */
+.table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* List group customization */
+.list-group-item {
+  border-color: #e9ecef;
+}
+
+.list-group-item-action:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Button group styling */
+.btn-group-sm > .btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+

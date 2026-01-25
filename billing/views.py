@@ -14,10 +14,14 @@ from django.utils import timezone
 from django.template.loader import render_to_string
 from django.core.mail import EmailMessage
 from django.conf import settings
-from django.db.models import Sum, Q
+from django.db import models
+from django.db.models import Sum, Q, F, ExpressionWrapper, DecimalField
 from decimal import Decimal
 import json
 import logging
+from datetime import timedelta, date
+from io import BytesIO
+import zipfile
 
 from core.utils import verify_recaptcha_v3
 from .models import Client, Employee, Invoice, Payment, InvoiceTemplate, InvoiceLineItem, ProposalLineItem, Project, Proposal, ClientPlanFile
@@ -252,6 +256,11 @@ def password_reset_confirm(request, uidb64, token):
 @login_required(login_url='/portal/login/')
 def dashboard(request):
     """Client dashboard showing invoices and account overview."""
+    # Staff see an operational dashboard instead of the client view
+    if request.user.is_staff:
+        context = _staff_dashboard_context()
+        return render(request, 'billing/staff_dashboard.html', context)
+
     try:
         client = request.user.client_profile
     except Client.DoesNotExist:
@@ -259,7 +268,7 @@ def dashboard(request):
         client = Client.objects.create(user=request.user)
     
     # Get invoices
-    invoices = client.invoices.all()[:10]
+    invoices = client.invoices.all().order_by('-created_at')[:10]
     
     # Calculate totals
     total_outstanding = sum(inv.get_balance_due() for inv in client.invoices.exclude(status='paid'))
@@ -269,7 +278,7 @@ def dashboard(request):
     recent_payments = Payment.objects.filter(
         invoice__client=client,
         status='succeeded'
-    ).order_by('-processed_at')[:5]
+    ).order_by('-processed_at')[:5].select_related('invoice')
     
     # Count invoices by status
     pending_count = client.invoices.filter(status__in=['sent', 'overdue']).count()
@@ -290,9 +299,168 @@ def dashboard(request):
         'pending_count': pending_count,
         'recent_proposals': recent_proposals,
         'recent_plan_files': recent_plan_files,
+        'now': timezone.now(),
     }
     
     return render(request, 'billing/dashboard.html', context)
+
+
+def _staff_dashboard_context():
+    """Build data for the staff-facing CRM dashboard."""
+    today = timezone.now().date()
+    now_dt = timezone.now()
+
+    balance_expr = ExpressionWrapper(
+        F('total') - F('amount_paid'),
+        output_field=DecimalField(max_digits=12, decimal_places=2),
+    )
+
+    invoices = Invoice.objects.select_related('client')
+    active_invoices = invoices.exclude(status='cancelled')
+    outstanding_qs = active_invoices.exclude(status='paid').annotate(balance=balance_expr)
+
+    total_outstanding = outstanding_qs.aggregate(total=Sum('balance'))['total'] or Decimal('0.00')
+    overdue_qs = outstanding_qs.filter(due_date__lt=today)
+    overdue_total = overdue_qs.aggregate(total=Sum('balance'))['total'] or Decimal('0.00')
+    current_total = total_outstanding - overdue_total
+
+    # Buckets similar to FreshBooks aging
+    aging_buckets = {
+        'current': {'label': 'Current', 'total': Decimal('0.00'), 'count': 0},
+        '0-30': {'label': '0-30 Days', 'total': Decimal('0.00'), 'count': 0},
+        '31-60': {'label': '31-60 Days', 'total': Decimal('0.00'), 'count': 0},
+        '61-90': {'label': '61-90 Days', 'total': Decimal('0.00'), 'count': 0},
+        '91+': {'label': '91+ Days', 'total': Decimal('0.00'), 'count': 0},
+    }
+
+    for inv in outstanding_qs:
+        balance = inv.balance or (inv.total - inv.amount_paid)
+        if balance <= 0:
+            continue
+        if inv.due_date:
+            days_overdue = (today - inv.due_date).days
+        else:
+            days_overdue = 0
+        if days_overdue <= 0:
+            bucket = 'current'
+        elif days_overdue <= 30:
+            bucket = '0-30'
+        elif days_overdue <= 60:
+            bucket = '31-60'
+        elif days_overdue <= 90:
+            bucket = '61-90'
+        else:
+            bucket = '91+'
+        aging_buckets[bucket]['total'] += balance
+        aging_buckets[bucket]['count'] += 1
+
+    # Invoice status counts
+    invoice_status_counts = {
+        'draft': active_invoices.filter(status='draft').count(),
+        'sent': active_invoices.filter(status='sent').count(),
+        'paid': active_invoices.filter(status='paid').count(),
+        'overdue': active_invoices.filter(status='overdue').count(),
+    }
+
+    # Payments in the last 30 days
+    thirty_days_ago = now_dt - timedelta(days=30)
+    payments_last_30 = Payment.objects.filter(
+        status='succeeded',
+        processed_at__isnull=False,
+        processed_at__gte=thirty_days_ago,
+    )
+    paid_last_30 = payments_last_30.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+    # Revenue trend for the last 6 months (based on successful payments)
+    def _shift_month(dt: date, delta: int) -> date:
+        month = dt.month + delta
+        year = dt.year + (month - 1) // 12
+        month = (month - 1) % 12 + 1
+        return date(year, month, 1)
+
+    month_labels = []
+    month_totals = []
+    current_month_start = today.replace(day=1)
+    for offset in range(5, -1, -1):
+        month_start = _shift_month(current_month_start, -offset)
+        next_month = _shift_month(month_start, 1)
+        total = Payment.objects.filter(
+            status='succeeded',
+            processed_at__date__gte=month_start,
+            processed_at__date__lt=next_month,
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        month_labels.append(month_start.strftime('%b %Y'))
+        month_totals.append(float(total))
+
+    # Top clients by outstanding balance
+    top_clients = outstanding_qs.values(
+        'client__id', 'client__first_name', 'client__last_name', 'client__company_name'
+    ).annotate(balance=Sum('balance')).order_by('-balance')[:5]
+
+    # Top overdue clients (for action card)
+    top_overdue = overdue_qs.values(
+        'client__id', 'client__first_name', 'client__last_name', 'client__company_name'
+    ).annotate(balance=Sum('balance')).order_by('-balance')[:3]
+
+    # Projects and proposals snapshots
+    projects_in_progress = Project.objects.exclude(status__in=['completed', 'cancelled']).select_related('client')
+    
+    # Project health: on-time, at-risk, overdue
+    project_health = {
+        'on_time': projects_in_progress.filter(due_date__gte=today).count(),
+        'at_risk': projects_in_progress.filter(due_date__lt=today + timedelta(days=7), due_date__gte=today).count(),
+        'overdue': projects_in_progress.filter(due_date__lt=today).count(),
+    }
+    
+    # Proposal conversion metrics
+    all_proposals = Proposal.objects.exclude(status='draft')
+    proposals_sent = all_proposals.filter(status__in=['sent', 'viewed']).count()
+    proposals_accepted = all_proposals.filter(status='accepted').count()
+    proposal_conversion_rate = (
+        (proposals_accepted / proposals_sent * 100) if proposals_sent > 0 else 0
+    )
+    
+    # Payment collection efficiency (paid / invoiced in last 30 days)
+    invoices_last_30 = active_invoices.filter(issue_date__gte=(today - timedelta(days=30))).aggregate(
+        total=Sum('total')
+    )['total'] or Decimal('0.00')
+    collection_efficiency = (
+        (float(paid_last_30) / float(invoices_last_30) * 100) if invoices_last_30 > 0 else 0
+    )
+    active_projects = projects_in_progress[:5]
+    proposal_counts = {
+        'draft': Proposal.objects.filter(status='draft').count(),
+        'sent': Proposal.objects.filter(status__in=['sent', 'viewed']).count(),
+        'accepted': Proposal.objects.filter(status='accepted').count(),
+    }
+    recent_proposals = Proposal.objects.select_related('client').order_by('-issue_date')[:5]
+
+    recent_invoices = active_invoices.order_by('-issue_date')[:6]
+    recent_payments = Payment.objects.filter(status='succeeded').select_related('invoice__client').order_by('-processed_at')[:6]
+
+    return {
+        'total_outstanding': total_outstanding,
+        'overdue_total': overdue_total,
+        'current_total': current_total,
+        'paid_last_30': paid_last_30,
+        'invoice_status_counts': invoice_status_counts,
+        'aging_buckets': aging_buckets,
+        'month_labels': month_labels,
+        'month_totals': month_totals,
+        'top_clients': top_clients,
+        'top_overdue': top_overdue,
+        'project_health': project_health,
+        'proposal_conversion_rate': proposal_conversion_rate,
+        'collection_efficiency': collection_efficiency,
+        'active_projects': active_projects,
+        'projects_in_progress_count': projects_in_progress.count(),
+        'proposal_counts': proposal_counts,
+        'recent_proposals': recent_proposals,
+        'recent_invoices': recent_invoices,
+        'recent_payments': recent_payments,
+        'total_clients': Client.objects.count(),
+        'total_projects': Project.objects.count(),
+    }
 
 
 @login_required(login_url='/portal/login/')
@@ -1641,3 +1809,1203 @@ def send_proposal(request, pk):
     
     context = {'proposal': proposal}
     return render(request, 'billing/proposal_send_confirm.html', context)
+
+
+# ==================== PROPOSAL → INVOICE (Staff) ====================
+
+@staff_member_required(login_url='/portal/login/')
+def proposal_convert_to_invoice(request, pk):
+    """Create a draft invoice from a proposal, copying line items and tax."""
+    from .models import SystemSettings
+
+    proposal = get_object_or_404(Proposal.objects.select_related('client', 'project'), pk=pk)
+
+    if proposal.status == 'rejected':
+        messages.error(request, 'Cannot convert a rejected proposal.')
+        return redirect('billing:proposal_detail', pk=proposal.pk)
+
+    # Optionally mark accepted when converting (keeps history consistent)
+    if proposal.status not in ['accepted', 'rejected']:
+        proposal.status = 'accepted'
+        proposal.accepted_date = timezone.now()
+        proposal.accepted_by = proposal.client.get_full_name()
+        proposal.acceptance_ip = request.META.get('REMOTE_ADDR')
+        proposal.save(update_fields=['status', 'accepted_date', 'accepted_by', 'acceptance_ip'])
+
+    settings_obj = SystemSettings.load()
+    terms_days = settings_obj.default_payment_terms_days if hasattr(settings_obj, 'default_payment_terms_days') else 30
+
+    due_date = timezone.now().date() + timedelta(days=terms_days)
+
+    # Create invoice shell
+    invoice = Invoice.objects.create(
+        client=proposal.client,
+        project=proposal.project,
+        status='draft',
+        issue_date=timezone.now().date(),
+        due_date=due_date,
+        description=proposal.description or proposal.title,
+        notes=proposal.terms_and_conditions,
+        tax_rate=proposal.tax_rate,
+    )
+
+    # Copy line items
+    line_items = []
+    for item in proposal.line_items.all():
+        total_val = (item.quantity * item.rate).quantize(Decimal('0.01'))
+        line_items.append(InvoiceLineItem(
+            invoice=invoice,
+            description=item.description,
+            quantity=item.quantity,
+            unit_price=item.rate,
+            total=total_val,
+            order=item.order,
+        ))
+    InvoiceLineItem.objects.bulk_create(line_items)
+
+    # Recalculate totals
+    invoice.calculate_totals()
+
+    # Persist backlink for traceability
+    proposal.linked_invoice = invoice
+    proposal.save(update_fields=['linked_invoice'])
+
+    messages.success(request, f'Invoice {invoice.invoice_number} created from proposal {proposal.proposal_number}.')
+    return redirect('billing:invoice_detail', pk=invoice.pk)
+
+
+# ==================== REPORTS (Staff Only) ====================
+
+@staff_member_required(login_url='/portal/login/')
+def reports_index(request):
+    """Landing page listing available reports."""
+    return render(request, 'billing/reports/index.html')
+
+
+@staff_member_required(login_url='/portal/login/')
+def revenue_by_client_report(request):
+    """Revenue by Client based on successful payments in a date range."""
+    from datetime import datetime
+
+    start_str = request.GET.get('start')
+    end_str = request.GET.get('end')
+    today = timezone.now().date()
+    # Default: last 6 months
+    default_start = (today.replace(day=1) - timedelta(days=180))
+    default_end = today
+
+    def parse_date(s, fallback):
+        try:
+            return datetime.strptime(s, '%Y-%m-%d').date()
+        except Exception:
+            return fallback
+
+    start_date = parse_date(start_str, default_start)
+    end_date = parse_date(end_str, default_end)
+
+    payments = Payment.objects.filter(
+        status='succeeded',
+        processed_at__date__gte=start_date,
+        processed_at__date__lte=end_date,
+    ).select_related('invoice__client')
+
+    rows = payments.values(
+        'invoice__client__id',
+        'invoice__client__first_name',
+        'invoice__client__last_name',
+        'invoice__client__company_name',
+    ).annotate(
+        total_received=Sum('amount'),
+        payments_count=models.Count('id'),
+    ).order_by('-total_received')
+
+    grand_total = rows.aggregate(t=Sum('total_received'))['t'] or Decimal('0.00')
+
+    context = {
+        'rows': rows,
+        'grand_total': grand_total,
+        'start_date': start_date,
+        'end_date': end_date,
+    }
+    return render(request, 'billing/reports/revenue_by_client.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def accounts_aging_report(request):
+    """Accounts aging buckets and per-client outstanding balances."""
+    asof_str = request.GET.get('asof')
+    today = timezone.now().date()
+    if asof_str:
+        try:
+            from datetime import datetime
+            today = datetime.strptime(asof_str, '%Y-%m-%d').date()
+        except Exception:
+            pass
+
+    balance_expr = ExpressionWrapper(
+        F('total') - F('amount_paid'),
+        output_field=DecimalField(max_digits=12, decimal_places=2),
+    )
+
+    outstanding = Invoice.objects.exclude(status='paid').annotate(balance=balance_expr).filter(balance__gt=0)
+
+    # Per-client totals
+    client_rows = outstanding.values(
+        'client__id', 'client__first_name', 'client__last_name', 'client__company_name'
+    ).annotate(
+        outstanding_total=Sum('balance'),
+        invoice_count=models.Count('id'),
+    ).order_by('-outstanding_total')
+
+    # Buckets
+    buckets = {
+        'current': {'label': 'Current', 'total': Decimal('0.00')},
+        '0-30': {'label': '0-30 Days', 'total': Decimal('0.00')},
+        '31-60': {'label': '31-60 Days', 'total': Decimal('0.00')},
+        '61-90': {'label': '61-90 Days', 'total': Decimal('0.00')},
+        '91+': {'label': '91+ Days', 'total': Decimal('0.00')},
+    }
+
+    for inv in outstanding:
+        bal = inv.balance or (inv.total - inv.amount_paid)
+        days = (today - inv.due_date).days if inv.due_date else 0
+        if days <= 0:
+            key = 'current'
+        elif days <= 30:
+            key = '0-30'
+        elif days <= 60:
+            key = '31-60'
+        elif days <= 90:
+            key = '61-90'
+        else:
+            key = '91+'
+        buckets[key]['total'] += bal
+
+    totals = {
+        'outstanding_total': outstanding.aggregate(t=Sum('balance'))['t'] or Decimal('0.00'),
+        'current_total': buckets['current']['total'],
+        'overdue_total': buckets['0-30']['total'] + buckets['31-60']['total'] + buckets['61-90']['total'] + buckets['91+']['total'],
+    }
+
+    context = {
+        'client_rows': client_rows,
+        'buckets': buckets,
+        'totals': totals,
+        'today': today,
+    }
+    return render(request, 'billing/reports/accounts_aging.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def revenue_by_client_pdf(request):
+    """PDF export for Revenue by Client report."""
+    from datetime import datetime
+    from io import BytesIO
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.units import inch
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet
+
+    start_str = request.GET.get('start')
+    end_str = request.GET.get('end')
+    today = timezone.now().date()
+    default_start = (today.replace(day=1) - timedelta(days=180))
+    default_end = today
+
+    def parse_date(s, fallback):
+        try:
+            return datetime.strptime(s, '%Y-%m-%d').date()
+        except Exception:
+            return fallback
+
+    start_date = parse_date(start_str, default_start)
+    end_date = parse_date(end_str, default_end)
+
+    payments = Payment.objects.filter(
+        status='succeeded',
+        processed_at__date__gte=start_date,
+        processed_at__date__lte=end_date,
+    ).select_related('invoice__client')
+
+    rows = payments.values(
+        'invoice__client__first_name',
+        'invoice__client__last_name',
+        'invoice__client__company_name',
+    ).annotate(
+        total_received=Sum('amount'),
+        payments_count=models.Count('id'),
+    ).order_by('-total_received')
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+    styles = getSampleStyleSheet()
+
+    elements.append(Paragraph('<b>Revenue by Client</b>', styles['Heading1']))
+    elements.append(Paragraph(f"Range: {start_date} to {end_date}", styles['Normal']))
+    elements.append(Spacer(1, 0.3*inch))
+
+    table_data = [['Client', 'Company', 'Payments', 'Total Received']]
+    for r in rows:
+        client_name = (f"{r['invoice__client__first_name']} {r['invoice__client__last_name']}").strip()
+        company = r['invoice__client__company_name'] or ''
+        table_data.append([
+            client_name,
+            company,
+            str(r['payments_count'] or 0),
+            f"${(r['total_received'] or Decimal('0.00')):,.2f}",
+        ])
+
+    total_val = rows.aggregate(t=Sum('total_received'))['t'] or Decimal('0.00')
+    table_data.append(['', '', 'Grand Total', f"${total_val:,.2f}"])
+
+    t = Table(table_data, colWidths=[2.5*inch, 2.5*inch, 1*inch, 1.5*inch])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+    ]))
+    elements.append(t)
+
+    doc.build(elements)
+    buffer.seek(0)
+    resp = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    resp['Content-Disposition'] = f'attachment; filename="revenue_by_client_{start_date}_{end_date}.pdf"'
+    return resp
+
+
+@staff_member_required(login_url='/portal/login/')
+def accounts_aging_pdf(request):
+    """PDF export for Accounts Aging report."""
+    from datetime import datetime
+    from io import BytesIO
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.units import inch
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet
+
+    asof_str = request.GET.get('asof')
+    today = timezone.now().date()
+    if asof_str:
+        try:
+            today = datetime.strptime(asof_str, '%Y-%m-%d').date()
+        except Exception:
+            pass
+
+    balance_expr = ExpressionWrapper(
+        F('total') - F('amount_paid'),
+        output_field=DecimalField(max_digits=12, decimal_places=2),
+    )
+    outstanding = Invoice.objects.exclude(status='paid').annotate(balance=balance_expr).filter(balance__gt=0)
+
+    buckets = {
+        'current': Decimal('0.00'),
+        '0-30': Decimal('0.00'),
+        '31-60': Decimal('0.00'),
+        '61-90': Decimal('0.00'),
+        '91+': Decimal('0.00'),
+    }
+    for inv in outstanding:
+        bal = inv.balance or (inv.total - inv.amount_paid)
+        days = (today - inv.due_date).days if inv.due_date else 0
+        if days <= 0:
+            buckets['current'] += bal
+        elif days <= 30:
+            buckets['0-30'] += bal
+        elif days <= 60:
+            buckets['31-60'] += bal
+        elif days <= 90:
+            buckets['61-90'] += bal
+        else:
+            buckets['91+'] += bal
+
+    client_rows = outstanding.values(
+        'client__first_name', 'client__last_name', 'client__company_name'
+    ).annotate(
+        outstanding_total=Sum('balance'),
+        invoice_count=models.Count('id'),
+    ).order_by('-outstanding_total')
+
+    totals_outstanding = outstanding.aggregate(t=Sum('balance'))['t'] or Decimal('0.00')
+    totals_current = buckets['current']
+    totals_overdue = buckets['0-30'] + buckets['31-60'] + buckets['61-90'] + buckets['91+']
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+    styles = getSampleStyleSheet()
+
+    elements.append(Paragraph('<b>Accounts Aging</b>', styles['Heading1']))
+    elements.append(Paragraph(f"As of {today}", styles['Normal']))
+    elements.append(Spacer(1, 0.3*inch))
+
+    totals_table = Table([
+        ['Total Outstanding', f"${totals_outstanding:,.2f}"],
+        ['Current', f"${totals_current:,.2f}"],
+        ['Overdue', f"${totals_overdue:,.2f}"],
+    ], colWidths=[3*inch, 2*inch])
+    totals_table.setStyle(TableStyle([
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+    ]))
+    elements.append(totals_table)
+    elements.append(Spacer(1, 0.3*inch))
+
+    bucket_table = Table([
+        ['Current', f"${buckets['current']:,.2f}"],
+        ['0-30 Days', f"${buckets['0-30']:,.2f}"],
+        ['31-60 Days', f"${buckets['31-60']:,.2f}"],
+        ['61-90 Days', f"${buckets['61-90']:,.2f}"],
+        ['91+ Days', f"${buckets['91+']:,.2f}"],
+    ], colWidths=[3*inch, 2*inch])
+    bucket_table.setStyle(TableStyle([
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+    ]))
+    elements.append(Paragraph('<b>Aging Buckets</b>', styles['Heading2']))
+    elements.append(bucket_table)
+    elements.append(Spacer(1, 0.3*inch))
+
+    table_data = [['Client', 'Company', 'Invoices', 'Outstanding']]
+    for r in client_rows:
+        client_name = (f"{r['client__first_name']} {r['client__last_name']}").strip()
+        company = r['client__company_name'] or ''
+        table_data.append([
+            client_name,
+            company,
+            str(r['invoice_count'] or 0),
+            f"${(r['outstanding_total'] or Decimal('0.00')):,.2f}",
+        ])
+    t = Table(table_data, colWidths=[2.5*inch, 2.5*inch, 1*inch, 1.5*inch])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+    ]))
+    elements.append(Paragraph('<b>Per-Client Totals</b>', styles['Heading2']))
+    elements.append(t)
+
+    doc.build(elements)
+    buffer.seek(0)
+    resp = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    resp['Content-Disposition'] = f'attachment; filename="accounts_aging_{today}.pdf"'
+    return resp
+
+
+@staff_member_required(login_url='/portal/login/')
+def revenue_by_client_csv(request):
+    """CSV export for Revenue by Client report."""
+    from datetime import datetime
+    import csv
+
+    start_str = request.GET.get('start')
+    end_str = request.GET.get('end')
+    today = timezone.now().date()
+    default_start = (today.replace(day=1) - timedelta(days=180))
+    default_end = today
+
+    def parse_date(s, fallback):
+        try:
+            return datetime.strptime(s, '%Y-%m-%d').date()
+        except Exception:
+            return fallback
+
+    start_date = parse_date(start_str, default_start)
+    end_date = parse_date(end_str, default_end)
+
+    payments = Payment.objects.filter(
+        status='succeeded',
+        processed_at__date__gte=start_date,
+        processed_at__date__lte=end_date,
+    ).select_related('invoice__client')
+
+    rows = payments.values(
+        'invoice__client__id',
+        'invoice__client__first_name',
+        'invoice__client__last_name',
+        'invoice__client__company_name',
+    ).annotate(
+        total_received=Sum('amount'),
+        payments_count=models.Count('id'),
+    ).order_by('-total_received')
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="revenue_by_client_{start_date}_{end_date}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Client', 'Company', 'Payments', 'Total Received'])
+    for r in rows:
+        client_name = f"{r['invoice__client__first_name']} {r['invoice__client__last_name']}".strip()
+        company = r['invoice__client__company_name'] or ''
+        writer.writerow([
+            client_name,
+            company,
+            r['payments_count'] or 0,
+            f"{(r['total_received'] or Decimal('0.00')):.2f}",
+        ])
+    return response
+
+
+@staff_member_required(login_url='/portal/login/')
+def accounts_aging_csv(request):
+    """CSV export for Accounts Aging report (per-client totals)."""
+    import csv
+
+    balance_expr = ExpressionWrapper(
+        F('total') - F('amount_paid'),
+        output_field=DecimalField(max_digits=12, decimal_places=2),
+    )
+
+    outstanding = Invoice.objects.exclude(status='paid').annotate(balance=balance_expr).filter(balance__gt=0)
+
+    client_rows = outstanding.values(
+        'client__first_name', 'client__last_name', 'client__company_name'
+    ).annotate(
+        outstanding_total=Sum('balance'),
+        invoice_count=models.Count('id'),
+    ).order_by('-outstanding_total')
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="accounts_aging.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Client', 'Company', 'Invoices', 'Outstanding Total'])
+    for r in client_rows:
+        client_name = f"{r['client__first_name']} {r['client__last_name']}".strip()
+        company = r['client__company_name'] or ''
+        writer.writerow([
+            client_name,
+            company,
+            r['invoice_count'] or 0,
+            f"{(r['outstanding_total'] or Decimal('0.00')):.2f}",
+        ])
+    return response
+
+
+@staff_member_required(login_url='/portal/login/')
+def accounts_aging_bucket_detail(request, bucket: str):
+    """Drill-down: list outstanding invoices in a specific aging bucket."""
+    asof_str = request.GET.get('asof')
+    today = timezone.now().date()
+    if asof_str:
+        try:
+            from datetime import datetime
+            today = datetime.strptime(asof_str, '%Y-%m-%d').date()
+        except Exception:
+            pass
+
+    balance_expr = ExpressionWrapper(
+        F('total') - F('amount_paid'),
+        output_field=DecimalField(max_digits=12, decimal_places=2),
+    )
+
+    outstanding = Invoice.objects.exclude(status='paid').annotate(balance=balance_expr).filter(balance__gt=0)
+
+    def in_bucket(inv):
+        days = (today - inv.due_date).days if inv.due_date else 0
+        if bucket == 'current':
+            return days <= 0
+        if bucket == '0-30':
+            return 1 <= days <= 30
+        if bucket == '31-60':
+            return 31 <= days <= 60
+        if bucket == '61-90':
+            return 61 <= days <= 90
+        if bucket == '91+':
+            return days >= 91
+        return False
+
+    invoices = [inv for inv in outstanding if in_bucket(inv)]
+    total = sum((inv.balance or (inv.total - inv.amount_paid)) for inv in invoices) if invoices else Decimal('0.00')
+
+    context = {
+        'bucket': bucket,
+        'invoices': invoices,
+        'total': total,
+        'today': today,
+    }
+    return render(request, 'billing/reports/accounts_aging_bucket_detail.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def revenue_by_client_client_detail(request, client_id: int):
+    """Drill-down: payments for a specific client within date range."""
+    from datetime import datetime
+
+    client = get_object_or_404(Client, pk=client_id)
+
+    start_str = request.GET.get('start')
+    end_str = request.GET.get('end')
+    today = timezone.now().date()
+    default_start = (today.replace(day=1) - timedelta(days=180))
+    default_end = today
+
+    def parse_date(s, fallback):
+        try:
+            return datetime.strptime(s, '%Y-%m-%d').date()
+        except Exception:
+            return fallback
+
+    start_date = parse_date(start_str, default_start)
+    end_date = parse_date(end_str, default_end)
+
+    payments = Payment.objects.filter(
+        status='succeeded',
+        invoice__client=client,
+        processed_at__date__gte=start_date,
+        processed_at__date__lte=end_date,
+    ).select_related('invoice')
+
+    total_received = payments.aggregate(t=Sum('amount'))['t'] or Decimal('0.00')
+
+    context = {
+        'client': client,
+        'payments': payments.order_by('-processed_at'),
+        'total_received': total_received,
+        'start_date': start_date,
+        'end_date': end_date,
+    }
+    return render(request, 'billing/reports/revenue_by_client_client_detail.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def revenue_by_client_client_csv(request, client_id: int):
+    """CSV export for a client's payments within a date range."""
+    from datetime import datetime
+    import csv
+
+    client = get_object_or_404(Client, pk=client_id)
+
+    start_str = request.GET.get('start')
+    end_str = request.GET.get('end')
+    today = timezone.now().date()
+    default_start = (today.replace(day=1) - timedelta(days=180))
+    default_end = today
+
+    def parse_date(s, fallback):
+        try:
+            return datetime.strptime(s, '%Y-%m-%d').date()
+        except Exception:
+            return fallback
+
+    start_date = parse_date(start_str, default_start)
+    end_date = parse_date(end_str, default_end)
+
+    payments = Payment.objects.filter(
+        status='succeeded',
+        invoice__client=client,
+        processed_at__date__gte=start_date,
+        processed_at__date__lte=end_date,
+    ).select_related('invoice')
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = (
+        f'attachment; filename="client_{client_id}_payments_{start_date}_{end_date}.csv"'
+    )
+    writer = csv.writer(response)
+    writer.writerow(['Date', 'Invoice', 'Amount', 'Method'])
+    for p in payments.order_by('-processed_at'):
+        writer.writerow([
+            p.processed_at.date().isoformat() if p.processed_at else '',
+            p.invoice.invoice_number,
+            f"{(p.amount or Decimal('0.00')):.2f}",
+            p.get_payment_method_display(),
+        ])
+    return response
+
+
+@staff_member_required(login_url='/portal/login/')
+def accounts_aging_bucket_detail_csv(request, bucket: str):
+    """CSV export for invoices in a specific aging bucket."""
+    import csv
+
+    asof_str = request.GET.get('asof')
+    today = timezone.now().date()
+    if asof_str:
+        try:
+            from datetime import datetime
+            today = datetime.strptime(asof_str, '%Y-%m-%d').date()
+        except Exception:
+            pass
+    balance_expr = ExpressionWrapper(
+        F('total') - F('amount_paid'),
+        output_field=DecimalField(max_digits=12, decimal_places=2),
+    )
+    outstanding = (
+        Invoice.objects.exclude(status='paid').annotate(balance=balance_expr).filter(balance__gt=0)
+    )
+
+    def in_bucket(inv):
+        days = (today - inv.due_date).days if inv.due_date else 0
+        if bucket == 'current':
+            return days <= 0
+        if bucket == '0-30':
+            return 1 <= days <= 30
+        if bucket == '31-60':
+            return 31 <= days <= 60
+        if bucket == '61-90':
+            return 61 <= days <= 90
+        if bucket == '91+':
+            return days >= 91
+        return False
+
+    invoices = [inv for inv in outstanding if in_bucket(inv)]
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="aging_bucket_{bucket}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Invoice', 'Client', 'Due Date', 'Balance', 'Status'])
+    for inv in invoices:
+        writer.writerow([
+            inv.invoice_number,
+            inv.client.company_name or inv.client.get_full_name(),
+            inv.due_date.isoformat() if inv.due_date else '',
+            f"{(inv.balance or (inv.total - inv.amount_paid)):.2f}",
+            inv.get_status_display(),
+        ])
+    return response
+
+
+@staff_member_required(login_url='/portal/login/')
+def accounts_aging_client_detail(request, client_id: int):
+    """Per-client aging detail: list outstanding invoices for a client."""
+    client = get_object_or_404(Client, pk=client_id)
+    today = timezone.now().date()
+
+    balance_expr = ExpressionWrapper(
+        F('total') - F('amount_paid'),
+        output_field=DecimalField(max_digits=12, decimal_places=2),
+    )
+
+    invoices = (
+        Invoice.objects.filter(client=client)
+        .exclude(status='paid')
+        .annotate(balance=balance_expr)
+        .filter(balance__gt=0)
+        .order_by('due_date')
+    )
+
+    total = invoices.aggregate(t=Sum('balance'))['t'] or Decimal('0.00')
+
+    context = {
+        'client': client,
+        'invoices': invoices,
+        'total': total,
+        'today': today,
+    }
+    return render(request, 'billing/reports/accounts_aging_client_detail.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def accounts_aging_client_detail_csv(request, client_id: int):
+    """CSV export for per-client aging detail (outstanding invoices)."""
+    import csv
+    client = get_object_or_404(Client, pk=client_id)
+
+    balance_expr = ExpressionWrapper(
+        F('total') - F('amount_paid'),
+        output_field=DecimalField(max_digits=12, decimal_places=2),
+    )
+
+    invoices = (
+        Invoice.objects.filter(client=client)
+        .exclude(status='paid')
+        .annotate(balance=balance_expr)
+        .filter(balance__gt=0)
+        .order_by('due_date')
+    )
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="aging_client_{client_id}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Invoice', 'Due Date', 'Balance', 'Status'])
+    for inv in invoices:
+        writer.writerow([
+            inv.invoice_number,
+            inv.due_date.isoformat() if inv.due_date else '',
+            f"{(inv.balance or (inv.total - inv.amount_paid)):.2f}",
+            inv.get_status_display(),
+        ])
+    return response
+
+
+@staff_member_required(login_url='/portal/login/')
+def revenue_by_client_client_pdf(request, client_id: int):
+    """PDF export for a client's payments within a date range."""
+    from datetime import datetime
+    from io import BytesIO
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.units import inch
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet
+
+    client = get_object_or_404(Client, pk=client_id)
+
+    start_str = request.GET.get('start')
+    end_str = request.GET.get('end')
+    today = timezone.now().date()
+    default_start = (today.replace(day=1) - timedelta(days=180))
+    default_end = today
+
+    def parse_date(s, fallback):
+        try:
+            return datetime.strptime(s, '%Y-%m-%d').date()
+        except Exception:
+            return fallback
+
+    start_date = parse_date(start_str, default_start)
+    end_date = parse_date(end_str, default_end)
+
+    payments = Payment.objects.filter(
+        status='succeeded',
+        invoice__client=client,
+        processed_at__date__gte=start_date,
+        processed_at__date__lte=end_date,
+    ).select_related('invoice')
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+    styles = getSampleStyleSheet()
+
+    elements.append(Paragraph(f"<b>Payments for {client.company_name or client.get_full_name()}</b>", styles['Heading1']))
+    elements.append(Paragraph(f"Range: {start_date} to {end_date}", styles['Normal']))
+    elements.append(Spacer(1, 0.3*inch))
+
+    table_data = [['Date', 'Invoice', 'Amount', 'Method']]
+    total_val = Decimal('0.00')
+    for p in payments.order_by('-processed_at'):
+        total_val += p.amount or Decimal('0.00')
+        table_data.append([
+            (p.processed_at.date().isoformat() if p.processed_at else ''),
+            p.invoice.invoice_number,
+            f"${(p.amount or Decimal('0.00')):,.2f}",
+            p.get_payment_method_display(),
+        ])
+    table_data.append(['', 'Total Received', f"${total_val:,.2f}", ''])
+
+    t = Table(table_data, colWidths=[1.5*inch, 2*inch, 1.5*inch, 2*inch])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (2, 1), (2, -1), 'RIGHT'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+    ]))
+    elements.append(t)
+
+    doc.build(elements)
+    buffer.seek(0)
+    resp = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    resp['Content-Disposition'] = (
+        f'attachment; filename="client_{client_id}_payments_{start_date}_{end_date}.pdf"'
+    )
+    return resp
+
+
+@staff_member_required(login_url='/portal/login/')
+def accounts_aging_client_detail_pdf(request, client_id: int):
+    """PDF export for outstanding invoices for a client."""
+    from io import BytesIO
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.units import inch
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet
+
+    client = get_object_or_404(Client, pk=client_id)
+
+    balance_expr = ExpressionWrapper(
+        F('total') - F('amount_paid'),
+        output_field=DecimalField(max_digits=12, decimal_places=2),
+    )
+    invoices = (
+        Invoice.objects.filter(client=client)
+        .exclude(status='paid')
+        .annotate(balance=balance_expr)
+        .filter(balance__gt=0)
+        .order_by('due_date')
+    )
+
+    total_val = invoices.aggregate(t=Sum('balance'))['t'] or Decimal('0.00')
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+    styles = getSampleStyleSheet()
+
+    elements.append(Paragraph(f"<b>Outstanding for {client.company_name or client.get_full_name()}</b>", styles['Heading1']))
+    elements.append(Spacer(1, 0.3*inch))
+
+    table_data = [['Invoice', 'Due Date', 'Balance', 'Status']]
+    for inv in invoices:
+        table_data.append([
+            inv.invoice_number,
+            inv.due_date.isoformat() if inv.due_date else '',
+            f"${(inv.balance or (inv.total - inv.amount_paid)):.2f}",
+            inv.get_status_display(),
+        ])
+    table_data.append(['', 'Total Outstanding', f"${total_val:,.2f}", ''])
+
+    t = Table(table_data, colWidths=[2*inch, 1.5*inch, 1.5*inch, 2*inch])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (2, 1), (2, -1), 'RIGHT'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+    ]))
+    elements.append(t)
+
+    doc.build(elements)
+    buffer.seek(0)
+    resp = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    resp['Content-Disposition'] = f'attachment; filename="aging_client_{client_id}.pdf"'
+    return resp
+
+
+@staff_member_required(login_url='/portal/login/')
+def export_reports_bundle(request):
+    """Generate a ZIP containing CSV and PDF exports for revenue-by-client and accounts aging.
+    Optional drill-downs via `include_drilldowns=1`.
+    Filters:
+    - Revenue: `start`, `end`
+    - Aging: `asof`
+    """
+    from datetime import datetime
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.units import inch
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet
+    import csv
+
+    include_drilldowns = request.GET.get('include_drilldowns') in ('1', 'true', 'yes')
+
+    # Parse filters
+    today = timezone.now().date()
+    start_date = request.GET.get('start')
+    end_date = request.GET.get('end')
+    asof_str = request.GET.get('asof')
+    def parse_date(s, fallback):
+        try:
+            return datetime.strptime(s, '%Y-%m-%d').date()
+        except Exception:
+            return fallback
+    rev_start = parse_date(start_date, (today.replace(day=1) - timedelta(days=180)))
+    rev_end = parse_date(end_date, today)
+    asof_date = parse_date(asof_str, today)
+
+    # Prepare in-memory zip
+    zip_buf = BytesIO()
+    with zipfile.ZipFile(zip_buf, 'w', zipfile.ZIP_DEFLATED) as zf:
+        # Revenue by Client data
+        payments = Payment.objects.filter(
+            status='succeeded',
+            processed_at__date__gte=rev_start,
+            processed_at__date__lte=rev_end,
+        ).select_related('invoice__client')
+
+        rev_rows = payments.values(
+            'invoice__client__id',
+            'invoice__client__first_name',
+            'invoice__client__last_name',
+            'invoice__client__company_name',
+        ).annotate(
+            total_received=Sum('amount'),
+            payments_count=models.Count('id'),
+        ).order_by('-total_received')
+
+        # Revenue CSV
+        csv_buf = BytesIO()
+        writer = csv.writer(csv_buf)
+        writer.writerow(['Client', 'Company', 'Payments', 'Total Received'])
+        for r in rev_rows:
+            client_name = (f"{r['invoice__client__first_name']} {r['invoice__client__last_name']}").strip()
+            company = r['invoice__client__company_name'] or ''
+            writer.writerow([
+                client_name,
+                company,
+                r['payments_count'] or 0,
+                f"{(r['total_received'] or Decimal('0.00')):.2f}",
+            ])
+        zf.writestr(f"revenue_by_client_{rev_start}_{rev_end}.csv", csv_buf.getvalue().decode('utf-8'))
+
+        # Revenue PDF
+        pdf_buf = BytesIO()
+        doc = SimpleDocTemplate(pdf_buf, pagesize=letter)
+        elements = []
+        styles = getSampleStyleSheet()
+        elements.append(Paragraph('<b>Revenue by Client</b>', styles['Heading1']))
+        elements.append(Paragraph(f"Range: {rev_start} to {rev_end}", styles['Normal']))
+        elements.append(Spacer(1, 0.3*inch))
+        table_data = [['Client', 'Company', 'Payments', 'Total Received']]
+        for r in rev_rows:
+            client_name = (f"{r['invoice__client__first_name']} {r['invoice__client__last_name']}").strip()
+            company = r['invoice__client__company_name'] or ''
+            table_data.append([
+                client_name,
+                company,
+                str(r['payments_count'] or 0),
+                f"${(r['total_received'] or Decimal('0.00')):,.2f}",
+            ])
+        total_val = rev_rows.aggregate(t=Sum('total_received'))['t'] or Decimal('0.00')
+        table_data.append(['', '', 'Grand Total', f"${total_val:,.2f}"])
+        t = Table(table_data, colWidths=[2.5*inch, 2.5*inch, 1*inch, 1.5*inch])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ]))
+        elements.append(t)
+        doc.build(elements)
+        zf.writestr(f"revenue_by_client_{rev_start}_{rev_end}.pdf", pdf_buf.getvalue())
+
+        if include_drilldowns:
+            # Per-client payments CSVs and PDFs
+            for r in rev_rows:
+                client_id = r['invoice__client__id']
+                client_name = (f"{r['invoice__client__first_name']} {r['invoice__client__last_name']}").strip()
+                client_company = r['invoice__client__company_name'] or ''
+                c_payments = Payment.objects.filter(
+                    status='succeeded',
+                    invoice__client_id=client_id,
+                    processed_at__date__gte=rev_start,
+                    processed_at__date__lte=rev_end,
+                ).select_related('invoice')
+
+                # CSV
+                c_csv = BytesIO()
+                w = csv.writer(c_csv)
+                w.writerow(['Date', 'Invoice', 'Amount', 'Method'])
+                total = Decimal('0.00')
+                for p in c_payments.order_by('-processed_at'):
+                    total += p.amount or Decimal('0.00')
+                    w.writerow([
+                        (p.processed_at.date().isoformat() if p.processed_at else ''),
+                        p.invoice.invoice_number,
+                        f"{(p.amount or Decimal('0.00')):.2f}",
+                        p.get_payment_method_display(),
+                    ])
+                w.writerow(['', 'Total Received', f"{total:.2f}", ''])
+                zf.writestr(f"revenue_by_client/clients/{client_id}_payments_{rev_start}_{rev_end}.csv", c_csv.getvalue().decode('utf-8'))
+
+                # PDF
+                c_pdf = BytesIO()
+                doc = SimpleDocTemplate(c_pdf, pagesize=letter)
+                elements = []
+                elements.append(Paragraph(f"<b>Payments for {client_company or client_name}</b>", styles['Heading1']))
+                elements.append(Paragraph(f"Range: {rev_start} to {rev_end}", styles['Normal']))
+                elements.append(Spacer(1, 0.3*inch))
+                table_data = [['Date', 'Invoice', 'Amount', 'Method']]
+                for p in c_payments.order_by('-processed_at'):
+                    table_data.append([
+                        (p.processed_at.date().isoformat() if p.processed_at else ''),
+                        p.invoice.invoice_number,
+                        f"${(p.amount or Decimal('0.00')):,.2f}",
+                        p.get_payment_method_display(),
+                    ])
+                table_data.append(['', 'Total Received', f"${total:,.2f}", ''])
+                t = Table(table_data, colWidths=[1.5*inch, 2*inch, 1.5*inch, 2*inch])
+                t.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (2, 1), (2, -1), 'RIGHT'),
+                    ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                ]))
+                elements.append(t)
+                doc.build(elements)
+                zf.writestr(f"revenue_by_client/clients/{client_id}_payments_{rev_start}_{rev_end}.pdf", c_pdf.getvalue())
+
+        # Accounts Aging data
+        balance_expr = ExpressionWrapper(
+            F('total') - F('amount_paid'),
+            output_field=DecimalField(max_digits=12, decimal_places=2),
+        )
+        outstanding = Invoice.objects.exclude(status='paid').annotate(balance=balance_expr).filter(balance__gt=0)
+
+        buckets = {
+            'current': Decimal('0.00'),
+            '0-30': Decimal('0.00'),
+            '31-60': Decimal('0.00'),
+            '61-90': Decimal('0.00'),
+            '91+': Decimal('0.00'),
+        }
+        for inv in outstanding:
+            bal = inv.balance or (inv.total - inv.amount_paid)
+            days = (asof_date - inv.due_date).days if inv.due_date else 0
+            if days <= 0:
+                buckets['current'] += bal
+            elif days <= 30:
+                buckets['0-30'] += bal
+            elif days <= 60:
+                buckets['31-60'] += bal
+            elif days <= 90:
+                buckets['61-90'] += bal
+            else:
+                buckets['91+'] += bal
+
+        client_rows = outstanding.values(
+            'client__id', 'client__first_name', 'client__last_name', 'client__company_name'
+        ).annotate(
+            outstanding_total=Sum('balance'),
+            invoice_count=models.Count('id'),
+        ).order_by('-outstanding_total')
+
+        # Aging CSV
+        a_csv = BytesIO()
+        w = csv.writer(a_csv)
+        w.writerow(['Client', 'Company', 'Invoices', 'Outstanding'])
+        for r in client_rows:
+            name = (f"{r['client__first_name']} {r['client__last_name']}").strip()
+            company = r['client__company_name'] or ''
+            w.writerow([
+                name,
+                company,
+                r['invoice_count'] or 0,
+                f"{(r['outstanding_total'] or Decimal('0.00')):.2f}",
+            ])
+        zf.writestr(f"accounts_aging_{asof_date}.csv", a_csv.getvalue().decode('utf-8'))
+
+        # Aging PDF
+        a_pdf = BytesIO()
+        doc = SimpleDocTemplate(a_pdf, pagesize=letter)
+        elements = []
+        elements.append(Paragraph('<b>Accounts Aging</b>', styles['Heading1']))
+        elements.append(Paragraph(f"As of {asof_date}", styles['Normal']))
+        elements.append(Spacer(1, 0.3*inch))
+        totals_outstanding = outstanding.aggregate(t=Sum('balance'))['t'] or Decimal('0.00')
+        totals_current = buckets['current']
+        totals_overdue = buckets['0-30'] + buckets['31-60'] + buckets['61-90'] + buckets['91+']
+        totals_table = Table([
+            ['Total Outstanding', f"${totals_outstanding:,.2f}"],
+            ['Current', f"${totals_current:,.2f}"],
+            ['Overdue', f"${totals_overdue:,.2f}"],
+        ], colWidths=[3*inch, 2*inch])
+        totals_table.setStyle(TableStyle([('GRID', (0, 0), (-1, -1), 0.5, colors.black)]))
+        elements.append(totals_table)
+        elements.append(Spacer(1, 0.3*inch))
+        bucket_table = Table([
+            ['Current', f"${buckets['current']:,.2f}"],
+            ['0-30 Days', f"${buckets['0-30']:,.2f}"],
+            ['31-60 Days', f"${buckets['31-60']:,.2f}"],
+            ['61-90 Days', f"${buckets['61-90']:,.2f}"],
+            ['91+ Days', f"${buckets['91+']:,.2f}"],
+        ], colWidths=[3*inch, 2*inch])
+        bucket_table.setStyle(TableStyle([('GRID', (0, 0), (-1, -1), 0.5, colors.black)]))
+        elements.append(Paragraph('<b>Aging Buckets</b>', styles['Heading2']))
+        elements.append(bucket_table)
+        elements.append(Spacer(1, 0.3*inch))
+        table_data = [['Client', 'Company', 'Invoices', 'Outstanding']]
+        for r in client_rows:
+            name = (f"{r['client__first_name']} {r['client__last_name']}").strip()
+            company = r['client__company_name'] or ''
+            table_data.append([
+                name,
+                company,
+                str(r['invoice_count'] or 0),
+                f"${(r['outstanding_total'] or Decimal('0.00')):,.2f}",
+            ])
+        t = Table(table_data, colWidths=[2.5*inch, 2.5*inch, 1*inch, 1.5*inch])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ]))
+        elements.append(Paragraph('<b>Per-Client Totals</b>', styles['Heading2']))
+        elements.append(t)
+        doc.build(elements)
+        zf.writestr(f"accounts_aging_{asof_date}.pdf", a_pdf.getvalue())
+
+        if include_drilldowns:
+            # Per-bucket CSVs
+            for bucket in ['current', '0-30', '31-60', '61-90', '91+']:
+                def in_bucket(inv):
+                    days = (asof_date - inv.due_date).days if inv.due_date else 0
+                    if bucket == 'current':
+                        return days <= 0
+                    if bucket == '0-30':
+                        return 1 <= days <= 30
+                    if bucket == '31-60':
+                        return 31 <= days <= 60
+                    if bucket == '61-90':
+                        return 61 <= days <= 90
+                    if bucket == '91+':
+                        return days >= 91
+                    return False
+                invs = [inv for inv in outstanding if in_bucket(inv)]
+                b_csv = BytesIO()
+                w = csv.writer(b_csv)
+                w.writerow(['Invoice', 'Client', 'Due Date', 'Balance', 'Status'])
+                for inv in invs:
+                    w.writerow([
+                        inv.invoice_number,
+                        inv.client.company_name or inv.client.get_full_name(),
+                        inv.due_date.isoformat() if inv.due_date else '',
+                        f"{(inv.balance or (inv.total - inv.amount_paid)):.2f}",
+                        inv.get_status_display(),
+                    ])
+                zf.writestr(f"accounts_aging/buckets/{bucket}_{asof_date}.csv", b_csv.getvalue().decode('utf-8'))
+
+            # Per-client aging CSVs and PDFs
+            for r in client_rows:
+                client_id = r['client__id']
+                client_name = (f"{r['client__first_name']} {r['client__last_name']}").strip()
+                client_company = r['client__company_name'] or ''
+                invs = (
+                    Invoice.objects.filter(client_id=client_id)
+                    .exclude(status='paid')
+                    .annotate(balance=balance_expr)
+                    .filter(balance__gt=0)
+                    .order_by('due_date')
+                )
+                # CSV
+                c_csv = BytesIO()
+                w = csv.writer(c_csv)
+                w.writerow(['Invoice', 'Due Date', 'Balance', 'Status'])
+                total = Decimal('0.00')
+                for inv in invs:
+                    total += inv.balance or (inv.total - inv.amount_paid)
+                    w.writerow([
+                        inv.invoice_number,
+                        inv.due_date.isoformat() if inv.due_date else '',
+                        f"{(inv.balance or (inv.total - inv.amount_paid)):.2f}",
+                        inv.get_status_display(),
+                    ])
+                w.writerow(['', 'Total Outstanding', f"{total:.2f}", ''])
+                zf.writestr(f"accounts_aging/clients/{client_id}_aging_{asof_date}.csv", c_csv.getvalue().decode('utf-8'))
+                # PDF
+                c_pdf = BytesIO()
+                doc = SimpleDocTemplate(c_pdf, pagesize=letter)
+                elements = []
+                elements.append(Paragraph(f"<b>Outstanding for {client_company or client_name}</b>", styles['Heading1']))
+                elements.append(Paragraph(f"As of {asof_date}", styles['Normal']))
+                elements.append(Spacer(1, 0.3*inch))
+                table_data = [['Invoice', 'Due Date', 'Balance', 'Status']]
+                for inv in invs:
+                    table_data.append([
+                        inv.invoice_number,
+                        inv.due_date.isoformat() if inv.due_date else '',
+                        f"${(inv.balance or (inv.total - inv.amount_paid)):.2f}",
+                        inv.get_status_display(),
+                    ])
+                table_data.append(['', 'Total Outstanding', f"${total:,.2f}", ''])
+                t = Table(table_data, colWidths=[2*inch, 1.5*inch, 1.5*inch, 2*inch])
+                t.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (2, 1), (2, -1), 'RIGHT'),
+                    ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                ]))
+                elements.append(t)
+                doc.build(elements)
+                zf.writestr(f"accounts_aging/clients/{client_id}_aging_{asof_date}.pdf", c_pdf.getvalue())
+
+    # Return zip
+    zip_buf.seek(0)
+    resp = HttpResponse(zip_buf.getvalue(), content_type='application/zip')
+    resp['Content-Disposition'] = (
+        f'attachment; filename="reports_bundle_{rev_start}_{rev_end}_{asof_date}.zip"'
+    )
+    return resp

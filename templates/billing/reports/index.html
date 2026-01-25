@@ -1,0 +1,51 @@
+{% extends 'billing/base_authenticated.html' %}
+
+{% block title %}Reports{% endblock %}
+
+{% block authenticated_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">Reports</h2>
+  <div>
+    <a class="btn btn-outline-primary" href="{% url 'billing:export_reports_bundle' %}">Quick Export (ZIP)</a>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header bg-white"><strong>Export Options</strong></div>
+      <div class="card-body">
+        <form method="get" action="{% url 'billing:export_reports_bundle' %}" class="needs-validation">
+          <div class="mb-3">
+            <label for="start" class="form-label">Revenue Start Date</label>
+            <input type="date" id="start" name="start" class="form-control" value="{{ today|date:'Y-m-d' }}"/>
+          </div>
+          <div class="mb-3">
+            <label for="end" class="form-label">Revenue End Date</label>
+            <input type="date" id="end" name="end" class="form-control" value="{{ today|date:'Y-m-d' }}"/>
+          </div>
+          <div class="mb-3">
+            <label for="asof" class="form-label">Aging As Of Date</label>
+            <input type="date" id="asof" name="asof" class="form-control" value="{{ today|date:'Y-m-d' }}"/>
+          </div>
+          <div class="mb-3 form-check">
+            <input type="checkbox" id="include_drilldowns" name="include_drilldowns" value="1" class="form-check-input"/>
+            <label for="include_drilldowns" class="form-check-label">Include per-client and per-bucket drill-downs</label>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Download Bundle (ZIP)</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="list-group">
+  <a class="list-group-item list-group-item-action" href="{% url 'billing:revenue_by_client_report' %}">
+    <i class="fas fa-chart-pie text-primary me-2"></i> Revenue by Client
+  </a>
+  <a class="list-group-item list-group-item-action" href="{% url 'billing:accounts_aging_report' %}">
+    <i class="fas fa-calendar-exclamation text-danger me-2"></i> Accounts Aging
+  </a>
+</div>
+{% endblock %}
+

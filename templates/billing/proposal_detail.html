@@ -38,6 +38,14 @@
         </div>
     </div>
 
+    {% if proposal.linked_invoice %}
+    <div class="alert alert-success mb-4">
+        <i class="bi bi-receipt"></i>
+        Converted to invoice
+        <a href="{% url 'billing:invoice_detail' proposal.linked_invoice.pk %}" class="alert-link">{{ proposal.linked_invoice.invoice_number }}</a>.
+    </div>
+    {% endif %}
+
     <!-- Action Buttons (Staff Only) -->
     {% if request.user.is_staff %}
     <div class="mb-4">
@@ -60,6 +68,10 @@
             
             <a href="{% url 'billing:duplicate_proposal' proposal.pk %}" class="btn btn-outline-secondary">
                 <i class="bi bi-files"></i> Duplicate
+            </a>
+
+            <a href="{% url 'billing:proposal_convert_to_invoice' proposal.pk %}" class="btn btn-success">
+                <i class="bi bi-receipt"></i> Create Invoice
             </a>
             
             {% if proposal.status not in 'accepted,rejected' %}

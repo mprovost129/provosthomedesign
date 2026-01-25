@@ -135,6 +135,11 @@
                                        title="Duplicate proposal">
                                         <i class="fas fa-copy"></i>
                                     </a>
+                                    <a href="{% url 'billing:proposal_convert_to_invoice' proposal.pk %}" 
+                                       class="btn btn-sm btn-success ms-1"
+                                       title="Create invoice from proposal">
+                                        <i class="fas fa-file-invoice-dollar"></i>
+                                    </a>
                                 </td>
                             </tr>
                             {% endfor %}

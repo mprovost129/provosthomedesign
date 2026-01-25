@@ -64,10 +64,35 @@ urlpatterns = [
     path('proposal/<int:pk>/duplicate/', views.duplicate_proposal, name='duplicate_proposal'),
     path('proposal/<int:pk>/delete/', views.delete_proposal, name='delete_proposal'),
     path('proposal/<int:pk>/send/', views.send_proposal, name='send_proposal'),
+    path('proposal/<int:pk>/convert-to-invoice/', views.proposal_convert_to_invoice, name='proposal_convert_to_invoice'),
     path('proposal/<int:pk>/accept/', views.accept_proposal, name='accept_proposal'),
     path('proposal/<int:pk>/reject/', views.reject_proposal, name='reject_proposal'),
     
     # System Settings (Staff Only)
     path('settings/', views.system_settings, name='system_settings'),
+
+    # Reports (Staff Only)
+    path('reports/', views.reports_index, name='reports_index'),
+    path('reports/revenue-by-client/', views.revenue_by_client_report, name='revenue_by_client_report'),
+    path('reports/accounts-aging/', views.accounts_aging_report, name='accounts_aging_report'),
+    # CSV export endpoints
+    path('reports/revenue-by-client/export.csv', views.revenue_by_client_csv, name='revenue_by_client_csv'),
+    path('reports/accounts-aging/export.csv', views.accounts_aging_csv, name='accounts_aging_csv'),
+    # PDF export endpoints
+    path('reports/revenue-by-client/export.pdf', views.revenue_by_client_pdf, name='revenue_by_client_pdf'),
+    path('reports/accounts-aging/export.pdf', views.accounts_aging_pdf, name='accounts_aging_pdf'),
+    # Drill-down endpoints
+    path('reports/accounts-aging/bucket/<str:bucket>/', views.accounts_aging_bucket_detail, name='accounts_aging_bucket_detail'),
+    path('reports/revenue-by-client/client/<int:client_id>/', views.revenue_by_client_client_detail, name='revenue_by_client_client_detail'),
+    # Additional CSV exports
+    path('reports/accounts-aging/bucket/<str:bucket>/export.csv', views.accounts_aging_bucket_detail_csv, name='accounts_aging_bucket_detail_csv'),
+    path('reports/revenue-by-client/client/<int:client_id>/export.csv', views.revenue_by_client_client_csv, name='revenue_by_client_client_csv'),
+    # Aging per-client detail
+    path('reports/accounts-aging/client/<int:client_id>/', views.accounts_aging_client_detail, name='accounts_aging_client_detail'),
+    path('reports/accounts-aging/client/<int:client_id>/export.csv', views.accounts_aging_client_detail_csv, name='accounts_aging_client_detail_csv'),
+    path('reports/accounts-aging/client/<int:client_id>/export.pdf', views.accounts_aging_client_detail_pdf, name='accounts_aging_client_detail_pdf'),
+    path('reports/revenue-by-client/client/<int:client_id>/export.pdf', views.revenue_by_client_client_pdf, name='revenue_by_client_client_pdf'),
+    # Export bundle
+    path('reports/export-all.zip', views.export_reports_bundle, name='export_reports_bundle'),
 ]
 

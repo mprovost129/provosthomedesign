@@ -69,6 +69,9 @@
                     <a class="nav-link {% if 'system_settings' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:system_settings' %}">
                         <i class="fas fa-cog"></i> System Settings
                     </a>
+                    <a class="nav-link {% if 'report_' in request.resolver_match.url_name or request.resolver_match.url_name == 'reports_index' %}active{% endif %}" href="{% url 'billing:reports_index' %}">
+                        <i class="fas fa-chart-line"></i> Reports
+                    </a>
                     {% endif %}
                     
                     <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
