@@ -370,6 +370,24 @@ def contact(request: HttpRequest) -> HttpResponse:
                         logger.info(f"Testimonial notification sent: From {t.name} ({t.email or 'no email'}), Rating: {t.rating}/5, To: {to_admin}")
                     except Exception:
                         logger.exception("Testimonial email send failed")
+                
+                # Send auto-ack to submitter if they provided email
+                if t.email:
+                    with contextlib.suppress(Exception):
+                        ack_text = (
+                            f"Hi {t.name},\n\n"
+                            "Thanks for sharing your experience with us! "
+                            "Your testimonial has been received and will be reviewed shortly.\n\n"
+                            "We appreciate you taking the time to provide feedback.\n\n"
+                            "— Provost Home Design"
+                        )
+                        ack = EmailMultiAlternatives(
+                            subject="Thanks for your testimonial",
+                            body=ack_text,
+                            from_email=getattr(settings, "AUTO_ACK_FROM_EMAIL", getattr(settings, "DEFAULT_FROM_EMAIL", None)),
+                            to=[t.email],
+                        )
+                        ack.send(fail_silently=True)
 
                 if _is_htmx(request):
                     return _htmx_status(request, "success", "Thanks! Your testimonial was submitted and will appear once approved.")

@@ -386,6 +386,28 @@ def send_plan_comment(request: HttpRequest, plan_id: int) -> HttpResponse:
         logger.error(f"Failed to send plan change request email: {e}", exc_info=True)
         messages.error(request, "Sorry, there was an error sending your message. Please try again or contact us directly.")
         return redirect(plan.get_absolute_url())
+    
+    # Send auto-ack to submitter if they provided email
+    if email:
+        try:
+            ack_text = (
+                f"Hi{' ' + name if name else ''},\n\n"
+                f"Thanks for your interest in plan {plan.plan_number}! "
+                "We received your change request and will get back to you shortly with details.\n\n"
+                f"Your request: {message[:200]}{'...' if len(message) > 200 else ''}\n\n"
+                "We'll be in touch soon.\n\n"
+                "— Provost Home Design"
+            )
+            from django.core.mail import EmailMultiAlternatives
+            ack = EmailMultiAlternatives(
+                subject=f"Thanks for your interest in plan {plan.plan_number}",
+                body=ack_text,
+                from_email=getattr(settings, "AUTO_ACK_FROM_EMAIL", getattr(settings, "DEFAULT_FROM_EMAIL", None)),
+                to=[email],
+            )
+            ack.send(fail_silently=True)
+        except Exception:
+            pass  # Don't fail the whole request if ack fails
 
     messages.success(request, "Thanks! Your request has been emailed. We'll follow up soon.")
     return redirect(plan.get_absolute_url())
