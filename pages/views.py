@@ -386,7 +386,7 @@ def contact(request: HttpRequest) -> HttpResponse:
                         logger.warning(f"Testimonial admin email skipped: no recipients configured")
                     else:
                         subj = f"New testimonial submitted: {t.name or '(No name)'} ({t.rating}/5)"
-                        text_body = render_to_string("pages/emails/testimonial_new.txt", ctx)
+                        text_body = render_to_string("pages/emails/testimonial_notify.txt", ctx)
                         html_body = render_to_string("pages/emails/testimonial_new.html", ctx)
 
                         em = EmailMultiAlternatives(
