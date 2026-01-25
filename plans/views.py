@@ -325,9 +325,17 @@ def send_plan_comment(request: HttpRequest, plan_id: int) -> HttpResponse:
 
     form = PlanCommentForm(request.POST)
 
-    # If form invalid (including honeypot), silently discard as success
+    # If form invalid - check if it's spam or real validation error
     if not form.is_valid():
-        messages.success(request, "Thanks! Your request has been emailed. We’ll follow up soon.")
+        # If honeypot was filled or terms not checked, treat as spam (silent success)
+        if form.data.get("website") or not form.data.get("terms"):
+            messages.success(request, "Thanks! Your request has been emailed. We'll follow up soon.")
+            return redirect(plan.get_absolute_url())
+        
+        # Otherwise show actual validation errors
+        for field, errors in form.errors.items():
+            for error in errors:
+                messages.error(request, error)
         return redirect(plan.get_absolute_url())
 
     name = (form.cleaned_data.get("name") or "").strip()
@@ -363,13 +371,21 @@ def send_plan_comment(request: HttpRequest, plan_id: int) -> HttpResponse:
     to_emails = getattr(settings, "CONTACT_TO_EMAILS", None) or [getattr(settings, "DEFAULT_FROM_EMAIL", "")]
     from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
 
-    EmailMessage(
-        subject=subject,
-        body=body,
-        from_email=from_email,
-        to=to_emails,
-        reply_to=[email] if email else None,
-    ).send(fail_silently=False)
+    try:
+        EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=from_email,
+            to=to_emails,
+            reply_to=[email] if email else None,
+        ).send(fail_silently=False)
+        
+        logger.info(f"Plan change request email sent: Plan {plan.plan_number}, From: {email or 'anonymous'}, To: {to_emails}")
+        
+    except Exception as e:
+        logger.error(f"Failed to send plan change request email: {e}", exc_info=True)
+        messages.error(request, "Sorry, there was an error sending your message. Please try again or contact us directly.")
+        return redirect(plan.get_absolute_url())
 
     messages.success(request, "Thanks! Your request has been emailed. We'll follow up soon.")
     return redirect(plan.get_absolute_url())

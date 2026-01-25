@@ -108,6 +108,9 @@ class PlanCommentForm(forms.Form):
     name = forms.CharField(required=False, widget=forms.TextInput(attrs={"class": "form-control"}))
     email = forms.EmailField(required=False, widget=forms.EmailInput(attrs={"class": "form-control"}))
     message = forms.CharField(required=True, widget=forms.Textarea(attrs={"rows": 4, "class": "form-control"}))
+    
+    # Terms acceptance (required)
+    terms = forms.BooleanField(required=True, error_messages={"required": "You must agree to the terms and conditions."})
 
     # Honeypot (hidden by CSS in template)
     website = forms.CharField(required=False, widget=forms.TextInput(attrs={"autocomplete": "off"}))

@@ -305,6 +305,12 @@
         if (!form) return;
 
         form.addEventListener("submit", function (e) {
+          // First check HTML5 validation (including required checkbox)
+          if (!form.checkValidity()) {
+            // Let browser show validation messages
+            return;
+          }
+
           var el = document.getElementById("recaptcha_token");
           if (el && el.value) return;
 
