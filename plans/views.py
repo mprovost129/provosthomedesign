@@ -394,8 +394,10 @@ def send_plan_comment(request: HttpRequest, plan_id: int) -> HttpResponse:
                 to=to_emails,
                 reply_to=[email] if email else None,
             ).send(fail_silently=False)
+            logger.info(f"Plan change request email sent: Plan {plan.plan_number}, From: {email or 'anonymous'}, To: {to_emails}")
 
-        except Exception:
+        except Exception as e:
+            logger.error(f"Failed to send plan change request email: {e}", exc_info=True)
             messages.error(request, "Sorry, there was an error sending your message. Please try again or contact us directly.")
             return redirect(plan.get_absolute_url())
         
