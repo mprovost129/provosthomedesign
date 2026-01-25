@@ -371,7 +371,7 @@ def contact(request: HttpRequest) -> HttpResponse:
                     approved=False,
                 )
 
-                with contextlib.suppress(Exception):
+                try:
                     admin_url = request.build_absolute_uri(reverse("admin:pages_testimonial_change", args=[t.pk]))
                     site_name = getattr(settings, "SITE_NAME", company)
                     ctx = {"t": t, "admin_url": admin_url, "site_name": site_name}
@@ -382,23 +382,25 @@ def contact(request: HttpRequest) -> HttpResponse:
                         or [getattr(settings, "DEFAULT_FROM_EMAIL", "")]
                     )
 
-                    subj = f"New testimonial submitted: {t.name or '(No name)'} ({t.rating}/5)"
-                    text_body = render_to_string("pages/emails/testimonial_new.txt", ctx)
-                    html_body = render_to_string("pages/emails/testimonial_new.html", ctx)
+                    if not to_admin or not to_admin[0]:
+                        logger.warning(f"Testimonial admin email skipped: no recipients configured")
+                    else:
+                        subj = f"New testimonial submitted: {t.name or '(No name)'} ({t.rating}/5)"
+                        text_body = render_to_string("pages/emails/testimonial_new.txt", ctx)
+                        html_body = render_to_string("pages/emails/testimonial_new.html", ctx)
 
-                    em = EmailMultiAlternatives(
-                        subject=subj,
-                        body=text_body,
-                        from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
-                        to=to_admin,
-                        reply_to=[t.email] if t.email else None,
-                    )
-                    em.attach_alternative(html_body, "text/html")
-                    try:
+                        em = EmailMultiAlternatives(
+                            subject=subj,
+                            body=text_body,
+                            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+                            to=to_admin,
+                            reply_to=[t.email] if t.email else None,
+                        )
+                        em.attach_alternative(html_body, "text/html")
                         em.send(fail_silently=False)
                         logger.info(f"Testimonial notification sent: From {t.name} ({t.email or 'no email'}), Rating: {t.rating}/5, To: {to_admin}")
-                    except Exception:
-                        logger.exception("Testimonial email send failed")
+                except Exception:
+                    logger.exception("Testimonial email send failed")
                 
                 # Send auto-ack to submitter if they provided email
                 if t.email:
