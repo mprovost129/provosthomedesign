@@ -74,7 +74,7 @@
                     </a>
                   {% endif %}
                   {% if t.email %}
-                    <a href="mailto:{{ t.email|urlencode }}?subject={{ ('Re: Your testimonial'|urlencode) }}"
+                    <a href="mailto:{{ t.email }}?subject=Re: Your testimonial"
                        style="display:inline-block;margin-left:8px;background:#198754;color:#fff;text-decoration:none;font:600 14px/1 Arial, sans-serif;padding:10px 16px;border-radius:8px;">
                       Reply to {{ t.name|default:'sender' }}
                     </a>
