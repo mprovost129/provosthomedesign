@@ -375,11 +375,11 @@ class InvoiceTemplateAdmin(admin.ModelAdmin):
 class ProjectAdmin(admin.ModelAdmin):
     """Admin interface for Project management."""
     list_display = ('job_number', 'job_name', 'client', 'status', 'billing_type', 
-                    'estimated_total', 'due_date', 'created_at')
-    list_filter = ('status', 'billing_type', 'created_at')
+                    'estimated_total', 'due_date', 'is_closed', 'created_at')
+    list_filter = ('status', 'billing_type', 'is_closed', 'created_at')
     search_fields = ('job_number', 'job_name', 'client__first_name', 'client__last_name', 
                      'client__company_name', 'description')
-    readonly_fields = ('created_at', 'updated_at', 'created_by')
+    readonly_fields = ('created_at', 'updated_at', 'created_by', 'closed_by', 'closed_date')
     date_hierarchy = 'created_at'
     ordering = ['-job_number']
     
@@ -389,6 +389,9 @@ class ProjectAdmin(admin.ModelAdmin):
         }),
         ('Timeline', {
             'fields': ('start_date', 'due_date', 'completed_date', 'status')
+        }),
+        ('Closure', {
+            'fields': ('is_closed', 'closed_date', 'closed_by')
         }),
         ('Billing Information', {
             'fields': ('billing_type', 'fixed_price', 'hourly_rate', 'estimated_hours', 'actual_hours')

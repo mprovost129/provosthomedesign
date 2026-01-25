@@ -128,6 +128,10 @@ def create_time_entry(request):
         form = TimeEntryForm(request.POST)
         if form.is_valid():
             entry = form.save(commit=False)
+            # Check if project is closed
+            if entry.project.is_closed:
+                messages.error(request, 'Cannot log time on a closed project.')
+                return redirect('timetracking:time_dashboard')
             entry.user = request.user
             entry.created_via_timer = False
             entry.save()
@@ -189,6 +193,13 @@ def start_timer(request):
             return JsonResponse({'success': False, 'error': 'Project is required.'})
         
         project = get_object_or_404(Project, pk=project_id)
+        
+        # Check if project is closed
+        if project.is_closed:
+            return JsonResponse({
+                'success': False,
+                'error': 'Cannot log time on a closed project.'
+            })
         
         # Create new time entry
         time_entry = TimeEntry.objects.create(

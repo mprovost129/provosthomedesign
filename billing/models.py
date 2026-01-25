@@ -730,6 +730,18 @@ class Project(models.Model):
         help_text="Current project status"
     )
     
+    # Project closure
+    is_closed = models.BooleanField(default=False, help_text="Whether project is closed")
+    closed_date = models.DateTimeField(null=True, blank=True, help_text="When project was closed")
+    closed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='closed_projects',
+        help_text="Staff member who closed this project"
+    )
+    
     # Notes and metadata
     notes = models.TextField(blank=True, help_text="Internal notes about the project")
     created_by = models.ForeignKey(
@@ -797,6 +809,52 @@ class Project(models.Model):
             progress = (self.actual_hours / self.estimated_hours) * 100
             return min(100, round(progress, 1))
         return 0
+    
+    def get_total_invoiced(self):
+        """Get total amount invoiced for this project."""
+        return sum(inv.total for inv in self.invoices.exclude(status='cancelled'))
+    
+    def get_total_paid(self):
+        """Get total amount paid for this project."""
+        return sum(inv.amount_paid for inv in self.invoices.exclude(status='cancelled'))
+    
+    def get_balance_due(self):
+        """Get remaining balance due for this project."""
+        return self.get_total_invoiced() - self.get_total_paid()
+    
+    def is_fully_paid(self):
+        """Check if all invoices are paid in full."""
+        invoices = self.invoices.exclude(status='cancelled')
+        if not invoices.exists():
+            return False
+        return all(inv.is_paid() for inv in invoices)
+    
+    def get_payment_status(self):
+        """Return payment status: 'unpaid', 'partial', or 'paid'."""
+        total_invoiced = self.get_total_invoiced()
+        total_paid = self.get_total_paid()
+        
+        if total_paid == 0:
+            return 'unpaid'
+        elif total_paid >= total_invoiced:
+            return 'paid'
+        else:
+            return 'partial'
+    
+    def get_payment_summary(self):
+        """Get payment summary dict with all details."""
+        total_invoiced = self.get_total_invoiced()
+        total_paid = self.get_total_paid()
+        balance = total_invoiced - total_paid
+        
+        return {
+            'total_invoiced': total_invoiced,
+            'total_paid': total_paid,
+            'balance_due': balance,
+            'percentage_paid': (total_paid / total_invoiced * 100) if total_invoiced > 0 else 0,
+            'status': self.get_payment_status(),
+            'is_fully_paid': self.is_fully_paid(),
+        }
 
 
 class Proposal(models.Model):

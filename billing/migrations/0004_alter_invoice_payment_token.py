@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('billing', '0003_populate_payment_tokens'),
+        ('billing', '0003_invoice_reminder_sent'),
     ]
 
     operations = [

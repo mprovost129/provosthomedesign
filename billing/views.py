@@ -1442,6 +1442,60 @@ def delete_project(request, pk):
 
 
 @staff_member_required(login_url='/portal/login/')
+def close_project(request, pk):
+    """Close a project only if fully paid; otherwise warn the user."""
+    from .models import Project
+    project = get_object_or_404(Project, pk=pk)
+
+    payment_summary = project.get_payment_summary()
+
+    if request.method == 'POST':
+        if not payment_summary['is_fully_paid']:
+            messages.error(
+                request,
+                'Project cannot be closed: outstanding balance remains (status: %s).' % payment_summary['status']
+            )
+            return redirect('billing:project_detail', pk=project.pk)
+
+        project.is_closed = True
+        project.closed_date = timezone.now()
+        project.closed_by = request.user
+        # Keep existing status, but if still in_progress bump to completed
+        if project.status == 'in_progress':
+            project.status = 'completed'
+        project.save(update_fields=['is_closed', 'closed_date', 'closed_by', 'status', 'updated_at'])
+        messages.success(request, 'Project closed. All invoices are paid in full.')
+        return redirect('billing:project_detail', pk=project.pk)
+
+    context = {
+        'project': project,
+        'payment_summary': payment_summary,
+    }
+    return render(request, 'billing/project_close_confirm.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def reopen_project(request, pk):
+    """Reopen a closed project."""
+    from .models import Project
+    project = get_object_or_404(Project, pk=pk)
+
+    if request.method == 'POST':
+        project.is_closed = False
+        project.closed_date = None
+        project.closed_by = None
+        # If previously completed, move back to in_progress for further work
+        if project.status == 'completed':
+            project.status = 'in_progress'
+        project.save(update_fields=['is_closed', 'closed_date', 'closed_by', 'status', 'updated_at'])
+        messages.success(request, 'Project reopened.')
+        return redirect('billing:project_detail', pk=project.pk)
+
+    context = {'project': project}
+    return render(request, 'billing/project_reopen_confirm.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
 def delete_invoice(request, pk):
     """Delete an invoice (staff only)."""
     invoice = get_object_or_404(Invoice, pk=pk)

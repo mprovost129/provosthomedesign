@@ -1,0 +1,13 @@
+{% extends 'billing/base_authenticated.html' %}
+{% block title %}Reopen Project {{ project.job_number }}{% endblock %}
+{% block authenticated_content %}
+<div class="container py-4">
+  <h3 class="mb-3">Reopen Project {{ project.job_number }}</h3>
+  <form method="post">
+    {% csrf_token %}
+    <p>Are you sure you want to reopen this project?</p>
+    <button type="submit" class="btn btn-primary">Reopen Project</button>
+    <a href="{% url 'billing:project_detail' project.pk %}" class="btn btn-secondary ms-2">Cancel</a>
+  </form>
+</div>
+{% endblock %}

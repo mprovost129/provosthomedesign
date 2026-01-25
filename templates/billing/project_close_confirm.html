@@ -1,0 +1,22 @@
+{% extends 'billing/base_authenticated.html' %}
+{% block title %}Close Project {{ project.job_number }}{% endblock %}
+{% block authenticated_content %}
+<div class="container py-4">
+  <h3 class="mb-3">Close Project {{ project.job_number }}</h3>
+  <div class="alert alert-warning">
+    <p class="mb-1"><strong>Payment status:</strong> {{ payment_summary.status|title }}</p>
+    <p class="mb-0">Invoiced: ${{ payment_summary.total_invoiced|floatformat:2 }} | Paid: ${{ payment_summary.total_paid|floatformat:2 }} | Balance: ${{ payment_summary.balance_due|floatformat:2 }}</p>
+  </div>
+  {% if not payment_summary.is_fully_paid %}
+    <div class="alert alert-danger">You cannot close this project because there is an outstanding balance.</div>
+    <a href="{% url 'billing:project_detail' project.pk %}" class="btn btn-secondary">Back to Project</a>
+  {% else %}
+    <form method="post" class="mt-3">
+      {% csrf_token %}
+      <p>Are you sure you want to close this project? You can reopen it later if needed.</p>
+      <button type="submit" class="btn btn-danger">Close Project</button>
+      <a href="{% url 'billing:project_detail' project.pk %}" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}
