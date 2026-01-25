@@ -94,5 +94,13 @@ urlpatterns = [
     path('reports/revenue-by-client/client/<int:client_id>/export.pdf', views.revenue_by_client_client_pdf, name='revenue_by_client_client_pdf'),
     # Export bundle
     path('reports/export-all.zip', views.export_reports_bundle, name='export_reports_bundle'),
-]
-
+    
+    # Expenses (Staff Only)
+    path('expenses/', views.expense_list, name='expense_list'),
+    path('expenses/<int:pk>/', views.expense_detail, name='expense_detail'),
+    path('expenses/create/', views.expense_create, name='expense_create'),
+    path('expenses/<int:pk>/edit/', views.expense_edit, name='expense_edit'),
+    path('expenses/<int:pk>/delete/', views.expense_delete, name='expense_delete'),
+    path('expenses/<int:pk>/approve/', views.expense_approve, name='expense_approve'),
+    path('expenses/report/', views.expense_report, name='expense_report'),
+    path('expenses/dashboard/', views.expense_dashboard, name='expense_dashboard'),]

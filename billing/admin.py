@@ -531,3 +531,96 @@ class ClientPlanFileAdmin(admin.ModelAdmin):
         msg.attach_alternative(html_content, 'text/html')
         msg.send(fail_silently=True)
 
+
+# ==================== EXPENSES ====================
+
+@admin.register(models.ExpenseCategory)
+class ExpenseCategoryAdmin(admin.ModelAdmin):
+    """Admin for expense categories."""
+    list_display = ('name', 'is_tax_deductible', 'is_active')
+    list_filter = ('is_tax_deductible', 'is_active')
+    search_fields = ('name',)
+
+
+@admin.register(models.Expense)
+class ExpenseAdmin(admin.ModelAdmin):
+    """Admin for expenses with filtering and bulk actions."""
+    list_display = ('description', 'amount_display', 'category', 'expense_date', 
+                    'project', 'client', 'status_badge', 'created_by')
+    list_filter = ('status', 'category', 'tax_deductible', 'expense_date', 'submitted_date')
+    search_fields = ('description', 'vendor', 'project__job_name', 'client__company_name')
+    readonly_fields = ('submitted_date', 'approved_date', 'created_by')
+    
+    fieldsets = (
+        ('Expense Details', {
+            'fields': ('description', 'amount', 'category', 'expense_date', 'vendor')
+        }),
+        ('Associated Records', {
+            'fields': ('project', 'client')
+        }),
+        ('Receipt', {
+            'fields': ('receipt_url',)
+        }),
+        ('Tax Information', {
+            'fields': ('tax_deductible', 'tax_category')
+        }),
+        ('Notes', {
+            'fields': ('notes',)
+        }),
+        ('Status & Approval', {
+            'fields': ('status', 'approved_by', 'reimbursed_date')
+        }),
+        ('Metadata', {
+            'fields': ('created_by', 'submitted_date', 'approved_date', 'created_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    date_hierarchy = 'expense_date'
+    list_per_page = 50
+    
+    def amount_display(self, obj):
+        """Display amount with formatting."""
+        return f"${obj.amount:,.2f}"
+    amount_display.short_description = 'Amount'
+    
+    def status_badge(self, obj):
+        """Display status as colored badge."""
+        colors = {
+            'pending': '#FFC107',
+            'approved': '#28A745',
+            'rejected': '#DC3545',
+            'reimbursed': '#17A2B8',
+        }
+        color = colors.get(obj.status, '#6C757D')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 5px 10px; border-radius: 3px;">{}</span>',
+            color,
+            obj.get_status_display()
+        )
+    status_badge.short_description = 'Status'
+    
+    def get_readonly_fields(self, request, obj=None):
+        """Prevent editing if already approved."""
+        readonly = list(self.readonly_fields)
+        if obj and obj.status in ['approved', 'reimbursed']:
+            readonly.extend(['amount', 'category', 'expense_date'])
+        return readonly
+    
+    actions = ['mark_approved', 'mark_pending']
+    
+    def mark_approved(self, request, queryset):
+        """Bulk approve expenses."""
+        count = 0
+        for expense in queryset.filter(status='pending'):
+            expense.approve(request.user)
+            count += 1
+        self.message_user(request, f'{count} expense(es) approved.')
+    mark_approved.short_description = 'Mark selected as approved'
+    
+    def mark_pending(self, request, queryset):
+        """Bulk revert to pending."""
+        count = queryset.exclude(status__in=['reimbursed']).update(status='pending')
+        self.message_user(request, f'{count} expense(es) marked as pending.')
+    mark_pending.short_description = 'Mark selected as pending'
+

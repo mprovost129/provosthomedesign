@@ -1,0 +1,21 @@
+{% autoescape off %}Dear {{ client.company_name|default:client.get_full_name }},
+
+This is a reminder that invoice {{ invoice.invoice_number }} is {{ days_overdue }} days overdue.
+
+Invoice Details:
+- Invoice Number: {{ invoice.invoice_number }}
+- Amount Due: ${{ invoice.total_amount|floatformat:2 }}
+- Due Date: {{ invoice.due_date|date:"F j, Y" }}
+- Days Overdue: {{ days_overdue }}
+
+Please contact us if you have any questions or if payment has already been sent.
+
+Company: {{ company_name }}
+Email: {{ company_email }}
+Phone: {{ company_phone }}
+
+Thank you for your prompt attention to this matter.
+
+Best regards,
+{{ company_name }} Team
+{% endautoescape %}

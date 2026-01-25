@@ -24,7 +24,7 @@ from io import BytesIO
 import zipfile
 
 from core.utils import verify_recaptcha_v3
-from .models import Client, Employee, Invoice, Payment, InvoiceTemplate, InvoiceLineItem, ProposalLineItem, Project, Proposal, ClientPlanFile
+from .models import Client, Employee, Invoice, Payment, InvoiceTemplate, InvoiceLineItem, ProposalLineItem, Project, Proposal, ClientPlanFile, Expense, ExpenseCategory
 from .forms import (
     ClientRegistrationForm, 
     ClientLoginForm, 
@@ -34,7 +34,8 @@ from .forms import (
     InvoiceLineItemFormSet,
     ClientForm,
     EmployeeForm,
-    ClientPlanFileForm
+    ClientPlanFileForm,
+    ExpenseForm
 )
 
 logger = logging.getLogger(__name__)
@@ -3009,3 +3010,260 @@ def export_reports_bundle(request):
         f'attachment; filename="reports_bundle_{rev_start}_{rev_end}_{asof_date}.zip"'
     )
     return resp
+
+# ==================== EXPENSES (Staff Only) ====================
+
+@staff_member_required(login_url='/portal/login/')
+def expense_list(request):
+    """List all expenses with filtering by status, category, date range."""
+    expenses = Expense.objects.select_related('category', 'project', 'client', 'created_by').order_by('-expense_date')
+    
+    # Filters
+    status = request.GET.get('status')
+    category = request.GET.get('category')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    
+    if status:
+        expenses = expenses.filter(status=status)
+    if category:
+        expenses = expenses.filter(category_id=category)
+    if start_date:
+        try:
+            start = timezone.datetime.strptime(start_date, '%Y-%m-%d').date()
+            expenses = expenses.filter(expense_date__gte=start)
+        except:
+            pass
+    if end_date:
+        try:
+            end = timezone.datetime.strptime(end_date, '%Y-%m-%d').date()
+            expenses = expenses.filter(expense_date__lte=end)
+        except:
+            pass
+    
+    # Calculations
+    total_amount = expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    approved_amount = expenses.filter(status='approved').aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    pending_amount = expenses.filter(status='pending').aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    
+    categories = ExpenseCategory.objects.filter(is_active=True)
+    
+    context = {
+        'expenses': expenses[:50],  # Pagination can be added later
+        'categories': categories,
+        'total_amount': total_amount,
+        'approved_amount': approved_amount,
+        'pending_amount': pending_amount,
+        'status_filter': status,
+        'category_filter': category,
+        'start_date': start_date,
+        'end_date': end_date,
+    }
+    return render(request, 'billing/expenses/list.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def expense_detail(request, pk):
+    """View expense details."""
+    expense = get_object_or_404(Expense, pk=pk)
+    
+    context = {
+        'expense': expense,
+    }
+    return render(request, 'billing/expenses/detail.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def expense_create(request):
+    """Create a new expense."""
+    from .forms import ExpenseForm
+    
+    if request.method == 'POST':
+        form = ExpenseForm(request.POST)
+        if form.is_valid():
+            expense = form.save(commit=False)
+            expense.created_by = request.user
+            expense.save()
+            messages.success(request, f'Expense "{expense.description}" created successfully.')
+            return redirect('billing:expense_detail', pk=expense.pk)
+    else:
+        form = ExpenseForm()
+    
+    context = {
+        'form': form,
+        'title': 'Create Expense',
+    }
+    return render(request, 'billing/expenses/form.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def expense_edit(request, pk):
+    """Edit an expense."""
+    from .forms import ExpenseForm
+    
+    expense = get_object_or_404(Expense, pk=pk)
+    
+    if request.method == 'POST':
+        form = ExpenseForm(request.POST, instance=expense)
+        if form.is_valid():
+            expense = form.save()
+            messages.success(request, 'Expense updated successfully.')
+            return redirect('billing:expense_detail', pk=expense.pk)
+    else:
+        form = ExpenseForm(instance=expense)
+    
+    context = {
+        'form': form,
+        'expense': expense,
+        'title': f'Edit Expense: {expense.description}',
+    }
+    return render(request, 'billing/expenses/form.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def expense_delete(request, pk):
+    """Delete an expense."""
+    expense = get_object_or_404(Expense, pk=pk)
+    
+    if request.method == 'POST':
+        desc = expense.description
+        expense.delete()
+        messages.success(request, f'Expense "{desc}" deleted.')
+        return redirect('billing:expense_list')
+    
+    context = {
+        'expense': expense,
+    }
+    return render(request, 'billing/expenses/delete.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def expense_approve(request, pk):
+    """Approve an expense."""
+    expense = get_object_or_404(Expense, pk=pk)
+    
+    if request.method == 'POST':
+        expense.approve(request.user)
+        messages.success(request, f'Expense "{expense.description}" approved.')
+        return redirect('billing:expense_detail', pk=expense.pk)
+    
+    context = {
+        'expense': expense,
+    }
+    return render(request, 'billing/expenses/approve.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def expense_report(request):
+    """Expense report by category, project, or date range."""
+    from datetime import datetime
+    
+    start_str = request.GET.get('start_date')
+    end_str = request.GET.get('end_date')
+    group_by = request.GET.get('group_by', 'category')  # category, project, month
+    
+    today = timezone.now().date()
+    default_start = today.replace(day=1)
+    default_end = today
+    
+    def parse_date(s, fallback):
+        try:
+            return datetime.strptime(s, '%Y-%m-%d').date()
+        except:
+            return fallback
+    
+    start_date = parse_date(start_str, default_start)
+    end_date = parse_date(end_str, default_end)
+    
+    expenses = Expense.objects.filter(
+        expense_date__gte=start_date,
+        expense_date__lte=end_date,
+    ).select_related('category', 'project')
+    
+    if group_by == 'category':
+        rows = expenses.values('category__name').annotate(
+            total=Sum('amount'),
+            count=models.Count('id'),
+            tax_deductible=Sum('amount', filter=models.Q(tax_deductible=True)),
+        ).order_by('-total')
+    elif group_by == 'project':
+        rows = expenses.values('project__job_name').annotate(
+            total=Sum('amount'),
+            count=models.Count('id'),
+        ).order_by('-total')
+    else:  # month
+        rows = expenses.values(
+            month_key=models.functions.TruncMonth('expense_date')
+        ).annotate(
+            total=Sum('amount'),
+            count=models.Count('id'),
+        ).order_by('-month_key')
+    
+    grand_total = expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    
+    context = {
+        'rows': rows,
+        'grand_total': grand_total,
+        'start_date': start_date,
+        'end_date': end_date,
+        'group_by': group_by,
+        'total_count': expenses.count(),
+    }
+    return render(request, 'billing/expenses/report.html', context)
+
+
+@staff_member_required(login_url='/portal/login/')
+def expense_dashboard(request):
+    """Dashboard for expense overview and analytics."""
+    today = timezone.now().date()
+    month_start = today.replace(day=1)
+    
+    # Get all expenses for calculations
+    all_expenses = Expense.objects.select_related('category')
+    
+    # Get totals
+    total_amount = all_expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    pending_count = all_expenses.filter(status='pending').count()
+    pending_amount = all_expenses.filter(status='pending').aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    month_amount = all_expenses.filter(
+        expense_date__gte=month_start,
+        expense_date__lte=today
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    
+    # Category breakdown
+    category_totals = []
+    for category in ExpenseCategory.objects.filter(is_active=True):
+        expenses = all_expenses.filter(category=category)
+        if expenses.exists():
+            total = expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+            count = expenses.count()
+            category_totals.append((category, total, count))
+    
+    # Monthly breakdown (last 6 months)
+    monthly_breakdown = []
+    from django.db.models.functions import TruncMonth
+    for item in all_expenses.annotate(month=TruncMonth('expense_date')).values('month').annotate(
+        total=Sum('amount'),
+        count=models.Count('id')
+    ).order_by('-month')[:6]:
+        monthly_breakdown.append((item['month'], item['total'] or Decimal('0.00'), item['count']))
+    
+    # Tax deductible
+    tax_deductible_total = all_expenses.filter(tax_deductible=True).aggregate(
+        total=Sum('amount')
+    )['total'] or Decimal('0.00')
+    non_deductible_total = all_expenses.filter(tax_deductible=False).aggregate(
+        total=Sum('amount')
+    )['total'] or Decimal('0.00')
+    
+    context = {
+        'pending_count': pending_count,
+        'pending_amount': pending_amount,
+        'total_amount': total_amount,
+        'month_amount': month_amount,
+        'category_totals': category_totals,
+        'monthly_breakdown': monthly_breakdown,
+        'tax_deductible_total': tax_deductible_total,
+        'non_deductible_total': non_deductible_total,
+    }
+    return render(request, 'billing/expenses/report.html', context)

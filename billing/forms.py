@@ -3,7 +3,7 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, Pass
 from django.contrib.auth.models import User
 from .models import (Client, Employee, Invoice, InvoiceTemplate, InvoiceLineItem, 
                      SystemSettings, Project, Proposal, ProposalLineItem, ProposalTemplate,
-                     ClientPlanFile)
+                     ClientPlanFile, Expense, ExpenseCategory)
 import re
 from datetime import datetime
 from django_recaptcha.fields import ReCaptchaField
@@ -666,6 +666,51 @@ class ClientPlanFileForm(forms.ModelForm):
         }
         help_texts = {
             'dropbox_link': 'Paste the Dropbox shared link. It will be automatically formatted for download.',
+        }
+
+
+class ExpenseForm(forms.ModelForm):
+    """Form for creating/editing expenses."""
+    
+    class Meta:
+        model = Expense
+        fields = ['description', 'amount', 'category', 'expense_date', 'vendor', 
+                  'project', 'client', 'receipt_url', 'notes', 'tax_deductible', 'tax_category']
+        widgets = {
+            'description': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'What was purchased/paid for?'
+            }),
+            'amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0.00',
+                'step': '0.01',
+            }),
+            'category': forms.Select(attrs={'class': 'form-select'}),
+            'expense_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date',
+            }),
+            'vendor': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Store/vendor name (optional)'
+            }),
+            'project': forms.Select(attrs={'class': 'form-select'}),
+            'client': forms.Select(attrs={'class': 'form-select'}),
+            'receipt_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Dropbox or cloud storage link'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Additional details or comments'
+            }),
+            'tax_deductible': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'tax_category': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., 6500 (Office Supplies)'
+            }),
         }
 
 

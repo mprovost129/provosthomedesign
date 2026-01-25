@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
+        .invoice-details { background-color: #fff; border: 1px solid #dee2e6; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
+        .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #dee2e6; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { font-weight: bold; }
+        .detail-value { text-align: right; }
+        .footer { background-color: #f8f9fa; padding: 20px; border-radius: 5px; text-align: center; font-size: 12px; color: #666; }
+        .alert { background-color: #fff3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Payment Reminder</h2>
+            <p>Dear {{ client.company_name|default:client.get_full_name }},</p>
+        </div>
+
+        <div class="alert">
+            <strong>This invoice is {{ days_overdue }} days overdue.</strong> Please arrange payment at your earliest convenience.
+        </div>
+
+        <div class="invoice-details">
+            <h3 style="margin-top: 0;">Invoice Details</h3>
+            
+            <div class="detail-row">
+                <span class="detail-label">Invoice Number:</span>
+                <span class="detail-value">{{ invoice.invoice_number }}</span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Amount Due:</span>
+                <span class="detail-value"><strong style="color: #dc3545; font-size: 18px;">${{ invoice.total_amount|floatformat:2 }}</strong></span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Due Date:</span>
+                <span class="detail-value">{{ invoice.due_date|date:"F j, Y" }}</span>
+            </div>
+            
+            <div class="detail-row">
+                <span class="detail-label">Days Overdue:</span>
+                <span class="detail-value"><strong style="color: #dc3545;">{{ days_overdue }} days</strong></span>
+            </div>
+
+            {% if invoice.description %}
+            <div class="detail-row">
+                <span class="detail-label">Description:</span>
+                <span class="detail-value">{{ invoice.description }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
+            <h4>If payment has already been sent:</h4>
+            <p>Please disregard this reminder. If you have questions about this invoice or need to discuss payment terms, please contact us.</p>
+
+            <h4>Contact Information:</h4>
+            <p>
+                <strong>{{ company_name }}</strong><br>
+                Email: <a href="mailto:{{ company_email }}">{{ company_email }}</a><br>
+                {% if company_phone %}Phone: {{ company_phone }}<br>{% endif %}
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated reminder. Please do not reply to this email.</p>
+            <p>&copy; {{ company_name }}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

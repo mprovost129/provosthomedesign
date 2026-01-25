@@ -251,6 +251,9 @@ class Invoice(models.Model):
     reminder_sent_count = models.PositiveIntegerField(default=0, help_text="Number of reminder emails sent")
     last_reminder_date = models.DateTimeField(null=True, blank=True)
     
+    # Overdue reminder tracking
+    reminder_sent = models.BooleanField(default=False, help_text="Whether overdue reminder was sent")
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -1175,4 +1178,113 @@ class ClientPlanFile(models.Model):
         elif '?dl=0' not in self.dropbox_link:
             return f"{self.dropbox_link}?dl=0"
         return self.dropbox_link
+
+
+# ==================== EXPENSES ====================
+
+class ExpenseCategory(models.Model):
+    """Categories for organizing business expenses (office, travel, meals, etc.)."""
+    
+    name = models.CharField(max_length=100, unique=True, help_text="e.g., Office Supplies, Travel, Meals")
+    description = models.TextField(blank=True, help_text="Details about this expense category")
+    is_tax_deductible = models.BooleanField(default=True, help_text="Is this category tax deductible?")
+    is_active = models.BooleanField(default=True, help_text="Whether this category is available for new expenses")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['name']
+        verbose_name_plural = 'Expense Categories'
+    
+    def __str__(self):
+        return self.name
+
+
+class Expense(models.Model):
+    """Track business expenses, optionally linked to projects/clients."""
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('reimbursed', 'Reimbursed'),
+    ]
+    
+    # Basic Info
+    description = models.CharField(max_length=255, help_text="What was purchased/paid for?")
+    amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))],
+                                help_text="Total expense amount")
+    category = models.ForeignKey(ExpenseCategory, on_delete=models.PROTECT, related_name='expenses')
+    
+    # Dates
+    expense_date = models.DateField(help_text="Date the expense occurred")
+    submitted_date = models.DateTimeField(auto_now_add=True)
+    reimbursed_date = models.DateField(null=True, blank=True, help_text="Date reimbursed (if applicable)")
+    
+    # Relationships (optional)
+    project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True,
+                               related_name='expenses', help_text="Associated project (optional)")
+    client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True,
+                              related_name='expenses', help_text="Associated client (optional)")
+    
+    # Details
+    vendor = models.CharField(max_length=200, blank=True, help_text="Where was this purchased from?")
+    receipt_url = models.URLField(blank=True, help_text="Link to receipt (Dropbox or cloud storage)")
+    notes = models.TextField(blank=True, help_text="Additional notes or details")
+    
+    # Tax & Tracking
+    tax_deductible = models.BooleanField(default=True, help_text="Is this expense tax deductible?")
+    tax_category = models.CharField(max_length=100, blank=True, help_text="Tax category for accounting (e.g., 6500 - Office Supplies)")
+    
+    # Status & Approval
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending',
+                             help_text="Approval status of this expense")
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='approved_expenses', help_text="User who approved this")
+    approved_date = models.DateTimeField(null=True, blank=True)
+    
+    # Metadata
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
+                                  related_name='submitted_expenses', help_text="User who submitted this")
+    
+    class Meta:
+        ordering = ['-expense_date']
+        indexes = [
+            models.Index(fields=['-expense_date']),
+            models.Index(fields=['status']),
+            models.Index(fields=['project']),
+            models.Index(fields=['client']),
+        ]
+    
+    def __str__(self):
+        return f"{self.description} - ${self.amount} ({self.expense_date})"
+    
+    def get_status_display_color(self):
+        """Return Bootstrap color for status badge."""
+        colors = {
+            'pending': 'warning',
+            'approved': 'success',
+            'rejected': 'danger',
+            'reimbursed': 'info',
+        }
+        return colors.get(self.status, 'secondary')
+    
+    def approve(self, user):
+        """Approve this expense."""
+        self.status = 'approved'
+        self.approved_by = user
+        self.approved_date = timezone.now()
+        self.save()
+    
+    def reject(self):
+        """Reject this expense."""
+        self.status = 'rejected'
+        self.save()
+    
+    def mark_reimbursed(self, date=None):
+        """Mark expense as reimbursed."""
+        self.status = 'reimbursed'
+        self.reimbursed_date = date or timezone.now().date()
+        self.save()
 
