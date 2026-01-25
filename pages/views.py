@@ -260,6 +260,7 @@ def contact(request: HttpRequest) -> HttpResponse:
                 msg.attach_alternative(html_body, "text/html")
                 try:
                     msg.send(fail_silently=False)
+                    logger.info(f"Contact form email sent: From {cd['email']} ({cd['name']}), To: {to_emails}")
                 except Exception as e:
                     logger.exception("Contact email send failed")
                     err = "We couldn't send your message just now. Please try again in a moment."
@@ -358,6 +359,7 @@ def contact(request: HttpRequest) -> HttpResponse:
                     em.attach_alternative(html_body, "text/html")
                     try:
                         em.send(fail_silently=False)
+                        logger.info(f"Testimonial notification sent: From {t.name} ({t.email or 'no email'}), Rating: {t.rating}/5, To: {to_admin}")
                     except Exception:
                         logger.exception("Testimonial email send failed")
 
