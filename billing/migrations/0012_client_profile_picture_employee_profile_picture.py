@@ -7,14 +7,14 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='client',
-            name='profile_picture',
-            field=models.ImageField(upload_to='client_pictures/', null=True, blank=True),
-        ),
-        migrations.AddField(
-            model_name='employee',
-            name='profile_picture',
-            field=models.ImageField(upload_to='employee_pictures/', null=True, blank=True),
-        ),
+            # migrations.AddField(
+            #     model_name='client',
+            #     name='profile_picture',
+            #     field=models.ImageField(upload_to='client_pictures/', null=True, blank=True),
+            # ),
+            # migrations.AddField(
+            #     model_name='employee',
+            #     name='profile_picture',
+            #     field=models.ImageField(upload_to='employee_pictures/', null=True, blank=True),
+            # ),
     ]
