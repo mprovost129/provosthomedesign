@@ -15,11 +15,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='project',
-            name='closed_by',
-            field=models.ForeignKey(blank=True, help_text='Staff member who closed this project', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='closed_projects', to=settings.AUTH_USER_MODEL),
-        ),
+            # ...existing code...
         migrations.AddField(
             model_name='project',
             name='closed_date',
