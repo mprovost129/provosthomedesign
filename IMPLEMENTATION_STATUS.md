@@ -1,63 +1,19 @@
 # Website Enhancements Implementation Guide
 ## Provost Home Design - Feature Additions
 
-### ✅ COMPLETED:
-1. **Database Models** - Added SavedPlan and PlanComparison models
-2. **Session Utilities** - Created session_utils.py for tracking favorites/comparison/recently viewed
-3. **View Functions** - Added toggle_favorite, favorites_list, toggle_comparison, compare_plans views
-4. **Context Processor** - Makes counts available globally in templates
-5. **Plan Detail Tracking** - Auto-tracks recently viewed plans
+### ✅ COMPLETED (Phase 1 + Web Enhancements):
+1. **Expenses & Overdue Reminders** – shipped and documented (see PHASE_1 files)
+2. **Favorites/Comparison/Recently Viewed** – backend, URLs, templates, navbar badges, and AJAX are live
+3. **Context Processor & Session Utilities** – counts available globally; session helpers in place
 
-### 🔧 NEXT STEPS TO COMPLETE:
+### 🟢 PHASE 2 STATUS: Not started (planning)
+- Phase 1 is fully complete; Phase 2 is queued. No code changes yet.
 
-#### 1. Update plans/urls.py
-Add these URL patterns:
-
-```python
-# Add to plans/urls.py
-from django.urls import path
-from . import views
-
-urlpatterns = [
-    # ... existing patterns ...
-    
-    # Favorites
-    path("favorites/", views.favorites_list, name="favorites_list"),
-    path("favorite/toggle/<int:plan_id>/", views.toggle_favorite, name="toggle_favorite"),
-    
-    # Comparison
-    path("compare/", views.compare_plans, name="compare_plans"),
-    path("compare/toggle/<int:plan_id>/", views.toggle_comparison, name="toggle_comparison"),
-    path("compare/clear/", views.clear_comparison_view, name="clear_comparison"),
-]
-```
-
-#### 2. Create templates/plans/favorites.html
-Create favorite plans listing page.
-
-#### 3. Create templates/plans/compare.html
-Create side-by-side comparison page.
-
-#### 4. Update templates/includes/navbar.html
-Add:
-- Click-to-call phone button
-- Favorites counter badge
-- Comparison counter badge
-
-#### 5. Update plan card templates
-Add favorite heart icon and compare checkbox to:
-- templates/pages/home.html (recent plans)
-- templates/plans/plans.html (plan cards)
-- templates/plans/plan_detail.html (main plan)
-
-#### 6. Add JavaScript for AJAX
-Create static/js/plans.js for:
-- Toggle favorites without page reload
-- Toggle comparison without page reload
-- Update counters dynamically
-
-#### 7. Update home page (pages/views.py)
-Add recently viewed plans section
+### 🔧 OPTIONAL POLISH (if desired next):
+1. Add a “Recently Viewed” section to `templates/pages/home.html` using a template tag
+2. Add save/compare buttons to all plan cards (home + listings) if you want additional entry points
+3. Add a lightweight `static/js/plans.js` for any extra AJAX/UI polish beyond what’s already shipped
+4. Optional emails/sharing for saved or compared plans
 
 ### 📋 KEY FEATURES IMPLEMENTED:
 

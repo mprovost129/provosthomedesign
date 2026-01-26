@@ -60,6 +60,11 @@ coverage.xml
 **/migrations/*.py
 !**/migrations/__init__.py
 
+# Desktop App (Tauri + React - not deployed to server)
+desktop/
+node_modules/
+dist/
+
 # Secrets file
 ecrets
 secrets

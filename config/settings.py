@@ -22,13 +22,23 @@ CSRF_TRUSTED_ORIGINS = config(
     cast=csv_list,
 )
 
+# CORS configuration for desktop app
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:1420",
+    "http://127.0.0.1:1420",
+]
+CORS_ALLOW_ALL_ORIGINS = True  # allow local dev tools and desktop app during development
+CORS_ALLOW_CREDENTIALS = True
+
 # --- Apps ---
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
     "django.contrib.humanize", "django.contrib.sitemaps",
     "django_recaptcha",
-    "core", "pages", "plans", "billing", "timetracking", "help", "crm"
+    "corsheaders",
+    "rest_framework", "rest_framework.authtoken",
+    "core", "pages", "plans", "billing", "timetracking", "help", "crm", "api"
 ]
 
 # Simple cache + defaults for sorl
@@ -42,6 +52,7 @@ CACHES = {
 # --- Middleware ---
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -107,6 +118,17 @@ STORAGES = {
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# --- REST Framework ---
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}
 
 # ======================================================================
 # Email
@@ -186,7 +208,7 @@ TESTIMONIAL_TO_EMAILS = config("TESTIMONIAL_TO_EMAILS", default=CONTACT_EMAIL, c
 # --- Security (tune for prod) ---
 BEHIND_PROXY = config("BEHIND_PROXY", cast=bool, default=False)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", cast=bool, default=not DEBUG)
+SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", cast=bool, default=False)  # disable HTTPS redirect in local dev so CORS works over http
 SESSION_COOKIE_SECURE = config("SESSION_COOKIE_SECURE", cast=bool, default=not DEBUG)
 CSRF_COOKIE_SECURE = config("CSRF_COOKIE_SECURE", cast=bool, default=not DEBUG)
 SESSION_COOKIE_SAMESITE = "Lax"

@@ -1,0 +1,252 @@
+{% load static %}
+
+<div class="floating-timer" id="floating-timer" style="display: {% if active_timer %}flex{% else %}none{% endif %};">
+    <div class="timer-content">
+        <div class="timer-project" id="timer-project-name">
+            {{ active_timer.time_entry.project.job_name|default:"No project" }}
+        </div>
+        <div class="timer-display" id="floating-timer-display">
+            <span id="floating-timer-hours">00</span>:<span id="floating-timer-minutes">00</span>:<span id="floating-timer-seconds">00</span>
+        </div>
+        <div class="timer-controls">
+            <button id="floating-pause-btn" class="btn-icon" title="Pause">
+                <i class="fas fa-pause"></i>
+            </button>
+            <button id="floating-stop-btn" class="btn-icon btn-danger" title="Stop">
+                <i class="fas fa-stop"></i>
+            </button>
+        </div>
+    </div>
+    <button id="timer-toggle" class="timer-toggle" title="Toggle timer panel">
+        <i class="fas fa-chevron-down"></i>
+    </button>
+</div>
+
+<style>
+.floating-timer {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+    color: white;
+    z-index: 1000;
+    min-width: 280px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.timer-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.timer-project {
+    font-size: 0.875rem;
+    font-weight: 600;
+    opacity: 0.9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.timer-display {
+    font-size: 1.75rem;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 2px;
+}
+
+.timer-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-icon {
+    background: rgba(255, 255, 255, 0.25);
+    border: none;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+}
+
+.btn-icon:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(1.05);
+}
+
+.btn-icon.btn-danger {
+    background: rgba(220, 53, 69, 0.6);
+}
+
+.btn-icon.btn-danger:hover {
+    background: rgba(220, 53, 69, 0.8);
+}
+
+.timer-toggle {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.timer-toggle:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Collapsed state */
+.floating-timer.collapsed {
+    min-width: auto;
+    padding: 12px;
+}
+
+.floating-timer.collapsed .timer-content {
+    display: none;
+}
+
+.floating-timer.collapsed .timer-toggle i {
+    transform: rotate(180deg);
+}
+
+@media (max-width: 768px) {
+    .floating-timer {
+        bottom: 10px;
+        right: 10px;
+        min-width: 260px;
+        padding: 12px;
+    }
+    
+    .timer-display {
+        font-size: 1.5rem;
+    }
+}
+</style>
+
+<document.addEventListener('DOMContentLoaded', function() {
+    const floatingTimer = document.getElementById('floating-timer');
+    const timerDisplay = document.getElementById('floating-timer-display');
+    const timerHours = document.getElementById('floating-timer-hours');
+    const timerMinutes = document.getElementById('floating-timer-minutes');
+    const timerSeconds = document.getElementById('floating-timer-seconds');
+    const pauseBtn = document.getElementById('floating-pause-btn');
+    const stopBtn = document.getElementById('floating-stop-btn');
+    const toggleBtn = document.getElementById('timer-toggle');
+    
+    let isRunning = true;
+    let startTime = null;
+    
+    // Initialize if timer is active
+    if (floatingTimer && floatingTimer.style.display === 'flex') {
+        // Get start time from hidden input
+        const startTimeElement = document.getElementById('active-timer-start-time');
+        if (startTimeElement && startTimeElement.value) {
+            try {
+                startTime = new Date(startTimeElement.value);
+            } catch (e) {
+                startTime = new Date();
+            }
+        } else {
+            startTime = new Date();
+        }
+    }
+    
+    function updateDisplay() {
+        if (!isRunning || !startTime) return;
+        
+        const now = new Date();
+        const elapsed = Math.floor((now - startTime) / 1000);
+        
+        const hours = Math.floor(elapsed / 3600);
+        const minutes = Math.floor((elapsed % 3600) / 60);
+        const seconds = elapsed % 60;
+        
+        timerHours.textContent = String(hours).padStart(2, '0');
+        timerMinutes.textContent = String(minutes).padStart(2, '0');
+        timerSeconds.textContent = String(seconds).padStart(2, '0');
+    }
+    
+    // Update every 100ms for smooth display
+    const updateInterval = setInterval(updateDisplay, 100);
+    updateDisplay();
+    
+    // Pause button
+    if (pauseBtn) {
+        pauseBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            isRunning = !isRunning;
+            pauseBtn.innerHTML = isRunning 
+                ? '<i class="fas fa-pause"></i>' 
+                : '<i class="fas fa-play"></i>';
+        });
+    }
+    
+    // Stop button
+    if (stopBtn) {
+        stopBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (confirm('Stop tracking time?')) {
+                // Submit stop timer form
+                const stopForm = document.getElementById('stop-timer-form');
+                if (stopForm) {
+                    stopForm.submit();
+                } else {
+                    // Fallback: make POST request if form doesn't exist
+                    fetch('{% url "timetracking:stop_timer" %}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                        }
+                    }).then(() => {
+                        location.reload();
+                    });
+                }
+            }
+        });
+    }
+    
+    // Toggle collapse
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            floatingTimer.classList.toggle('collapsed');
+        });
+    }
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+        clearInterval(updateInterval);
+    });
+});

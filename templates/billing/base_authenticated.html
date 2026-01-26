@@ -106,4 +106,20 @@
         </div>
     </div>
 </div>
+
+<!-- Hidden form for stopping timer -->
+{% if active_timer %}
+<form id="stop-timer-form" method="post" action="{% url 'timetracking:stop_timer' %}" style="display: none;">
+    {% csrf_token %}
+</form>
+
+<!-- Store active timer start time for floating widget -->
+<input type="hidden" id="active-timer-start-time" value="{{ active_timer.time_entry.start_time|date:'c' }}">
+{% endif %}
+
+<!-- Floating Timer Widget (always visible when timer is running) -->
+{% if active_timer %}
+    {% include 'timetracking/floating_timer.html' %}
+{% endif %}
+
 {% endblock %}

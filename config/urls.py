@@ -29,6 +29,9 @@ urlpatterns = [
     # Help Center
     path("help/", include("help.urls")), # requires app_name="help" in help/urls.py
 
+    # API
+    path("api/", include("api.urls")),
+
     # SEO endpoints
     path("robots.txt", robots_txt, name="robots_txt"),
     path(
