@@ -16,11 +16,11 @@ class Migration(migrations.Migration):
 
     operations = [
             # ...existing code...
-        migrations.AddField(
-            model_name='project',
-            name='closed_date',
-            field=models.DateTimeField(blank=True, help_text='When project was closed', null=True),
-        ),
+        # migrations.AddField(
+        #     model_name='project',
+        #     name='closed_date',
+        #     field=models.DateTimeField(blank=True, help_text='When project was closed', null=True),
+        # ),
         migrations.AddField(
             model_name='project',
             name='is_closed',
