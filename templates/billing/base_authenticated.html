@@ -30,47 +30,47 @@
                         <i class="fas fa-tachometer-alt"></i> Dashboard
                     </a>
                     <a class="nav-link {% if request.resolver_match.url_name == 'invoice_list' %}active{% endif %}" href="{% url 'billing:invoice_list' %}">
-                        <i class="fas fa-file-invoice"></i> Invoices
+                        <i class="fas fa-file-invoice"></i> My Invoices
                     </a>
                     <a class="nav-link {% if request.resolver_match.url_name == 'plan_files' %}active{% endif %}" href="{% url 'billing:plan_files' %}">
                         <i class="fas fa-file-alt"></i> My Plan Files
                     </a>
                     <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'billing:profile' %}">
-                        <i class="fas fa-user"></i> Profile
+                        <i class="fas fa-user"></i> My Profile
                     </a>
                     
                     {% if user.is_staff %}
                     <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
                     <p class="small text-uppercase text-white-50 mb-2 px-3">Staff Tools</p>
+                    <a class="nav-link {% if 'client' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:client_list' %}">
+                        <i class="fas fa-users"></i> Manage Clients
+                    </a>
+                    <a class="nav-link {% if 'proposal' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:proposal_list' %}">
+                        <i class="fas fa-file-signature"></i> Proposals
+                    </a>
+                    <a class="nav-link {% if 'create_invoice' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:create_invoice' %}">
+                        <i class="fas fa-file-invoice-dollar"></i> Invoices
+                    </a>
+                    <a class="nav-link {% if 'project' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:project_list' %}">
+                        <i class="fas fa-project-diagram"></i> Projects
+                    </a>
                     <a class="nav-link {% if 'time' in request.resolver_match.url_name or 'timetracking' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'timetracking:time_dashboard' %}">
                         <i class="fas fa-clock"></i> Time Tracking
                     </a>
                     <a class="nav-link {% if 'portal_plan' in request.resolver_match.url_name or 'portal_style' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'plans:portal_plan_list' %}">
                         <i class="fas fa-home"></i> Manage Plans
                     </a>
-                    <a class="nav-link {% if 'proposal' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:proposal_list' %}">
-                        <i class="fas fa-file-signature"></i> Proposals
-                    </a>
-                    <a class="nav-link {% if 'project' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:project_list' %}">
-                        <i class="fas fa-project-diagram"></i> Projects
-                    </a>
                     <a class="nav-link {% if 'upload_plan_file' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:upload_plan_file' %}">
                         <i class="fas fa-cloud-upload-alt"></i> Upload Plan File
                     </a>
-                    <a class="nav-link {% if 'client' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:client_list' %}">
-                        <i class="fas fa-users"></i> Manage Clients
-                    </a>
-                    <a class="nav-link {% if 'employee' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:employee_list' %}">
-                        <i class="fas fa-user-tie"></i> Manage Employees
-                    </a>
-                    <a class="nav-link {% if 'create_invoice' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:create_invoice' %}">
-                        <i class="fas fa-file-invoice-dollar"></i> Create Invoice
+                    <a class="nav-link {% if 'report_' in request.resolver_match.url_name or request.resolver_match.url_name == 'reports_index' %}active{% endif %}" href="{% url 'billing:reports_index' %}">
+                        <i class="fas fa-chart-line"></i> Reports
                     </a>
                     <a class="nav-link {% if 'system_settings' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:system_settings' %}">
                         <i class="fas fa-cog"></i> System Settings
                     </a>
-                    <a class="nav-link {% if 'report_' in request.resolver_match.url_name or request.resolver_match.url_name == 'reports_index' %}active{% endif %}" href="{% url 'billing:reports_index' %}">
-                        <i class="fas fa-chart-line"></i> Reports
+                    <a class="nav-link {% if 'employee' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'billing:employee_list' %}">
+                        <i class="fas fa-user-tie"></i> Manage Employees
                     </a>
                     {% endif %}
                     
