@@ -15,47 +15,14 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
-            name='ExpenseCategory',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(help_text='e.g., Office Supplies, Travel, Meals', max_length=100, unique=True)),
-                ('description', models.TextField(blank=True, help_text='Details about this expense category')),
-                ('is_tax_deductible', models.BooleanField(default=True, help_text='Is this category tax deductible?')),
-                ('is_active', models.BooleanField(default=True, help_text='Whether this category is available for new expenses')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-            ],
-            options={
-                'verbose_name_plural': 'Expense Categories',
-                'ordering': ['name'],
-            },
-        ),
-        migrations.CreateModel(
-            name='Expense',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('description', models.CharField(help_text='What was purchased/paid for?', max_length=255)),
-                ('amount', models.DecimalField(decimal_places=2, help_text='Total expense amount', max_digits=12, validators=[django.core.validators.MinValueValidator(Decimal('0.01'))])),
-                ('expense_date', models.DateField(help_text='Date the expense occurred')),
-                ('submitted_date', models.DateTimeField(auto_now_add=True)),
-                ('reimbursed_date', models.DateField(blank=True, help_text='Date reimbursed (if applicable)', null=True)),
-                ('vendor', models.CharField(blank=True, help_text='Where was this purchased from?', max_length=200)),
-                ('receipt_url', models.URLField(blank=True, help_text='Link to receipt (Dropbox or cloud storage)')),
-                ('notes', models.TextField(blank=True, help_text='Additional notes or details')),
-                ('tax_deductible', models.BooleanField(default=True, help_text='Is this expense tax deductible?')),
-                ('tax_category', models.CharField(blank=True, help_text='Tax category for accounting (e.g., 6500 - Office Supplies)', max_length=100)),
-                ('status', models.CharField(choices=[('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected'), ('reimbursed', 'Reimbursed')], default='pending', help_text='Approval status of this expense', max_length=20)),
-                ('approved_date', models.DateTimeField(blank=True, null=True)),
-                ('approved_by', models.ForeignKey(blank=True, help_text='User who approved this', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='approved_expenses', to=settings.AUTH_USER_MODEL)),
-                ('client', models.ForeignKey(blank=True, help_text='Associated client (optional)', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='expenses', to='billing.client')),
-                ('created_by', models.ForeignKey(help_text='User who submitted this', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='submitted_expenses', to=settings.AUTH_USER_MODEL)),
-                ('project', models.ForeignKey(blank=True, help_text='Associated project (optional)', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='expenses', to='billing.project')),
-                ('category', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='expenses', to='billing.expensecategory')),
-            ],
-            options={
-                'ordering': ['-expense_date'],
-                'indexes': [models.Index(fields=['-expense_date'], name='billing_exp_expense_d56562_idx'), models.Index(fields=['status'], name='billing_exp_status_ddbf2b_idx'), models.Index(fields=['project'], name='billing_exp_project_b95f35_idx'), models.Index(fields=['client'], name='billing_exp_client__b4d338_idx')],
-            },
-        ),
+            # migrations.CreateModel(
+            #     name='ExpenseCategory',
+            #     fields=[ ... ],
+            #     options={ ... },
+            # ),
+            # migrations.CreateModel(
+            #     name='Expense',
+            #     fields=[ ... ],
+            #     options={ ... },
+            # ),
     ]
