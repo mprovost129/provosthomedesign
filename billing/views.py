@@ -1366,8 +1366,11 @@ def project_list(request):
     """List all projects with filtering and search (staff only)."""
     from .models import Project
     
+    from timetracking.models import TimeEntry
+    from billing.models import Invoice
+
     projects = Project.objects.select_related('client', 'created_by').all()
-    
+
     # Search functionality
     search_query = request.GET.get('search', '')
     if search_query:
@@ -1378,24 +1381,59 @@ def project_list(request):
             models.Q(client__last_name__icontains=search_query) |
             models.Q(client__company_name__icontains=search_query)
         )
-    
+
     # Status filter
     status_filter = request.GET.get('status', '')
     if status_filter:
         projects = projects.filter(status=status_filter)
-    
+
     # Billing type filter
     billing_type_filter = request.GET.get('billing_type', '')
     if billing_type_filter:
         projects = projects.filter(billing_type=billing_type_filter)
-    
+
     # Client filter
     client_filter = request.GET.get('client', '')
     if client_filter:
         projects = projects.filter(client_id=client_filter)
-    
+
+    # Annotate each project with hours_logged, unbilled_hours, unbilled_amount, last_invoice_date
+    project_data = []
+    for project in projects:
+        # Hours logged: sum of all time entries (in hours)
+        time_entries = TimeEntry.objects.filter(project=project)
+        hours_logged = sum([te.get_duration_decimal() for te in time_entries])
+
+        # Unbilled hours: sum of hours not invoiced
+        unbilled_entries = time_entries.filter(models.Q(invoiced=False) | models.Q(invoice__isnull=True))
+        unbilled_hours = sum([te.get_duration_decimal() for te in unbilled_entries])
+
+        # Amount: flat rate or unbilled hours × hourly rate
+        if project.billing_type == 'flat_rate' and project.fixed_price:
+            amount = project.fixed_price
+        elif project.billing_type == 'hourly' and project.hourly_rate:
+            amount = unbilled_hours * float(project.hourly_rate)
+        else:
+            amount = 0
+
+        # Last invoice: most recent invoice date
+        last_invoice = project.invoices.exclude(status='cancelled').order_by('-issue_date').first()
+        last_invoice_date = last_invoice.issue_date if last_invoice else None
+
+        # Due date
+        due_date = project.due_date
+
+        project_data.append({
+            'project': project,
+            'hours_logged': hours_logged,
+            'unbilled_hours': unbilled_hours,
+            'amount': amount,
+            'last_invoice_date': last_invoice_date,
+            'due_date': due_date,
+        })
+
     context = {
-        'projects': projects,
+        'projects_data': project_data,
         'search_query': search_query,
         'status_filter': status_filter,
         'billing_type_filter': billing_type_filter,
