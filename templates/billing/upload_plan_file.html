@@ -3,6 +3,7 @@
 {% block title %}Upload Plan File{% endblock %}
 
 {% block authenticated_content %}
+{% include 'timetracking/floating_timer.html' %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2>Upload Plan File</h2>
@@ -40,6 +41,15 @@
                         <small class="form-text text-muted">Associate this file with a specific project</small>
                         {% if form.project.errors %}
                             <div class="invalid-feedback d-block">{{ form.project.errors }}</div>
+                        {% endif %}
+                        {% if form.project.value %}
+                        <form method="post" action="{% url 'timetracking:start_timer' %}" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="project" value="{{ form.project.value }}">
+                            <button type="submit" class="btn btn-outline-success btn-sm mt-2">
+                                <i class="fas fa-play me-1"></i> Start Timer for this Project
+                            </button>
+                        </form>
                         {% endif %}
                     </div>
                     
