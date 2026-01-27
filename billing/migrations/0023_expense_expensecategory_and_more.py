@@ -14,11 +14,6 @@ class Migration(migrations.Migration):
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
     operations = [
-        migrations.AddField(
-            model_name='clientplanfile',
-            name='attachment',
-            field=models.FileField(blank=True, help_text='Optional attachment file (PDF, image, etc.)', null=True, upload_to='plan_attachments/'),
-        ),
         migrations.AddIndex(
             model_name='activity',
             index=models.Index(fields=['client', '-created_at'], name='billing_act_client__67a9df_idx'),
