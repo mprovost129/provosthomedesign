@@ -25,11 +25,11 @@ class Migration(migrations.Migration):
         #     fields=[ ... ],
         #     options={ ... },
         # ),
-        migrations.RenameField(
-            model_name='activity',
-            old_name='timestamp',
-            new_name='created_at',
-        ),
+        #migrations.RenameField(
+        #    model_name='activity',
+        #    old_name='timestamp',
+        #    new_name='created_at',
+        #),
         migrations.RemoveField(
             model_name='activity',
             name='action',
