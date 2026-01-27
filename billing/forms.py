@@ -640,7 +640,7 @@ class ClientPlanFileForm(forms.ModelForm):
     class Meta:
         model = ClientPlanFile
         fields = ['client', 'project', 'file_name', 'file_type', 'version', 
-                  'description', 'dropbox_link', 'is_active']
+              'description', 'dropbox_link', 'attachment', 'is_active']
         widgets = {
             'client': forms.Select(attrs={'class': 'form-select'}),
             'project': forms.Select(attrs={'class': 'form-select'}),
