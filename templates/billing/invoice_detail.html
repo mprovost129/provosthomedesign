@@ -50,8 +50,8 @@
                     <div>
                         <h4 class="mb-0">{{ system_settings.company_name|default:'Provost Home Design' }}</h4>
                         <div style="font-size: 0.95em;">
-                            123 Main St, Your City, ST 12345<br>
-                            (555) 555-5555 &bull; info@provosthomedesign.com
+                            {{ system_settings.company_address|linebreaksbr }}<br>
+                            {{ system_settings.company_phone }} &bull; {{ system_settings.company_email }}
                         </div>
                     </div>
                     <div class="flex-grow-1 text-end">
