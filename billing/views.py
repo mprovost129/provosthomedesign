@@ -957,23 +957,33 @@ def client_list(request):
     """View all clients (staff only)."""
     from django.db.models import Sum, Count, Q
     
-    clients = Client.objects.annotate(
+    search = request.GET.get('search', '').strip()
+    client_qs = Client.objects.all()
+    if search:
+        client_qs = client_qs.filter(
+            Q(first_name__icontains=search) |
+            Q(last_name__icontains=search) |
+            Q(email__icontains=search) |
+            Q(company_name__icontains=search)
+        )
+    clients = client_qs.annotate(
         invoice_count=Count('invoices'),
         total_billed=Sum('invoices__total'),
         total_paid=Sum('invoices__amount_paid'),
         outstanding=Sum('invoices__total') - Sum('invoices__amount_paid')
-    ).order_by('-created_at')
-    
+    ).order_by('last_name', 'first_name')
+
     # Calculate overall totals
-    totals = Client.objects.aggregate(
+    totals = client_qs.aggregate(
         total_billed=Sum('invoices__total'),
         total_outstanding=Sum('invoices__total') - Sum('invoices__amount_paid')
     )
-    
+
     context = {
         'clients': clients,
         'total_billed': totals['total_billed'] or Decimal('0.00'),
         'total_outstanding': totals['total_outstanding'] or Decimal('0.00'),
+        'search': search,
     }
     return render(request, 'billing/client_list.html', context)
 
