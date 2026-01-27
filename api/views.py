@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 
-from billing.models import Client, Project, Invoice, Payment, Expense, ExpenseCategory, SystemSettings, ClientPlanFile
+from billing.models import Client, Project, Invoice, Payment, Expense, ExpenseCategory, SystemSettings, ClientPlanFile, IncomingWorkLog
 from timetracking.models import TimeEntry
 from .serializers import (
     UserSerializer,
@@ -20,6 +20,7 @@ from .serializers import (
     TimeEntrySerializer,
     SystemSettingsSerializer,
     ClientPlanFileSerializer,
+    IncomingWorkLogSerializer,
 )
 
 
@@ -166,3 +167,12 @@ class ClientPlanFileViewSet(UpdatedAfterMixin, viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(uploaded_by=self.request.user)
+
+
+class IncomingWorkLogViewSet(viewsets.ModelViewSet):
+    queryset = IncomingWorkLog.objects.all().order_by('-created_at')
+    serializer_class = IncomingWorkLogSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)

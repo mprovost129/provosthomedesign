@@ -11,6 +11,7 @@ from .views import (
     TimeEntryViewSet,
     SystemSettingsViewSet,
     ClientPlanFileViewSet,
+    IncomingWorkLogViewSet,
 )
 
 router = DefaultRouter()
@@ -23,6 +24,7 @@ router.register(r"expenses", ExpenseViewSet)
 router.register(r"time-entries", TimeEntryViewSet)
 router.register(r"system-settings", SystemSettingsViewSet)
 router.register(r"plan-files", ClientPlanFileViewSet)
+router.register(r"incoming-work-logs", IncomingWorkLogViewSet)
 
 urlpatterns = [
     path("auth/token/", DeviceTokenAuthView.as_view(), name="api_token_auth"),

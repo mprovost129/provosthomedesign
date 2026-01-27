@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from billing.models import Client, Project, Invoice, Payment, Expense, ExpenseCategory, SystemSettings, ClientPlanFile
+from billing.models import Client, Project, Invoice, Payment, Expense, ExpenseCategory, SystemSettings, ClientPlanFile, IncomingWorkLog
 from timetracking.models import TimeEntry
 
 
@@ -66,3 +66,9 @@ class ClientPlanFileSerializer(serializers.ModelSerializer):
         model = ClientPlanFile
         fields = "__all__"
         read_only_fields = ["uploaded_by", "uploaded_at"]
+
+
+class IncomingWorkLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = IncomingWorkLog
+        fields = "__all__"
