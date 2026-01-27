@@ -12,34 +12,8 @@
     <div class="card-body">
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
-            {{ worklog_form.non_field_errors }}
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label for="id_client" class="form-label">Customer Name</label>
-                    {{ worklog_form.client }}
-                </div>
-                <div class="col-md-6">
-                    <label for="id_project" class="form-label">Project Number</label>
-                    {{ worklog_form.project }}
-                </div>
-            </div>
-            <div class="mb-3 mt-3">
-                <label for="id_details" class="form-label">Project Details</label>
-                {{ worklog_form.details }}
-            </div>
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label for="id_priority" class="form-label">Priority</label>
-                    {{ worklog_form.priority }}
-                </div>
-                <div class="col-md-8">
-                    <label for="id_attachment" class="form-label">Attachments</label>
-                    {{ worklog_form.attachment }}
-                </div>
-            </div>
-            <div class="mt-4">
-                <button type="submit" name="incoming_worklog_submit" class="btn btn-primary">Submit</button>
-            </div>
+            {{ worklog_form.as_p }}
+            <button type="submit" name="incoming_worklog_submit" class="btn btn-primary">Submit</button>
         </form>
     </div>
 </div>
