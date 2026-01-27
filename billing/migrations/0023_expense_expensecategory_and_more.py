@@ -14,6 +14,6 @@ class Migration(migrations.Migration):
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
     operations = [
-        # All AddIndex operations removed due to existing indexes in DB
+        # All CreateModel operations removed due to existing tables in DB
     ]
         #    new_name='created_at',
