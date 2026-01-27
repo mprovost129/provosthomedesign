@@ -267,49 +267,99 @@
                 </div>
             </div>
             <script>
-            // Simple JS timer logic (client-side only, for demo; replace with AJAX for real tracking)
+            // Timer sync logic with backend API
             let timerInterval = null;
             let elapsed = 0;
+            let timerActive = false;
             const display = document.getElementById('timer-display');
             const status = document.getElementById('timer-status');
             const startBtn = document.getElementById('start-timer-btn');
             const stopBtn = document.getElementById('stop-timer-btn');
             const resetBtn = document.getElementById('reset-timer-btn');
+            const projectId = document.getElementById('project-id').value;
+            const apiBase = '/api/timer/';
+
             function updateDisplay() {
                 const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
                 const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
                 const s = String(elapsed % 60).padStart(2, '0');
                 display.textContent = `${h}:${m}:${s}`;
             }
-            startBtn.onclick = function() {
-                if (!timerInterval) {
-                    timerInterval = setInterval(() => {
-                        elapsed++;
+
+            function pollTimer() {
+                fetch(apiBase + 'status/', { credentials: 'same-origin' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.active && String(data.project_id) === String(projectId)) {
+                            timerActive = true;
+                            elapsed = data.elapsed_seconds || 0;
+                            if (!timerInterval) {
+                                timerInterval = setInterval(() => {
+                                    elapsed++;
+                                    updateDisplay();
+                                }, 1000);
+                            }
+                            status.textContent = 'Running';
+                            status.className = 'badge bg-success';
+                            startBtn.style.display = 'none';
+                            stopBtn.style.display = '';
+                            resetBtn.style.display = '';
+                        } else {
+                            timerActive = false;
+                            if (timerInterval) {
+                                clearInterval(timerInterval);
+                                timerInterval = null;
+                            }
+                            status.textContent = 'Stopped';
+                            status.className = 'badge bg-secondary';
+                            startBtn.style.display = '';
+                            stopBtn.style.display = 'none';
+                        }
                         updateDisplay();
-                    }, 1000);
-                    status.textContent = 'Running';
-                    status.className = 'badge bg-success';
-                    startBtn.style.display = 'none';
-                    stopBtn.style.display = '';
-                    resetBtn.style.display = '';
-                }
+                    });
+            }
+
+            startBtn.onclick = function() {
+                fetch(apiBase + 'start/', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                    body: JSON.stringify({ project_id: projectId })
+                }).then(() => pollTimer());
             };
             stopBtn.onclick = function() {
-                if (timerInterval) {
-                    clearInterval(timerInterval);
-                    timerInterval = null;
-                    status.textContent = 'Stopped';
-                    status.className = 'badge bg-secondary';
-                    startBtn.style.display = '';
-                    stopBtn.style.display = 'none';
-                }
+                fetch(apiBase + 'stop/', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                }).then(() => pollTimer());
             };
             resetBtn.onclick = function() {
-                elapsed = 0;
-                updateDisplay();
-                resetBtn.style.display = 'none';
+                fetch(apiBase + 'reset/', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                }).then(() => { elapsed = 0; pollTimer(); });
             };
-            updateDisplay();
+
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+            // Poll every 5 seconds for sync
+            setInterval(pollTimer, 5000);
+            pollTimer();
             </script>
             <!-- End Project Timer Widget -->
             <!-- Project Summary -->
