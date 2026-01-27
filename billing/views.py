@@ -1,3 +1,28 @@
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib import messages
+# --- Portal Email for Employee ---
+from django.views.decorators.http import require_POST
+
+@staff_member_required(login_url='/portal/login/')
+@require_POST
+def send_portal_email(request, pk):
+    """Send portal email to an employee (staff only)."""
+    employee = get_object_or_404(Employee, pk=pk)
+    if not employee.email:
+        messages.error(request, "Employee does not have an email address on file.")
+        return redirect('billing:employee_detail', pk=employee.pk)
+    # Compose email (customize as needed)
+    subject = "Your Portal Access for Provost Home Design"
+    message = f"Hello {employee.get_full_name()},\n\nYou have been granted access to the Provost Home Design portal. Please log in with your credentials. If you have not received your login information, please contact your administrator.\n\nPortal URL: {request.build_absolute_uri('/portal/login/')}\n\nThank you!"
+    from_email = settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else None
+    recipient_list = [employee.email]
+    try:
+        send_mail(subject, message, from_email, recipient_list, fail_silently=False)
+        messages.success(request, f"Portal email sent to {employee.get_full_name()} ({employee.email})!")
+    except Exception as e:
+        messages.error(request, f"Failed to send portal email: {e}")
+    return redirect('billing:employee_detail', pk=employee.pk)
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
