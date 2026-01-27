@@ -33,6 +33,7 @@
                                 <th>Department</th>
                                 <th>Email</th>
                                 <th>Phone</th>
+                                <th>Last Login</th>
                                 <th class="text-center">Status</th>
                                 <th class="text-center">Actions</th>
                             </tr>
@@ -53,6 +54,13 @@
                                     <a href="tel:{{ employee.phone_1 }}">{{ employee.phone_1 }}</a>
                                     {% else %}
                                     -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if employee.last_login %}
+                                        {{ employee.last_login|date:"Y-m-d H:i" }}
+                                    {% else %}
+                                        <span class="text-muted">Never</span>
                                     {% endif %}
                                 </td>
                                 <td class="text-center">

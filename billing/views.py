@@ -1198,8 +1198,9 @@ def delete_client(request, pk):
 @staff_member_required(login_url='/portal/login/')
 def employee_list(request):
     """View all employees (staff only)."""
-    employees = Employee.objects.all().order_by('status', 'last_name', 'first_name')
-    
+    employees = Employee.objects.select_related('user').all().order_by('status', 'last_name', 'first_name')
+    for emp in employees:
+        emp.last_login = emp.user.last_login if emp.user else None
     context = {'employees': employees}
     return render(request, 'billing/employee_list.html', context)
 
@@ -1311,9 +1312,9 @@ def edit_employee(request, pk):
 @staff_member_required(login_url='/portal/login/')
 def employee_detail(request, pk):
     """View detailed information about an employee (staff only)."""
-    employee = get_object_or_404(Employee, pk=pk)
-    
-    context = {'employee': employee}
+    employee = get_object_or_404(Employee.objects.select_related('user'), pk=pk)
+    last_login = employee.user.last_login if employee.user else None
+    context = {'employee': employee, 'last_login': last_login}
     return render(request, 'billing/employee_detail.html', context)
 
 

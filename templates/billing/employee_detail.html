@@ -57,6 +57,16 @@
                                 </span>
                             </div>
                         </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Last Login:</strong><br>
+                                {% if last_login %}
+                                    {{ last_login|date:"Y-m-d H:i" }}
+                                {% else %}
+                                    <span class="text-muted">Never</span>
+                                {% endif %}
+                            </div>
+                        </div>
                         
                         <div class="row mb-3">
                             <div class="col-md-6">
