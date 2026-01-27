@@ -248,6 +248,70 @@
                     </div>
                 </div>
             </div>
+            <!-- Project Timer Widget -->
+            <div id="project-timer-widget" class="mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-stopwatch"></i> Project Timer</h5>
+                        <span id="timer-status" class="badge bg-secondary">Stopped</span>
+                    </div>
+                    <div class="card-body d-flex flex-column align-items-center">
+                        <div class="display-4 mb-3" id="timer-display">00:00:00</div>
+                        <div class="d-flex gap-2">
+                            <button id="start-timer-btn" class="btn btn-success"><i class="fas fa-play"></i> Start Timer</button>
+                            <button id="stop-timer-btn" class="btn btn-danger" style="display:none;"><i class="fas fa-stop"></i> Stop Timer</button>
+                            <button id="reset-timer-btn" class="btn btn-outline-secondary" style="display:none;"><i class="fas fa-undo"></i> Reset</button>
+                        </div>
+                        <input type="hidden" id="project-id" value="{{ project.pk }}">
+                    </div>
+                </div>
+            </div>
+            <script>
+            // Simple JS timer logic (client-side only, for demo; replace with AJAX for real tracking)
+            let timerInterval = null;
+            let elapsed = 0;
+            const display = document.getElementById('timer-display');
+            const status = document.getElementById('timer-status');
+            const startBtn = document.getElementById('start-timer-btn');
+            const stopBtn = document.getElementById('stop-timer-btn');
+            const resetBtn = document.getElementById('reset-timer-btn');
+            function updateDisplay() {
+                const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+                const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+                const s = String(elapsed % 60).padStart(2, '0');
+                display.textContent = `${h}:${m}:${s}`;
+            }
+            startBtn.onclick = function() {
+                if (!timerInterval) {
+                    timerInterval = setInterval(() => {
+                        elapsed++;
+                        updateDisplay();
+                    }, 1000);
+                    status.textContent = 'Running';
+                    status.className = 'badge bg-success';
+                    startBtn.style.display = 'none';
+                    stopBtn.style.display = '';
+                    resetBtn.style.display = '';
+                }
+            };
+            stopBtn.onclick = function() {
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    status.textContent = 'Stopped';
+                    status.className = 'badge bg-secondary';
+                    startBtn.style.display = '';
+                    stopBtn.style.display = 'none';
+                }
+            };
+            resetBtn.onclick = function() {
+                elapsed = 0;
+                updateDisplay();
+                resetBtn.style.display = 'none';
+            };
+            updateDisplay();
+            </script>
+            <!-- End Project Timer Widget -->
             <!-- Project Summary -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-white">
