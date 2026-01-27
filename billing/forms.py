@@ -435,7 +435,7 @@ class ProjectForm(forms.ModelForm):
                 'placeholder': 'Detailed project description...'
             }),
             'client': forms.Select(attrs={
-                'class': 'form-select'
+                'class': 'form-select select2',
             }),
             'start_date': forms.DateInput(attrs={
                 'class': 'form-control',
@@ -476,6 +476,11 @@ class ProjectForm(forms.ModelForm):
                 'placeholder': 'Internal notes...'
             }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Order clients by last name, then first name
+        self.fields['client'].queryset = Client.objects.order_by('last_name', 'first_name')
     
     def clean_job_number(self):
         """Validate job number format (YYMM## where ## is the job number)"""
