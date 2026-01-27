@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
-from billing.models import Project
+from django.apps import apps
 from datetime import timedelta
 
 
@@ -13,7 +13,7 @@ class TimeEntry(models.Model):
     
     # Relationships
     project = models.ForeignKey(
-        Project,
+        "billing.Project",
         on_delete=models.CASCADE,
         related_name='time_entries',
         help_text="Project this time was spent on"

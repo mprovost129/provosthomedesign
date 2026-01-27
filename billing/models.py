@@ -1,6 +1,49 @@
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.urls import reverse
+from django.core.cache import cache
+from django.core.validators import MinValueValidator, MaxValueValidator
+from decimal import Decimal
+import uuid
+
+# ...existing code...
+from django.urls import reverse
+from django.core.cache import cache
+from django.core.validators import MinValueValidator, MaxValueValidator
+
+# ==================== INCOMING WORK LOG (Dashboard Input) ====================
+
+class IncomingWorkLog(models.Model):
+    PRIORITY_CHOICES = [
+        ("low", "Low"),
+        ("normal", "Normal"),
+        ("high", "High"),
+    ]
+    client = models.ForeignKey('Client', on_delete=models.CASCADE, related_name='incoming_work_logs')
+    project = models.ForeignKey('Project', on_delete=models.SET_NULL, null=True, blank=True, related_name='incoming_work_logs')
+    details = models.TextField(help_text="What is requested or what changes need to be made")
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default="normal")
+    attachment = models.FileField(upload_to="incoming_work_attachments/", null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='incoming_work_created')
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.client} - {self.project or 'New Project'} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+from django.db import models
+from django.contrib.auth.models import User
+from django.utils import timezone
+from django.urls import reverse
+from django.core.cache import cache
+from django.core.validators import MinValueValidator, MaxValueValidator
+from decimal import Decimal
+import uuid
+
+# ...existing code...
 from django.urls import reverse
 from django.core.cache import cache
 from django.core.validators import MinValueValidator, MaxValueValidator
