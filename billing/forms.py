@@ -3,7 +3,7 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, Pass
 from django.contrib.auth.models import User
 from .models import (Client, Employee, Invoice, InvoiceTemplate, InvoiceLineItem, 
                      SystemSettings, Project, Proposal, ProposalLineItem, ProposalTemplate,
-                     ClientPlanFile, Expense, ExpenseCategory)
+                     ClientPlanFile, Expense, ExpenseCategory, IncomingWorkLog)
 import re
 from datetime import datetime
 from django_recaptcha.fields import ReCaptchaField
@@ -717,6 +717,20 @@ class ExpenseForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'e.g., 6500 (Office Supplies)'
             }),
+        }
+
+class IncomingWorkLogForm(forms.ModelForm):
+    class Meta:
+        model = IncomingWorkLog
+        fields = [
+            'client', 'project', 'details', 'priority', 'attachment'
+        ]
+        widgets = {
+            'client': forms.Select(attrs={'class': 'form-select'}),
+            'project': forms.Select(attrs={'class': 'form-select'}),
+            'details': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Describe the request or changes...'}),
+            'priority': forms.Select(attrs={'class': 'form-select'}),
+            'attachment': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
 
 

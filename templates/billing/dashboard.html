@@ -18,6 +18,68 @@
     </div>
 </div>
 
+<!-- Incoming Work Log Form -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Log Incoming Work</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ worklog_form.non_field_errors }}
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="id_client" class="form-label">Customer Name</label>
+                    {{ worklog_form.client }}
+                </div>
+                <div class="col-md-6">
+                    <label for="id_project" class="form-label">Project Number</label>
+                    {{ worklog_form.project }}
+                </div>
+            </div>
+            <div class="mb-3 mt-3">
+                <label for="id_details" class="form-label">Project Details</label>
+                {{ worklog_form.details }}
+            </div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="id_priority" class="form-label">Priority</label>
+                    {{ worklog_form.priority }}
+                </div>
+                <div class="col-md-8">
+                    <label for="id_attachment" class="form-label">Attachments</label>
+                    {{ worklog_form.attachment }}
+                </div>
+            </div>
+            <div class="mt-4">
+                <button type="submit" name="incoming_worklog_submit" class="btn btn-primary">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Recent Incoming Work List -->
+<div class="card mb-4">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Recent Incoming Work</h5>
+    </div>
+    <ul class="list-group list-group-flush">
+        {% for log in recent_logs %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <strong>{{ log.client }}</strong>
+                {% if log.project %} - <a href="#">{{ log.project }}</a>{% endif %}<br>
+                <span class="text-muted small">{{ log.created_at|date:"M d, Y H:i" }}</span>
+                <div>{{ log.details|truncatewords:12 }}</div>
+            </div>
+            <span class="badge bg-secondary">{{ log.get_priority_display }}</span>
+        </li>
+        {% empty %}
+        <li class="list-group-item text-muted">No recent incoming work logs.</li>
+        {% endfor %}
+    </ul>
+</div>
+
 <!-- Primary Stats Cards -->
 <div class="row mb-4">
     <div class="col-md-6 mb-3">

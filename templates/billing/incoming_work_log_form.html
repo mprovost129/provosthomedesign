@@ -1,0 +1,56 @@
+{% extends 'billing/base_authenticated.html' %}
+
+{% block title %}Log Incoming Work{% endblock %}
+
+{% block authenticated_content %}
+<div class="container my-4">
+    <h3>Log Incoming Work</h3>
+    <form method="post" enctype="multipart/form-data" class="mb-4">
+        {% csrf_token %}
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label for="id_client" class="form-label">Customer Name</label>
+                {{ form.client }}
+            </div>
+            <div class="col-md-6">
+                <label for="id_project" class="form-label">Project Number</label>
+                {{ form.project }}
+            </div>
+        </div>
+        <div class="mb-3 mt-3">
+            <label for="id_details" class="form-label">Project Details</label>
+            {{ form.details }}
+        </div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label for="id_priority" class="form-label">Priority</label>
+                {{ form.priority }}
+            </div>
+            <div class="col-md-8">
+                <label for="id_attachment" class="form-label">Attachments</label>
+                {{ form.attachment }}
+            </div>
+        </div>
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+    </form>
+
+    <h4 class="mt-5">Recent Incoming Work</h4>
+    <ul class="list-group">
+        {% for log in recent_logs %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <strong>{{ log.client }}</strong>
+                {% if log.project %} - <a href="#">{{ log.project }}</a>{% endif %}<br>
+                <span class="text-muted small">{{ log.created_at|date:"M d, Y H:i" }}</span>
+                <div>{{ log.details|truncatewords:12 }}</div>
+            </div>
+            <span class="badge bg-secondary">{{ log.get_priority_display }}</span>
+        </li>
+        {% empty %}
+        <li class="list-group-item text-muted">No recent incoming work logs.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

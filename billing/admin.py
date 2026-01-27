@@ -547,9 +547,6 @@ class IncomingWorkLogAdmin(admin.ModelAdmin):
         ('Work Log Information', {
             'fields': ('client', 'project', 'details', 'priority', 'created_at', 'created_by')
         }),
-        ('Settings', {
-            'fields': ('is_pinned', 'is_internal', 'created_by', 'created_at')
-        }),
     )
     def save_model(self, request, obj, form, change):
         if not change:  # If creating new activity

@@ -50,7 +50,7 @@ from io import BytesIO
 import zipfile
 
 from core.utils import verify_recaptcha_v3
-from .models import Client, Employee, Invoice, Payment, InvoiceTemplate, InvoiceLineItem, ProposalLineItem, Project, Proposal, ClientPlanFile, Expense, ExpenseCategory
+from .models import Client, Employee, Invoice, Payment, InvoiceTemplate, InvoiceLineItem, ProposalLineItem, Project, Proposal, ClientPlanFile, Expense, ExpenseCategory, IncomingWorkLog
 from .forms import (
     ClientRegistrationForm, 
     ClientLoginForm, 
@@ -61,7 +61,8 @@ from .forms import (
     ClientForm,
     EmployeeForm,
     ClientPlanFileForm,
-    ExpenseForm
+    ExpenseForm,
+    IncomingWorkLogForm
 )
 
 logger = logging.getLogger(__name__)
@@ -317,6 +318,19 @@ def dashboard(request):
     from .models import ClientPlanFile
     recent_plan_files = ClientPlanFile.objects.filter(client=client).order_by('-uploaded_at')[:5]
     
+    # Incoming Work Log form
+    if request.method == 'POST' and 'incoming_worklog_submit' in request.POST:
+        worklog_form = IncomingWorkLogForm(request.POST, request.FILES)
+        if worklog_form.is_valid():
+            worklog = worklog_form.save(commit=False)
+            worklog.created_by = request.user
+            worklog.save()
+            messages.success(request, 'Incoming work log added!')
+            return redirect('billing:dashboard')
+    else:
+        worklog_form = IncomingWorkLogForm()
+
+    recent_logs = IncomingWorkLog.objects.order_by('-created_at')[:10]
     context = {
         'client': client,
         'invoices': invoices,
@@ -327,6 +341,8 @@ def dashboard(request):
         'recent_proposals': recent_proposals,
         'recent_plan_files': recent_plan_files,
         'now': timezone.now(),
+        'worklog_form': worklog_form,
+        'recent_logs': recent_logs,
     }
     
     return render(request, 'billing/dashboard.html', context)
@@ -2158,6 +2174,7 @@ def revenue_by_client_pdf(request):
     ).select_related('invoice__client')
 
     rows = payments.values(
+        'invoice__client__id',
         'invoice__client__first_name',
         'invoice__client__last_name',
         'invoice__client__company_name',
@@ -2228,7 +2245,9 @@ def accounts_aging_pdf(request):
         F('total') - F('amount_paid'),
         output_field=DecimalField(max_digits=12, decimal_places=2),
     )
-    outstanding = Invoice.objects.exclude(status='paid').annotate(balance=balance_expr).filter(balance__gt=0)
+    outstanding = (
+        Invoice.objects.exclude(status='paid').annotate(balance=balance_expr).filter(balance__gt=0)
+    )
 
     buckets = {
         'current': Decimal('0.00'),
@@ -2252,7 +2271,7 @@ def accounts_aging_pdf(request):
             buckets['91+'] += bal
 
     client_rows = outstanding.values(
-        'client__first_name', 'client__last_name', 'client__company_name'
+        'client__id', 'client__first_name', 'client__last_name', 'client__company_name'
     ).annotate(
         outstanding_total=Sum('balance'),
         invoice_count=models.Count('id'),
@@ -2535,7 +2554,7 @@ def revenue_by_client_client_csv(request, client_id: int):
     writer.writerow(['Date', 'Invoice', 'Amount', 'Method'])
     for p in payments.order_by('-processed_at'):
         writer.writerow([
-            p.processed_at.date().isoformat() if p.processed_at else '',
+            (p.processed_at.date().isoformat() if p.processed_at else ''),
             p.invoice.invoice_number,
             f"{(p.amount or Decimal('0.00')):.2f}",
             p.get_payment_method_display(),
@@ -2771,7 +2790,7 @@ def accounts_aging_client_detail_pdf(request, client_id: int):
         table_data.append([
             inv.invoice_number,
             inv.due_date.isoformat() if inv.due_date else '',
-            f"${(inv.balance or (inv.total - inv.amount_paid)):.2f}",
+            f"{(inv.balance or (inv.total - inv.amount_paid)):.2f}",
             inv.get_status_display(),
         ])
     table_data.append(['', 'Total Outstanding', f"${total_val:,.2f}", ''])
@@ -3395,3 +3414,22 @@ def expense_dashboard(request):
         'non_deductible_total': non_deductible_total,
     }
     return render(request, 'billing/expenses/report.html', context)
+
+from .forms import IncomingWorkLogForm
+from .models import IncomingWorkLog
+
+@login_required
+def incoming_work_log(request):
+    if request.method == 'POST':
+        form = IncomingWorkLogForm(request.POST, request.FILES)
+        if form.is_valid():
+            log = form.save(commit=False)
+            log.created_by = request.user
+            log.save()
+            messages.success(request, 'Incoming work log added!')
+            return redirect('billing:dashboard')
+    else:
+        form = IncomingWorkLogForm()
+    # Show last 10 logs
+    recent_logs = IncomingWorkLog.objects.order_by('-created_at')[:10]
+    return render(request, 'billing/incoming_work_log_form.html', {'form': form, 'recent_logs': recent_logs})
