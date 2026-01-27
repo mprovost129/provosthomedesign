@@ -1187,6 +1187,14 @@ class ClientPlanFile(models.Model):
         max_length=500,
         help_text="Dropbox shared link (use direct download link: ?dl=1)"
     )
+
+    # Optional attachment
+    attachment = models.FileField(
+        upload_to='plan_attachments/',
+        null=True,
+        blank=True,
+        help_text="Optional attachment file (PDF, image, etc.)"
+    )
     
     # Metadata
     version = models.CharField(

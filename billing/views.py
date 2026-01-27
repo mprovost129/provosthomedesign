@@ -502,16 +502,15 @@ def plan_files(request):
 def upload_plan_file(request):
     """Staff view to upload plan files for clients."""
     if request.method == 'POST':
-        form = ClientPlanFileForm(request.POST)
+        form = ClientPlanFileForm(request.POST, request.FILES)
         if form.is_valid():
             plan_file = form.save(commit=False)
             plan_file.uploaded_by = request.user
             plan_file.save()
-            
+            form.save_m2m()
             # Send email notification if requested
             if form.cleaned_data.get('send_email_notification'):
                 _send_plan_file_email(plan_file, request.user)
-            
             messages.success(request, f'Plan file "{plan_file.file_name}" uploaded successfully!')
             return redirect('billing:upload_plan_file')
     else:

@@ -662,6 +662,7 @@ class ClientPlanFileForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Paste Dropbox shared link here'
             }),
+            'attachment': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
         help_texts = {
