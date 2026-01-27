@@ -40,7 +40,7 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Client Name</th>
+                                <th>Client Name / Company</th>
                                 <th>Email</th>
                                 <th>Phone</th>
                                 <th class="text-center">Total Invoices</th>
@@ -55,8 +55,7 @@
                                 <td>
                                     <strong>{{ client.get_full_name }}</strong>
                                     {% if client.company_name %}
-                                    <br>
-                                    <small class="text-muted">{{ client.company_name }}</small>
+                                    <span class="d-block">({{ client.company_name }})</span>
                                     {% endif %}
                                 </td>
                                 <td>
