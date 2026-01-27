@@ -14,13 +14,6 @@ class Migration(migrations.Migration):
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
     operations = [
-        migrations.AddIndex(
-            model_name='activity',
-            index=models.Index(fields=['client', '-created_at'], name='billing_act_client__67a9df_idx'),
-        ),
-        migrations.AddIndex(
-            model_name='activity',
-            index=models.Index(fields=['project', '-created_at'], name='billing_act_project_efff7c_idx'),
-        ),
+        # All AddIndex operations removed due to existing indexes in DB
     ]
         #    new_name='created_at',
