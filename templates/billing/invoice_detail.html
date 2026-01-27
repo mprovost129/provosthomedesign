@@ -44,20 +44,23 @@
         <!-- Invoice Details -->
         <div class="card shadow-sm mb-4">
             <div class="card-body">
-                <div class="row mb-3">
-                    <div class="col-6">
-                        <h5>Provost Home Design</h5>
-                        <p class="mb-0 text-muted">Custom Home Design Services</p>
+                <!-- Branding/Header -->
+                <div class="d-flex align-items-center mb-3">
+                    <img src="{% if system_settings.portal_logo %}{{ system_settings.portal_logo.url }}{% else %}{% static 'images/phdlogo.svg' %}{% endif %}" alt="Company Logo" style="max-height: 60px; margin-right: 18px;">
+                    <div>
+                        <h4 class="mb-0">{{ system_settings.company_name|default:'Provost Home Design' }}</h4>
+                        <div style="font-size: 0.95em;">
+                            123 Main St, Your City, ST 12345<br>
+                            (555) 555-5555 &bull; info@provosthomedesign.com
+                        </div>
                     </div>
-                    <div class="col-6 text-end">
+                    <div class="flex-grow-1 text-end">
                         <span class="status-badge status-{{ invoice.status }}">
                             {{ invoice.get_status_display }}
                         </span>
                     </div>
                 </div>
-                
                 <hr>
-                
                 <div class="row mb-4">
                     <div class="col-6">
                         <h6 class="text-muted mb-2">Bill To:</h6>
