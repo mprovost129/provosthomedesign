@@ -11,6 +11,81 @@
         </div>
     </div>
 
+    {% block upload_plan_file %}
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="fas fa-upload me-2"></i>Upload New Plan File</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="id_client" class="form-label">Client *</label>
+                        <select name="client" id="id_client" class="form-select" required>
+                            <option value="">Select client</option>
+                            {% for client in clients %}
+                            <option value="{{ client.id }}">{{ client.first_name }} {{ client.last_name }} ({{ client.company_name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="id_project" class="form-label">Project (Optional)</label>
+                        <select name="project" id="id_project" class="form-select">
+                            <option value="">Select project</option>
+                            {% for project in projects %}
+                            <option value="{{ project.id }}">{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <label for="id_file_name" class="form-label">File Name *</label>
+                        <input type="text" name="file_name" id="id_file_name" class="form-control" required placeholder="e.g., Main Floor Plan.pdf" />
+                    </div>
+                    <div class="col-md-4">
+                        <label for="id_file_type" class="form-label">File Type *</label>
+                        <select name="file_type" id="id_file_type" class="form-select" required>
+                            <option value="Other">Other</option>
+                            <option value="PDF">PDF</option>
+                            <option value="DWG">DWG</option>
+                            <option value="Image">Image</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="id_version" class="form-label">Version</label>
+                        <input type="text" name="version" id="id_version" class="form-control" placeholder="e.g., Rev 3, v2.1" />
+                    </div>
+                    <div class="col-md-6">
+                        <label for="id_description" class="form-label">Description</label>
+                        <textarea name="description" id="id_description" class="form-control" placeholder="Optional description or notes about this file"></textarea>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="id_dropbox_link" class="form-label">Dropbox Shared Link *</label>
+                    <input type="text" name="dropbox_link" id="id_dropbox_link" class="form-control" required placeholder="Paste Dropbox shared link here" />
+                </div>
+                <div class="mb-3">
+                    <label for="id_attachment" class="form-label">Attachment (optional)</label>
+                    <input type="file" name="attachment" id="id_attachment" class="form-control" />
+                </div>
+                <div class="form-check mb-2">
+                    <input type="checkbox" name="notify" id="id_notify" class="form-check-input" checked />
+                    <label for="id_notify" class="form-check-label">Send email notification to client</label>
+                </div>
+                <div class="form-check mb-3">
+                    <input type="checkbox" name="active" id="id_active" class="form-check-input" checked />
+                    <label for="id_active" class="form-check-label">File is active (visible to client)</label>
+                </div>
+                <button type="submit" class="btn btn-primary">Upload File</button>
+            </form>
+        </div>
+    </div>
+    {% endblock %}
+
     {% if plan_files %}
         {% for project_name, files in files_by_project.items %}
         <div class="card shadow-sm mb-4">
