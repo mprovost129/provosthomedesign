@@ -78,6 +78,7 @@ TEMPLATES = [{
             "pages.context_processors.site_analytics",
             "plans.context_processors.plans_context",
             "billing.context_processors.system_settings",
+            "billing.context_processors.active_timer_for_staff",
         ],
     },
 }]

@@ -1,3 +1,23 @@
+@staff_member_required(login_url='/portal/login/')
+def project_list(request):
+    """Staff view to list all projects."""
+    from .models import Project
+    projects = Project.objects.all().select_related('client').order_by('-created_at')
+
+    # Add active timer for floating timer widget (staff only)
+    from timetracking.models import ActiveTimer
+    active_timer = None
+    if request.user.is_staff:
+        try:
+            active_timer = ActiveTimer.objects.select_related('time_entry__project').get(user=request.user)
+        except ActiveTimer.DoesNotExist:
+            active_timer = None
+
+    context = {
+        'projects': projects,
+        'active_timer': active_timer,
+    }
+    return render(request, 'billing/project_list.html', context)
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.mail import send_mail
 from django.conf import settings
@@ -563,9 +583,19 @@ def upload_plan_file(request):
         'client', 'project', 'uploaded_by'
     ).order_by('-uploaded_at')[:10]
     
+    # Add active timer for floating timer widget (staff only)
+    from timetracking.models import ActiveTimer
+    active_timer = None
+    if request.user.is_staff:
+        try:
+            active_timer = ActiveTimer.objects.select_related('time_entry__project').get(user=request.user)
+        except ActiveTimer.DoesNotExist:
+            active_timer = None
+
     context = {
         'form': form,
         'recent_uploads': recent_uploads,
+        'active_timer': active_timer,
     }
     
     return render(request, 'billing/upload_plan_file.html', context)
@@ -1448,6 +1478,15 @@ def project_list(request):
             'due_date': due_date,
         })
 
+    # Add active timer for floating timer widget (staff only)
+    from timetracking.models import ActiveTimer
+    active_timer = None
+    if request.user.is_staff:
+        try:
+            active_timer = ActiveTimer.objects.select_related('time_entry__project').get(user=request.user)
+        except ActiveTimer.DoesNotExist:
+            active_timer = None
+
     context = {
         'projects_data': project_data,
         'search_query': search_query,
@@ -1456,6 +1495,7 @@ def project_list(request):
         'client_filter': client_filter,
         'status_choices': Project.STATUS_CHOICES,
         'billing_type_choices': Project.BILLING_TYPE_CHOICES,
+        'active_timer': active_timer,
     }
     return render(request, 'billing/project_list.html', context)
 

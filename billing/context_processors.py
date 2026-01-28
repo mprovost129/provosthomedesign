@@ -1,3 +1,14 @@
+from timetracking.models import ActiveTimer
+
+def active_timer_for_staff(request):
+    """Context processor to inject active_timer for staff users."""
+    if request.user.is_authenticated and request.user.is_staff:
+        try:
+            active_timer = ActiveTimer.objects.select_related('time_entry__project').get(user=request.user)
+        except ActiveTimer.DoesNotExist:
+            active_timer = None
+        return {'active_timer': active_timer}
+    return {}
 """
 Context processors for billing app.
 Makes system settings and active timer available in all templates.
