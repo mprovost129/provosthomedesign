@@ -1,3 +1,5 @@
+from django.contrib.admin.views.decorators import staff_member_required
+
 @staff_member_required(login_url='/portal/login/')
 def project_list(request):
     """Staff view to list all projects."""
