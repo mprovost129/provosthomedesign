@@ -64,19 +64,9 @@
           </ul>
         </div>
 
-        {# RIGHT: 3/12 at xl+ (portal, phone, favorites, comparison, socials) #}
+        {# RIGHT: 3/12 at xl+ (phone, favorites, comparison, socials) #}
         <div class="col-12 col-xl-3 d-flex justify-content-xl-end justify-content-center mt-2 mt-xl-0">
           <ul class="navbar-nav align-items-center gap-2 flex-row">
-            {# Client Portal Icon #}
-            <li class="nav-item d-none d-xl-block">
-              <a href="{% url 'billing:login' %}"
-                 class="nav-link px-2 nav-link--icon {% if m and m.namespace == 'billing' %}active{% endif %}"
-                 aria-label="Client Portal"
-                 {% if m and m.namespace == 'billing' %}aria-current="page"{% endif %}>
-                <i class="bi bi-person-circle" aria-hidden="true"></i>
-              </a>
-            </li>
-            
             {# Click-to-Call Phone #}
             <li class="nav-item d-none d-xl-block">
               <a href="tel:+15082437912"

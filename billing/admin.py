@@ -63,30 +63,31 @@ class ClientAdmin(admin.ModelAdmin):
     
     readonly_fields = ('created_at', 'updated_at')
     
+    @admin.display(description='Client Name', ordering='last_name')
     def display_name(self, obj):
         """Display client name with link."""
         name = obj.get_full_name()
         if obj.user:
             return format_html('{} <span style="color: #27ae60;">●</span>', name)
         return name
-    display_name.short_description = 'Client Name'
-    display_name.admin_order_field = 'last_name'
     
+    @admin.display(description='Primary Phone')
     def phone_1_display(self, obj):
         """Display primary phone with type."""
         if obj.phone_1:
             return f"{obj.phone_1} ({obj.get_phone_1_type_display()})"
         return '-'
-    phone_1_display.short_description = 'Primary Phone'
     
+    @admin.display(description='Invoices')
     def total_invoices(self, obj):
         count = obj.invoices.count()
         if count:
             url = reverse('admin:billing_invoice_changelist') + f'?client__id__exact={obj.id}'
-            return format_html('<a href="{}">{} invoice{}</a>', url, count, 's' if count != 1 else '')
+            return format_html('<a href="{}">{} invoice{}</a>',
+                                url, count, 's' if count != 1 else '')
         return '0'
-    total_invoices.short_description = 'Invoices'
     
+    @admin.display(description='Outstanding')
     def total_outstanding(self, obj):
         from decimal import Decimal
         outstanding = Decimal('0.00')
@@ -95,7 +96,6 @@ class ClientAdmin(admin.ModelAdmin):
         if outstanding > 0:
             return format_html('<span style="color: #d63031; font-weight: bold;">${:,.2f}</span>', outstanding)
         return format_html('<span style="color: #27ae60;">$0.00</span>')
-    total_outstanding.short_description = 'Outstanding'
 
 
 @admin.register(Employee)
@@ -147,6 +147,7 @@ class EmployeeAdmin(admin.ModelAdmin):
     
     readonly_fields = ('created_at', 'updated_at')
     
+    @admin.display(description='Employee Name', ordering='last_name')
     def display_name(self, obj):
         """Display employee name with active indicator."""
         name = obj.get_full_name()
@@ -156,16 +157,15 @@ class EmployeeAdmin(admin.ModelAdmin):
             return format_html('{} <span style="color: #f39c12;">●</span>', name)
         else:
             return format_html('{} <span style="color: #95a5a6;">●</span>', name)
-    display_name.short_description = 'Employee Name'
-    display_name.admin_order_field = 'last_name'
     
+    @admin.display(description='Primary Phone')
     def phone_1_display(self, obj):
         """Display primary phone with type."""
         if obj.phone_1:
             return f"{obj.phone_1} ({obj.get_phone_1_type_display()})"
         return '-'
-    phone_1_display.short_description = 'Primary Phone'
     
+    @admin.display(description='Permissions')
     def permissions_display(self, obj):
         """Display active permissions as badges."""
         perms = []
@@ -181,7 +181,6 @@ class EmployeeAdmin(admin.ModelAdmin):
             return format_html('<span style="color: #0984e3;">Staff{}</span>', 
                              f' + {", ".join(perms)}' if perms else '')
         return ', '.join(perms) if perms else '-'
-    permissions_display.short_description = 'Permissions'
 
 
 class PaymentInline(admin.TabularInline):
@@ -229,6 +228,7 @@ class InvoiceAdmin(admin.ModelAdmin):
     
     actions = ['mark_as_sent', 'mark_as_paid', 'recalculate_totals']
     
+    @admin.display(description='Status')
     def status_badge(self, obj):
         colors = {
             'draft': '#95a5a6',
@@ -247,31 +247,27 @@ class InvoiceAdmin(admin.ModelAdmin):
             'border-radius: 3px; font-size: 11px; font-weight: bold;">{}</span>',
             color, status.upper()
         )
-    status_badge.short_description = 'Status'
     
+    @admin.display(description='Total', ordering='total')
     def total_display(self, obj):
         return format_html('${:,.2f}', obj.total)
-    total_display.short_description = 'Total'
-    total_display.admin_order_field = 'total'
     
+    @admin.display(description='Paid', ordering='amount_paid')
     def amount_paid_display(self, obj):
         if obj.amount_paid > 0:
             return format_html('<span style="color: #27ae60;">${:,.2f}</span>', obj.amount_paid)
         return '$0.00'
-    amount_paid_display.short_description = 'Paid'
-    amount_paid_display.admin_order_field = 'amount_paid'
     
+    @admin.display(description='Balance Due')
     def balance_display(self, obj):
         balance = obj.get_balance_due()
         if balance > 0:
             return format_html('<span style="color: #e74c3c;">${:,.2f}</span>', balance)
         return '$0.00'
-    balance_display.short_description = 'Balance Due'
     
     def mark_as_sent(self, request, queryset):
         updated = queryset.filter(status='draft').update(status='sent')
         self.message_user(request, f'{updated} invoice(s) marked as sent.')
-    mark_as_sent.short_description = 'Mark selected as Sent'
     
     def mark_as_paid(self, request, queryset):
         for invoice in queryset:
@@ -282,13 +278,11 @@ class InvoiceAdmin(admin.ModelAdmin):
                     invoice.paid_date = timezone.now().date()
                 invoice.save()
         self.message_user(request, f'{queryset.count()} invoice(s) marked as paid.')
-    mark_as_paid.short_description = 'Mark selected as Paid'
     
     def recalculate_totals(self, request, queryset):
         for invoice in queryset:
             invoice.calculate_totals()
         self.message_user(request, f'{queryset.count()} invoice(s) recalculated.')
-    recalculate_totals.short_description = 'Recalculate totals'
 
 
 @admin.register(Payment)
@@ -319,15 +313,15 @@ class PaymentAdmin(admin.ModelAdmin):
     
     readonly_fields = ('payment_id', 'processed_at', 'created_at')
     
+    @admin.display(description='Payment ID')
     def payment_id_short(self, obj):
         return str(obj.payment_id)[:8]
-    payment_id_short.short_description = 'Payment ID'
     
+    @admin.display(description='Amount', ordering='amount')
     def amount_display(self, obj):
         return format_html('${:,.2f}', obj.amount)
-    amount_display.short_description = 'Amount'
-    amount_display.admin_order_field = 'amount'
     
+    @admin.display(description='Status')
     def status_badge(self, obj):
         colors = {
             'pending': '#f39c12',
@@ -342,7 +336,6 @@ class PaymentAdmin(admin.ModelAdmin):
             'border-radius: 3px; font-size: 11px; font-weight: bold;">{}</span>',
             color, obj.status.upper()
         )
-    status_badge.short_description = 'Status'
 
 
 @admin.register(models.InvoiceTemplate)
@@ -470,18 +463,18 @@ class ClientPlanFileAdmin(admin.ModelAdmin):
         }),
     )
     
-    def get_form(self, request, obj=None, **kwargs):
+    def get_form(self, request, obj=None, change=False, **kwargs):
         """Add send_email_notification checkbox to the form."""
-        form = super().get_form(request, obj, **kwargs)
-        # Add send_email_notification field
+        form_class = super().get_form(request, obj, change=change, **kwargs)
         from django import forms
-        form.base_fields['send_email_notification'] = forms.BooleanField(
-            required=False,
-            initial=True,
-            label='Send email notification to client',
-            help_text='Email the client to notify them about this plan file'
-        )
-        return form
+        class CustomForm(form_class):
+            send_email_notification = forms.BooleanField(
+                required=False,
+                initial=True,
+                label='Send email notification to client',
+                help_text='Email the client to notify them about this plan file'
+            )
+        return CustomForm
     
     def save_model(self, request, obj, form, change):
         """Auto-set uploaded_by on creation and send email if requested."""

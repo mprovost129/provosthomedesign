@@ -333,7 +333,12 @@ class Invoice(models.Model):
     
     def calculate_totals(self):
         """Recalculate invoice totals from line items."""
-        self.subtotal = sum(item.total for item in self.line_items.all())
+        # Use getattr for reverse manager in case of related_name
+        line_items_manager = getattr(self, 'line_items', None)
+        if line_items_manager is not None:
+            self.subtotal = sum(item.total for item in line_items_manager.all())
+        else:
+            self.subtotal = Decimal('0.00')
         self.tax_amount = (self.subtotal * self.tax_rate / Decimal('100')).quantize(Decimal('0.01'))
         self.total = self.subtotal + self.tax_amount
         self.save()
@@ -402,9 +407,8 @@ class InvoiceLineItem(models.Model):
         # Calculate total
         self.total = (self.quantity * self.unit_price).quantize(Decimal('0.01'))
         super().save(*args, **kwargs)
-        
         # Update invoice totals
-        if self.invoice_id:
+        if self.invoice:
             self.invoice.calculate_totals()
 
 
@@ -457,7 +461,9 @@ class Payment(models.Model):
         ]
     
     def __str__(self):
-        return f"Payment {self.payment_id} - ${self.amount} - {self.get_status_display()}"
+        # Defensive: get_status_display is provided by Django for choices fields, but fallback if not present
+        status_display = getattr(self, 'get_status_display', lambda: self.status)()
+        return f"Payment {self.payment_id} - ${self.amount} - {status_display}"
     
     def save(self, *args, **kwargs):
         is_new = self.pk is None
@@ -468,21 +474,19 @@ class Payment(models.Model):
             if not self.processed_at:
                 self.processed_at = timezone.now()
                 super().save(update_fields=['processed_at'])
-            
-            # Recalculate invoice amount_paid
-            total_paid = self.invoice.payments.filter(status='succeeded').aggregate(
-                total=models.Sum('amount')
-            )['total'] or Decimal('0.00')
-            
-            self.invoice.amount_paid = total_paid
-            
-            # Update invoice status if fully paid
-            if self.invoice.amount_paid >= self.invoice.total:
-                self.invoice.status = 'paid'
-                if not self.invoice.paid_date:
-                    self.invoice.paid_date = timezone.now().date()
-            
-            self.invoice.save()
+            # Use getattr for reverse manager in case of related_name
+            payments_manager = getattr(self.invoice, 'payments', None)
+            if payments_manager is not None:
+                total_paid = payments_manager.filter(status='succeeded').aggregate(
+                    total=models.Sum('amount')
+                )['total'] or Decimal('0.00')
+                self.invoice.amount_paid = total_paid
+                # Update invoice status if fully paid
+                if self.invoice.amount_paid >= self.invoice.total:
+                    self.invoice.status = 'paid'
+                    if not self.invoice.paid_date:
+                        self.invoice.paid_date = timezone.now().date()
+                self.invoice.save()
 
 
 class InvoiceTemplate(models.Model):
@@ -612,7 +616,7 @@ class SystemSettings(models.Model):
     late_fee_percentage = models.DecimalField(
         max_digits=5,
         decimal_places=2,
-        default=0.00,
+        default=Decimal('0.00'),
         validators=[MinValueValidator(0), MaxValueValidator(100)],
         help_text="Late fee percentage (0-100)"
     )
@@ -672,7 +676,7 @@ class SystemSettings(models.Model):
     
     def delete(self, *args, **kwargs):
         # Prevent deletion
-        pass
+        return (0, {})
     
     @classmethod
     def load(cls):
@@ -855,11 +859,11 @@ class Project(models.Model):
     
     def get_total_invoiced(self):
         """Get total amount invoiced for this project."""
-        return sum(inv.total for inv in self.invoices.exclude(status='cancelled'))
+        return sum(inv.total for inv in self.invoices.all().exclude(status='cancelled'))
     
     def get_total_paid(self):
         """Get total amount paid for this project."""
-        return sum(inv.amount_paid for inv in self.invoices.exclude(status='cancelled'))
+        return sum(inv.amount_paid for inv in self.invoices.all().exclude(status='cancelled'))
     
     def get_balance_due(self):
         """Get remaining balance due for this project."""
@@ -867,7 +871,7 @@ class Project(models.Model):
     
     def is_fully_paid(self):
         """Check if all invoices are paid in full."""
-        invoices = self.invoices.exclude(status='cancelled')
+        invoices = self.invoices.all().exclude(status='cancelled')
         if not invoices.exists():
             return False
         return all(inv.is_paid() for inv in invoices)
@@ -1044,7 +1048,12 @@ class Proposal(models.Model):
     
     def calculate_totals(self):
         """Recalculate subtotal from line items"""
-        self.subtotal = sum(item.amount for item in self.line_items.all())
+        # Use getattr for reverse manager in case of related_name
+        line_items_manager = getattr(self, 'line_items', None)
+        if line_items_manager is not None:
+            self.subtotal = sum(item.amount for item in line_items_manager.all())
+        else:
+            self.subtotal = Decimal('0.00')
         self.tax_amount = (self.subtotal * self.tax_rate) / Decimal('100')
         self.total = self.subtotal + self.tax_amount
         if self.deposit_percentage > 0:
@@ -1172,8 +1181,13 @@ class Activity(models.Model):
             models.Index(fields=['project', '-created_at']),
         ]
     
+    @property
+    def activity_type_display(self):
+        # Defensive: get_activity_type_display is provided by Django for choices fields, but fallback if not present
+        return getattr(self, 'get_activity_type_display', lambda: self.activity_type)()
+
     def __str__(self):
-        return f"{self.get_activity_type_display()} - {self.client} - {self.created_at.strftime('%Y-%m-%d')}"
+        return f"{self.activity_type_display} - {self.client} - {self.created_at.strftime('%Y-%m-%d')}"
 
 
 class ClientPlanFile(models.Model):

@@ -112,6 +112,8 @@
         <a href="{% url 'pages:contact' %}" class="btn btn-primary">Contact us</a>
         <a href="{% url 'plans:plan_list' %}" class="btn btn-outline-primary">Browse plans</a>
       </div>
+
+      {% include "includes/ez360pm_card.html" with compact=True %}
     </div>
 
     <!-- RIGHT COLUMN: photos (SAFE: no .url dereference) -->
@@ -151,4 +153,5 @@
   </div>
 </div>
 {% endblock %}
+
 

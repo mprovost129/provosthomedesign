@@ -190,34 +190,34 @@ def contact(request: HttpRequest) -> HttpResponse:
         request.session["testimonial_started_ts"] = time()
 
     if request.method == "POST":
-        # 1) Basic per-session throttle
-        if _too_many_recent_submissions(request):
-            msg = "You're sending messages too quickly. Please wait a minute and try again."
-            if _is_htmx(request):
-                return _htmx_status(request, "warning", msg)
-            messages.warning(request, msg)
-            return redirect("pages:contact")
-
-        # 2) “Too fast” submission (likely bot)
-        started = float(request.session.get("contact_started_ts", 0))
-        if time() - started < 2.0:
-            # reset seed for the next legit attempt
-            request.session["contact_started_ts"] = time()
-            logger.info(
-                "Spam gate tripped: too_fast ip=%s ua=%s",
-                request.META.get("REMOTE_ADDR"),
-                request.META.get("HTTP_USER_AGENT"),
-            )
-            if _is_htmx(request):
-                return _htmx_status(request, "error", "Spam protection triggered. Please try again.")
-            messages.error(request, "Spam protection triggered. Please try again.")
-            return redirect("pages:contact")
-
-        # refresh seed to avoid reusing the same timestamp
-        request.session["contact_started_ts"] = time()
-
         # Contact submission
         if is_contact_post:
+            # 1) Contact-specific throttle
+            if _too_many_recent_submissions(request, "contact"):
+                msg = "You're sending messages too quickly. Please wait a minute and try again."
+                if _is_htmx(request):
+                    return _htmx_status(request, "warning", msg)
+                messages.warning(request, msg)
+                return redirect("pages:contact")
+
+            # 2) "Too fast" submission (likely bot)
+            started = float(request.session.get("contact_started_ts", 0))
+            if time() - started < 2.0:
+                # reset seed for the next legit attempt
+                request.session["contact_started_ts"] = time()
+                logger.info(
+                    "Spam gate tripped: too_fast ip=%s ua=%s",
+                    request.META.get("REMOTE_ADDR"),
+                    request.META.get("HTTP_USER_AGENT"),
+                )
+                if _is_htmx(request):
+                    return _htmx_status(request, "error", "Spam protection triggered. Please try again.")
+                messages.error(request, "Spam protection triggered. Please try again.")
+                return redirect("pages:contact")
+
+            # refresh seed to avoid reusing the same timestamp
+            request.session["contact_started_ts"] = time()
+
             # reCAPTCHA v3 verification (enforced if secret is configured)
             recaptcha_ok, score = verify_recaptcha_v3(request)
             if not recaptcha_ok:
@@ -358,6 +358,15 @@ def contact(request: HttpRequest) -> HttpResponse:
             # refresh seed to avoid reusing the same timestamp
             request.session["testimonial_started_ts"] = time()
 
+            # reCAPTCHA v3 verification (enforced if secret is configured)
+            recaptcha_ok, score = verify_recaptcha_v3(request)
+            if not recaptcha_ok:
+                msg = "Spam detection failed. Please try again."
+                if _is_htmx(request):
+                    return _htmx_status(request, "error", msg)
+                messages.error(request, msg)
+                return redirect("pages:contact")
+
             if not request.POST.get(f"{tform.prefix}-terms_accepted") and hasattr(tform, "fields") and "terms_accepted" in tform.fields:
                 tform.add_error("terms_accepted", "You must accept the Terms & Conditions.")
             if tform.is_valid():
@@ -365,6 +374,7 @@ def contact(request: HttpRequest) -> HttpResponse:
                 t = Testimonial.objects.create(
                     name=cd["name"],
                     email=cd.get("email", ""),
+                    role=cd.get("role") or "",
                     rating=int(cd["rating"]),
                     message=cd["message"],
                     consent_to_publish=cd["consent_to_publish"],
@@ -433,6 +443,10 @@ def contact(request: HttpRequest) -> HttpResponse:
                 messages.error(request, "Please accept the Terms & Conditions to submit your testimonial.")
             else:
                 messages.error(request, "Please correct the errors in the testimonial form.")
+
+        if not is_contact_post and not is_testimonial_post:
+            messages.error(request, "Invalid form submission.")
+            return redirect("pages:contact")
 
     approved_testimonials = Testimonial.objects.filter(approved=True, consent_to_publish=True)[:6]
 

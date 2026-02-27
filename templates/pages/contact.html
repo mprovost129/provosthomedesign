@@ -294,6 +294,9 @@
 
             <div class="text-end">
               <input type="hidden" name="action" value="submit_testimonial">
+              {% if recaptcha_site_key %}
+                <input type="hidden" name="recaptcha_token" id="testimonial_recaptcha_token" value="">
+              {% endif %}
               <button type="submit" class="btn btn-outline-primary">Submit testimonial</button>
             </div>
           </form>
@@ -334,11 +337,11 @@
   <script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}"></script>
   <script>
     (function () {
-      function setToken() {
+      function setToken(actionName, targetId) {
         return new Promise(function(resolve) {
           grecaptcha.ready(function () {
-            grecaptcha.execute("{{ recaptcha_site_key }}", {action: "contact_form"}).then(function (token) {
-              var el = document.getElementById("contact_recaptcha_token");
+            grecaptcha.execute("{{ recaptcha_site_key }}", {action: actionName}).then(function (token) {
+              var el = document.getElementById(targetId);
               if (el) el.value = token;
               resolve(token);
             });
@@ -347,26 +350,34 @@
       }
 
       document.addEventListener("DOMContentLoaded", function () {
-        setToken();
+        setToken("contact_form", "contact_recaptcha_token");
+        setToken("testimonial_form", "testimonial_recaptcha_token");
 
-        var form = document.querySelector('form[action="{% url "pages:contact" %}"]');
-        if (!form) return;
+        var contactForm = document.querySelector('input[name="action"][value="send_message"]')?.closest("form");
+        var testimonialForm = document.querySelector('input[name="action"][value="submit_testimonial"]')?.closest("form");
 
-        form.addEventListener("submit", function (e) {
-          // First check HTML5 validation (including required checkbox)
-          if (!form.checkValidity()) {
-            // Let browser show validation messages
-            return;
-          }
+        function bindProtectedSubmit(form, actionName, targetId) {
+          if (!form) return;
 
-          var el = document.getElementById("contact_recaptcha_token");
-          if (el && el.value) return;
+          form.addEventListener("submit", function (e) {
+            // First check HTML5 validation (including required checkbox)
+            if (!form.checkValidity()) {
+              // Let browser show validation messages
+              return;
+            }
 
-          e.preventDefault();
-          setToken().then(function () {
-            form.submit();
+            var el = document.getElementById(targetId);
+            if (el && el.value) return;
+
+            e.preventDefault();
+            setToken(actionName, targetId).then(function () {
+              form.submit();
+            });
           });
-        });
+        }
+
+        bindProtectedSubmit(contactForm, "contact_form", "contact_recaptcha_token");
+        bindProtectedSubmit(testimonialForm, "testimonial_form", "testimonial_recaptcha_token");
       });
     })();
   </script>

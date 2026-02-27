@@ -1,0 +1,38 @@
+{% load static %}
+
+<section class="mt-5" aria-labelledby="ez360pm-heading">
+  <div class="bg-white border shadow-sm rounded-3 p-4">
+    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
+      <div class="d-flex align-items-start gap-3">
+        <img
+          src="{% static 'images/ez360pm_logo.svg' %}"
+          alt="EZ360PM logo"
+          style="width: 48px; height: 48px; object-fit: contain;"
+          loading="lazy"
+          decoding="async"
+        >
+        <div>
+          {% if compact %}
+            <h2 id="ez360pm-heading" class="h6 mb-1">The System Behind Our Process</h2>
+            <p class="text-muted mb-0">
+              We run projects with EZ360PM, our professional CRM, project management, invoicing, and accounting platform.
+            </p>
+          {% else %}
+            <h2 id="ez360pm-heading" class="h5 mb-2">Built for Builders, Architects, Engineers, and Designers. Used by Us.</h2>
+            <p class="text-muted mb-1">
+              At Provost Home Design, we manage every project using our own professional management platform, EZ360PM.
+              From proposals and invoicing to time tracking and financial reporting, it keeps our work organized and our clients informed.
+            </p>
+            <p class="small text-muted mb-0">Trusted by Provost Home Design.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="w-100 w-md-auto text-md-end">
+        <a class="btn btn-primary" href="https://www.ez360pm.com" target="_blank" rel="noopener">
+          {% if compact %}Learn More About EZ360PM{% else %}Explore EZ360PM{% endif %}
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
