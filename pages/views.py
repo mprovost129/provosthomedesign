@@ -13,15 +13,15 @@ from typing import Iterable
 
 from django.conf import settings
 from django.contrib import messages
+from django.core.cache import cache
 from django.core.mail import EmailMultiAlternatives
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.templatetags.static import static
 from django.urls import reverse
-from django.utils import timezone
 
-from core.utils import verify_recaptcha_v3
+from core.utils import get_client_ip, verify_recaptcha_v3
 from .forms import ContactForm, NewHouseForm, TestimonialForm
 from .models import (
     InquiryAttachment,
@@ -77,17 +77,42 @@ def _is_htmx(request: HttpRequest) -> bool:
 def _htmx_status(request: HttpRequest, level: str, message: str) -> HttpResponse:
     return render(request, "pages/partials/contact_status.html", {"level": level, "text": message})
 
-THROTTLE_WINDOW_SECONDS = 60
+THROTTLE_WINDOW_SECONDS = int(getattr(settings, "FORM_THROTTLE_WINDOW_SECONDS", 600))
+THROTTLE_MAX_ATTEMPTS = int(getattr(settings, "FORM_THROTTLE_MAX_ATTEMPTS", 3))
+THROTTLE_BURST_WINDOW_SECONDS = int(getattr(settings, "FORM_THROTTLE_BURST_WINDOW_SECONDS", 60))
+THROTTLE_BURST_MAX_ATTEMPTS = int(getattr(settings, "FORM_THROTTLE_BURST_MAX_ATTEMPTS", 1))
 
 def _too_many_recent_submissions(request: HttpRequest, form_type: str = "contact") -> bool:
-    """Check and update throttle for a specific form type (contact or testimonial)."""
-    key = f"last_{form_type}_submission_ts"
-    last = request.session.get(key)
-    now = timezone.now().timestamp()
-    if last and (now - last) < THROTTLE_WINDOW_SECONDS:
-        return True
-    request.session[key] = now
-    return False
+    """
+    Check and update server-side throttle per IP and form type.
+    Uses cache counters so bots cannot bypass by dropping session cookies.
+    """
+    ip = get_client_ip(request) or "unknown"
+    safe_form_type = "".join(ch for ch in (form_type or "contact").lower() if ch.isalnum() or ch in ("-", "_"))
+
+    # Wider window limit, e.g. max 3 submissions / 10 minutes per IP per form.
+    wide_key = f"form_throttle:{safe_form_type}:{ip}:wide"
+    if cache.add(wide_key, 1, timeout=THROTTLE_WINDOW_SECONDS):
+        wide_count = 1
+    else:
+        try:
+            wide_count = cache.incr(wide_key)
+        except ValueError:
+            cache.set(wide_key, 1, timeout=THROTTLE_WINDOW_SECONDS)
+            wide_count = 1
+
+    # Burst limit, e.g. max 1 submission / 60 seconds per IP per form.
+    burst_key = f"form_throttle:{safe_form_type}:{ip}:burst"
+    if cache.add(burst_key, 1, timeout=THROTTLE_BURST_WINDOW_SECONDS):
+        burst_count = 1
+    else:
+        try:
+            burst_count = cache.incr(burst_key)
+        except ValueError:
+            cache.set(burst_key, 1, timeout=THROTTLE_BURST_WINDOW_SECONDS)
+            burst_count = 1
+
+    return wide_count > THROTTLE_MAX_ATTEMPTS or burst_count > THROTTLE_BURST_MAX_ATTEMPTS
 
 # ----- Views ----------------------------------------------------------------
 
@@ -219,7 +244,7 @@ def contact(request: HttpRequest) -> HttpResponse:
             request.session["contact_started_ts"] = time()
 
             # reCAPTCHA v3 verification (enforced if secret is configured)
-            recaptcha_ok, score = verify_recaptcha_v3(request)
+            recaptcha_ok, score = verify_recaptcha_v3(request, expected_action="contact_form")
             if not recaptcha_ok:
                 msg = "Spam detection failed. Please try again."
                 if _is_htmx(request):
@@ -359,7 +384,7 @@ def contact(request: HttpRequest) -> HttpResponse:
             request.session["testimonial_started_ts"] = time()
 
             # reCAPTCHA v3 verification (enforced if secret is configured)
-            recaptcha_ok, score = verify_recaptcha_v3(request)
+            recaptcha_ok, score = verify_recaptcha_v3(request, expected_action="testimonial_form")
             if not recaptcha_ok:
                 msg = "Spam detection failed. Please try again."
                 if _is_htmx(request):
@@ -477,14 +502,17 @@ def contact(request: HttpRequest) -> HttpResponse:
         "form": contact_form,
         "tform": tform,
         "approved_testimonials": approved_testimonials,
-        "recaptcha_site_key": (getattr(settings, "RECAPTCHA_SITE_KEY", "") or "").strip(),
+        "recaptcha_site_key": (
+            (getattr(settings, "RECAPTCHA_SITE_KEY", "") or "").strip()
+            or (getattr(settings, "RECAPTCHA_PUBLIC_KEY", "") or "").strip()
+        ),
     }
     return render(request, "pages/contact.html", context)
 
 def get_started(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         # reCAPTCHA v3 verification (enforced if secret is configured)
-        recaptcha_ok, score = verify_recaptcha_v3(request)
+        recaptcha_ok, score = verify_recaptcha_v3(request, expected_action="get_started")
         if not recaptcha_ok:
             messages.error(request, "Spam detection failed. Please try again.")
             return redirect("pages:get_started")
@@ -597,7 +625,10 @@ def get_started(request: HttpRequest) -> HttpResponse:
         {
             "page": {"title": "Get Started", "description": "Tell us about your project."},
             "form": form,
-            "recaptcha_site_key": (getattr(settings, "RECAPTCHA_SITE_KEY", "") or "").strip(),
+            "recaptcha_site_key": (
+                (getattr(settings, "RECAPTCHA_SITE_KEY", "") or "").strip()
+                or (getattr(settings, "RECAPTCHA_PUBLIC_KEY", "") or "").strip()
+            ),
         },
     )
 
