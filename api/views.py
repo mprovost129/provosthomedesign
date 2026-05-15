@@ -1,6 +1,9 @@
+from django.http import HttpResponse
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from django.views import View
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -8,7 +11,9 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 
 from billing.models import Client, Project, Invoice, Payment, Expense, ExpenseCategory, SystemSettings, ClientPlanFile, IncomingWorkLog
+from plans.models import Plans
 from timetracking.models import TimeEntry
+from .authentication import PartnerAPIKeyAuthentication, HasPartnerAPIKey
 from .serializers import (
     UserSerializer,
     ClientSerializer,
@@ -21,6 +26,7 @@ from .serializers import (
     SystemSettingsSerializer,
     ClientPlanFileSerializer,
     IncomingWorkLogSerializer,
+    PlanSerializer,
 )
 
 
@@ -176,3 +182,64 @@ class IncomingWorkLogViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+
+
+# ---------------------------------------------------------------------------
+# Public Plans API (partner embed)
+# ---------------------------------------------------------------------------
+
+class PublicPlanViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Read-only plan catalog for partner embeds. Requires a partner API key.
+
+    Lookup is by plan_number (e.g. GET /api/plans/ABC123/).
+
+    Supported query filters on the list endpoint:
+      ?bedrooms=3
+      ?min_sqft=1500&max_sqft=3000
+      ?style=ranch          (house style slug)
+      ?featured=true
+      ?plan_number=ABC123   (alternative to detail URL)
+    """
+    authentication_classes = [PartnerAPIKeyAuthentication]
+    permission_classes = [HasPartnerAPIKey]
+    serializer_class = PlanSerializer
+    lookup_field = "plan_number"
+
+    def get_queryset(self):
+        qs = Plans.objects.available().prefetch_related("images", "house_styles")
+        p = self.request.query_params
+
+        if bedrooms := p.get("bedrooms"):
+            try:
+                qs = qs.filter(bedrooms=int(bedrooms))
+            except ValueError:
+                pass
+        if min_sqft := p.get("min_sqft"):
+            try:
+                qs = qs.filter(square_footage__gte=int(min_sqft))
+            except ValueError:
+                pass
+        if max_sqft := p.get("max_sqft"):
+            try:
+                qs = qs.filter(square_footage__lte=int(max_sqft))
+            except ValueError:
+                pass
+        if style := p.get("style"):
+            qs = qs.filter(house_styles__slug=style)
+        if featured := p.get("featured"):
+            if featured.lower() in ("true", "1", "yes"):
+                qs = qs.filter(is_featured=True)
+        if plan_number := p.get("plan_number"):
+            qs = qs.filter(plan_number=plan_number)
+
+        return qs.distinct()
+
+
+class PlanEmbedWidgetView(View):
+    """Serve the embeddable JavaScript widget (no auth required — key is used client-side)."""
+
+    def get(self, request, *args, **kwargs):
+        api_base = request.build_absolute_uri("/api/")
+        js = render_to_string("api/embed_widget.js", {"api_base": api_base})
+        return HttpResponse(js, content_type="application/javascript; charset=utf-8")

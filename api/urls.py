@@ -12,6 +12,8 @@ from .views import (
     SystemSettingsViewSet,
     ClientPlanFileViewSet,
     IncomingWorkLogViewSet,
+    PublicPlanViewSet,
+    PlanEmbedWidgetView,
 )
 
 router = DefaultRouter()
@@ -25,8 +27,10 @@ router.register(r"time-entries", TimeEntryViewSet)
 router.register(r"system-settings", SystemSettingsViewSet)
 router.register(r"plan-files", ClientPlanFileViewSet)
 router.register(r"incoming-work-logs", IncomingWorkLogViewSet)
+router.register(r"plans", PublicPlanViewSet, basename="public-plans")
 
 urlpatterns = [
     path("auth/token/", DeviceTokenAuthView.as_view(), name="api_token_auth"),
+    path("embed/widget.js", PlanEmbedWidgetView.as_view(), name="plan_embed_widget"),
     path("", include(router.urls)),
 ]
