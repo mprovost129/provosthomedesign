@@ -3,6 +3,7 @@ Minimal Django settings for the 'config' project.
 Django 5.2.x
 """
 from pathlib import Path
+import os
 from decouple import config
 import dj_database_url
 
@@ -365,17 +366,19 @@ CONTACT_ADDRESS = config("CONTACT_ADDRESS", default="123 Main St, Your City, ST 
 #   AWS_STORAGE_BUCKET_NAME=phd-media-prod
 #   AWS_S3_REGION_NAME=us-east-1
 
-USE_S3_MEDIA = config("USE_S3_MEDIA", cast=bool, default=not DEBUG)
+RUNNING_ON_RENDER = bool(os.environ.get("RENDER")) or bool(RENDER_EXTERNAL_HOSTNAME)
+USE_S3_MEDIA = config("USE_S3_MEDIA", cast=bool, default=(RUNNING_ON_RENDER or not DEBUG))
 AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID", default="")
 AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY", default="")
 AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME", default="phd-media-prod")
 AWS_S3_REGION_NAME = config("AWS_S3_REGION_NAME", default="us-east-1")
+# Use the regional endpoint. This avoids redirects and keeps generated image URLs
+# consistent with the bucket region shown in AWS/S3.
 AWS_S3_CUSTOM_DOMAIN = config(
     "AWS_S3_CUSTOM_DOMAIN",
-    default=f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
-    if AWS_S3_REGION_NAME == "us-east-1"
-    else f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com",
+    default=f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com",
 )
+AWS_S3_ADDRESSING_STYLE = "virtual"
 AWS_DEFAULT_ACL = None
 AWS_QUERYSTRING_AUTH = False
 AWS_S3_FILE_OVERWRITE = False
@@ -394,5 +397,7 @@ if USE_S3_MEDIA:
             "default_acl": None,
             "querystring_auth": False,
             "file_overwrite": False,
+            "addressing_style": AWS_S3_ADDRESSING_STYLE,
+            "custom_domain": AWS_S3_CUSTOM_DOMAIN,
         },
     }
