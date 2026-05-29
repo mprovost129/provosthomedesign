@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     "django_recaptcha",
     "corsheaders",
     "rest_framework", "rest_framework.authtoken",
-    "core", "pages", "plans", "help", "api"
+    "core", "pages", "plans", "help", "api", "storages"
 ]
 
 # Simple cache + defaults for sorl
@@ -350,3 +350,30 @@ COMPANY_NAME = config("COMPANY_NAME", default="Provost Home Design")
 CONTACT_EMAIL = config("CONTACT_EMAIL", default=DEFAULT_FROM_EMAIL)
 CONTACT_PHONE = config("CONTACT_PHONE", default="(555) 123-4567")
 CONTACT_ADDRESS = config("CONTACT_ADDRESS", default="123 Main St, Your City, ST 12345")
+
+AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME", default="phd-media-prod")
+AWS_S3_REGION_NAME = config("AWS_S3_REGION_NAME", default="us-east-1")
+AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
+AWS_DEFAULT_ACL = None
+AWS_QUERYSTRING_AUTH = False
+AWS_S3_OBJECT_PARAMETERS = {
+    "CacheControl": "max-age=86400",
+}
+
+MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": AWS_STORAGE_BUCKET_NAME,
+            "region_name": AWS_S3_REGION_NAME,
+            "location": "media",
+        },
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
