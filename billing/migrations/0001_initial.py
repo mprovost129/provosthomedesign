@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('plans', '0002_plancomparison_savedplan'),
+        ('plans', '0006_remove_plans_plans_plans_house_s_82aeb9_idx'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

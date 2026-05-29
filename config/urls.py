@@ -20,15 +20,6 @@ urlpatterns = [
     path("", include("pages.urls")),          # requires app_name="pages" in pages/urls.py
     path("plans/", include("plans.urls")),    # requires app_name="plans" in plans/urls.py
     
-    # Client Portal
-    path("portal/", include("billing.urls")), # requires app_name="billing" in billing/urls.py
-    
-    # Time Tracking
-    path("time/", include("timetracking.urls")), # requires app_name="timetracking" in timetracking/urls.py
-    
-    # Timer API for sync
-    path("api/timer/", include("timetracking.urls_api")),
-    
     # Help Center
     path("help/", include("help.urls")), # requires app_name="help" in help/urls.py
 
