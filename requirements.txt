@@ -13,8 +13,10 @@ django-recaptcha==4.0.0
 django-storages==1.14.6
 djangorestframework==3.16.1
 easy-thumbnails==2.10.1
+gunicorn==26.0.0
 idna==3.10
 jmespath==1.1.0
+packaging==26.2
 pillow==11.3.0
 psycopg==3.2.13
 psycopg-binary==3.2.13
