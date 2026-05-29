@@ -266,16 +266,59 @@
   {% endif %}
 
   <section class="mt-5">
-    <div class="bg-white border shadow rounded-3 p-4">
-      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-        <div>
-          <h2 class="h6 mb-1">What we do</h2>
-          <p class="text-muted mb-0">Custom design, plan modifications, framing plans, and permit sets.</p>
+    <div class="d-flex align-items-baseline justify-content-between mb-2">
+      <h2 class="h5 mb-0">Two things I do well</h2>
+    </div>
+    <div class="row g-3">
+
+      {# House Design card #}
+      <div class="col-md-6">
+        <div class="rounded-3 shadow overflow-hidden h-100" style="background:linear-gradient(135deg,#1a3350 0%,#2d6a9f 100%);">
+          <div class="p-4 text-white h-100 d-flex flex-column">
+            <div class="mb-3">
+              <i class="bi bi-house-door fs-1 opacity-75" aria-hidden="true"></i>
+            </div>
+            <h3 class="h5 fw-bold mb-2">House Design</h3>
+            <p class="mb-3 opacity-90 flex-grow-1">
+              Stock and custom house plans — code-compliant, permit-ready, and built for New England.
+              Modifications, framing plans, and permit sets included.
+            </p>
+            <div class="d-flex gap-2 flex-wrap">
+              <a href="{% url 'plans:plan_list' %}" class="btn btn-light btn-sm px-3">
+                <i class="bi bi-grid me-1" aria-hidden="true"></i> Browse Plans
+              </a>
+              <a href="{% url 'pages:services' %}" class="btn btn-outline-light btn-sm px-3">
+                View Services
+              </a>
+            </div>
+          </div>
         </div>
-        <a class="btn btn-outline-primary" href="{% url 'pages:services' %}">
-          View Services
-        </a>
       </div>
+
+      {# Web Design card #}
+      <div class="col-md-6">
+        <div class="rounded-3 shadow overflow-hidden h-100" style="background:linear-gradient(135deg,#0d1b2a 0%,#1a3350 100%);">
+          <div class="p-4 text-white h-100 d-flex flex-column">
+            <div class="mb-3">
+              <i class="bi bi-code-slash fs-1 opacity-75" aria-hidden="true"></i>
+            </div>
+            <h3 class="h5 fw-bold mb-2">Web Design &amp; Development</h3>
+            <p class="mb-3 flex-grow-1" style="opacity:.9;">
+              Custom websites and web apps built with Python, Django, and modern front-end tools.
+              Fast, mobile-ready, and built by a real developer — not a template.
+            </p>
+            <div class="d-flex gap-2 flex-wrap">
+              <a href="{% url 'pages:web_design' %}" class="btn btn-light btn-sm px-3">
+                <i class="bi bi-arrow-right me-1" aria-hidden="true"></i> Learn More
+              </a>
+              <a href="{% url 'pages:web_design' %}#inquiry" class="btn btn-outline-light btn-sm px-3">
+                Get a Quote
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -333,18 +376,25 @@
   <!-- Quick CTA tiles -->
   <section class="mt-5">
     <div class="row g-3">
-      <div class="col-md-6">
+      <div class="col-md-4">
         <div class="bg-white border shadow rounded-3 p-4 h-100">
           <h3 class="h6">Have existing plans?</h3>
           <p class="text-muted mb-3">Upload your drawings and we’ll tailor them to your needs.</p>
           <a class="btn btn-outline-primary" href="{% url 'pages:get_started' %}">Get Started</a>
         </div>
       </div>
-      <div class="col-md-6">
+      <div class="col-md-4">
         <div class="bg-white border shadow rounded-3 p-4 h-100">
           <h3 class="h6">Need something custom?</h3>
           <p class="text-muted mb-3">Work directly with our designer to create the perfect plan.</p>
           <a class="btn btn-outline-primary" href="{% url 'pages:contact' %}">Contact Us</a>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="bg-white border shadow rounded-3 p-4 h-100">
+          <h3 class="h6">Need a website or web app?</h3>
+          <p class="text-muted mb-3">Custom sites and applications built with Python, Django, and modern front-end tools.</p>
+          <a class="btn btn-outline-primary" href="{% url 'pages:web_design' %}">Web Design</a>
         </div>
       </div>
     </div>
