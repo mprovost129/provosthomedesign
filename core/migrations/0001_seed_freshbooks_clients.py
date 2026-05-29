@@ -3,13 +3,18 @@
 
 import csv
 import os
+from django.conf import settings
 from django.db import migrations
 
 
 def seed_freshbooks_clients(apps, schema_editor):
     """Import clients from Freshbooks CSV export."""
     User = apps.get_model('auth', 'User')
-    Client = apps.get_model('billing', 'Client')
+    try:
+        Client = apps.get_model('billing', 'Client')
+    except LookupError:
+        print("⚠️  billing app not installed; skipping Freshbooks client seed migration")
+        return
     
     # Path to CSV file (in project root)
     csv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'Freshbooks Client Export.csv')
@@ -92,6 +97,7 @@ def reverse_seed(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
+    migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
