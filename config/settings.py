@@ -362,7 +362,7 @@ AWS_S3_OBJECT_PARAMETERS = {
     "CacheControl": "max-age=86400",
 }
 
-MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+MEDIA_URL = "https://phd-media-prod.s3.us-east-1.amazonaws.com/media/"
 
 STORAGES = {
     "default": {
