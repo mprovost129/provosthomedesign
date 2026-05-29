@@ -651,7 +651,10 @@ def about(request: HttpRequest) -> HttpResponse:
         with contextlib.suppress(Exception):
             photos.append(ap.photo_secondary.url)
     if not photos:
-        photos = [static("images/Michael_1.jpg"), static("images/michael_2.jpg")]
+        # Render uses ManifestStaticFilesStorage in production. The old fallback
+        # referenced files that are not in static/images, which raises a 500
+        # before the page can render. Use the existing checked-in static image.
+        photos = [static("images/michael.jpg")]
 
     about_ctx = {
         "title": ap.title if ap else "About",

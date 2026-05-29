@@ -20,11 +20,11 @@
   <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
 
   {% if plan.main_image %}
-    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ plan.main_image.url }}">
-    <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{{ plan.main_image.url }}">
+    <meta property="og:image" content="{{ plan.main_image.url }}">
+    <meta name="twitter:image" content="{{ plan.main_image.url }}">
   {% elif images %}
-    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ images.0.image.url }}">
-    <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{{ images.0.image.url }}">
+    <meta property="og:image" content="{{ images.0.image.url }}">
+    <meta name="twitter:image" content="{{ images.0.image.url }}">
   {% endif %}
 {% endblock %}
 
@@ -37,10 +37,10 @@
   "description": "{{ plan.meta_description|default:plan.description|default:''|striptags|truncatechars:300|escapejs }}",
   "image": [
     {% if plan.main_image %}
-      "{{ request.scheme }}://{{ request.get_host }}{{ plan.main_image.url }}"{% if images %},{% endif %}
+      "{{ plan.main_image.url }}"{% if images %},{% endif %}
     {% endif %}
     {% for img in images %}
-      "{{ request.scheme }}://{{ request.get_host }}{{ img.image.url }}"{% if not forloop.last %}, {% endif %}
+      "{{ img.image.url }}"{% if not forloop.last %}, {% endif %}
     {% endfor %}
   ],
   "sku": "{{ plan.plan_number }}",

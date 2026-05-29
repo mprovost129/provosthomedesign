@@ -129,8 +129,8 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
-# Media defaults are local for development. Production/Render can switch
-# uploaded media to S3 by setting USE_S3_MEDIA=True.
+# Local media defaults for development. These are intentionally overridden
+# below when S3 media is enabled.
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
@@ -357,23 +357,25 @@ CONTACT_ADDRESS = config("CONTACT_ADDRESS", default="123 Main St, Your City, ST 
 # S3 Media Storage
 # ======================================================================
 # Render has an ephemeral filesystem, so user-uploaded images/files should
-# live in S3. Keep static files on WhiteNoise; only uploaded media uses S3.
+# Uploaded media on S3 -----------------------------------------------------
+# Static assets stay on WhiteNoise. User/admin-uploaded media such as plan
+# images, gallery images, about photos, and brand logos are served from S3.
 #
 # Required Render env vars:
-#   USE_S3_MEDIA=True
 #   AWS_ACCESS_KEY_ID=<IAM access key>
 #   AWS_SECRET_ACCESS_KEY=<IAM secret key>
 #   AWS_STORAGE_BUCKET_NAME=phd-media-prod
 #   AWS_S3_REGION_NAME=us-east-1
+#
+# Optional:
+#   USE_S3_MEDIA=True
+#   AWS_S3_CUSTOM_DOMAIN=phd-media-prod.s3.us-east-1.amazonaws.com
 
 RUNNING_ON_RENDER = bool(os.environ.get("RENDER")) or bool(RENDER_EXTERNAL_HOSTNAME)
-USE_S3_MEDIA = config("USE_S3_MEDIA", cast=bool, default=(RUNNING_ON_RENDER or not DEBUG))
 AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID", default="")
 AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY", default="")
 AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME", default="phd-media-prod")
 AWS_S3_REGION_NAME = config("AWS_S3_REGION_NAME", default="us-east-1")
-# Use the regional endpoint. This avoids redirects and keeps generated image URLs
-# consistent with the bucket region shown in AWS/S3.
 AWS_S3_CUSTOM_DOMAIN = config(
     "AWS_S3_CUSTOM_DOMAIN",
     default=f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com",
@@ -385,6 +387,12 @@ AWS_S3_FILE_OVERWRITE = False
 AWS_S3_OBJECT_PARAMETERS = {
     "CacheControl": "max-age=86400",
 }
+
+# Turn S3 on automatically in production when the bucket/credentials exist.
+# This prevents Render from silently falling back to local /media/ URLs if
+# USE_S3_MEDIA was forgotten. Set USE_S3_MEDIA=False only for local dev.
+S3_ENV_PRESENT = bool(AWS_STORAGE_BUCKET_NAME and AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY)
+USE_S3_MEDIA = config("USE_S3_MEDIA", cast=bool, default=(S3_ENV_PRESENT or RUNNING_ON_RENDER or not DEBUG))
 
 if USE_S3_MEDIA:
     MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
@@ -398,6 +406,5 @@ if USE_S3_MEDIA:
             "querystring_auth": False,
             "file_overwrite": False,
             "addressing_style": AWS_S3_ADDRESSING_STYLE,
-            "custom_domain": AWS_S3_CUSTOM_DOMAIN,
         },
     }
