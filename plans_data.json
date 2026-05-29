@@ -1,0 +1,3533 @@
+[
+{
+  "model": "plans.housestyle",
+  "pk": 1,
+  "fields": {
+    "style_name": "Colonial",
+    "slug": "colonial",
+    "description": "",
+    "style_image": "",
+    "order": 1
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 2,
+  "fields": {
+    "style_name": "Cape Cod",
+    "slug": "cape-cod",
+    "description": "",
+    "style_image": "",
+    "order": 2
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 3,
+  "fields": {
+    "style_name": "Farmhouse",
+    "slug": "farmhouse",
+    "description": "",
+    "style_image": "",
+    "order": 3
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 4,
+  "fields": {
+    "style_name": "Modern Farmhouse",
+    "slug": "modern-farmhouse",
+    "description": "",
+    "style_image": "",
+    "order": 4
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 5,
+  "fields": {
+    "style_name": "Craftsman",
+    "slug": "craftsman",
+    "description": "",
+    "style_image": "",
+    "order": 5
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 6,
+  "fields": {
+    "style_name": "Ranch",
+    "slug": "ranch",
+    "description": "",
+    "style_image": "",
+    "order": 6
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 7,
+  "fields": {
+    "style_name": "Split Level",
+    "slug": "split-level",
+    "description": "",
+    "style_image": "",
+    "order": 7
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 8,
+  "fields": {
+    "style_name": "Contemporary",
+    "slug": "contemporary",
+    "description": "",
+    "style_image": "",
+    "order": 8
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 9,
+  "fields": {
+    "style_name": "Modern",
+    "slug": "modern",
+    "description": "",
+    "style_image": "",
+    "order": 9
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 10,
+  "fields": {
+    "style_name": "Traditional",
+    "slug": "traditional",
+    "description": "",
+    "style_image": "",
+    "order": 10
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 11,
+  "fields": {
+    "style_name": "Tudor",
+    "slug": "tudor",
+    "description": "",
+    "style_image": "",
+    "order": 11
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 12,
+  "fields": {
+    "style_name": "Cottage",
+    "slug": "cottage",
+    "description": "",
+    "style_image": "",
+    "order": 12
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 13,
+  "fields": {
+    "style_name": "Bungalow",
+    "slug": "bungalow",
+    "description": "",
+    "style_image": "",
+    "order": 13
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 14,
+  "fields": {
+    "style_name": "Victorian",
+    "slug": "victorian",
+    "description": "",
+    "style_image": "",
+    "order": 14
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 15,
+  "fields": {
+    "style_name": "Mediterranean",
+    "slug": "mediterranean",
+    "description": "",
+    "style_image": "",
+    "order": 15
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 16,
+  "fields": {
+    "style_name": "Spanish",
+    "slug": "spanish",
+    "description": "",
+    "style_image": "",
+    "order": 16
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 17,
+  "fields": {
+    "style_name": "French Country",
+    "slug": "french-country",
+    "description": "",
+    "style_image": "",
+    "order": 17
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 18,
+  "fields": {
+    "style_name": "Beach / Coastal",
+    "slug": "beach-coastal",
+    "description": "",
+    "style_image": "",
+    "order": 18
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 19,
+  "fields": {
+    "style_name": "Mountain / Rustic",
+    "slug": "mountain-rustic",
+    "description": "",
+    "style_image": "",
+    "order": 19
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 20,
+  "fields": {
+    "style_name": "Barndominium",
+    "slug": "barndominium",
+    "description": "",
+    "style_image": "",
+    "order": 20
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 21,
+  "fields": {
+    "style_name": "Duplex",
+    "slug": "duplex",
+    "description": "",
+    "style_image": "",
+    "order": 21
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 22,
+  "fields": {
+    "style_name": "Townhouse / Rowhouse",
+    "slug": "townhouse-rowhouse",
+    "description": "",
+    "style_image": "",
+    "order": 22
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 23,
+  "fields": {
+    "style_name": "A-Frame",
+    "slug": "a-frame",
+    "description": "",
+    "style_image": "",
+    "order": 23
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 24,
+  "fields": {
+    "style_name": "Scandinavian",
+    "slug": "scandinavian",
+    "description": "",
+    "style_image": "",
+    "order": 24
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 25,
+  "fields": {
+    "style_name": "Mid-Century Modern",
+    "slug": "mid-century-modern",
+    "description": "",
+    "style_image": "",
+    "order": 25
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 26,
+  "fields": {
+    "style_name": "Prairie",
+    "slug": "prairie",
+    "description": "",
+    "style_image": "",
+    "order": 26
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 27,
+  "fields": {
+    "style_name": "Southwest / Pueblo",
+    "slug": "southwest-pueblo",
+    "description": "",
+    "style_image": "",
+    "order": 27
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 28,
+  "fields": {
+    "style_name": "Low Country",
+    "slug": "low-country",
+    "description": "",
+    "style_image": "",
+    "order": 28
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 29,
+  "fields": {
+    "style_name": "Lake House",
+    "slug": "lake-house",
+    "description": "",
+    "style_image": "",
+    "order": 29
+  }
+},
+{
+  "model": "plans.housestyle",
+  "pk": 30,
+  "fields": {
+    "style_name": "Carriage House / ADU",
+    "slug": "carriage-house-adu",
+    "description": "",
+    "style_image": "",
+    "order": 30
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 1,
+  "fields": {
+    "plan_number": "180301",
+    "slug": "180301",
+    "square_footage": 2176,
+    "bedrooms": 4,
+    "bathrooms": "2.5",
+    "stories": 2,
+    "garage_stalls": 2,
+    "house_width_in": 768,
+    "house_depth_in": 546,
+    "description": "Two story 2,176 sq/ft colonial with 4 bedrooms and 2.5 bathrooms.",
+    "sku": null,
+    "meta_description": "house plan",
+    "plan_price": "1088.00",
+    "main_image": "plans/main/180301p_BufUFUa.png",
+    "is_available": true,
+    "is_featured": false,
+    "created_date": "2025-08-21T19:05:02.462Z",
+    "modified_date": "2026-01-23T15:51:00.755Z",
+    "house_styles": [
+      1
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 2,
+  "fields": {
+    "plan_number": "240201",
+    "slug": "240201",
+    "square_footage": 3910,
+    "bedrooms": 4,
+    "bathrooms": "3.5",
+    "stories": 2,
+    "garage_stalls": 3,
+    "house_width_in": 900,
+    "house_depth_in": 672,
+    "description": "Two story 3,910 sq/ft colonial with 4 bedrooms and 3.5 bathrooms. 1 bedroom ADU located above garage.",
+    "sku": null,
+    "meta_description": "house plan",
+    "plan_price": "1955.00",
+    "main_image": "plans/main/240201p_itBveDb.png",
+    "is_available": true,
+    "is_featured": false,
+    "created_date": "2025-08-21T19:07:37.778Z",
+    "modified_date": "2026-01-23T15:51:17.423Z",
+    "house_styles": [
+      1,
+      4
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 3,
+  "fields": {
+    "plan_number": "240302",
+    "slug": "240302",
+    "square_footage": 3006,
+    "bedrooms": 4,
+    "bathrooms": "2.5",
+    "stories": 2,
+    "garage_stalls": 2,
+    "house_width_in": 792,
+    "house_depth_in": 508,
+    "description": "Two story 3,006 sq/ft colonial with 4 bedrooms and 2.5 bathrooms.",
+    "sku": null,
+    "meta_description": "house plan",
+    "plan_price": "1503.00",
+    "main_image": "plans/main/240302p_K4nehAL.png",
+    "is_available": true,
+    "is_featured": false,
+    "created_date": "2025-08-22T18:26:22.172Z",
+    "modified_date": "2026-01-23T15:51:28.402Z",
+    "house_styles": [
+      1
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 4,
+  "fields": {
+    "plan_number": "240303",
+    "slug": "240303",
+    "square_footage": 4322,
+    "bedrooms": 4,
+    "bathrooms": "3.5",
+    "stories": 2,
+    "garage_stalls": 3,
+    "house_width_in": 1086,
+    "house_depth_in": 582,
+    "description": "Two story 4,322 sq/ft colonial with 4 bedrooms and 3.5 bathrooms.",
+    "sku": null,
+    "meta_description": "house plan",
+    "plan_price": "2161.00",
+    "main_image": "plans/main/240303p.png",
+    "is_available": true,
+    "is_featured": false,
+    "created_date": "2025-08-22T18:30:39.420Z",
+    "modified_date": "2026-01-23T15:50:48.252Z",
+    "house_styles": [
+      1
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 5,
+  "fields": {
+    "plan_number": "240304",
+    "slug": "240304",
+    "square_footage": 1800,
+    "bedrooms": 4,
+    "bathrooms": "3.0",
+    "stories": 1,
+    "garage_stalls": 2,
+    "house_width_in": 1080,
+    "house_depth_in": 360,
+    "description": "One story 1,800 sq/ft ranch with 4 bedrooms and 3 bathrooms.",
+    "sku": null,
+    "meta_description": "house plan",
+    "plan_price": "1000.00",
+    "main_image": "plans/main/240304p.png",
+    "is_available": true,
+    "is_featured": false,
+    "created_date": "2025-08-22T18:56:41.162Z",
+    "modified_date": "2026-01-23T15:51:51.922Z",
+    "house_styles": [
+      6
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 6,
+  "fields": {
+    "plan_number": "240306",
+    "slug": "240306",
+    "square_footage": 1920,
+    "bedrooms": 3,
+    "bathrooms": "2.5",
+    "stories": 2,
+    "garage_stalls": 3,
+    "house_width_in": 738,
+    "house_depth_in": 504,
+    "description": "Two story 1,920 sq/ft colonial with 3 bedrooms and 2.5 bathrooms.",
+    "sku": null,
+    "meta_description": "house plan",
+    "plan_price": "1000.00",
+    "main_image": "plans/main/240306p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-08-22T19:05:33.932Z",
+    "modified_date": "2026-01-23T15:50:17.901Z",
+    "house_styles": [
+      1
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 7,
+  "fields": {
+    "plan_number": "240401",
+    "slug": "240401",
+    "square_footage": 1848,
+    "bedrooms": 3,
+    "bathrooms": "2.5",
+    "stories": 2,
+    "garage_stalls": 2,
+    "house_width_in": 708,
+    "house_depth_in": 506,
+    "description": "Two story 1,848 sq/ft colonial with 3 bedrooms and 2.5 bathrooms.",
+    "sku": null,
+    "meta_description": "house plan",
+    "plan_price": "1000.00",
+    "main_image": "plans/main/240401p.png",
+    "is_available": true,
+    "is_featured": false,
+    "created_date": "2025-08-22T19:15:06.961Z",
+    "modified_date": "2026-01-23T15:51:39.981Z",
+    "house_styles": [
+      1
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 8,
+  "fields": {
+    "plan_number": "240403",
+    "slug": "240403",
+    "square_footage": 3614,
+    "bedrooms": 4,
+    "bathrooms": "2.5",
+    "stories": 2,
+    "garage_stalls": 3,
+    "house_width_in": 1002,
+    "house_depth_in": 474,
+    "description": "Two story 3,614 sq/ft colonial with 4 bedrooms and 2.5 bathrooms.",
+    "sku": null,
+    "meta_description": "colonial house plan",
+    "plan_price": "1807.00",
+    "main_image": "plans/main/240403p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-08-23T11:31:04.447Z",
+    "modified_date": "2026-01-23T15:50:01.323Z",
+    "house_styles": [
+      1,
+      4
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 9,
+  "fields": {
+    "plan_number": "240406",
+    "slug": "240406",
+    "square_footage": 4237,
+    "bedrooms": 5,
+    "bathrooms": "3.5",
+    "stories": 2,
+    "garage_stalls": 2,
+    "house_width_in": 792,
+    "house_depth_in": 768,
+    "description": "Two story 4,237 sq/ft colonial with 5 bedrooms and 3.5 bathrooms. First floor master suite. Second floor ADU.",
+    "sku": null,
+    "meta_description": "colonial house plan",
+    "plan_price": "2118.00",
+    "main_image": "plans/main/240406p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-08-23T11:50:09.703Z",
+    "modified_date": "2026-01-23T15:49:47.204Z",
+    "house_styles": [
+      1,
+      4
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 10,
+  "fields": {
+    "plan_number": "240504",
+    "slug": "240504",
+    "square_footage": 1896,
+    "bedrooms": 3,
+    "bathrooms": "2.5",
+    "stories": 1,
+    "garage_stalls": 2,
+    "house_width_in": 852,
+    "house_depth_in": 692,
+    "description": "One story 1,896 sq/ft ranch with 3 bedrooms and 2.5 bathrooms.",
+    "sku": null,
+    "meta_description": "ranch house plan",
+    "plan_price": "1000.00",
+    "main_image": "plans/main/240504p.jpg",
+    "is_available": true,
+    "is_featured": false,
+    "created_date": "2025-08-24T16:46:07.797Z",
+    "modified_date": "2026-01-23T15:50:33.967Z",
+    "house_styles": [
+      4,
+      6
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 11,
+  "fields": {
+    "plan_number": "240506",
+    "slug": "240506",
+    "square_footage": 2586,
+    "bedrooms": 3,
+    "bathrooms": "2.5",
+    "stories": 1,
+    "garage_stalls": 2,
+    "house_width_in": 1089,
+    "house_depth_in": 720,
+    "description": "One story 2,586 sq/ft ranch with 3 bedrooms and 2.5 bathrooms.",
+    "sku": null,
+    "meta_description": "ranch house plan",
+    "plan_price": "1293.00",
+    "main_image": "plans/main/240506p.jpg",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-08-24T17:15:39.242Z",
+    "modified_date": "2026-01-23T15:49:28.496Z",
+    "house_styles": [
+      5,
+      6
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 12,
+  "fields": {
+    "plan_number": "240507",
+    "slug": "240507",
+    "square_footage": 3553,
+    "bedrooms": 4,
+    "bathrooms": "3.5",
+    "stories": 2,
+    "garage_stalls": 3,
+    "house_width_in": 744,
+    "house_depth_in": 744,
+    "description": "Two story 3,553 sq/ft modern farmhouse with 4 bedrooms and 3.5 bathrooms.",
+    "sku": null,
+    "meta_description": "colonial house plan",
+    "plan_price": "1776.50",
+    "main_image": "plans/main/240507p.jpg",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-08-24T17:38:40.319Z",
+    "modified_date": "2026-01-23T15:48:43.640Z",
+    "house_styles": [
+      1,
+      4
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 13,
+  "fields": {
+    "plan_number": "240508",
+    "slug": "240508",
+    "square_footage": 2302,
+    "bedrooms": 4,
+    "bathrooms": "2.5",
+    "stories": 2,
+    "garage_stalls": 2,
+    "house_width_in": 652,
+    "house_depth_in": 576,
+    "description": "Two story 2,302 sq/ft craftsman with 4 bedrooms 2.5 bathrooms.",
+    "sku": null,
+    "meta_description": "craftsman house plan",
+    "plan_price": "1151.00",
+    "main_image": "plans/main/240508p.jpg",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-08-24T17:56:02.753Z",
+    "modified_date": "2026-01-23T15:48:57.333Z",
+    "house_styles": [
+      1,
+      5
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 14,
+  "fields": {
+    "plan_number": "240510",
+    "slug": "240510",
+    "square_footage": 2787,
+    "bedrooms": 4,
+    "bathrooms": "2.5",
+    "stories": 2,
+    "garage_stalls": 2,
+    "house_width_in": 528,
+    "house_depth_in": 664,
+    "description": "Two story 2,787 sq/ft colonial with 4 bedrooms 2.5 bathrooms.",
+    "sku": null,
+    "meta_description": "colonial house plan",
+    "plan_price": "1394.00",
+    "main_image": "plans/main/240510p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-11-14T13:43:13.915Z",
+    "modified_date": "2026-01-23T15:48:28.472Z",
+    "house_styles": [
+      1
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 15,
+  "fields": {
+    "plan_number": "240603",
+    "slug": "240603",
+    "square_footage": 1884,
+    "bedrooms": 3,
+    "bathrooms": "2.0",
+    "stories": 1,
+    "garage_stalls": 3,
+    "house_width_in": 816,
+    "house_depth_in": 770,
+    "description": "One story 1,884 sq/ft ranch with 3 bedrooms and 2 bathrooms.",
+    "sku": null,
+    "meta_description": "ranch house plan",
+    "plan_price": "1000.00",
+    "main_image": "plans/main/240603p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-11-17T13:44:11.925Z",
+    "modified_date": "2026-01-23T15:48:09.766Z",
+    "house_styles": [
+      6
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 16,
+  "fields": {
+    "plan_number": "240604",
+    "slug": "240604",
+    "square_footage": 2196,
+    "bedrooms": 3,
+    "bathrooms": "1.5",
+    "stories": 2,
+    "garage_stalls": 2,
+    "house_width_in": 744,
+    "house_depth_in": 408,
+    "description": "Two story 2,196 sq/ft colonial with 3 bedrooms and 2.5 baths.",
+    "sku": null,
+    "meta_description": "colonial house plan",
+    "plan_price": "1098.00",
+    "main_image": "plans/main/240604p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-11-18T13:59:51.422Z",
+    "modified_date": "2026-01-23T15:47:50.038Z",
+    "house_styles": [
+      1
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 17,
+  "fields": {
+    "plan_number": "240605",
+    "slug": "240605",
+    "square_footage": 2780,
+    "bedrooms": 3,
+    "bathrooms": "2.5",
+    "stories": 2,
+    "garage_stalls": 2,
+    "house_width_in": 720,
+    "house_depth_in": 662,
+    "description": "Two story craftsman cape with 3 bedrooms and 2.5 bathrooms.",
+    "sku": null,
+    "meta_description": "cape house plan",
+    "plan_price": "1390.00",
+    "main_image": "plans/main/240605p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-11-19T13:54:24.601Z",
+    "modified_date": "2026-01-23T15:47:37.654Z",
+    "house_styles": [
+      2,
+      5
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 18,
+  "fields": {
+    "plan_number": "240608",
+    "slug": "240608",
+    "square_footage": 2475,
+    "bedrooms": 4,
+    "bathrooms": "2.5",
+    "stories": 2,
+    "garage_stalls": 2,
+    "house_width_in": 528,
+    "house_depth_in": 654,
+    "description": "Two story colonial with 4 bedrooms and 2.5 bathrooms.",
+    "sku": null,
+    "meta_description": "colonial house plan",
+    "plan_price": "1238.00",
+    "main_image": "plans/main/240608p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-11-20T13:45:47.600Z",
+    "modified_date": "2026-01-23T15:47:15.921Z",
+    "house_styles": [
+      1,
+      5
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 19,
+  "fields": {
+    "plan_number": "240705",
+    "slug": "240705",
+    "square_footage": 2577,
+    "bedrooms": 4,
+    "bathrooms": "2.5",
+    "stories": 2,
+    "garage_stalls": 2,
+    "house_width_in": 504,
+    "house_depth_in": 624,
+    "description": "Two story colonial with 4 bedrooms and 2.5 bathrooms.",
+    "sku": null,
+    "meta_description": "colonial house plan",
+    "plan_price": "1290.00",
+    "main_image": "plans/main/240705p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-11-21T13:24:13.444Z",
+    "modified_date": "2026-01-23T15:46:55.402Z",
+    "house_styles": [
+      1
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 20,
+  "fields": {
+    "plan_number": "240706",
+    "slug": "240706",
+    "square_footage": 3078,
+    "bedrooms": 3,
+    "bathrooms": "2.5",
+    "stories": 2,
+    "garage_stalls": 2,
+    "house_width_in": 792,
+    "house_depth_in": 576,
+    "description": "Two story colonial with 3 bedrooms and 2.5 bathrooms.",
+    "sku": null,
+    "meta_description": "colonial house plan",
+    "plan_price": "1539.00",
+    "main_image": "plans/main/240706p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-11-24T14:20:22.732Z",
+    "modified_date": "2026-01-23T15:46:38.585Z",
+    "house_styles": [
+      1
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 21,
+  "fields": {
+    "plan_number": "240802",
+    "slug": "240802",
+    "square_footage": 2601,
+    "bedrooms": 3,
+    "bathrooms": "2.5",
+    "stories": 2,
+    "garage_stalls": 2,
+    "house_width_in": 864,
+    "house_depth_in": 576,
+    "description": "Two story cape with 3 bedrooms and 2.5 bathrooms.",
+    "sku": null,
+    "meta_description": "cape house plan",
+    "plan_price": "1300.00",
+    "main_image": "plans/main/240802p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-11-26T13:49:11.206Z",
+    "modified_date": "2026-01-23T15:46:16.804Z",
+    "house_styles": [
+      2
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 22,
+  "fields": {
+    "plan_number": "240901",
+    "slug": "240901",
+    "square_footage": 2916,
+    "bedrooms": 4,
+    "bathrooms": "2.5",
+    "stories": 2,
+    "garage_stalls": 2,
+    "house_width_in": 864,
+    "house_depth_in": 504,
+    "description": "Two story modern farmhouse with 4 bedrooms and 2.5 bathrooms.",
+    "sku": null,
+    "meta_description": "Modern farmhouse plan",
+    "plan_price": "1458.00",
+    "main_image": "plans/main/240901p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-12-01T15:47:03.714Z",
+    "modified_date": "2026-01-23T15:46:00.241Z",
+    "house_styles": [
+      1,
+      4
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 23,
+  "fields": {
+    "plan_number": "240903",
+    "slug": "240903",
+    "square_footage": 2698,
+    "bedrooms": 4,
+    "bathrooms": "2.5",
+    "stories": 2,
+    "garage_stalls": 3,
+    "house_width_in": 630,
+    "house_depth_in": 906,
+    "description": "Two story craftsman with 3 bedrooms and 2.5 bathrooms.",
+    "sku": null,
+    "meta_description": "craftsman house plan",
+    "plan_price": "1350.00",
+    "main_image": "plans/main/240903p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-12-03T14:05:44.714Z",
+    "modified_date": "2026-01-23T15:45:16.607Z",
+    "house_styles": [
+      2,
+      5
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 24,
+  "fields": {
+    "plan_number": "240909",
+    "slug": "240909",
+    "square_footage": 3705,
+    "bedrooms": 4,
+    "bathrooms": "3.5",
+    "stories": 2,
+    "garage_stalls": 2,
+    "house_width_in": 744,
+    "house_depth_in": 528,
+    "description": "Two story Modern Farmhouse Colonial with 4 bedrooms and 3.5 bathrooms.",
+    "sku": null,
+    "meta_description": "Modern farmhouse plan",
+    "plan_price": "1851.99",
+    "main_image": "plans/main/240909p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-12-05T14:16:36.013Z",
+    "modified_date": "2026-01-23T15:45:43.641Z",
+    "house_styles": [
+      1,
+      4
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 25,
+  "fields": {
+    "plan_number": "241003",
+    "slug": "241003",
+    "square_footage": 3148,
+    "bedrooms": 3,
+    "bathrooms": "2.5",
+    "stories": 1,
+    "garage_stalls": 3,
+    "house_width_in": 1020,
+    "house_depth_in": 1014,
+    "description": "One story ranch with 3 bedrooms and 2.5 bathrooms.",
+    "sku": null,
+    "meta_description": "ranch house plan",
+    "plan_price": "1574.00",
+    "main_image": "plans/main/241003p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-12-09T14:04:04.836Z",
+    "modified_date": "2026-01-23T15:45:28.373Z",
+    "house_styles": [
+      6
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 26,
+  "fields": {
+    "plan_number": "241102",
+    "slug": "241102",
+    "square_footage": 7639,
+    "bedrooms": 5,
+    "bathrooms": "4.5",
+    "stories": 3,
+    "garage_stalls": 3,
+    "house_width_in": 1364,
+    "house_depth_in": 861,
+    "description": "Three story Modern Farmhouse with 5 bedrooms and 4.5 bathrooms.",
+    "sku": null,
+    "meta_description": "Modern farmhouse plan",
+    "plan_price": "3820.00",
+    "main_image": "plans/main/241102p.jpg",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-12-10T15:07:38.471Z",
+    "modified_date": "2026-01-23T15:44:14.289Z",
+    "house_styles": [
+      2,
+      4
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 27,
+  "fields": {
+    "plan_number": "241103",
+    "slug": "241103",
+    "square_footage": 2535,
+    "bedrooms": 3,
+    "bathrooms": "2.0",
+    "stories": 2,
+    "garage_stalls": 2,
+    "house_width_in": 744,
+    "house_depth_in": 739,
+    "description": "One story Modern Farmhouse Ranch with bonus room over garage. The house has 3 bedrooms and 2 bathrooms.",
+    "sku": null,
+    "meta_description": "Modern farmhouse ranch plan",
+    "plan_price": "1268.00",
+    "main_image": "plans/main/241103p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-12-11T14:18:39.449Z",
+    "modified_date": "2026-01-23T15:43:29.872Z",
+    "house_styles": [
+      4,
+      6
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 28,
+  "fields": {
+    "plan_number": "241104",
+    "slug": "241104",
+    "square_footage": 1852,
+    "bedrooms": 3,
+    "bathrooms": "2.5",
+    "stories": 1,
+    "garage_stalls": 2,
+    "house_width_in": 772,
+    "house_depth_in": 792,
+    "description": "One story ranch with 3 bedrooms and 2.5 bathrooms.",
+    "sku": null,
+    "meta_description": "ranch house plan",
+    "plan_price": "1000.00",
+    "main_image": "plans/main/241104p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-12-12T13:54:00.527Z",
+    "modified_date": "2026-01-23T15:43:13.524Z",
+    "house_styles": [
+      6
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 29,
+  "fields": {
+    "plan_number": "241106",
+    "slug": "241106",
+    "square_footage": 2417,
+    "bedrooms": 3,
+    "bathrooms": "2.5",
+    "stories": 2,
+    "garage_stalls": 2,
+    "house_width_in": 864,
+    "house_depth_in": 480,
+    "description": "Two story colonial with 3 bedrooms and 2.5 bathrooms.",
+    "sku": null,
+    "meta_description": "colonial house plan",
+    "plan_price": "1209.98",
+    "main_image": "plans/main/241106p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-12-17T14:09:56.567Z",
+    "modified_date": "2026-01-23T15:42:59.091Z",
+    "house_styles": [
+      1
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 30,
+  "fields": {
+    "plan_number": "241109",
+    "slug": "241109",
+    "square_footage": 6513,
+    "bedrooms": 4,
+    "bathrooms": "5.0",
+    "stories": 3,
+    "garage_stalls": 3,
+    "house_width_in": 1320,
+    "house_depth_in": 990,
+    "description": "Three story Modern Farmhouse with 4 bedrooms and 5 bathrooms.",
+    "sku": null,
+    "meta_description": "Modern farmhouse plan",
+    "plan_price": "3256.00",
+    "main_image": "plans/main/241109p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2025-12-18T13:55:26.633Z",
+    "modified_date": "2026-01-23T15:41:24.332Z",
+    "house_styles": [
+      1,
+      4
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 31,
+  "fields": {
+    "plan_number": "241204",
+    "slug": "241204",
+    "square_footage": 2015,
+    "bedrooms": 3,
+    "bathrooms": "2.0",
+    "stories": 1,
+    "garage_stalls": 2,
+    "house_width_in": 894,
+    "house_depth_in": 696,
+    "description": "One story ranch with 3 bedrooms and 2 bathrooms.",
+    "sku": null,
+    "meta_description": "ranch house plan",
+    "plan_price": "1008.00",
+    "main_image": "plans/main/241204p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2026-01-06T14:17:06.436Z",
+    "modified_date": "2026-01-23T15:40:38.881Z",
+    "house_styles": [
+      6
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 32,
+  "fields": {
+    "plan_number": "251204",
+    "slug": "251204",
+    "square_footage": 896,
+    "bedrooms": 1,
+    "bathrooms": "1.0",
+    "stories": 1,
+    "garage_stalls": 0,
+    "house_width_in": 384,
+    "house_depth_in": 336,
+    "description": "One story ranch ADU with 1 bedroom and 1 bathroom.",
+    "sku": null,
+    "meta_description": "ADU plan",
+    "plan_price": "672.00",
+    "main_image": "plans/main/251204p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2026-01-08T14:22:20.909Z",
+    "modified_date": "2026-01-23T15:39:51.630Z",
+    "house_styles": [
+      4,
+      6,
+      30
+    ]
+  }
+},
+{
+  "model": "plans.plans",
+  "pk": 33,
+  "fields": {
+    "plan_number": "250101",
+    "slug": "250101",
+    "square_footage": 2265,
+    "bedrooms": 3,
+    "bathrooms": "2.0",
+    "stories": 1,
+    "garage_stalls": 2,
+    "house_width_in": 744,
+    "house_depth_in": 756,
+    "description": "One story, 2265 sq/ft modern farmhouse with 3 bedrooms and 2 bathrooms.",
+    "sku": null,
+    "meta_description": "Modern farmhouse plan",
+    "plan_price": "1132.00",
+    "main_image": "plans/main/250101p.png",
+    "is_available": true,
+    "is_featured": true,
+    "created_date": "2026-01-12T13:40:03.694Z",
+    "modified_date": "2026-01-23T15:39:20.230Z",
+    "house_styles": [
+      4,
+      6
+    ]
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 1,
+  "fields": {
+    "plan": 1,
+    "image": "plans/gallery/1st_Floor_t3SkgX4.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-21T19:05:02.408Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 2,
+  "fields": {
+    "plan": 1,
+    "image": "plans/gallery/2nd_Floor_uMFnfVW.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-21T19:05:02.409Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 3,
+  "fields": {
+    "plan": 1,
+    "image": "plans/gallery/Front_Elevation_Vps9H6B.JPG",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-21T19:05:02.409Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 4,
+  "fields": {
+    "plan": 1,
+    "image": "plans/gallery/Rear_Elevation_fRAJhpD.JPG",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-21T19:05:02.409Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 5,
+  "fields": {
+    "plan": 1,
+    "image": "plans/gallery/Left_Elevation_0CLTF5V.JPG",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-21T19:05:02.409Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 6,
+  "fields": {
+    "plan": 1,
+    "image": "plans/gallery/Right_Elevation_xM6uaMh.JPG",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-21T19:05:02.410Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 7,
+  "fields": {
+    "plan": 2,
+    "image": "plans/gallery/240201_fl1_bf7SD8x.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-21T19:07:37.736Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 8,
+  "fields": {
+    "plan": 2,
+    "image": "plans/gallery/240201_fl2_B851xCA.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-21T19:07:37.736Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 9,
+  "fields": {
+    "plan": 2,
+    "image": "plans/gallery/240201_fe_TTHPZZe.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-21T19:07:37.736Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 10,
+  "fields": {
+    "plan": 2,
+    "image": "plans/gallery/240201_re_aWCSu71.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-21T19:07:37.736Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 11,
+  "fields": {
+    "plan": 2,
+    "image": "plans/gallery/240201_le_frPaBqx.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-21T19:07:37.737Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 12,
+  "fields": {
+    "plan": 2,
+    "image": "plans/gallery/240201_rte_74KkoeR.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-21T19:07:37.737Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 13,
+  "fields": {
+    "plan": 3,
+    "image": "plans/gallery/240302_fl1_rge_8xOhSYX.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-22T18:26:22.167Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 14,
+  "fields": {
+    "plan": 3,
+    "image": "plans/gallery/240302_fl2_rge_Hjmkaxe.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-22T18:26:22.167Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 15,
+  "fields": {
+    "plan": 3,
+    "image": "plans/gallery/240302_fe_yOQBJjH.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-22T18:26:22.167Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 16,
+  "fields": {
+    "plan": 3,
+    "image": "plans/gallery/240302_re_lY7za8L.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-22T18:26:22.167Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 17,
+  "fields": {
+    "plan": 3,
+    "image": "plans/gallery/240302_le_wSJ639v.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-22T18:26:22.167Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 18,
+  "fields": {
+    "plan": 3,
+    "image": "plans/gallery/240302_rte_Xii1k5c.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-22T18:26:22.168Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 19,
+  "fields": {
+    "plan": 4,
+    "image": "plans/gallery/240303_fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-22T18:30:39.415Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 20,
+  "fields": {
+    "plan": 4,
+    "image": "plans/gallery/240303_fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-22T18:30:39.416Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 21,
+  "fields": {
+    "plan": 4,
+    "image": "plans/gallery/240303_fe.jpg",
+    "kind": "floor",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-22T18:30:39.416Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 22,
+  "fields": {
+    "plan": 4,
+    "image": "plans/gallery/240303_re.jpg",
+    "kind": "floor",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-22T18:30:39.416Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 23,
+  "fields": {
+    "plan": 4,
+    "image": "plans/gallery/240303_le.jpg",
+    "kind": "floor",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-22T18:30:39.416Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 24,
+  "fields": {
+    "plan": 4,
+    "image": "plans/gallery/240303_rte.jpg",
+    "kind": "floor",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-22T18:30:39.417Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 25,
+  "fields": {
+    "plan": 5,
+    "image": "plans/gallery/240304fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-22T18:56:41.158Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 26,
+  "fields": {
+    "plan": 5,
+    "image": "plans/gallery/240304fe.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-22T18:56:41.158Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 27,
+  "fields": {
+    "plan": 5,
+    "image": "plans/gallery/240304re.jpg",
+    "kind": "elevation",
+    "caption": "Rear elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-22T18:56:41.158Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 28,
+  "fields": {
+    "plan": 5,
+    "image": "plans/gallery/240304le.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-22T18:56:41.159Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 29,
+  "fields": {
+    "plan": 5,
+    "image": "plans/gallery/240304rte.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-22T18:56:41.159Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 30,
+  "fields": {
+    "plan": 6,
+    "image": "plans/gallery/240306fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-22T19:05:33.884Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 31,
+  "fields": {
+    "plan": 6,
+    "image": "plans/gallery/240306fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-22T19:05:33.884Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 32,
+  "fields": {
+    "plan": 6,
+    "image": "plans/gallery/240306fe.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-22T19:05:33.884Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 33,
+  "fields": {
+    "plan": 6,
+    "image": "plans/gallery/240306re.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-22T19:05:33.884Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 34,
+  "fields": {
+    "plan": 6,
+    "image": "plans/gallery/240306le.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-22T19:05:33.885Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 35,
+  "fields": {
+    "plan": 6,
+    "image": "plans/gallery/240306rte.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-22T19:05:33.885Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 36,
+  "fields": {
+    "plan": 7,
+    "image": "plans/gallery/240401fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-22T19:15:06.957Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 37,
+  "fields": {
+    "plan": 7,
+    "image": "plans/gallery/240401fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-22T19:15:06.958Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 38,
+  "fields": {
+    "plan": 7,
+    "image": "plans/gallery/240401fe.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-22T19:15:06.958Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 39,
+  "fields": {
+    "plan": 7,
+    "image": "plans/gallery/240401re.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-22T19:15:06.958Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 40,
+  "fields": {
+    "plan": 7,
+    "image": "plans/gallery/240401le.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-22T19:15:06.958Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 41,
+  "fields": {
+    "plan": 7,
+    "image": "plans/gallery/240401rte.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-22T19:15:06.958Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 42,
+  "fields": {
+    "plan": 8,
+    "image": "plans/gallery/240403fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-23T11:31:04.440Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 43,
+  "fields": {
+    "plan": 8,
+    "image": "plans/gallery/240403fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-23T11:31:04.441Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 44,
+  "fields": {
+    "plan": 8,
+    "image": "plans/gallery/240403fe.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-23T11:31:04.441Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 45,
+  "fields": {
+    "plan": 8,
+    "image": "plans/gallery/240403re.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-23T11:31:04.441Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 46,
+  "fields": {
+    "plan": 8,
+    "image": "plans/gallery/240403le.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-23T11:31:04.441Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 47,
+  "fields": {
+    "plan": 8,
+    "image": "plans/gallery/240403rte.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-23T11:31:04.441Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 48,
+  "fields": {
+    "plan": 9,
+    "image": "plans/gallery/240406fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-23T11:50:09.698Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 49,
+  "fields": {
+    "plan": 9,
+    "image": "plans/gallery/240406fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-23T11:50:09.698Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 50,
+  "fields": {
+    "plan": 9,
+    "image": "plans/gallery/240406fe.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-23T11:50:09.698Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 51,
+  "fields": {
+    "plan": 9,
+    "image": "plans/gallery/240406re.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-23T11:50:09.698Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 52,
+  "fields": {
+    "plan": 9,
+    "image": "plans/gallery/240406le.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-23T11:50:09.699Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 53,
+  "fields": {
+    "plan": 9,
+    "image": "plans/gallery/240406rte.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-23T11:50:09.699Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 54,
+  "fields": {
+    "plan": 10,
+    "image": "plans/gallery/240504fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-24T16:46:07.793Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 55,
+  "fields": {
+    "plan": 10,
+    "image": "plans/gallery/240504fe.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-24T16:46:07.793Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 56,
+  "fields": {
+    "plan": 10,
+    "image": "plans/gallery/240504re.jpg",
+    "kind": "elevation",
+    "caption": "Rear elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-24T16:46:07.793Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 57,
+  "fields": {
+    "plan": 10,
+    "image": "plans/gallery/240504le.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-24T16:46:07.794Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 58,
+  "fields": {
+    "plan": 10,
+    "image": "plans/gallery/240504rte.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-24T16:46:07.794Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 59,
+  "fields": {
+    "plan": 11,
+    "image": "plans/gallery/240506fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-24T17:15:39.238Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 60,
+  "fields": {
+    "plan": 11,
+    "image": "plans/gallery/240506fe.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-24T17:15:39.238Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 61,
+  "fields": {
+    "plan": 11,
+    "image": "plans/gallery/240506re.jpg",
+    "kind": "elevation",
+    "caption": "Rear elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-24T17:15:39.239Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 62,
+  "fields": {
+    "plan": 11,
+    "image": "plans/gallery/240506le.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-24T17:15:39.239Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 63,
+  "fields": {
+    "plan": 11,
+    "image": "plans/gallery/240506rte.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-24T17:15:39.239Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 64,
+  "fields": {
+    "plan": 12,
+    "image": "plans/gallery/240507fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-24T17:38:40.315Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 65,
+  "fields": {
+    "plan": 12,
+    "image": "plans/gallery/240507fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-24T17:38:40.316Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 66,
+  "fields": {
+    "plan": 12,
+    "image": "plans/gallery/240507fe.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-24T17:38:40.316Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 67,
+  "fields": {
+    "plan": 12,
+    "image": "plans/gallery/240507re.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-24T17:38:40.316Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 68,
+  "fields": {
+    "plan": 12,
+    "image": "plans/gallery/240507le.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-24T17:38:40.316Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 69,
+  "fields": {
+    "plan": 12,
+    "image": "plans/gallery/240507rte.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-24T17:38:40.316Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 70,
+  "fields": {
+    "plan": 13,
+    "image": "plans/gallery/240508fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-24T17:56:02.749Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 71,
+  "fields": {
+    "plan": 13,
+    "image": "plans/gallery/240508fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-08-24T17:56:02.749Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 72,
+  "fields": {
+    "plan": 13,
+    "image": "plans/gallery/240508fe.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-24T17:56:02.749Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 73,
+  "fields": {
+    "plan": 13,
+    "image": "plans/gallery/240508re.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-24T17:56:02.749Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 74,
+  "fields": {
+    "plan": 13,
+    "image": "plans/gallery/240508le.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-24T17:56:02.749Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 75,
+  "fields": {
+    "plan": 13,
+    "image": "plans/gallery/240508rte.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-08-24T17:56:02.750Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 76,
+  "fields": {
+    "plan": 14,
+    "image": "plans/gallery/240510fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-11-14T14:41:07.592Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 77,
+  "fields": {
+    "plan": 14,
+    "image": "plans/gallery/240510fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-11-14T14:41:07.593Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 78,
+  "fields": {
+    "plan": 14,
+    "image": "plans/gallery/240510f.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-14T14:41:07.593Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 79,
+  "fields": {
+    "plan": 14,
+    "image": "plans/gallery/240510r.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-14T14:41:07.593Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 80,
+  "fields": {
+    "plan": 14,
+    "image": "plans/gallery/240510l.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-14T14:41:07.593Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 81,
+  "fields": {
+    "plan": 14,
+    "image": "plans/gallery/240510re.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-14T14:41:07.593Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 82,
+  "fields": {
+    "plan": 15,
+    "image": "plans/gallery/240603fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-11-17T13:44:11.770Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 83,
+  "fields": {
+    "plan": 15,
+    "image": "plans/gallery/240603f.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-17T13:44:11.771Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 84,
+  "fields": {
+    "plan": 15,
+    "image": "plans/gallery/240603r.jpg",
+    "kind": "elevation",
+    "caption": "Rear elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-17T13:44:11.771Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 85,
+  "fields": {
+    "plan": 15,
+    "image": "plans/gallery/240603l.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-17T13:44:11.771Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 86,
+  "fields": {
+    "plan": 15,
+    "image": "plans/gallery/240603re.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-17T13:44:11.771Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 87,
+  "fields": {
+    "plan": 16,
+    "image": "plans/gallery/240604fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-11-18T13:59:51.418Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 88,
+  "fields": {
+    "plan": 16,
+    "image": "plans/gallery/240604fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-11-18T13:59:51.418Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 89,
+  "fields": {
+    "plan": 16,
+    "image": "plans/gallery/240604f.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-18T13:59:51.418Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 90,
+  "fields": {
+    "plan": 16,
+    "image": "plans/gallery/240604r.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-18T13:59:51.418Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 91,
+  "fields": {
+    "plan": 16,
+    "image": "plans/gallery/240604l.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-18T13:59:51.419Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 92,
+  "fields": {
+    "plan": 16,
+    "image": "plans/gallery/240604re.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-18T13:59:51.419Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 93,
+  "fields": {
+    "plan": 17,
+    "image": "plans/gallery/240605fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-11-19T13:54:24.596Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 94,
+  "fields": {
+    "plan": 17,
+    "image": "plans/gallery/240605fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-11-19T13:54:24.596Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 95,
+  "fields": {
+    "plan": 17,
+    "image": "plans/gallery/240605f.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-19T13:54:24.597Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 96,
+  "fields": {
+    "plan": 17,
+    "image": "plans/gallery/240605r.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-19T13:54:24.597Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 97,
+  "fields": {
+    "plan": 17,
+    "image": "plans/gallery/240605l.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-19T13:54:24.597Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 98,
+  "fields": {
+    "plan": 17,
+    "image": "plans/gallery/240605re.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-19T13:54:24.597Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 99,
+  "fields": {
+    "plan": 18,
+    "image": "plans/gallery/240608fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-11-20T13:45:47.595Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 100,
+  "fields": {
+    "plan": 18,
+    "image": "plans/gallery/240608fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-11-20T13:45:47.595Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 101,
+  "fields": {
+    "plan": 18,
+    "image": "plans/gallery/240608f.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-20T13:45:47.595Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 102,
+  "fields": {
+    "plan": 18,
+    "image": "plans/gallery/240608r.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-20T13:45:47.595Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 103,
+  "fields": {
+    "plan": 18,
+    "image": "plans/gallery/240608l.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-20T13:45:47.595Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 104,
+  "fields": {
+    "plan": 18,
+    "image": "plans/gallery/240608re.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-20T13:45:47.596Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 105,
+  "fields": {
+    "plan": 19,
+    "image": "plans/gallery/240705fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-11-21T13:24:13.440Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 106,
+  "fields": {
+    "plan": 19,
+    "image": "plans/gallery/240705fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-11-21T13:24:13.440Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 107,
+  "fields": {
+    "plan": 19,
+    "image": "plans/gallery/240705f.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-21T13:24:13.440Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 108,
+  "fields": {
+    "plan": 19,
+    "image": "plans/gallery/240705r.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-21T13:24:13.440Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 109,
+  "fields": {
+    "plan": 19,
+    "image": "plans/gallery/240705l.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-21T13:24:13.441Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 110,
+  "fields": {
+    "plan": 19,
+    "image": "plans/gallery/240705re.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-21T13:24:13.441Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 111,
+  "fields": {
+    "plan": 20,
+    "image": "plans/gallery/240706fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-11-24T14:20:22.726Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 112,
+  "fields": {
+    "plan": 20,
+    "image": "plans/gallery/240706fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-11-24T14:20:22.726Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 113,
+  "fields": {
+    "plan": 20,
+    "image": "plans/gallery/240706f.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-24T14:20:22.726Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 114,
+  "fields": {
+    "plan": 20,
+    "image": "plans/gallery/240706r.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-24T14:20:22.726Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 115,
+  "fields": {
+    "plan": 20,
+    "image": "plans/gallery/240706l.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-24T14:20:22.727Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 116,
+  "fields": {
+    "plan": 20,
+    "image": "plans/gallery/240706re.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-24T14:20:22.727Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 117,
+  "fields": {
+    "plan": 21,
+    "image": "plans/gallery/240802fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-11-26T13:49:11.201Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 118,
+  "fields": {
+    "plan": 21,
+    "image": "plans/gallery/240802fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-11-26T13:49:11.201Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 119,
+  "fields": {
+    "plan": 21,
+    "image": "plans/gallery/240802f.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-26T13:49:11.202Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 120,
+  "fields": {
+    "plan": 21,
+    "image": "plans/gallery/240802r.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-26T13:49:11.202Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 121,
+  "fields": {
+    "plan": 21,
+    "image": "plans/gallery/240802l.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-26T13:49:11.202Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 122,
+  "fields": {
+    "plan": 21,
+    "image": "plans/gallery/240802re.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-11-26T13:49:11.202Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 123,
+  "fields": {
+    "plan": 22,
+    "image": "plans/gallery/240901fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-12-01T15:47:03.552Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 124,
+  "fields": {
+    "plan": 22,
+    "image": "plans/gallery/240901fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-12-01T15:47:03.552Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 125,
+  "fields": {
+    "plan": 22,
+    "image": "plans/gallery/240901f.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-01T15:47:03.552Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 126,
+  "fields": {
+    "plan": 22,
+    "image": "plans/gallery/240901r.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-01T15:47:03.553Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 127,
+  "fields": {
+    "plan": 22,
+    "image": "plans/gallery/240901l.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-01T15:47:03.553Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 128,
+  "fields": {
+    "plan": 22,
+    "image": "plans/gallery/240901re.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-01T15:47:03.553Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 129,
+  "fields": {
+    "plan": 23,
+    "image": "plans/gallery/240903fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-12-03T14:05:44.709Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 130,
+  "fields": {
+    "plan": 23,
+    "image": "plans/gallery/240903fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-12-03T14:05:44.710Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 131,
+  "fields": {
+    "plan": 23,
+    "image": "plans/gallery/240903f.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-03T14:05:44.710Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 132,
+  "fields": {
+    "plan": 23,
+    "image": "plans/gallery/240903r.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-03T14:05:44.710Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 133,
+  "fields": {
+    "plan": 23,
+    "image": "plans/gallery/240903l.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-03T14:05:44.710Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 134,
+  "fields": {
+    "plan": 23,
+    "image": "plans/gallery/240903re.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-03T14:05:44.710Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 135,
+  "fields": {
+    "plan": 24,
+    "image": "plans/gallery/240909fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-12-05T14:16:36.008Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 136,
+  "fields": {
+    "plan": 24,
+    "image": "plans/gallery/240909fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-12-05T14:16:36.009Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 137,
+  "fields": {
+    "plan": 24,
+    "image": "plans/gallery/240909f.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-05T14:16:36.009Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 138,
+  "fields": {
+    "plan": 24,
+    "image": "plans/gallery/240909r.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-05T14:16:36.009Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 139,
+  "fields": {
+    "plan": 24,
+    "image": "plans/gallery/240909l.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-05T14:16:36.009Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 140,
+  "fields": {
+    "plan": 24,
+    "image": "plans/gallery/240909re.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-05T14:16:36.010Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 141,
+  "fields": {
+    "plan": 25,
+    "image": "plans/gallery/241003fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-12-09T14:04:04.833Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 142,
+  "fields": {
+    "plan": 25,
+    "image": "plans/gallery/241003f.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-09T14:04:04.833Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 143,
+  "fields": {
+    "plan": 25,
+    "image": "plans/gallery/241003r.jpg",
+    "kind": "elevation",
+    "caption": "Rear elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-09T14:04:04.833Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 144,
+  "fields": {
+    "plan": 25,
+    "image": "plans/gallery/241003l.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-09T14:04:04.833Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 145,
+  "fields": {
+    "plan": 25,
+    "image": "plans/gallery/241003re.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-09T14:04:04.833Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 146,
+  "fields": {
+    "plan": 26,
+    "image": "plans/gallery/241102fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-12-10T15:07:38.465Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 147,
+  "fields": {
+    "plan": 26,
+    "image": "plans/gallery/241102fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-12-10T15:07:38.465Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 148,
+  "fields": {
+    "plan": 26,
+    "image": "plans/gallery/241102b.jpg",
+    "kind": "floor",
+    "caption": "Basement Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-12-10T15:07:38.465Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 149,
+  "fields": {
+    "plan": 26,
+    "image": "plans/gallery/241102f.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-10T15:07:38.466Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 150,
+  "fields": {
+    "plan": 26,
+    "image": "plans/gallery/241102r.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-10T15:07:38.466Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 151,
+  "fields": {
+    "plan": 26,
+    "image": "plans/gallery/241102l.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-10T15:07:38.466Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 152,
+  "fields": {
+    "plan": 26,
+    "image": "plans/gallery/241102re.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-10T15:07:38.466Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 153,
+  "fields": {
+    "plan": 27,
+    "image": "plans/gallery/241103fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-12-11T14:18:39.444Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 154,
+  "fields": {
+    "plan": 27,
+    "image": "plans/gallery/241103fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-12-11T14:18:39.444Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 155,
+  "fields": {
+    "plan": 27,
+    "image": "plans/gallery/241103f.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-11T14:18:39.444Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 156,
+  "fields": {
+    "plan": 27,
+    "image": "plans/gallery/241103r.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-11T14:18:39.444Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 157,
+  "fields": {
+    "plan": 27,
+    "image": "plans/gallery/241103l.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-11T14:18:39.444Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 158,
+  "fields": {
+    "plan": 27,
+    "image": "plans/gallery/241103re.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-11T14:18:39.445Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 159,
+  "fields": {
+    "plan": 28,
+    "image": "plans/gallery/241104fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-12-12T13:54:00.523Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 160,
+  "fields": {
+    "plan": 28,
+    "image": "plans/gallery/241104f.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-12T13:54:00.524Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 161,
+  "fields": {
+    "plan": 28,
+    "image": "plans/gallery/241104r.jpg",
+    "kind": "elevation",
+    "caption": "Rear elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-12T13:54:00.524Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 162,
+  "fields": {
+    "plan": 28,
+    "image": "plans/gallery/241104l.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-12T13:54:00.524Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 163,
+  "fields": {
+    "plan": 28,
+    "image": "plans/gallery/241104re.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-12T13:54:00.524Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 164,
+  "fields": {
+    "plan": 29,
+    "image": "plans/gallery/241106fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-12-17T14:09:56.562Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 165,
+  "fields": {
+    "plan": 29,
+    "image": "plans/gallery/241106fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-12-17T14:09:56.562Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 166,
+  "fields": {
+    "plan": 29,
+    "image": "plans/gallery/241106f.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-17T14:09:56.562Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 167,
+  "fields": {
+    "plan": 29,
+    "image": "plans/gallery/241106r.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-17T14:09:56.562Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 168,
+  "fields": {
+    "plan": 29,
+    "image": "plans/gallery/241106l.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-17T14:09:56.562Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 169,
+  "fields": {
+    "plan": 29,
+    "image": "plans/gallery/241106re.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-17T14:09:56.563Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 170,
+  "fields": {
+    "plan": 30,
+    "image": "plans/gallery/241109fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-12-18T13:55:26.626Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 171,
+  "fields": {
+    "plan": 30,
+    "image": "plans/gallery/241109fl2.jpg",
+    "kind": "floor",
+    "caption": "Second Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-12-18T13:55:26.627Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 172,
+  "fields": {
+    "plan": 30,
+    "image": "plans/gallery/241109b.jpg",
+    "kind": "floor",
+    "caption": "Basement Floor Plan",
+    "order": 0,
+    "uploaded_at": "2025-12-18T13:55:26.627Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 173,
+  "fields": {
+    "plan": 30,
+    "image": "plans/gallery/241109f.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-18T13:55:26.627Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 174,
+  "fields": {
+    "plan": 30,
+    "image": "plans/gallery/241109r.jpg",
+    "kind": "elevation",
+    "caption": "Rear Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-18T13:55:26.627Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 175,
+  "fields": {
+    "plan": 30,
+    "image": "plans/gallery/241109l.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-18T13:55:26.627Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 176,
+  "fields": {
+    "plan": 30,
+    "image": "plans/gallery/241109re.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2025-12-18T13:55:26.627Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 177,
+  "fields": {
+    "plan": 31,
+    "image": "plans/gallery/241204fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2026-01-06T14:17:06.433Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 178,
+  "fields": {
+    "plan": 31,
+    "image": "plans/gallery/241204f.jpg",
+    "kind": "floor",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2026-01-06T14:17:06.433Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 179,
+  "fields": {
+    "plan": 31,
+    "image": "plans/gallery/241204r.jpg",
+    "kind": "elevation",
+    "caption": "Rear elevation",
+    "order": 0,
+    "uploaded_at": "2026-01-06T14:17:06.433Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 180,
+  "fields": {
+    "plan": 31,
+    "image": "plans/gallery/241204l.jpg",
+    "kind": "floor",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2026-01-06T14:17:06.433Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 181,
+  "fields": {
+    "plan": 31,
+    "image": "plans/gallery/241204re.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2026-01-06T14:17:06.434Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 182,
+  "fields": {
+    "plan": 32,
+    "image": "plans/gallery/251204fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2026-01-08T14:22:20.904Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 183,
+  "fields": {
+    "plan": 32,
+    "image": "plans/gallery/251204f.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2026-01-08T14:22:20.904Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 184,
+  "fields": {
+    "plan": 32,
+    "image": "plans/gallery/251204r.jpg",
+    "kind": "elevation",
+    "caption": "Rear elevation",
+    "order": 0,
+    "uploaded_at": "2026-01-08T14:22:20.904Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 185,
+  "fields": {
+    "plan": 32,
+    "image": "plans/gallery/251204l.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2026-01-08T14:22:20.905Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 186,
+  "fields": {
+    "plan": 32,
+    "image": "plans/gallery/251204re.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2026-01-08T14:22:20.905Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 187,
+  "fields": {
+    "plan": 33,
+    "image": "plans/gallery/250101fl1.jpg",
+    "kind": "floor",
+    "caption": "First Floor Plan",
+    "order": 0,
+    "uploaded_at": "2026-01-12T13:40:03.691Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 188,
+  "fields": {
+    "plan": 33,
+    "image": "plans/gallery/250101f.jpg",
+    "kind": "elevation",
+    "caption": "Front Elevation",
+    "order": 0,
+    "uploaded_at": "2026-01-12T13:40:03.691Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 189,
+  "fields": {
+    "plan": 33,
+    "image": "plans/gallery/250101r.jpg",
+    "kind": "elevation",
+    "caption": "Rear elevation",
+    "order": 0,
+    "uploaded_at": "2026-01-12T13:40:03.691Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 190,
+  "fields": {
+    "plan": 33,
+    "image": "plans/gallery/250101l.jpg",
+    "kind": "elevation",
+    "caption": "Left Elevation",
+    "order": 0,
+    "uploaded_at": "2026-01-12T13:40:03.691Z"
+  }
+},
+{
+  "model": "plans.plangallery",
+  "pk": 191,
+  "fields": {
+    "plan": 33,
+    "image": "plans/gallery/250101re.jpg",
+    "kind": "elevation",
+    "caption": "Right Elevation",
+    "order": 0,
+    "uploaded_at": "2026-01-12T13:40:03.691Z"
+  }
+}
+]

@@ -5,7 +5,12 @@ from django.utils import timezone
 
 class PartnerAPIKey(models.Model):
     name = models.CharField(max_length=100, help_text="Partner site name")
-    key = models.CharField(max_length=64, unique=True, editable=False)
+    key = models.CharField(
+        max_length=64,
+        unique=True,
+        blank=True,
+        help_text="Optional. Leave blank to auto-generate on save.",
+    )
     allowed_origins = models.TextField(
         blank=True,
         help_text=(
