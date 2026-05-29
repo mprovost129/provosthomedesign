@@ -9,23 +9,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
-
-from billing.models import Client, Project, Invoice, Payment, Expense, ExpenseCategory, SystemSettings, ClientPlanFile, IncomingWorkLog
 from plans.models import Plans
-from timetracking.models import TimeEntry
 from .authentication import PartnerAPIKeyAuthentication, HasPartnerAPIKey
 from .serializers import (
     UserSerializer,
-    ClientSerializer,
-    ProjectSerializer,
-    InvoiceSerializer,
-    PaymentSerializer,
-    ExpenseSerializer,
-    ExpenseCategorySerializer,
-    TimeEntrySerializer,
-    SystemSettingsSerializer,
-    ClientPlanFileSerializer,
-    IncomingWorkLogSerializer,
     PlanSerializer,
 )
 
@@ -85,16 +72,6 @@ class DeviceTokenAuthView(ObtainAuthToken):
             "user": UserSerializer(user).data,
         })
 
-
-class ClientViewSet(UpdatedAfterMixin, viewsets.ModelViewSet):
-    queryset = Client.objects.all().select_related("user")
-    serializer_class = ClientSerializer
-
-
-class ProjectViewSet(UpdatedAfterMixin, viewsets.ModelViewSet):
-    queryset = Project.objects.all().select_related("client", "created_by", "closed_by")
-    serializer_class = ProjectSerializer
-
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def close(self, request, pk=None):
         project = self.get_object()
@@ -119,69 +96,6 @@ class ProjectViewSet(UpdatedAfterMixin, viewsets.ModelViewSet):
             project.status = "in_progress"
         project.save(update_fields=["is_closed", "closed_date", "closed_by", "status", "updated_at"])
         return Response(ProjectSerializer(project).data)
-
-
-class InvoiceViewSet(UpdatedAfterMixin, viewsets.ModelViewSet):
-    queryset = Invoice.objects.all().select_related("client", "project")
-    serializer_class = InvoiceSerializer
-
-
-class PaymentViewSet(UpdatedAfterMixin, viewsets.ReadOnlyModelViewSet):
-    queryset = Payment.objects.all().select_related("invoice", "invoice__client")
-    serializer_class = PaymentSerializer
-
-
-class ExpenseCategoryViewSet(UpdatedAfterMixin, viewsets.ModelViewSet):
-    queryset = ExpenseCategory.objects.all()
-    serializer_class = ExpenseCategorySerializer
-
-
-class ExpenseViewSet(UpdatedAfterMixin, viewsets.ModelViewSet):
-    queryset = Expense.objects.all().select_related("project", "client", "category", "approved_by", "created_by")
-    serializer_class = ExpenseSerializer
-
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
-
-    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
-    def approve(self, request, pk=None):
-        expense = self.get_object()
-        expense.status = "approved"
-        expense.approved_by = request.user
-        expense.approved_date = timezone.now()
-        expense.save(update_fields=["status", "approved_by", "approved_date"])
-        return Response(ExpenseSerializer(expense).data)
-
-
-class TimeEntryViewSet(UpdatedAfterMixin, viewsets.ModelViewSet):
-    queryset = TimeEntry.objects.all().select_related("project", "user", "invoice")
-    serializer_class = TimeEntrySerializer
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-
-class SystemSettingsViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = SystemSettings.objects.all()
-    serializer_class = SystemSettingsSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-
-class ClientPlanFileViewSet(UpdatedAfterMixin, viewsets.ModelViewSet):
-    queryset = ClientPlanFile.objects.all().select_related("client", "project", "uploaded_by")
-    serializer_class = ClientPlanFileSerializer
-
-    def perform_create(self, serializer):
-        serializer.save(uploaded_by=self.request.user)
-
-
-class IncomingWorkLogViewSet(viewsets.ModelViewSet):
-    queryset = IncomingWorkLog.objects.all().order_by('-created_at')
-    serializer_class = IncomingWorkLogSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
 
 
 # ---------------------------------------------------------------------------

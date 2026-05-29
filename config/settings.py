@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     "django_recaptcha",
     "corsheaders",
     "rest_framework", "rest_framework.authtoken",
-    "core", "pages", "plans", "billing", "timetracking", "help", "api"
+    "core", "pages", "plans", "help", "api"
 ]
 
 # Simple cache + defaults for sorl
