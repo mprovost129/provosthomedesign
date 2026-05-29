@@ -128,10 +128,11 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
+# Media defaults are local for development. Production/Render can switch
+# uploaded media to S3 by setting USE_S3_MEDIA=True.
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# Django 5 storages (recommended)
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
@@ -351,29 +352,47 @@ CONTACT_EMAIL = config("CONTACT_EMAIL", default=DEFAULT_FROM_EMAIL)
 CONTACT_PHONE = config("CONTACT_PHONE", default="(555) 123-4567")
 CONTACT_ADDRESS = config("CONTACT_ADDRESS", default="123 Main St, Your City, ST 12345")
 
-AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY")
-AWS_STORAGE_BUCKET_NAME = "phd-media-prod"
-AWS_S3_REGION_NAME = "us-east-1"
-AWS_S3_CUSTOM_DOMAIN = "https://phd-media-prod.s3.us-east-1.amazonaws.com"
+# ======================================================================
+# S3 Media Storage
+# ======================================================================
+# Render has an ephemeral filesystem, so user-uploaded images/files should
+# live in S3. Keep static files on WhiteNoise; only uploaded media uses S3.
+#
+# Required Render env vars:
+#   USE_S3_MEDIA=True
+#   AWS_ACCESS_KEY_ID=<IAM access key>
+#   AWS_SECRET_ACCESS_KEY=<IAM secret key>
+#   AWS_STORAGE_BUCKET_NAME=phd-media-prod
+#   AWS_S3_REGION_NAME=us-east-1
+
+USE_S3_MEDIA = config("USE_S3_MEDIA", cast=bool, default=not DEBUG)
+AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID", default="")
+AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY", default="")
+AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME", default="phd-media-prod")
+AWS_S3_REGION_NAME = config("AWS_S3_REGION_NAME", default="us-east-1")
+AWS_S3_CUSTOM_DOMAIN = config(
+    "AWS_S3_CUSTOM_DOMAIN",
+    default=f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
+    if AWS_S3_REGION_NAME == "us-east-1"
+    else f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com",
+)
 AWS_DEFAULT_ACL = None
 AWS_QUERYSTRING_AUTH = False
+AWS_S3_FILE_OVERWRITE = False
 AWS_S3_OBJECT_PARAMETERS = {
     "CacheControl": "max-age=86400",
 }
 
-MEDIA_URL = "https://phd-media-prod.s3.us-east-1.amazonaws.com/media/"
-
-STORAGES = {
-    "default": {
+if USE_S3_MEDIA:
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+    STORAGES["default"] = {
         "BACKEND": "storages.backends.s3.S3Storage",
         "OPTIONS": {
             "bucket_name": AWS_STORAGE_BUCKET_NAME,
             "region_name": AWS_S3_REGION_NAME,
             "location": "media",
+            "default_acl": None,
+            "querystring_auth": False,
+            "file_overwrite": False,
         },
-    },
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}
+    }
