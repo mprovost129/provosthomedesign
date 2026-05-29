@@ -26,7 +26,7 @@ class PlanGalleryInline(admin.TabularInline):
     def preview(self, obj):
         if getattr(obj, "image", None) and getattr(obj.image, "url", None):
             return format_html('<img src="{}" style="max-height:80px;border-radius:6px;" />', obj.image.url)
-        return "—"
+        return "-"
 
 
 @admin.register(Plans)
@@ -58,11 +58,11 @@ class PlansAdmin(admin.ModelAdmin):
 
     @admin.display(description="Styles")
     def styles_list(self, obj):
-        return ", ".join([style.style_name for style in obj.house_styles.all()]) or "—"
+        return ", ".join([style.style_name for style in obj.house_styles.all()]) or "-"
 
     @admin.display(description="Price")
     def price(self, obj):
-        return f"${obj.plan_price:,.2f}" if obj.plan_price else "—"
+        return f"${obj.plan_price:,.2f}" if obj.plan_price else "-"
 
     @admin.action(description="Mark selected plans as Featured")
     def make_featured(self, request, queryset):

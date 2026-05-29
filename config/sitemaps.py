@@ -35,14 +35,15 @@ class CorePagesSitemap(Sitemap):
     protocol = "https"
 
     def items(self):
-        # list the url names you want indexed
         return [
             "pages:home",
             "plans:plan_list",
             "pages:services",
+            "pages:web_design",
             "pages:get_started",
             "pages:about",
             "pages:contact",
+            "pages:testimonials",
         ]
 
     def location(self, item): # type: ignore

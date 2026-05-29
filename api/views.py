@@ -151,7 +151,7 @@ class PublicPlanViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class PlanEmbedWidgetView(View):
-    """Serve the embeddable JavaScript widget (no auth required — key is used client-side)."""
+    """Serve the embeddable JavaScript widget (no auth required - key is used client-side)."""
 
     def get(self, request, *args, **kwargs):
         api_base = request.build_absolute_uri("/api/")

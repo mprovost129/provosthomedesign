@@ -3,6 +3,10 @@
 
 {% block title %}Plans • Provost Home Design{% endblock %}
 
+{% block meta_description %}Browse our catalog of stock house plans — Colonial, Cape, Ranch, and more. Filter by style, square footage, bedrooms, and garage. Code-compliant and permit-ready.{% endblock %}
+{% block og_title %}House Plan Catalog • Provost Home Design{% endblock %}
+{% block og_description %}Browse dozens of stock house plans for New England. Filter by style, size, bedrooms, and more — or start a custom design.{% endblock %}
+
 {% block content %}
 <div class="container-lg py-4">
 
@@ -126,7 +130,7 @@
                 <img
                   src="{{ p.main_image.url }}"
                   class="card-img-top plan-thumb"
-                  alt="Front elevation of Plan {{ p.plan_number|default:'—' }}"
+                  alt="Front elevation of Plan {{ p.plan_number|default:'-' }}"
                   loading="lazy" decoding="async"
                   style="cursor: pointer;">
               {% else %}

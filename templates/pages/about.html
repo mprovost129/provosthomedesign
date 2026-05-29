@@ -5,6 +5,10 @@
   {{ about.title|default:"About" }} • {{ about.company|default:"Provost Home Design" }}
 {% endblock %}
 
+{% block meta_description %}Meet Michael Provost — licensed designer with a background in structural engineering and residential construction. Provost Home Design serves builders and homeowners across New England.{% endblock %}
+{% block og_title %}About • {{ about.company|default:"Provost Home Design" }}{% endblock %}
+{% block og_description %}Michael Provost brings construction experience and design expertise together to create code-compliant, buildable house plans for New England clients.{% endblock %}
+
 {% block content %}
 <div class="container-lg py-4">
   <!-- Header -->
@@ -131,7 +135,7 @@
             {% endwith %}
           {% endwith %}
 
-          {# Additional photos — full width to match first #}
+          {# Additional photos - full width to match first #}
           {% if about.photos|length > 1 %}
             {% for ph in about.photos|slice:"1:" %}
               {% with src=ph.src|default:ph alt=ph.alt|default:"Additional photo" cap=ph.caption|default:"" %}

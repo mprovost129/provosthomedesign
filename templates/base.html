@@ -6,16 +6,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}Provost Home Design{% endblock %}</title>
 
-    {# ---- Canonical (simple, path-only) ---- #}
+    {# ---- Favicon ---- #}
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/phdlogo.svg' %}">
+
+    {# ---- Canonical ---- #}
     <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}"/>
 
-    {# ---- SEO & Meta ---- #}
+    {# ---- Meta description (override per page with {% block meta_description %}) ---- #}
+    <meta name="description" content="{% block meta_description %}Custom house plans and home design services for New England builders and homeowners. Code-compliant plans built with care.{% endblock %}">
+
+    {# ---- Open Graph (override individual blocks in child templates) ---- #}
+    <meta property="og:title"       content="{% block og_title %}Provost Home Design{% endblock %}" />
+    <meta property="og:description" content="{% block og_description %}Custom & stock home plans designed for code compliance, with form, function, and style in mind.{% endblock %}" />
+    <meta property="og:image"       content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'images/og-image.jpg' %}{% endblock %}" />
+    <meta property="og:url"         content="{% block og_url %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% endblock %}" />
+    <meta property="og:type"        content="{% block og_type %}website{% endblock %}" />
+    <meta property="og:site_name"   content="Provost Home Design" />
+
+    {# ---- Twitter Card (inherits OG values automatically) ---- #}
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:title"       content="{% block twitter_title %}Provost Home Design{% endblock %}" />
+    <meta name="twitter:description" content="{% block twitter_description %}Custom & stock home plans designed for code compliance, with form, function, and style in mind.{% endblock %}" />
+    <meta name="twitter:image"       content="{% block twitter_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'images/og-image.jpg' %}{% endblock %}" />
+
+    {# ---- Per-page JSON-LD (override in child templates) ---- #}
+    {% block jsonld %}{% endblock %}
+
+    {# ---- Additional per-page head (schemas, preloads, extra meta) ---- #}
     {% block extra_meta %}{% endblock %}
-    <meta property="og:title" content="Provost Home Design" />
-    <meta property="og:description" content="Custom & stock home plans designed for code compliance, with form, function, and style in mind." />
-    <meta property="og:image" content="https://provosthomedesign.com/static/img/og-image.jpg" />
-    <meta property="og:url" content="https://provosthomedesign.com/" />
-    <meta property="og:type" content="website" />
 
     {# LocalBusiness: richer local/brand details; uses same @id as Organization #}
     <script type="application/ld+json">

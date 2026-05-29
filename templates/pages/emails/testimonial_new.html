@@ -3,7 +3,7 @@
   <body style="margin:0;padding:0;background:#f6f7fb;color:#111;">
     <!-- Preheader (hidden in most clients) -->
     <div style="display:none;max-height:0;overflow:hidden;">
-      New testimonial from {{ t.name|default:"(No name)" }} — rating {{ t.rating|default:"—" }}/5
+      New testimonial from {{ t.name|default:"(No name)" }} - rating {{ t.rating|default:"-" }}/5
     </div>
 
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f6f7fb;">
@@ -26,7 +26,7 @@
                 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
                   <tr>
                     <td style="padding:6px 0;color:#667085;width:160px;">Name</td>
-                    <td style="padding:6px 0;">{{ t.name|default:"—" }}</td>
+                    <td style="padding:6px 0;">{{ t.name|default:"-" }}</td>
                   </tr>
                   <tr>
                     <td style="padding:6px 0;color:#667085;">Email</td>
@@ -34,14 +34,14 @@
                       {% if t.email %}
                         <a href="mailto:{{ t.email }}" style="color:#0d6efd;text-decoration:none;">{{ t.email }}</a>
                       {% else %}
-                        —
+                        -
                       {% endif %}
                     </td>
                   </tr>
                   <tr>
                     <td style="padding:6px 0;color:#667085;">Rating</td>
                     <td style="padding:6px 0;">
-                      {{ t.rating|default:"—" }}/5
+                      {{ t.rating|default:"-" }}/5
                       {% if t.rating %}
                         &nbsp;<span aria-hidden="true">({% for _ in "12345"|slice:":t.rating"|make_list %}★{% endfor %}{% for _ in "12345"|slice:"t.rating:"|make_list %}☆{% endfor %})</span>
                       {% endif %}

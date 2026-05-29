@@ -3,6 +3,10 @@
 
 {% block title %}Home • Provost Home Design{% endblock %}
 
+{% block meta_description %}Browse custom and stock house plans for New England. Provost Home Design offers code-compliant, permit-ready plans tailored to your site and budget.{% endblock %}
+{% block og_title %}Provost Home Design — Custom House Plans{% endblock %}
+{% block og_description %}Browse custom and stock house plans. Code-compliant, permit-ready designs for New England builders and homeowners.{% endblock %}
+
 {% block content %}
 <div class="container-lg py-4">
 
@@ -156,7 +160,7 @@
                   <img
                     src="{{ p.main_image.url }}"
                     class="card-img-top plan-thumb"
-                    alt="Front elevation of Plan {{ p.plan_number|default:'—' }}"
+                    alt="Front elevation of Plan {{ p.plan_number|default:'-' }}"
                     loading="lazy" decoding="async"
                     style="cursor: pointer;">
                 {% else %}

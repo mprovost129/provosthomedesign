@@ -159,7 +159,7 @@ def projectinquiry_post_save(sender, instance: ProjectInquiry, created: bool, **
 
             subject_name = f"{(instance.first_name or '').strip()} {(instance.last_name or '').strip()}".strip() or "Visitor"
             subject_email = (instance.email or "").strip()
-            subject = f"[Get Started] {subject_name} — {subject_email or 'no-email'}"
+            subject = f"[Get Started] {subject_name} - {subject_email or 'no-email'}"
 
             msg = EmailMultiAlternatives(
                 subject=subject,
@@ -266,7 +266,7 @@ def testimonial_post_save(sender, instance: Testimonial, created: bool, **kwargs
                 html_body = None
 
             ack = EmailMultiAlternatives(
-                subject="Thanks — your testimonial is now published",
+                subject="Thanks - your testimonial is now published",
                 body=text_body,
                 from_email=getattr(settings, "AUTO_ACK_FROM_EMAIL", getattr(settings, "DEFAULT_FROM_EMAIL", None)),
                 to=[instance.email],

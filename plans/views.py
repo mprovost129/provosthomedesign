@@ -410,7 +410,7 @@ def send_plan_comment(request: HttpRequest, plan_id: int) -> HttpResponse:
                     "We received your change request and will get back to you shortly with details.\n\n"
                     f"Your request: {message[:200]}{'...' if len(message) > 200 else ''}\n\n"
                     "We'll be in touch soon.\n\n"
-                    "— Provost Home Design"
+                    "- Provost Home Design"
                 )
                 from django.core.mail import EmailMultiAlternatives
                 ack = EmailMultiAlternatives(

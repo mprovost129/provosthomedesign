@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}My Favorites | Provost Home Design{% endblock %}
+{% block title %}My Favorites • Provost Home Design{% endblock %}
+
+{% block extra_meta %}<meta name="robots" content="noindex,nofollow">{% endblock %}
 
 {% block content %}
 <div class="container py-5">
@@ -55,7 +57,7 @@
                             </p>
                             
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <span class="badge bg-primary">{{ plan.square_footage|default:"—" }} sq ft</span>
+                                <span class="badge bg-primary">{{ plan.square_footage|default:"-" }} sq ft</span>
                                 <span class="badge bg-secondary">{{ plan.bedrooms }} bed | {{ plan.bathrooms }} bath</span>
                             </div>
                             

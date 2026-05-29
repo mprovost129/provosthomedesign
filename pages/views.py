@@ -22,13 +22,15 @@ from django.templatetags.static import static
 from django.urls import reverse
 
 from core.utils import get_client_ip, verify_recaptcha_v3
-from .forms import ContactForm, NewHouseForm, TestimonialForm
+from .forms import ContactForm, NewHouseForm, TestimonialForm, WebDesignInquiryForm
 from .models import (
     InquiryAttachment,
     ProjectInquiry,
     Testimonial,
     AboutPage,
     SiteSettings,
+    WebDesignInquiry,
+    WEB_PROJECT_TYPE_CHOICES,
 )
 from plans.models import Plans, HouseStyle
 from plans.session_utils import get_saved_plan_ids, get_comparison_plan_ids
@@ -184,7 +186,7 @@ def contact(request: HttpRequest) -> HttpResponse:
         elif getattr(h, "open_time", None) and getattr(h, "close_time", None):
             span = f"{_fmt(h.open_time)} – {_fmt(h.close_time)}"
         else:
-            span = "—"
+            span = "-"
         hours_display.append({"day": DAY_LABELS.get(h.day, h.day), "span": span})  # type: ignore
 
     # Email recipients
@@ -326,10 +328,10 @@ def contact(request: HttpRequest) -> HttpResponse:
                         "Thanks for reaching out. We received your message and will reply soon.\n\n"
                         f"Subject: {sub}\n"
                         f"Message ID: {message_id_display}\n\n"
-                        "— The Team"
+                        "- The Team"
                     )
                     ack = EmailMultiAlternatives(
-                        subject="Thanks — we received your message",
+                        subject="Thanks - we received your message",
                         body=ack_text,
                         from_email=getattr(settings, "AUTO_ACK_FROM_EMAIL", getattr(settings, "DEFAULT_FROM_EMAIL", None)),
                         to=[cd["email"]],
@@ -445,7 +447,7 @@ def contact(request: HttpRequest) -> HttpResponse:
                             "Thanks for sharing your experience with us! "
                             "Your testimonial has been received and will be reviewed shortly.\n\n"
                             "We appreciate you taking the time to provide feedback.\n\n"
-                            "— Provost Home Design"
+                            "- Provost Home Design"
                         )
                         ack = EmailMultiAlternatives(
                             subject="Thanks for your testimonial",
@@ -587,7 +589,7 @@ def get_started(request: HttpRequest) -> HttpResponse:
                 "admin_url": request.build_absolute_uri(f"/admin/pages/projectinquiry/{inquiry.pk}/change/"),
                 "site_url": request.build_absolute_uri("/"),
             }
-            subject = f"[Get Started] {inquiry.first_name} {inquiry.last_name} — {inquiry.email}"
+            subject = f"[Get Started] {inquiry.first_name} {inquiry.last_name} - {inquiry.email}"
             text_body = render_to_string("pages/emails/get_started_notification.txt", ctx)
             html_body = render_to_string("pages/emails/get_started_notification.html", ctx)
 
@@ -714,6 +716,131 @@ from django.shortcuts import render
 
 def services(request):
     return render(request, "pages/services.html")
+
+@ratelimit(key="ip", rate="5/m", block=True)
+def web_design(request: HttpRequest) -> HttpResponse:
+    s = SiteSettings.load()
+    company = s.company_name or getattr(settings, "COMPANY_NAME", "Provost Home Design")
+    email = s.contact_email or getattr(settings, "CONTACT_EMAIL", "mike@provosthomedesign.com")
+    logo_url = s.logo_url
+
+    to_emails = (
+        _as_list(getattr(settings, "CONTACT_TO_EMAILS", None))
+        or [email or getattr(settings, "DEFAULT_FROM_EMAIL", "")]
+    )
+
+    if request.method == "POST":
+        if _too_many_recent_submissions(request, "web_design"):
+            messages.warning(request, "You're sending messages too quickly. Please wait a minute and try again.")
+            return redirect("pages:web_design")
+
+        started = float(request.session.get("web_design_started_ts", 0))
+        if time() - started < 2.0:
+            request.session["web_design_started_ts"] = time()
+            messages.error(request, "Spam protection triggered. Please try again.")
+            return redirect("pages:web_design")
+        request.session["web_design_started_ts"] = time()
+
+        recaptcha_ok, _ = verify_recaptcha_v3(request, expected_action="web_design_form")
+        if not recaptcha_ok:
+            messages.error(request, "Spam detection failed. Please try again.")
+            return redirect("pages:web_design")
+
+        form = WebDesignInquiryForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            pt_label = dict(WEB_PROJECT_TYPE_CHOICES).get(cd.get("project_type", ""), cd.get("project_type", "")) or "Not specified"
+
+            inquiry = WebDesignInquiry.objects.create(
+                name=cd["name"],
+                email=cd["email"],
+                phone=cd.get("phone") or "",
+                project_type=cd.get("project_type") or "",
+                message=cd["message"],
+                terms_accepted=bool(cd.get("terms_accepted")),
+                ip_address=get_client_ip(request),
+            )
+
+            ctx = {
+                "company": company,
+                "logo_url": logo_url,
+                "from_name": cd["name"],
+                "from_email": cd["email"],
+                "from_phone": cd.get("phone", ""),
+                "project_type": pt_label,
+                "message": cd["message"],
+                "admin_url": request.build_absolute_uri(f"/admin/pages/webdesigninquiry/{inquiry.pk}/change/"),
+                "request_url": request.build_absolute_uri(),
+            }
+
+            try:
+                text_body = render_to_string("pages/emails/web_design_notification.txt", ctx)
+                html_body = render_to_string("pages/emails/web_design_notification.html", ctx)
+            except Exception:
+                logger.exception("Missing/broken web design notification templates")
+                messages.error(request, "We had a problem preparing the notification. Please try again.")
+                return redirect("pages:web_design")
+
+            subject = f"[Web Design] New inquiry from {cd['name']}"
+            msg = EmailMultiAlternatives(
+                subject=subject,
+                body=text_body,
+                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
+                to=to_emails or [getattr(settings, "DEFAULT_FROM_EMAIL", "")],
+                reply_to=[cd["email"]],
+            )
+            msg.attach_alternative(html_body, "text/html")
+            try:
+                msg.send(fail_silently=False)
+                logger.info("Web design inquiry email sent: From %s (%s)", cd["email"], cd["name"])
+            except Exception as e:
+                logger.exception("Web design inquiry email send failed")
+                err = "We couldn't send your message just now. Please try again in a moment."
+                if settings.DEBUG:
+                    err += f" ({e.__class__.__name__}: {e})"
+                messages.error(request, err)
+                return redirect("pages:web_design")
+
+            messages.success(request, "Thanks! Your inquiry has been sent. I'll be in touch soon.")
+            return redirect("pages:web_design")
+
+        messages.error(request, "Please correct the errors below.")
+    else:
+        request.session["web_design_started_ts"] = time()
+        form = WebDesignInquiryForm()
+
+    devicon = "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons"
+    tech_stack = [
+        {"name": "Python",      "icon": f"{devicon}/python/python-original.svg"},
+        {"name": "Django",      "icon": f"{devicon}/django/django-plain.svg"},
+        {"name": "HTML5",       "icon": f"{devicon}/html5/html5-original.svg"},
+        {"name": "CSS3",        "icon": f"{devicon}/css3/css3-original.svg"},
+        {"name": "JavaScript",  "icon": f"{devicon}/javascript/javascript-original.svg"},
+        {"name": "Bootstrap",   "icon": f"{devicon}/bootstrap/bootstrap-original.svg"},
+        {"name": "Tailwind CSS","icon": f"{devicon}/tailwindcss/tailwindcss-original.svg"},
+        {"name": "React",       "icon": f"{devicon}/react/react-original.svg"},
+        {"name": "PostgreSQL",  "icon": f"{devicon}/postgresql/postgresql-original.svg"},
+        {"name": "Git",         "icon": f"{devicon}/git/git-original.svg"},
+    ]
+
+    process_steps = [
+        {"title": "Discover",  "desc": "We talk through your goals, audience, and requirements so the project starts with the right foundation."},
+        {"title": "Design",    "desc": "Wireframes and layout decisions made before a line of code is written - so we're aligned on the result."},
+        {"title": "Build",     "desc": "Clean, maintainable code with regular check-ins. You see progress throughout, not just at the end."},
+        {"title": "Launch",    "desc": "Deployment, testing, and handoff. I stay available for questions and ongoing support as needed."},
+    ]
+
+    return render(request, "pages/web_design.html", {
+        "page": {"title": "Web Design & Development", "description": "Custom web apps and business websites built with Python, Django, and modern front-end tech."},
+        "form": form,
+        "tech_stack": tech_stack,
+        "process_steps": process_steps,
+        "recaptcha_site_key": (
+            (getattr(settings, "RECAPTCHA_SITE_KEY", "") or "").strip()
+            or (getattr(settings, "RECAPTCHA_PUBLIC_KEY", "") or "").strip()
+        ),
+    })
+
 
 def robots_txt(request):
     lines = [

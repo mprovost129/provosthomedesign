@@ -28,7 +28,7 @@
                 <p style="margin:0 0 16px;">
                   Email: <a href="mailto:{{ inquiry.email }}" style="color:#0d6efd;text-decoration:none;">{{ inquiry.email }}</a>
                   {% if inquiry.phone_number %} &nbsp;|&nbsp; Phone: <a href="tel:{{ inquiry.phone_number }}" style="color:#0d6efd;text-decoration:none;">{{ inquiry.phone_number }}</a>{% endif %}
-                  <br>Preferred contact: {{ inquiry.get_preferred_contact_method_display|default:"—" }}
+                  <br>Preferred contact: {{ inquiry.get_preferred_contact_method_display|default:"-" }}
                 </p>
 
                 {% if inquiry.street_address or inquiry.city or inquiry.state or inquiry.zip_code %}
@@ -50,19 +50,19 @@
                   <tr>
                     <td style="padding:6px 0;color:#6b7280;width:180px;">House style:</td>
                     <td style="padding:6px 0;">
-                      {% firstof inquiry.house_style.style_name inquiry.house_style.name inquiry.house_style "—" %}
+                      {% firstof inquiry.house_style.style_name inquiry.house_style.name inquiry.house_style "-" %}
                     </td>
                   </tr>
-                  <tr><td style="padding:6px 0;color:#6b7280;">Min sqft:</td><td style="padding:6px 0;">{{ inquiry.min_square_footage|default:"—" }}</td></tr>
-                  <tr><td style="padding:6px 0;color:#6b7280;">Max sqft:</td><td style="padding:6px 0;">{{ inquiry.max_square_footage|default:"—" }}</td></tr>
-                  <tr><td style="padding:6px 0;color:#6b7280;">Floors:</td><td style="padding:6px 0;">{{ inquiry.number_of_floors|default:"—" }}</td></tr>
-                  <tr><td style="padding:6px 0;color:#6b7280;">Bedrooms:</td><td style="padding:6px 0;">{{ inquiry.number_of_bedrooms|default:"—" }}</td></tr>
-                  <tr><td style="padding:6px 0;color:#6b7280;">Bathrooms:</td><td style="padding:6px 0;">{{ inquiry.number_of_bathrooms|default:"—" }}</td></tr>
-                  <tr><td style="padding:6px 0;color:#6b7280;">Garage:</td><td style="padding:6px 0;">{{ inquiry.number_of_garage_spaces|default:"—" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Min sqft:</td><td style="padding:6px 0;">{{ inquiry.min_square_footage|default:"-" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Max sqft:</td><td style="padding:6px 0;">{{ inquiry.max_square_footage|default:"-" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Floors:</td><td style="padding:6px 0;">{{ inquiry.number_of_floors|default:"-" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Bedrooms:</td><td style="padding:6px 0;">{{ inquiry.number_of_bedrooms|default:"-" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Bathrooms:</td><td style="padding:6px 0;">{{ inquiry.number_of_bathrooms|default:"-" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Garage:</td><td style="padding:6px 0;">{{ inquiry.number_of_garage_spaces|default:"-" }}</td></tr>
                   <tr>
                     <td style="padding:6px 0;color:#6b7280;">Budget:</td>
                     <td style="padding:6px 0;">
-                      {% if inquiry.budget %}${{ inquiry.budget|floatformat:0|intcomma }}{% else %}—{% endif %}
+                      {% if inquiry.budget %}${{ inquiry.budget|floatformat:0|intcomma }}{% else %}-{% endif %}
                     </td>
                   </tr>
                 </table>
@@ -79,16 +79,16 @@
                       {% if inquiry.land_zip_code %} {{ inquiry.land_zip_code }}{% endif %}
                     </td>
                   </tr>
-                  <tr><td style="padding:6px 0;color:#6b7280;">Lot size:</td><td style="padding:6px 0;">{{ inquiry.land_size|default:"—" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Lot size:</td><td style="padding:6px 0;">{{ inquiry.land_size|default:"-" }}</td></tr>
                 </table>
 
                 <h3 style="margin:12px 0 6px;font:600 14px Arial, sans-serif;">Plans &amp; structure</h3>
                 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:4px 0 12px 0;">
                   <tr><td style="padding:6px 0;color:#6b7280;width:180px;">Pre-existing plans:</td><td style="padding:6px 0;">{{ inquiry.pre_existing_plans|yesno:"Yes,No" }}</td></tr>
-                  <tr><td style="padding:6px 0;color:#6b7280;">Foundation:</td><td style="padding:6px 0;">{{ inquiry.get_foundation_height_display|default:"—" }}</td></tr>
-                  <tr><td style="padding:6px 0;color:#6b7280;">First floor ceiling:</td><td style="padding:6px 0;">{{ inquiry.get_first_floor_height_display|default:"—" }}</td></tr>
-                  <tr><td style="padding:6px 0;color:#6b7280;">Second floor ceiling:</td><td style="padding:6px 0;">{{ inquiry.get_second_floor_height_display|default:"—" }}</td></tr>
-                  <tr><td style="padding:6px 0;color:#6b7280;">Third floor ceiling:</td><td style="padding:6px 0;">{{ inquiry.get_third_floor_height_display|default:"—" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Foundation:</td><td style="padding:6px 0;">{{ inquiry.get_foundation_height_display|default:"-" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">First floor ceiling:</td><td style="padding:6px 0;">{{ inquiry.get_first_floor_height_display|default:"-" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Second floor ceiling:</td><td style="padding:6px 0;">{{ inquiry.get_second_floor_height_display|default:"-" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Third floor ceiling:</td><td style="padding:6px 0;">{{ inquiry.get_third_floor_height_display|default:"-" }}</td></tr>
                   <tr>
                     <td style="padding:6px 0;color:#6b7280;">Ceilings:</td>
                     <td style="padding:6px 0;">
@@ -97,7 +97,7 @@
                           {% if f1 %}{{ f1 }}{% endif %}
                           {% if f2 %}{% if f1 %}, {% endif %}{{ f2 }}{% endif %}
                           {% if f3 %}{% if f1 or f2 %}, {% endif %}{{ f3 }}{% endif %}
-                        {% else %}—{% endif %}
+                        {% else %}-{% endif %}
                       {% endwith %}
                     </td>
                   </tr>
@@ -105,7 +105,7 @@
 
                 <h3 style="margin:12px 0 6px;font:600 14px Arial, sans-serif;">Notes</h3>
                 <div style="padding:8px 10px;background:#f8fafc;border:1px solid #e7e9ee;border-radius:6px;">
-                  {{ inquiry.additional_notes|default:"—" }}
+                  {{ inquiry.additional_notes|default:"-" }}
                 </div>
 
                 <h3 style="margin:16px 0 6px;font:600 14px Arial, sans-serif;">Attachments</h3>

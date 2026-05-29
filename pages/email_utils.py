@@ -27,7 +27,7 @@ def send_contact_ack(context: dict):
     html = render_to_string("emails/contact_ack.html", context)
     txt  = render_to_string("emails/contact_ack.txt", context)
     ack = EmailMultiAlternatives(
-        subject="Thanks for reaching out — Provost Home Design",
+        subject="Thanks for reaching out - Provost Home Design",
         body=txt,
         from_email=getattr(settings, "AUTO_ACK_FROM_EMAIL", settings.DEFAULT_FROM_EMAIL),
         to=[context["email"]],

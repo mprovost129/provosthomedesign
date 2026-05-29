@@ -318,6 +318,52 @@ class ContactForm(forms.Form):
         return cleaned
 
 
+class WebDesignInquiryForm(forms.Form):
+    website = forms.CharField(required=False, widget=forms.HiddenInput())  # honeypot
+
+    name = forms.CharField(max_length=120)
+    email = forms.EmailField()
+    phone = forms.CharField(max_length=30, required=False, validators=[phone_validator])
+    project_type = forms.ChoiceField(
+        choices=[
+            ("", "What are you looking to build?"),
+            ("business_site", "Business Website"),
+            ("web_app", "Web Application"),
+            ("ecommerce", "E-commerce Site"),
+            ("redesign", "Redesign / Refresh"),
+            ("other", "Other"),
+        ],
+        required=False,
+        widget=forms.Select(attrs={"class": "form-select"}),
+        label="Project type",
+    )
+    message = forms.CharField(
+        widget=forms.Textarea(attrs={"rows": 5, "placeholder": "Tell me about your project - what it does, who it's for, and any timeline or tech requirements."}),
+        label="Tell me about your project",
+    )
+    terms_accepted = forms.BooleanField(
+        required=True,
+        label="I agree to the Terms & Conditions",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for _, field in self.fields.items():
+            if isinstance(field.widget, (forms.CheckboxInput, forms.HiddenInput, forms.Select)):
+                continue
+            css = field.widget.attrs.get("class", "")
+            field.widget.attrs["class"] = f"{css} form-control".strip()
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("website"):
+            raise forms.ValidationError("Invalid submission.")
+        if not cleaned.get("terms_accepted"):
+            self.add_error("terms_accepted", "You must agree to the Terms & Conditions.")
+        return cleaned
+
+
 class TestimonialForm(forms.Form):
     # Honeypot (bots only)
     website2 = forms.CharField(required=False, widget=forms.HiddenInput())

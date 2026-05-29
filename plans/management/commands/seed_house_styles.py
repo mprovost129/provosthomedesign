@@ -179,7 +179,7 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Seed complete — created: {created}, updated: {updated}, skipped: {skipped}."
+                f"Seed complete - created: {created}, updated: {updated}, skipped: {skipped}."
                 + (" (dry-run)" if dry_run else "")
             )
         )

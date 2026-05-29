@@ -171,7 +171,7 @@ class ProjectInquiry(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"{self.first_name} {self.last_name} — {self.email} — {self.submitted_at:%Y-%m-%d}"
+        return f"{self.first_name} {self.last_name} - {self.email} - {self.submitted_at:%Y-%m-%d}"
 
     def clean(self):
 # sourcery skip: merge-nested-ifs
@@ -255,8 +255,8 @@ class AboutPage(models.Model):
     body = models.TextField(blank=True, help_text="One paragraph per line.")
     highlights = models.TextField(blank=True, help_text="One item per line.")
     badges = models.TextField(blank=True, help_text="One item per line.")
-    knowledge_skills = models.TextField(blank=True, help_text="Knowledge & skills — one item per line.")
-    licenses = models.TextField(blank=True, help_text="Licenses/registrations — one item per line.")
+    knowledge_skills = models.TextField(blank=True, help_text="Knowledge & skills - one item per line.")
+    licenses = models.TextField(blank=True, help_text="Licenses/registrations - one item per line.")
 
     is_published = models.BooleanField(default=True)
     updated = models.DateTimeField(auto_now=True)
@@ -277,7 +277,7 @@ class AboutPage(models.Model):
     def paragraphs(self) -> list[str]:
         """
         ONE LINE = ONE PARAGRAPH.
-        Remove simple bullet prefixes (•, -, –, —). Ignore empties.
+        Remove simple bullet prefixes (•, -, –, -). Ignore empties.
         """
         lines = (self.body or "").splitlines()
         out: list[str] = []
@@ -285,8 +285,8 @@ class AboutPage(models.Model):
             ln = ln.strip()
             if not ln:
                 continue
-            if ln.startswith(("•", "-", "–", "—")):
-                ln = ln.lstrip("•-–— ").strip()
+            if ln.startswith(("•", "-", "–", "-")):
+                ln = ln.lstrip("•-–- ").strip()
             out.append(ln)
         return out
 
@@ -345,7 +345,42 @@ class BusinessHour(models.Model):
             return f"{label}: By Appointment"
         if self.open_time and self.close_time:
             return f"{label}: {self.open_time.strftime('%I:%M %p').lstrip('0')} – {self.close_time.strftime('%I:%M %p').lstrip('0')}"
-        return f"{label}: —"
+        return f"{label}: -"
+
+WEB_PROJECT_TYPE_CHOICES = [
+    ("business_site", "Business Website"),
+    ("web_app", "Web Application"),
+    ("ecommerce", "E-commerce Site"),
+    ("redesign", "Redesign / Refresh"),
+    ("other", "Other"),
+]
+
+
+class WebDesignInquiry(models.Model):
+    name = models.CharField(max_length=120)
+    email = models.EmailField(db_index=True)
+    phone = models.CharField(max_length=30, blank=True)
+    project_type = models.CharField(max_length=30, choices=WEB_PROJECT_TYPE_CHOICES, blank=True)
+    message = models.TextField()
+    terms_accepted = models.BooleanField(default=False)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+    STATUS_CHOICES = [("new", "New"), ("reviewed", "Reviewed"), ("archived", "Archived")]
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="new", db_index=True)
+
+    class Meta:
+        ordering = ["-submitted_at"]
+        verbose_name = "Web design inquiry"
+        verbose_name_plural = "Web design inquiries"
+        indexes = [
+            models.Index(fields=["status", "submitted_at"]),
+        ]
+
+    def __str__(self) -> str:
+        pt = dict(WEB_PROJECT_TYPE_CHOICES).get(self.project_type, self.project_type)
+        return f"{self.name} - {pt} - {self.submitted_at:%Y-%m-%d}"
+
 
 # models.py
 class ContactMessage(models.Model):
@@ -375,4 +410,4 @@ class ContactMessage(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.subject} — {self.name} <{self.email}>"
+        return f"{self.subject} - {self.name} <{self.email}>"

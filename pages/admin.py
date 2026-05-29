@@ -14,8 +14,9 @@ from .models import (
     ProjectInquiry,
     InquiryAttachment,
     Testimonial,
-    SiteSettings,   # single source of truth for brand/contact info
-    BusinessHour,   # <-- structured hours
+    SiteSettings,
+    BusinessHour,
+    WebDesignInquiry,
 )
 
 # ----------------------------
@@ -211,12 +212,31 @@ class SiteSettingsAdmin(SingletonModelAdmin):
                 )
         except Exception:
             pass
-        return "—"
+        return "-"
     logo_preview.short_description = "Logo preview"  # type: ignore
 
 # ----------------------------
 # Contact messages
 # ----------------------------
+
+@admin.register(WebDesignInquiry)
+class WebDesignInquiryAdmin(admin.ModelAdmin):
+    list_display = ("submitted_at", "name", "email", "phone", "project_type", "status")
+    list_filter = ("status", "project_type", "submitted_at")
+    search_fields = ("name", "email", "phone", "message")
+    readonly_fields = ("submitted_at", "ip_address")
+    date_hierarchy = "submitted_at"
+    ordering = ("-submitted_at",)
+    actions = ("mark_reviewed", "mark_archived")
+
+    @admin.action(description="Mark selected as Reviewed")
+    def mark_reviewed(self, request, queryset):
+        queryset.update(status="reviewed")
+
+    @admin.action(description="Mark selected as Archived")
+    def mark_archived(self, request, queryset):
+        queryset.update(status="archived")
+
 
 if ContactMessage:
     @admin.register(ContactMessage)

@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Web Design & Development • Provost Home Design{% endblock %}
+
+{% block meta_description %}Custom web apps and business websites built with Python, Django, React, and Bootstrap. Fast, mobile-ready, and built by a real developer — not a template.{% endblock %}
+{% block og_title %}Web Design & Development • Provost Home Design{% endblock %}
+{% block og_description %}Custom websites and web applications built with Python, Django, and modern front-end tools. No page builders — just clean, professional code.{% endblock %}
+{% block twitter_title %}Web Design & Development • Provost Home Design{% endblock %}
+{% block twitter_description %}Custom websites and web applications built with Python, Django, and modern front-end tools. No page builders — just clean, professional code.{% endblock %}
+
+{% block jsonld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "name": "Web Design & Development",
+  "provider": {
+    "@type": "LocalBusiness",
+    "@id": "{{ request.scheme }}://{{ request.get_host }}/#org",
+    "name": "Provost Home Design"
+  },
+  "serviceType": "Web Design and Development",
+  "description": "Custom websites and web applications built with Python, Django, HTML, CSS, JavaScript, Bootstrap, Tailwind, and React.",
+  "areaServed": {
+    "@type": "Country",
+    "name": "United States"
+  },
+  "url": "{{ request.scheme }}://{{ request.get_host }}{% url 'pages:web_design' %}",
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "Web Design Packages",
+    "itemListElement": [
+      {
+        "@type": "Offer",
+        "itemOffered": { "@type": "Service", "name": "Business Website" }
+      },
+      {
+        "@type": "Offer",
+        "itemOffered": { "@type": "Service", "name": "Web Application" }
+      },
+      {
+        "@type": "Offer",
+        "itemOffered": { "@type": "Service", "name": "E-commerce Site" }
+      }
+    ]
+  }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+
+{# ── Hero ─────────────────────────────────────────────────────────────────── #}
+<section class="py-5" style="background: linear-gradient(135deg, #0d1b2a 0%, #1a3350 100%);">
+  <div class="container-lg py-3">
+    <div class="row align-items-center gy-4">
+      <div class="col-lg-7">
+        <p class="text-uppercase fw-semibold mb-2" style="color:#7eb3d8; letter-spacing:.08em; font-size:.85rem;">Web Design & Development</p>
+        <h1 class="display-5 fw-bold text-white mb-3">Sites and apps that actually work for your business</h1>
+        <p class="lead mb-4" style="color:#c8dce8;">
+          I build custom websites and web applications using Python, Django, and modern front-end tools.
+          Fast-loading, mobile-ready, and built to grow with you - not a template, not a page builder.
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+          <a href="#inquiry" class="btn btn-primary btn-lg px-4">
+            <i class="bi bi-chat-dots me-1" aria-hidden="true"></i> Start a Conversation
+          </a>
+          <a href="#portfolio" class="btn btn-outline-light btn-lg px-4">
+            <i class="bi bi-eye me-1" aria-hidden="true"></i> See My Work
+          </a>
+        </div>
+      </div>
+      <div class="col-lg-5 d-none d-lg-flex justify-content-center align-items-center">
+        <div class="d-flex flex-wrap gap-3 justify-content-center" style="max-width:320px;">
+          {% for tech in tech_stack|slice:":6" %}
+          <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-3" style="background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12);">
+            <img src="{{ tech.icon }}" alt="{{ tech.name }}" width="20" height="20" loading="lazy">
+            <span class="text-white small fw-medium">{{ tech.name }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ── What I Build ─────────────────────────────────────────────────────────── #}
+<section class="py-5 bg-white">
+  <div class="container-lg">
+    <div class="text-center mb-4">
+      <h2 class="h3 fw-bold">What I Build</h2>
+      <p class="text-muted">From simple business sites to full-stack web applications.</p>
+    </div>
+    <div class="row g-3">
+      <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border rounded-3 shadow-sm p-3">
+          <div class="card-body">
+            <div class="mb-2">
+              <i class="bi bi-briefcase fs-2 text-primary" aria-hidden="true"></i>
+            </div>
+            <h3 class="h6 fw-semibold">Business Websites</h3>
+            <p class="small text-muted mb-0">Professional, mobile-responsive sites that build credibility and convert visitors into leads. Built clean and fast.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border rounded-3 shadow-sm p-3">
+          <div class="card-body">
+            <div class="mb-2">
+              <i class="bi bi-code-square fs-2 text-primary" aria-hidden="true"></i>
+            </div>
+            <h3 class="h6 fw-semibold">Web Applications</h3>
+            <p class="small text-muted mb-0">Custom back-end logic, user accounts, dashboards, APIs, and dynamic data - built with Python and Django.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border rounded-3 shadow-sm p-3">
+          <div class="card-body">
+            <div class="mb-2">
+              <i class="bi bi-cart3 fs-2 text-primary" aria-hidden="true"></i>
+            </div>
+            <h3 class="h6 fw-semibold">E-commerce</h3>
+            <p class="small text-muted mb-0">Online stores with product catalogs, Stripe payments, order management, and a seamless checkout flow.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border rounded-3 shadow-sm p-3">
+          <div class="card-body">
+            <div class="mb-2">
+              <i class="bi bi-arrow-repeat fs-2 text-primary" aria-hidden="true"></i>
+            </div>
+            <h3 class="h6 fw-semibold">Redesigns & Refreshes</h3>
+            <p class="small text-muted mb-0">Already have a site but it looks dated or doesn't perform? I'll rebuild or modernize it so it works harder for you.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ── Tech Stack ───────────────────────────────────────────────────────────── #}
+<section class="py-5" style="background:#f8fafc;">
+  <div class="container-lg">
+    <div class="text-center mb-4">
+      <h2 class="h3 fw-bold">Built With Modern Tools</h2>
+      <p class="text-muted">The full stack, from database to deployment.</p>
+    </div>
+    <div class="row g-3 justify-content-center">
+      {% for tech in tech_stack %}
+      <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+        <div class="card border rounded-3 text-center py-3 px-2 h-100 shadow-sm" style="transition:transform .15s;" onmouseenter="this.style.transform='translateY(-3px)'" onmouseleave="this.style.transform=''">
+          <img src="{{ tech.icon }}" alt="{{ tech.name }}" width="48" height="48" class="mx-auto mb-2" loading="lazy" style="display:block;">
+          <p class="small fw-medium mb-0" style="font-size:.8rem;">{{ tech.name }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{# ── Portfolio ────────────────────────────────────────────────────────────── #}
+<section class="py-5 bg-white" id="portfolio">
+  <div class="container-lg">
+    <div class="text-center mb-4">
+      <h2 class="h3 fw-bold">Sites I've Built</h2>
+      <p class="text-muted">Real projects, live on the web.</p>
+    </div>
+    <div class="row g-4 justify-content-center">
+
+      <div class="col-md-6 col-lg-5">
+        <div class="card border rounded-3 shadow-sm h-100 overflow-hidden">
+          <div class="d-flex align-items-center justify-content-center" style="height:180px; background:linear-gradient(135deg,#1a3350,#2d6a9f);">
+            <div class="text-center text-white px-3">
+              <i class="bi bi-building fs-1 mb-2 d-block" aria-hidden="true"></i>
+              <span class="fw-semibold">J. Fisk Construction</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <h3 class="h6 fw-semibold mb-1">J. Fisk Construction</h3>
+            <p class="small text-muted mb-3">Business website for a local construction company - clean design, service pages, contact form, and mobile-responsive layout.</p>
+            <a href="https://www.jfiskconstruction.com/" target="_blank" rel="noopener noreferrer"
+               class="btn btn-outline-primary btn-sm">
+              <i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i> Visit Site
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-5">
+        <div class="card border rounded-3 shadow-sm h-100 overflow-hidden">
+          <div class="d-flex align-items-center justify-content-center" style="height:180px; background:linear-gradient(135deg,#0d1b2a,#1a3350);">
+            <div class="text-center text-white px-3">
+              <i class="bi bi-house-heart fs-1 mb-2 d-block" aria-hidden="true"></i>
+              <span class="fw-semibold">Provost Home Design</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <h3 class="h6 fw-semibold mb-1">Provost Home Design</h3>
+            <p class="small text-muted mb-3">This site - a full Django web application with a house plan catalog, favorites, comparisons, admin portal, S3 media, and more.</p>
+            <a href="https://www.provosthomedesign.com/" target="_blank" rel="noopener noreferrer"
+               class="btn btn-outline-primary btn-sm">
+              <i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i> Visit Site
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+{# ── How It Works ─────────────────────────────────────────────────────────── #}
+<section class="py-5" style="background:#f8fafc;">
+  <div class="container-lg">
+    <div class="text-center mb-4">
+      <h2 class="h3 fw-bold">How It Works</h2>
+      <p class="text-muted">A straightforward process from first conversation to launch.</p>
+    </div>
+    <div class="row g-3 justify-content-center">
+      {% for step in process_steps %}
+      <div class="col-sm-6 col-lg-3">
+        <div class="text-center px-2">
+          <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+               style="width:52px;height:52px;background:#0d6efd;color:#fff;font-size:1.2rem;font-weight:700;">
+            {{ forloop.counter }}
+          </div>
+          <h3 class="h6 fw-semibold mb-1">{{ step.title }}</h3>
+          <p class="small text-muted mb-0">{{ step.desc }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{# ── Inquiry Form ─────────────────────────────────────────────────────────── #}
+<section class="py-5 bg-white" id="inquiry">
+  <div class="container-lg">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+
+        <div class="text-center mb-4">
+          <h2 class="h3 fw-bold">Let's Talk About Your Project</h2>
+          <p class="text-muted">Fill out the form and I'll get back to you - usually same day.</p>
+        </div>
+
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        <div class="card border rounded-3 shadow-sm p-4">
+          <form method="post" novalidate>
+            {% csrf_token %}
+
+            {# Honeypot #}
+            <div style="display:none" aria-hidden="true">
+              {{ form.website }}
+            </div>
+
+            {% if recaptcha_site_key %}
+              <input type="hidden" name="g-recaptcha-response" id="id_g_recaptcha_response_wd">
+            {% endif %}
+
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <label for="{{ form.name.id_for_label }}" class="form-label fw-medium">
+                  Name <span class="text-danger">*</span>
+                </label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                  <div class="invalid-feedback d-block">{{ form.name.errors|join:", " }}</div>
+                {% endif %}
+              </div>
+              <div class="col-sm-6">
+                <label for="{{ form.email.id_for_label }}" class="form-label fw-medium">
+                  Email <span class="text-danger">*</span>
+                </label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                  <div class="invalid-feedback d-block">{{ form.email.errors|join:", " }}</div>
+                {% endif %}
+              </div>
+              <div class="col-sm-6">
+                <label for="{{ form.phone.id_for_label }}" class="form-label fw-medium">Phone</label>
+                {{ form.phone }}
+                {% if form.phone.errors %}
+                  <div class="invalid-feedback d-block">{{ form.phone.errors|join:", " }}</div>
+                {% endif %}
+              </div>
+              <div class="col-sm-6">
+                <label for="{{ form.project_type.id_for_label }}" class="form-label fw-medium">Project Type</label>
+                {{ form.project_type }}
+                {% if form.project_type.errors %}
+                  <div class="invalid-feedback d-block">{{ form.project_type.errors|join:", " }}</div>
+                {% endif %}
+              </div>
+              <div class="col-12">
+                <label for="{{ form.message.id_for_label }}" class="form-label fw-medium">
+                  Tell me about your project <span class="text-danger">*</span>
+                </label>
+                {{ form.message }}
+                {% if form.message.errors %}
+                  <div class="invalid-feedback d-block">{{ form.message.errors|join:", " }}</div>
+                {% endif %}
+              </div>
+              <div class="col-12">
+                <div class="form-check">
+                  {{ form.terms_accepted }}
+                  <label class="form-check-label small" for="{{ form.terms_accepted.id_for_label }}">
+                    I agree to the <a href="{% url 'pages:terms' %}" target="_blank">Terms &amp; Conditions</a>
+                    <span class="text-danger">*</span>
+                  </label>
+                  {% if form.terms_accepted.errors %}
+                    <div class="invalid-feedback d-block">{{ form.terms_accepted.errors|join:", " }}</div>
+                  {% endif %}
+                </div>
+              </div>
+              {% if form.non_field_errors %}
+                <div class="col-12">
+                  <div class="alert alert-danger py-2 mb-0">{{ form.non_field_errors|join:", " }}</div>
+                </div>
+              {% endif %}
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary px-4">
+                  <i class="bi bi-send me-1" aria-hidden="true"></i> Send Inquiry
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <p class="text-center text-muted small mt-3 mb-0">
+          Prefer email? <a href="mailto:mike@provosthomedesign.com">mike@provosthomedesign.com</a>
+          &nbsp;|&nbsp;
+          <a href="tel:+15082437912">(508) 243-7912</a>
+        </p>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if recaptcha_site_key %}
+<script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}" async defer></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var form = document.querySelector('#inquiry form');
+    if (!form) return;
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var btn = form.querySelector('[type=submit]');
+      if (btn) btn.disabled = true;
+      grecaptcha.ready(function () {
+        grecaptcha.execute('{{ recaptcha_site_key }}', { action: 'web_design_form' }).then(function (token) {
+          var input = document.getElementById('id_g_recaptcha_response_wd');
+          if (input) input.value = token;
+          form.submit();
+        });
+      });
+    });
+  });
+</script>
+{% endif %}
+
+{% endblock %}
+

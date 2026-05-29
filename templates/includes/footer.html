@@ -5,7 +5,7 @@
   <div class="container">
     <div class="row gy-4 align-items-start">
 
-      {# LEFT: Logo, name, email, phone, address — with Organization microdata #}
+      {# LEFT: Logo, name, email, phone, address - with Organization microdata #}
       <div class="col-md-4" itemscope itemtype="https://schema.org/Organization">
         <a href="{% url 'pages:home' %}"
            class="d-inline-flex align-items-center mb-2 link-dark text-decoration-none"
@@ -44,7 +44,7 @@
         {% endif %}
       </div>
 
-      {# CENTER: Links (two columns) — expose as a nav landmark #}
+      {# CENTER: Links (two columns) - expose as a nav landmark #}
       <div class="col-md-4">
         <nav aria-label="Footer">
           <div class="row">
@@ -60,6 +60,7 @@
               <h6 class="fw-semibold">Company</h6>
               <ul class="list-unstyled small mb-0">
                 <li><a href="{% url 'pages:about' %}" class="text-decoration-none text-muted">About Us</a></li>
+                <li><a href="{% url 'pages:web_design' %}" class="text-decoration-none text-muted">Web Design</a></li>
                 <li><a href="{% url 'pages:privacy' %}" class="text-decoration-none text-muted">Privacy Policy</a></li>
                 <li><a href="{% url 'pages:terms' %}" class="text-decoration-none text-muted">Terms &amp; Conditions</a></li>
                 {% if request.user.is_authenticated and request.user.is_staff %}

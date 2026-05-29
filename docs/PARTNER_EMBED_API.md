@@ -8,7 +8,7 @@ Allows partner websites to embed Provost Home Design plan cards or query the pla
 
 1. Log into the Django admin at `/admin/`
 2. Go to **Partner API Keys** and click **Add**
-3. Enter the partner's site name and save — the key (`phd_xxxx...`) is auto-generated
+3. Enter the partner's site name and save - the key (`phd_xxxx...`) is auto-generated
 4. Share the key with the partner
 5. Optionally fill in **Allowed Origins** (e.g. `https://partnersite.com`) to restrict which domains the key works from
 
@@ -28,7 +28,7 @@ No programming required. Partners add one `<div>` and one `<script>` tag anywher
 
 Replace `PLAN-NUMBER` with the plan's number (e.g. `PHD-1001`) and `phd_YOUR_KEY_HERE` with the API key.
 
-**Multiple plans on one page** — repeat the `<div>` for each plan; only one `<script>` tag is needed.
+**Multiple plans on one page** - repeat the `<div>` for each plan; only one `<script>` tag is needed.
 
 ```html
 <div data-phd-plan="PHD-1001" data-phd-key="phd_YOUR_KEY_HERE"></div>
@@ -108,6 +108,6 @@ X-API-Key: phd_YOUR_KEY_HERE
 
 ## 4. Security Notes
 
-- API keys are visible in client-side HTML source — this is expected (same model as Google Maps)
+- API keys are visible in client-side HTML source - this is expected (same model as Google Maps)
 - Restrict keys to specific domains using the **Allowed Origins** field in the admin to prevent unauthorized use
 - Keys can be deactivated instantly from the admin without contacting the partner

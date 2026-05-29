@@ -5,15 +5,9 @@
 
 {% block title %}Contact • {{ contact.company|default:"Provost Home Design" }}{% endblock %}
 
-{% block extra_meta %}
-  <meta name="description" content="Contact {{ contact.company|default:'Provost Home Design' }} about stock or custom home plans. We’d love to hear about your project.">
-  <meta property="og:title" content="Contact {{ contact.company|default:'Provost Home Design' }}">
-  <meta property="og:description" content="Tell us about your project and how we can help.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
-  <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ contact.logo_url|default:BRAND_LOGO_STATIC }}">
-  <meta name="robots" content="index,follow">
-{% endblock %}
+{% block meta_description %}Contact {{ contact.company|default:"Provost Home Design" }} about stock or custom home plans. We’d love to hear about your project.{% endblock %}
+{% block og_title %}Contact {{ contact.company|default:"Provost Home Design" }}{% endblock %}
+{% block og_description %}Tell us about your project and how we can help. Call, email, or send a message.{% endblock %}
 
 {% block content %}
 <div class="container-lg py-4">
@@ -91,7 +85,7 @@
                     {% elif h.open_time and h.close_time %}
                       {{ h.open_time|time:"g a" }} to {{ h.close_time|time:"g a" }}
                     {% else %}
-                      —
+                      -
                     {% endif %}
                   </strong>
                 </li>

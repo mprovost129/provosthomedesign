@@ -2,7 +2,7 @@ Hi {{ t.name|default:"there" }},
 
 Thank you for your feedback! Your testimonial has been approved and published.
 
-Rating: {{ t.rating|default:"—" }}/5
+Rating: {{ t.rating|default:"-" }}/5
 Message:
 {{ t.message|default:"(no message provided)" }}
 
@@ -10,4 +10,4 @@ Message:
 
 If you’d like us to make a correction, just reply to this email.
 
-— {{ company|default:"Provost Home Design" }}
+- {{ company|default:"Provost Home Design" }}

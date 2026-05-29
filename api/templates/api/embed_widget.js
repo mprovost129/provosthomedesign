@@ -1,4 +1,4 @@
-/* Provost Home Design — Plan Embed Widget */
+/* Provost Home Design - Plan Embed Widget */
 /* Usage: add  data-phd-plan="PLAN-NUMBER"  and  data-phd-key="YOUR_KEY"  to any div,
    then include this script once on the page. */
 (function () {
