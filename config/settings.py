@@ -305,11 +305,6 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
-        "billing": {
-            "handlers": ["console"] if DEBUG else ["console", "file"],
-            "level": "INFO",
-            "propagate": False,
-        },
     },
 }
 
