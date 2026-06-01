@@ -121,25 +121,6 @@
           </a>
         </div>
       </div>
-
-      <!-- Quick chips -->
-      <div class="d-flex flex-wrap gap-2">
-        {% if house_styles %}
-          {% for s in house_styles %}
-            {% with slug=s.slug|default:s|slugify label=s %}
-              <a href="{% url 'plans:plan_list' %}?style={{ slug }}"
-                 class="badge rounded-pill chip text-decoration-none">
-                {{ label }}
-              </a>
-            {% endwith %}
-          {% endfor %}
-        {% else %}
-          <span class="badge rounded-pill chip">Ranch</span>
-          <span class="badge rounded-pill chip">Colonial</span>
-          <span class="badge rounded-pill chip">Modern Farmhouse</span>
-          <span class="badge rounded-pill chip">Cape</span>
-        {% endif %}
-      </div>
     </div>
   </section>
 
