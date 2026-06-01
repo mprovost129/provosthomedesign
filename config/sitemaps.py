@@ -40,6 +40,7 @@ class CorePagesSitemap(Sitemap):
             "plans:plan_list",
             "pages:services",
             "pages:web_design",
+            "pages:pricing",
             "pages:get_started",
             "pages:about",
             "pages:contact",

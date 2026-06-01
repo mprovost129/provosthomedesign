@@ -31,6 +31,7 @@ from .models import (
     SiteSettings,
     WebDesignInquiry,
     WEB_PROJECT_TYPE_CHOICES,
+    PricingPage,
 )
 from plans.models import Plans, HouseStyle
 from plans.session_utils import get_saved_plan_ids, get_comparison_plan_ids
@@ -839,6 +840,17 @@ def web_design(request: HttpRequest) -> HttpResponse:
             (getattr(settings, "RECAPTCHA_SITE_KEY", "") or "").strip()
             or (getattr(settings, "RECAPTCHA_PUBLIC_KEY", "") or "").strip()
         ),
+    })
+
+
+def pricing(request: HttpRequest) -> HttpResponse:
+    page = PricingPage.load()
+    items = list(page.items.filter(is_active=True)) if page.is_published else []
+    calc_items = [i for i in items if i.show_in_calculator]
+    return render(request, "pages/pricing.html", {
+        "page_obj": page,
+        "items": items,
+        "calc_items": calc_items,
     })
 
 

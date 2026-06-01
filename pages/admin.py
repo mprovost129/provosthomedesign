@@ -17,6 +17,8 @@ from .models import (
     SiteSettings,
     BusinessHour,
     WebDesignInquiry,
+    PricingPage,
+    PricingItem,
 )
 
 # ----------------------------
@@ -218,6 +220,25 @@ class SiteSettingsAdmin(SingletonModelAdmin):
 # ----------------------------
 # Contact messages
 # ----------------------------
+
+class PricingItemInline(admin.TabularInline):
+    model = PricingItem
+    extra = 1
+    fields = ("order", "label", "description", "price_type", "amount", "unit_label", "default_quantity", "show_in_calculator", "is_active")
+    ordering = ("order",)
+
+
+@admin.register(PricingPage)
+class PricingPageAdmin(SingletonModelAdmin):
+    inlines = [PricingItemInline]
+    fieldsets = (
+        (None, {"fields": ("title", "subtitle", "is_published")}),
+        ("What's Included section", {"fields": ("included_heading", "included_body")}),
+    )
+    formfield_overrides = {
+        models.TextField: {"widget": forms.Textarea(attrs={"rows": 10, "style": "font-family:ui-monospace,monospace;"})},
+    }
+
 
 @admin.register(WebDesignInquiry)
 class WebDesignInquiryAdmin(admin.ModelAdmin):

@@ -382,6 +382,75 @@ class WebDesignInquiry(models.Model):
         return f"{self.name} - {pt} - {self.submitted_at:%Y-%m-%d}"
 
 
+class PricingPage(models.Model):
+    """Singleton admin-editable pricing page content."""
+    title = models.CharField(max_length=120, default="Pricing")
+    subtitle = models.CharField(max_length=200, blank=True)
+    included_heading = models.CharField(max_length=200, blank=True, default="What's Included")
+    included_body = models.TextField(
+        blank=True,
+        help_text="One bullet point per line. Lines starting with -, •, or — are stripped of the prefix.",
+    )
+    is_published = models.BooleanField(default=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Pricing page"
+        verbose_name_plural = "Pricing page"
+
+    def __str__(self) -> str:
+        return self.title
+
+    @classmethod
+    def load(cls) -> "PricingPage":
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def bullets(self) -> list[str]:
+        lines = (self.included_body or "").splitlines()
+        out = []
+        for ln in lines:
+            ln = ln.strip()
+            if not ln:
+                continue
+            if ln.startswith(("•", "-", "–", "—")):
+                ln = ln.lstrip("•-–— ").strip()
+            out.append(ln)
+        return out
+
+
+class PricingItem(models.Model):
+    PRICE_TYPE_FLAT = "flat"
+    PRICE_TYPE_HOURLY = "hourly"
+    PRICE_TYPE_CHOICES = [
+        (PRICE_TYPE_FLAT, "Flat Rate"),
+        (PRICE_TYPE_HOURLY, "Per Hour"),
+    ]
+
+    page = models.ForeignKey(PricingPage, on_delete=models.CASCADE, related_name="items")
+    label = models.CharField(max_length=150, help_text="e.g. 'Custom Home Design'")
+    description = models.CharField(max_length=300, blank=True, help_text="Optional short description shown on the page.")
+    price_type = models.CharField(max_length=10, choices=PRICE_TYPE_CHOICES, default=PRICE_TYPE_FLAT)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    unit_label = models.CharField(max_length=60, blank=True, help_text="Shown next to the price, e.g. 'per project', 'per page'.")
+    show_in_calculator = models.BooleanField(default=True, help_text="Include this item in the pricing calculator.")
+    default_quantity = models.DecimalField(
+        max_digits=8, decimal_places=1, default=1,
+        help_text="Default quantity pre-filled in the calculator.",
+    )
+    order = models.PositiveIntegerField(default=0, help_text="Lower numbers appear first.")
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+        verbose_name = "Pricing item"
+        verbose_name_plural = "Pricing items"
+
+    def __str__(self) -> str:
+        type_label = dict(self.PRICE_TYPE_CHOICES).get(self.price_type, self.price_type)
+        return f"{self.label} — ${self.amount} ({type_label})"
+
+
 # models.py
 class ContactMessage(models.Model):
     class Status(models.TextChoices):

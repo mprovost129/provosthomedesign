@@ -42,19 +42,30 @@
                  {% if m and m.namespace == 'plans' %}aria-current="page"{% endif %}>Plans</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link {% if m and m.url_name == 'services' %}active{% endif %}"
-                 href="{% url 'pages:services' %}"
-                 {% if m and m.url_name == 'services' %}aria-current="page"{% endif %}>Services</a>
-            </li>
-            <li class="nav-item">
               <a class="nav-link {% if m and m.url_name == 'web_design' %}active{% endif %}"
                  href="{% url 'pages:web_design' %}"
                  {% if m and m.url_name == 'web_design' %}aria-current="page"{% endif %}>Web Design</a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link {% if m and m.url_name == 'about' %}active{% endif %}"
-                 href="{% url 'pages:about' %}"
-                 {% if m and m.url_name == 'about' %}aria-current="page"{% endif %}>About</a>
+            {# Company dropdown #}
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle {% if m and m.url_name == 'services' or m and m.url_name == 'pricing' or m and m.url_name == 'about' %}active{% endif %}"
+                 href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Company
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <a class="dropdown-item {% if m and m.url_name == 'services' %}active{% endif %}"
+                     href="{% url 'pages:services' %}">Services</a>
+                </li>
+                <li>
+                  <a class="dropdown-item {% if m and m.url_name == 'pricing' %}active{% endif %}"
+                     href="{% url 'pages:pricing' %}">Pricing</a>
+                </li>
+                <li>
+                  <a class="dropdown-item {% if m and m.url_name == 'about' %}active{% endif %}"
+                     href="{% url 'pages:about' %}">About</a>
+                </li>
+              </ul>
             </li>
             <li class="nav-item">
               <a class="nav-link {% if m and m.url_name == 'get_started' %}active{% endif %}"
