@@ -7,15 +7,15 @@
   {% endwith %}
 {% endblock %}
 
-{% block meta_description %}{% if plan.meta_description %}{{ plan.meta_description }}{% elif plan.description %}{{ plan.description|striptags|truncatechars:160 }}{% else %}House plan {{ plan.plan_number }} from Provost Home Design — view specs, images, and request a quote.{% endif %}{% endblock %}
+{% block meta_description %}{% if plan.meta_description %}{{ plan.meta_description }}{% elif plan.description %}{{ plan.description|striptags|truncatechars:160 }}{% else %}House plan {{ plan.plan_number }} from Provost Home Design - view specs, images, and request a quote.{% endif %}{% endblock %}
 
 {% block og_title %}{% with first_style=plan.house_styles.first %}Plan {{ plan.plan_number }}{% if first_style %} – {{ first_style.style_name }}{% endif %} • Provost Home Design{% endwith %}{% endblock %}
-{% block og_description %}{% if plan.meta_description %}{{ plan.meta_description }}{% elif plan.description %}{{ plan.description|striptags|truncatechars:160 }}{% else %}House plan {{ plan.plan_number }} — view specs, pricing, and images.{% endif %}{% endblock %}
+{% block og_description %}{% if plan.meta_description %}{{ plan.meta_description }}{% elif plan.description %}{{ plan.description|striptags|truncatechars:160 }}{% else %}House plan {{ plan.plan_number }} - view specs, pricing, and images.{% endif %}{% endblock %}
 {% block og_url %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% endblock %}
 {% block og_image %}{% if plan.main_image %}{{ plan.main_image.url }}{% elif images %}{{ images.0.image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'images/og-image.jpg' %}{% endif %}{% endblock %}
 {% block twitter_image %}{% if plan.main_image %}{{ plan.main_image.url }}{% elif images %}{{ images.0.image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'images/og-image.jpg' %}{% endif %}{% endblock %}
 {% block twitter_title %}{% with first_style=plan.house_styles.first %}Plan {{ plan.plan_number }}{% if first_style %} – {{ first_style.style_name }}{% endif %} • Provost Home Design{% endwith %}{% endblock %}
-{% block twitter_description %}{% if plan.meta_description %}{{ plan.meta_description }}{% elif plan.description %}{{ plan.description|striptags|truncatechars:160 }}{% else %}House plan {{ plan.plan_number }} — view specs, pricing, and images.{% endif %}{% endblock %}
+{% block twitter_description %}{% if plan.meta_description %}{{ plan.meta_description }}{% elif plan.description %}{{ plan.description|striptags|truncatechars:160 }}{% else %}House plan {{ plan.plan_number }} - view specs, pricing, and images.{% endif %}{% endblock %}
 
 {% block jsonld %}
 <script type="application/ld+json">
