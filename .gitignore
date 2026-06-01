@@ -56,22 +56,7 @@ coverage.xml
 *.py,cover
 *.hypothesis/
 
-# Migrations: exclude auto-generated app migrations (pages, crm, help, core, timetracking, plans, api)
-# but INCLUDE billing migrations (which must be tracked in version control)
-pages/migrations/*.py
-!pages/migrations/__init__.py
-crm/migrations/*.py
-!crm/migrations/__init__.py
-help/migrations/*.py
-!help/migrations/__init__.py
-core/migrations/*.py
-!core/migrations/__init__.py
-timetracking/migrations/*.py
-!timetracking/migrations/__init__.py
-plans/migrations/*.py
-!plans/migrations/__init__.py
-api/migrations/*.py
-!api/migrations/__init__.py
+# Migrations are tracked in version control so Render applies them automatically on deploy.
 
 # Desktop App (Tauri + React - not deployed to server)
 desktop/
