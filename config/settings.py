@@ -55,8 +55,9 @@ INSTALLED_APPS = [
 
 THUMBNAIL_ALIASES = {
     "": {
-        "plan_card": {"size": (640, 400), "crop": "center", "quality": 85},
+        "plan_card":     {"size": (640, 400), "crop": "center", "quality": 85},
         "plan_thumb_sm": {"size": (400, 250), "crop": "center", "quality": 80},
+        "gallery_thumb": {"size": (440, 330), "crop": "center", "quality": 85},
     }
 }
 
@@ -89,6 +90,7 @@ else:
 # --- Middleware ---
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "core.middleware.ContentSecurityPolicyMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",

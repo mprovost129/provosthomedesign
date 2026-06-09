@@ -37,7 +37,7 @@
           <ul class="list-unstyled mb-0">
             {% if contact.address %}
               <li class="mb-2 d-flex">
-                <span class="material-symbols-outlined me-2" aria-hidden="true">location_on</span>
+                <i class="bi bi-geo-alt me-2" aria-hidden="true"></i>
                 <address class="mb-0">
                   {{ contact.address|linebreaksbr }}
                 </address>
@@ -45,7 +45,7 @@
             {% endif %}
             {% if contact.phone %}
               <li class="mb-2 d-flex align-items-center">
-                <span class="material-symbols-outlined me-2" aria-hidden="true">call</span>
+                <i class="bi bi-telephone me-2" aria-hidden="true"></i>
                 {% if contact.tel_href %}
                   <a href="{{ contact.tel_href }}" rel="nofollow">{{ contact.phone }}</a>
                 {% else %}
@@ -55,7 +55,7 @@
             {% endif %}
             {% if contact.email %}
               <li class="mb-2 d-flex align-items-center">
-                <span class="material-symbols-outlined me-2" aria-hidden="true">mail</span>
+                <i class="bi bi-envelope me-2" aria-hidden="true"></i>
                 {% if contact.mailto_href %}
                   <a href="{{ contact.mailto_href }}">{{ contact.email }}</a>
                 {% else %}

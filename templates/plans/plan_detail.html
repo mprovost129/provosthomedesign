@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static humanize plans_extras %}
+{% load static humanize plans_extras thumbnail %}
 
 {% block title %}
   {% with first_style=plan.house_styles.first %}
@@ -70,7 +70,14 @@
                 data-bs-toggle="modal"
                 data-bs-target="#planGalleryModal"
                 data-start-index="{% if plan.main_image %}{{ forloop.counter0|add:1 }}{% else %}{{ forloop.counter0 }}{% endif %}">
-                <img src="{{ img.image.url }}" class="img-fluid rounded border" alt="{{ img.caption|default:'Gallery image' }}">
+                {% thumbnail img.image "gallery_thumb" as thumb %}
+                <img src="{{ thumb.url }}"
+                     width="{{ thumb.width }}"
+                     height="{{ thumb.height }}"
+                     class="img-fluid rounded border"
+                     alt="{{ img.caption|default:'Gallery image' }}"
+                     loading="lazy" decoding="async">
+                {% endthumbnail %}
               </a>
             </div>
           {% endfor %}
