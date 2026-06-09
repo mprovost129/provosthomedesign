@@ -512,7 +512,7 @@ class AffiliateProduct(models.Model):
         ]
 
     def __str__(self) -> str:
-        cat = AffiliateCategory(self.category).label
+        cat = dict(AFFILIATE_CATEGORY_CHOICES).get(self.category, self.category)
         return f"{self.title} ({cat})"
 
 
