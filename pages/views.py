@@ -7,7 +7,6 @@ from django_ratelimit.decorators import ratelimit
 
 import contextlib
 import logging
-import mimetypes
 import re
 from typing import Iterable
 
@@ -15,6 +14,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.cache import cache
 from django.core.mail import EmailMultiAlternatives
+from django.db import transaction
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
@@ -24,6 +24,7 @@ from django.urls import reverse
 from core.utils import get_client_ip, verify_recaptcha_v3
 from .forms import ContactForm, NewHouseForm, TestimonialForm, WebDesignInquiryForm
 from .models import (
+    ContactMessage,
     InquiryAttachment,
     ProjectInquiry,
     Testimonial,
@@ -38,7 +39,6 @@ from .models import (
 from plans.models import Plans, HouseStyle
 from plans.session_utils import get_saved_plan_ids, get_comparison_plan_ids
 from django.core.paginator import Paginator
-from pages.models import Testimonial
 
 logger = logging.getLogger(__name__)
 
@@ -269,6 +269,18 @@ def contact(request: HttpRequest) -> HttpResponse:
                 cd = contact_form.cleaned_data
                 sub = cd.get("subject") or f"Contact request from {cd['name']}"
                 message_id_display = "-"
+
+                with contextlib.suppress(Exception):
+                    ContactMessage.objects.create(
+                        name=cd["name"],
+                        email=cd["email"],
+                        phone=cd.get("phone", ""),
+                        subject=sub,
+                        message=cd["message"],
+                        ip_address=get_client_ip(request),
+                        user_agent=request.META.get("HTTP_USER_AGENT", ""),
+                        referer=request.META.get("HTTP_REFERER", ""),
+                    )
 
                 ctx = {
                     "company": company,
@@ -544,83 +556,50 @@ def get_started(request: HttpRequest) -> HttpResponse:
             elif isinstance(hs_val, str) and hs_val:
                 hs_obj = HouseStyle.objects.filter(slug=hs_val).first()
 
-            inquiry = ProjectInquiry.objects.create(
-                first_name=cd["first_name"],
-                last_name=cd["last_name"],
-                email=cd["email"],
-                alt_email=cd.get("alt_email") or "",
-                company=cd.get("company") or "",
-                phone_number=cd["phone_number"],
-                alt_phone_number=cd.get("alt_phone_number") or "",
-                preferred_contact_method=cd.get("preferred_contact_method") or "email",
-                street_address=cd.get("street_address") or "",
-                city=cd.get("city") or "",
-                state=cd.get("state") or "",
-                zip_code=cd.get("zip_code") or "",
-                house_style=hs_obj,
-                min_square_footage=to_int(cd.get("min_square_footage")),
-                max_square_footage=to_int(cd.get("max_square_footage")),
-                budget=cd.get("budget"),
-                number_of_floors=to_int(cd.get("number_of_floors")),
-                number_of_bedrooms=to_int(cd.get("number_of_bedrooms")),
-                number_of_bathrooms=to_int(cd.get("number_of_bathrooms")),
-                number_of_garage_spaces=to_int(cd.get("number_of_garage_spaces")),
-                land_purchased=bool(cd.get("land_purchased")),
-                land_address=cd.get("land_address") or "",
-                land_city=cd.get("land_city") or "",
-                land_state=cd.get("land_state") or "",
-                land_zip_code=cd.get("land_zip_code") or "",
-                land_size=cd.get("land_size") or "",
-                pre_existing_plans=bool(cd.get("pre_existing_plans")),
-                foundation_height=cd.get("foundation_height") or "",
-                first_floor_height=cd.get("first_floor_height") or "",
-                second_floor_height=cd.get("second_floor_height") or "",
-                third_floor_height=cd.get("third_floor_height") or "",
-                ceiling_feature_1=cd.get("ceiling_feature_1") or "",
-                ceiling_feature_2=cd.get("ceiling_feature_2") or "",
-                ceiling_feature_3=cd.get("ceiling_feature_3") or "",
-                additional_notes=cd.get("additional_notes") or "",
-                terms_accepted=bool(cd.get("terms_accepted")),
-            )
-
-            attachments = []
-            for f in request.FILES.getlist("plan_files"):
-                att = InquiryAttachment.objects.create(inquiry=inquiry, file=f)
-                attachments.append(att)
-
-            to_emails = getattr(settings, "GET_STARTED_TO_EMAILS", None) or [getattr(settings, "DEFAULT_FROM_EMAIL", "")]
-            to_emails = [e for e in to_emails if e]
-
-            ctx = {
-                "inquiry": inquiry,
-                "attachments": inquiry.attachments.all(),  # type: ignore
-                "admin_url": request.build_absolute_uri(f"/admin/pages/projectinquiry/{inquiry.pk}/change/"),
-                "site_url": request.build_absolute_uri("/"),
-            }
-            subject = f"[Get Started] {inquiry.first_name} {inquiry.last_name} - {inquiry.email}"
-            text_body = render_to_string("pages/emails/get_started_notification.txt", ctx)
-            html_body = render_to_string("pages/emails/get_started_notification.html", ctx)
-
-            msg = EmailMultiAlternatives(
-                subject=subject,
-                body=text_body,
-                from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
-                to=to_emails or None,
-                reply_to=[inquiry.email],
-            )
-            msg.attach_alternative(html_body, "text/html")
-
-            for att in attachments:
-                with contextlib.suppress(Exception):
-                    if att.file and att.file.size <= 5 * 1024 * 1024:
-                        att.file.open("rb")
-                        data = att.file.read()
-                        att.file.close()
-                        filename = att.file.name.split("/")[-1]
-                        ctype, _ = mimetypes.guess_type(filename)
-                        msg.attach(filename, data, ctype or "application/octet-stream")
-
-            msg.send(fail_silently=True)
+            # Wrap both saves so transaction.on_commit in the post_save signal
+            # fires after attachments are committed, ensuring the notification
+            # email includes all uploaded files.
+            with transaction.atomic():
+                inquiry = ProjectInquiry.objects.create(
+                    first_name=cd["first_name"],
+                    last_name=cd["last_name"],
+                    email=cd["email"],
+                    alt_email=cd.get("alt_email") or "",
+                    company=cd.get("company") or "",
+                    phone_number=cd["phone_number"],
+                    alt_phone_number=cd.get("alt_phone_number") or "",
+                    preferred_contact_method=cd.get("preferred_contact_method") or "email",
+                    street_address=cd.get("street_address") or "",
+                    city=cd.get("city") or "",
+                    state=cd.get("state") or "",
+                    zip_code=cd.get("zip_code") or "",
+                    house_style=hs_obj,
+                    min_square_footage=to_int(cd.get("min_square_footage")),
+                    max_square_footage=to_int(cd.get("max_square_footage")),
+                    budget=cd.get("budget"),
+                    number_of_floors=to_int(cd.get("number_of_floors")),
+                    number_of_bedrooms=to_int(cd.get("number_of_bedrooms")),
+                    number_of_bathrooms=to_int(cd.get("number_of_bathrooms")),
+                    number_of_garage_spaces=to_int(cd.get("number_of_garage_spaces")),
+                    land_purchased=bool(cd.get("land_purchased")),
+                    land_address=cd.get("land_address") or "",
+                    land_city=cd.get("land_city") or "",
+                    land_state=cd.get("land_state") or "",
+                    land_zip_code=cd.get("land_zip_code") or "",
+                    land_size=cd.get("land_size") or "",
+                    pre_existing_plans=bool(cd.get("pre_existing_plans")),
+                    foundation_height=cd.get("foundation_height") or "",
+                    first_floor_height=cd.get("first_floor_height") or "",
+                    second_floor_height=cd.get("second_floor_height") or "",
+                    third_floor_height=cd.get("third_floor_height") or "",
+                    ceiling_feature_1=cd.get("ceiling_feature_1") or "",
+                    ceiling_feature_2=cd.get("ceiling_feature_2") or "",
+                    ceiling_feature_3=cd.get("ceiling_feature_3") or "",
+                    additional_notes=cd.get("additional_notes") or "",
+                    terms_accepted=bool(cd.get("terms_accepted")),
+                )
+                for f in request.FILES.getlist("plan_files"):
+                    InquiryAttachment.objects.create(inquiry=inquiry, file=f)
 
             messages.success(request, "Thanks! Your request was received. We’ll reach out soon.")
             return redirect("pages:get_started")

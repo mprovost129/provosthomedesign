@@ -52,13 +52,31 @@ INSTALLED_APPS = [
     "core", "pages", "plans", "help", "api", "storages"
 ]
 
-# Simple cache + defaults for sorl
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "phd-local-cache",
+# Cache: Redis if REDIS_URL is set, database cache in production (shared across
+# gunicorn workers, survives restarts), locmem in local dev.
+# After first deploy with db cache: run `python manage.py createcachetable`
+REDIS_URL = config("REDIS_URL", default="")
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+        }
     }
-}
+elif not DEBUG:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+            "LOCATION": "django_cache",
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "phd-local-cache",
+        }
+    }
 
 # --- Middleware ---
 MIDDLEWARE = [
