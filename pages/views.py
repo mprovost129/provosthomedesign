@@ -32,6 +32,7 @@ from .models import (
     WebDesignInquiry,
     WEB_PROJECT_TYPE_CHOICES,
     PricingPage,
+    AffiliateProduct,
 )
 from plans.models import Plans, HouseStyle
 from plans.session_utils import get_saved_plan_ids, get_comparison_plan_ids
@@ -141,6 +142,10 @@ def home(request: HttpRequest) -> HttpResponse:
     # NEW: expose a few styles for the chips
     house_styles = HouseStyle.objects.only("slug", "style_name").order_by("style_name")[:8]
 
+    affiliate_products = list(
+        AffiliateProduct.objects.filter(category="home_design", is_active=True)[:8]
+    )
+
     return render(
         request,
         "pages/home.html",
@@ -148,6 +153,7 @@ def home(request: HttpRequest) -> HttpResponse:
             "recent_plans": recent_plans,
             "recent_testimonials": recent_testimonials,
             "house_styles": house_styles,
+            "affiliate_products": affiliate_products,
             "saved_plan_ids": get_saved_plan_ids(request),
             "comparison_plan_ids": get_comparison_plan_ids(request),
         },
@@ -831,11 +837,16 @@ def web_design(request: HttpRequest) -> HttpResponse:
         {"title": "Launch",    "desc": "Deployment, testing, and handoff. I stay available for questions and ongoing support as needed."},
     ]
 
+    affiliate_products = list(
+        AffiliateProduct.objects.filter(category="web_dev", is_active=True)[:8]
+    )
+
     return render(request, "pages/web_design.html", {
         "page": {"title": "Web Design & Development", "description": "Custom web apps and business websites built with Python, Django, and modern front-end tech."},
         "form": form,
         "tech_stack": tech_stack,
         "process_steps": process_steps,
+        "affiliate_products": affiliate_products,
         "recaptcha_site_key": (
             (getattr(settings, "RECAPTCHA_SITE_KEY", "") or "").strip()
             or (getattr(settings, "RECAPTCHA_PUBLIC_KEY", "") or "").strip()

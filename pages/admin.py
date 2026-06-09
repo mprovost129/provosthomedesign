@@ -19,6 +19,7 @@ from .models import (
     WebDesignInquiry,
     PricingPage,
     PricingItem,
+    AffiliateProduct,
 )
 
 # ----------------------------
@@ -238,6 +239,42 @@ class PricingPageAdmin(SingletonModelAdmin):
     formfield_overrides = {
         models.TextField: {"widget": forms.Textarea(attrs={"rows": 10, "style": "font-family:ui-monospace,monospace;"})},
     }
+
+
+@admin.register(AffiliateProduct)
+class AffiliateProductAdmin(admin.ModelAdmin):
+    list_display = ("thumb", "title", "category", "price_note", "order", "is_active", "updated_at")
+    list_display_links = ("thumb", "title")
+    list_editable = ("order", "is_active")
+    list_filter = ("category", "is_active")
+    search_fields = ("title", "description", "url")
+    ordering = ("category", "order")
+    list_per_page = 50
+
+    fieldsets = (
+        (None, {"fields": ("title", "category", "is_active", "order")}),
+        ("Links", {"fields": ("url", "image_url", "image_preview")}),
+        ("Details", {"fields": ("description", "price_note")}),
+    )
+    readonly_fields = ("image_preview",)
+
+    @admin.display(description="")
+    def thumb(self, obj):  # sourcery skip: use-contextlib-suppress
+        if obj.image_url:
+            return format_html(
+                '<img src="{}" style="height:40px;width:40px;object-fit:cover;border-radius:4px;" />',
+                obj.image_url,
+            )
+        return "—"
+
+    @admin.display(description="Image preview")
+    def image_preview(self, obj):
+        if obj.image_url:
+            return format_html(
+                '<img src="{}" style="max-height:160px;border:1px solid #ddd;padding:2px;border-radius:6px;" />',
+                obj.image_url,
+            )
+        return "No image URL set."
 
 
 @admin.register(WebDesignInquiry)

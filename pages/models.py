@@ -451,6 +451,64 @@ class PricingItem(models.Model):
         return f"{self.label} — ${self.amount} ({type_label})"
 
 
+AFFILIATE_CATEGORY_CHOICES = [
+    ("home_design", "Home Design Products"),
+    ("web_dev", "Web / Coding Books & Tools"),
+]
+
+
+class AffiliateProduct(models.Model):
+    """
+    Amazon Associates (or other affiliate) product link, managed in admin.
+    Grouped by `category` so the right products show on the right page:
+    `home_design` products appear on the Home page, `web_dev` on the Web Design page.
+    """
+    title = models.CharField(max_length=200)
+    category = models.CharField(
+        max_length=20,
+        choices=AFFILIATE_CATEGORY_CHOICES,
+        db_index=True,
+        help_text="Which page section this product appears in.",
+    )
+    url = models.URLField(
+        "Affiliate URL",
+        max_length=600,
+        help_text="Your full Amazon affiliate link (includes your Associates tag).",
+    )
+    image_url = models.URLField(
+        "Image URL",
+        max_length=600,
+        blank=True,
+        help_text="Optional. Paste a product image URL (e.g. the Amazon image address).",
+    )
+    description = models.CharField(
+        max_length=300,
+        blank=True,
+        help_text="Optional short blurb shown under the title.",
+    )
+    price_note = models.CharField(
+        max_length=40,
+        blank=True,
+        help_text="Optional free text shown as the price, e.g. '$24.99' or 'From $19'.",
+    )
+    order = models.PositiveIntegerField(default=0, help_text="Lower numbers appear first.")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["order", "-created_at"]
+        verbose_name = "Affiliate product"
+        verbose_name_plural = "Affiliate products"
+        indexes = [
+            models.Index(fields=["category", "is_active", "order"]),
+        ]
+
+    def __str__(self) -> str:
+        cat = dict(AFFILIATE_CATEGORY_CHOICES).get(self.category, self.category)
+        return f"{self.title} ({cat})"
+
+
 # models.py
 class ContactMessage(models.Model):
     class Status(models.TextChoices):

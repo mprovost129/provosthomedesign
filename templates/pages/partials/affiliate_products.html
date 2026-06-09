@@ -1,0 +1,68 @@
+{% comment %}
+Reusable affiliate product grid.
+
+Usage:
+  {% include "pages/partials/affiliate_products.html" with products=affiliate_products heading="Trending Design Products" subheading="Tools and decor I recommend." %}
+
+Context:
+  products   - iterable of AffiliateProduct (required)
+  heading    - section heading (optional)
+  subheading - small muted line under the heading (optional)
+{% endcomment %}
+{% if products %}
+<div class="container-lg">
+  {% if heading or subheading %}
+  <div class="text-center mb-4">
+    {% if heading %}<h2 class="h3 fw-bold">{{ heading }}</h2>{% endif %}
+    {% if subheading %}<p class="text-muted mb-0">{{ subheading }}</p>{% endif %}
+  </div>
+  {% endif %}
+
+  <div class="row g-3">
+    {% for product in products %}
+    <div class="col-6 col-md-4 col-lg-3">
+      <div class="card h-100 border rounded-3 shadow-sm">
+        <a href="{{ product.url }}" target="_blank" rel="nofollow sponsored noopener noreferrer"
+           class="d-block text-center pt-3 px-3" aria-label="{{ product.title }} on Amazon (opens in new tab)">
+          {% if product.image_url %}
+            <img src="{{ product.image_url }}" alt="{{ product.title }}"
+                 style="height:150px;object-fit:contain;max-width:100%;" loading="lazy" decoding="async">
+          {% else %}
+            <div class="d-flex align-items-center justify-content-center bg-body-tertiary text-muted rounded-3"
+                 style="height:150px;">
+              <i class="bi bi-box-seam fs-1" aria-hidden="true"></i>
+            </div>
+          {% endif %}
+        </a>
+        <div class="card-body d-flex flex-column">
+          <h3 class="h6 fw-semibold mb-1">
+            <a href="{{ product.url }}" target="_blank" rel="nofollow sponsored noopener noreferrer"
+               class="text-decoration-none text-dark stretched-link-none">{{ product.title }}</a>
+          </h3>
+          {% if product.description %}
+            <p class="small text-muted mb-2">{{ product.description }}</p>
+          {% endif %}
+          <div class="mt-auto d-flex align-items-center justify-content-between gap-2">
+            {% if product.price_note %}
+              <span class="fw-bold">{{ product.price_note }}</span>
+            {% else %}
+              <span></span>
+            {% endif %}
+            <a href="{{ product.url }}" target="_blank" rel="nofollow sponsored noopener noreferrer"
+               class="btn btn-sm btn-warning text-nowrap">
+              <i class="bi bi-amazon me-1" aria-hidden="true"></i> View
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <p class="small text-muted text-center mt-3 mb-0">
+    <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+    As an Amazon Associate I earn from qualifying purchases. Links above may be affiliate links,
+    which means I may earn a commission at no extra cost to you.
+  </p>
+</div>
+{% endif %}
