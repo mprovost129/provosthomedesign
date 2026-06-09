@@ -303,6 +303,13 @@
     </div>
   </section>
 
+  <!-- Trending Design Products (Amazon affiliate) -->
+  {% if affiliate_products %}
+    <section class="mt-5">
+      {% include "pages/partials/affiliate_products.html" with products=affiliate_products heading="Trending Design Products" subheading="Tools, decor, and resources I recommend for your home project." %}
+    </section>
+  {% endif %}
+
   <!-- Recent Testimonials (optional) -->
   {% if recent_testimonials %}
     <section class="mt-5">

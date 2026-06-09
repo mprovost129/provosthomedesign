@@ -234,6 +234,13 @@
   </div>
 </section>
 
+{# ── Recommended Books & Tools (Amazon affiliate) ─────────────────────────── #}
+{% if affiliate_products %}
+<section class="py-5" style="background:#f8fafc;" id="recommended">
+  {% include "pages/partials/affiliate_products.html" with products=affiliate_products heading="Books & Tools I Recommend" subheading="My go-to books and resources for learning HTML, Python, Django, and web development." %}
+</section>
+{% endif %}
+
 {# ── Inquiry Form ─────────────────────────────────────────────────────────── #}
 <section class="py-5 bg-white" id="inquiry">
   <div class="container-lg">
