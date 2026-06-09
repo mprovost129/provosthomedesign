@@ -130,7 +130,7 @@ def home(request: HttpRequest) -> HttpResponse:
             "id", "slug", "plan_number", "plan_price", "square_footage",
             "bedrooms", "bathrooms", "main_image", "created_date"
         )
-        .order_by("-created_date")[:3]
+        .order_by("-is_featured", "-created_date")[:3]
     )
 
     recent_testimonials = list(
@@ -698,8 +698,6 @@ def testimonials_list(request):
     ).order_by("-created_at")
     page = Paginator(qs, 12).get_page(request.GET.get("page"))
     return render(request, "pages/testimonials_list.html", {"page": page})
-
-from django.shortcuts import render
 
 def services(request):
     return render(request, "pages/services.html")

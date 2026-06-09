@@ -52,11 +52,11 @@
       "telephone": "{{ CONTACT_PHONE|escapejs }}",
       "address": {
         "@type": "PostalAddress",
-        "streetAddress": "7 Park St, Unit 1",
-        "addressLocality": "Rehoboth",
-        "addressRegion": "MA",
-        "postalCode": "02769",
-        "addressCountry": "US"
+        "streetAddress": "{{ CONTACT_STREET|escapejs }}",
+        "addressLocality": "{{ CONTACT_CITY|escapejs }}",
+        "addressRegion": "{{ CONTACT_REGION|escapejs }}",
+        "postalCode": "{{ CONTACT_POSTAL|escapejs }}",
+        "addressCountry": "{{ CONTACT_COUNTRY|default:'US'|escapejs }}"
       },
       "areaServed": ["MA","RI","NH"],
       "openingHoursSpecification": [
@@ -139,7 +139,6 @@
 
     <!-- JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="{% static 'js/plans.js' %}" defer></script>
     {% block extra_scripts %}{% endblock %}
   </body>
 </html>
