@@ -62,16 +62,36 @@
   color:var(--bs-primary);
 }
 
-/* Hero treatment */
-.hero {
-  background-position: center;
-  background-size: cover;
-  min-height: 360px;
+/* Plan card thumbnails */
+.plan-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  height: auto;
+  display: block;
 }
-.hero-overlay{
-  position:absolute; inset:0;
-  background:
-    linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.55));
+.plan-thumb-placeholder {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Hero treatment */
+.hero { min-height: 360px; }
+.hero-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.55));
 }
 
 /* Chips that read well on the photo */

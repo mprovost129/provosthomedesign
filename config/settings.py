@@ -49,8 +49,16 @@ INSTALLED_APPS = [
     "django_recaptcha",
     "corsheaders",
     "rest_framework", "rest_framework.authtoken",
-    "core", "pages", "plans", "help", "api", "storages"
+    "core", "pages", "plans", "help", "api", "storages",
+    "easy_thumbnails",
 ]
+
+THUMBNAIL_ALIASES = {
+    "": {
+        "plan_card": {"size": (640, 400), "crop": "center", "quality": 85},
+        "plan_thumb_sm": {"size": (400, 250), "crop": "center", "quality": 80},
+    }
+}
 
 # Cache: Redis if REDIS_URL is set, database cache in production (shared across
 # gunicorn workers, survives restarts), locmem in local dev.

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static humanize plans_extras %}
+{% load static humanize plans_extras thumbnail %}
 
 {% block title %}Home • Provost Home Design{% endblock %}
 
@@ -7,20 +7,23 @@
 {% block og_title %}Provost Home Design - Custom House Plans{% endblock %}
 {% block og_description %}Browse custom and stock house plans. Code-compliant, permit-ready designs for New England builders and homeowners.{% endblock %}
 
+{% block extra_head %}
+<link rel="preload" as="image" href="{% static 'images/hero-blueprint.jpg' %}">
+{% endblock %}
+
 {% block content %}
 <div class="container-lg py-4">
 
-  {# --- Image sizing (no sorl thumbnail) --- #}
-  <style>
-    .plan-thumb{width:100%;aspect-ratio:16/10;object-fit:cover;height:auto;display:block}
-    .plan-thumb-placeholder{
-      width:100%;aspect-ratio:16/10;display:flex;align-items:center;justify-content:center
-    }
-  </style>
-
   <!-- Hero -->
-  <section class="mb-4 position-relative overflow-hidden rounded-3 shadow border hero"
-           style="background-image: url('{% static 'images/hero-blueprint.jpg' %}');">
+  <section class="mb-4 position-relative overflow-hidden rounded-3 shadow border hero">
+    <img src="{% static 'images/hero-blueprint.jpg' %}"
+         alt=""
+         aria-hidden="true"
+         class="hero-img"
+         fetchpriority="high"
+         decoding="async"
+         width="1200"
+         height="600">
     <div class="hero-overlay"></div>
 
     <div class="position-relative p-4 p-md-5 text-white">
@@ -138,12 +141,16 @@
             <div class="card h-100 border shadow rounded-3">
               <a href="{{ p.get_absolute_url }}" class="d-block">
                 {% if p.main_image %}
+                  {% thumbnail p.main_image "plan_card" as thumb %}
                   <img
-                    src="{{ p.main_image.url }}"
+                    src="{{ thumb.url }}"
+                    width="{{ thumb.width }}"
+                    height="{{ thumb.height }}"
                     class="card-img-top plan-thumb"
                     alt="Front elevation of Plan {{ p.plan_number|default:'-' }}"
                     loading="lazy" decoding="async"
                     style="cursor: pointer;">
+                  {% endthumbnail %}
                 {% else %}
                   <div class="bg-body-tertiary text-muted small plan-thumb-placeholder">
                     No image
@@ -220,10 +227,14 @@
         <div class="card h-100 shadow-sm">
           <a href="{{ p.get_absolute_url }}">
             {% if p.main_image %}
-            <img src="{{ p.main_image.url }}" 
-                 class="card-img-top plan-thumb" 
+            {% thumbnail p.main_image "plan_thumb_sm" as thumb %}
+            <img src="{{ thumb.url }}"
+                 width="{{ thumb.width }}"
+                 height="{{ thumb.height }}"
+                 class="card-img-top plan-thumb"
                  alt="Plan {{ p.plan_number }}"
                  loading="lazy" decoding="async">
+            {% endthumbnail %}
             {% else %}
             <div class="bg-light plan-thumb-placeholder">
               <span class="text-muted small">No image</span>

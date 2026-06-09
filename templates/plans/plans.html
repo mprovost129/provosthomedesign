@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static humanize plans_extras %}
+{% load static humanize plans_extras thumbnail %}
 
 {% block title %}Plans • Provost Home Design{% endblock %}
 
@@ -9,23 +9,6 @@
 
 {% block content %}
 <div class="container-lg py-4">
-
-  <style>
-    .plan-thumb {
-      width: 100%;
-      aspect-ratio: 16 / 10;
-      object-fit: cover;
-      height: auto;
-      display: block;
-    }
-    .plan-thumb-placeholder {
-      width: 100%;
-      aspect-ratio: 16 / 10;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-  </style>
 
   <header class="mb-3">
     <h1 class="h3 mb-1">{{ page.title|default:"Plans" }}</h1>
@@ -127,12 +110,16 @@
           <div class="card h-100 shadow-sm">
             <a href="{{ p.get_absolute_url }}" class="d-block">
               {% if p.main_image %}
+                {% thumbnail p.main_image "plan_card" as thumb %}
                 <img
-                  src="{{ p.main_image.url }}"
+                  src="{{ thumb.url }}"
+                  width="{{ thumb.width }}"
+                  height="{{ thumb.height }}"
                   class="card-img-top plan-thumb"
                   alt="Front elevation of Plan {{ p.plan_number|default:'-' }}"
                   loading="lazy" decoding="async"
                   style="cursor: pointer;">
+                {% endthumbnail %}
               {% else %}
                 <div class="bg-light text-muted small plan-thumb-placeholder">No image</div>
               {% endif %}
