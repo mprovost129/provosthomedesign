@@ -150,7 +150,6 @@
                     alt="Front elevation of Plan {{ p.plan_number|default:'-' }}"
                     loading="lazy" decoding="async"
                     style="cursor: pointer;">
-                  {% endthumbnail %}
                 {% else %}
                   <div class="bg-body-tertiary text-muted small plan-thumb-placeholder">
                     No image
@@ -234,7 +233,6 @@
                  class="card-img-top plan-thumb"
                  alt="Plan {{ p.plan_number }}"
                  loading="lazy" decoding="async">
-            {% endthumbnail %}
             {% else %}
             <div class="bg-light plan-thumb-placeholder">
               <span class="text-muted small">No image</span>
