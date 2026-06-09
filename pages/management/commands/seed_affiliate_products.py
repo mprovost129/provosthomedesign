@@ -19,7 +19,7 @@ from __future__ import annotations
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from pages.models import AffiliateProduct
+from pages.models import AffiliateProduct, AffiliateCategory
 
 
 # Curated starter products. ASINs verified against amazon.com listings.
@@ -27,37 +27,37 @@ from pages.models import AffiliateProduct
 CURATED = [
     # --- Home / architecture & design (shows on the Home page) ---
     (
-        "home_design",
+        AffiliateCategory.HOME_DESIGN,
         "A Pattern Language: Towns, Buildings, Construction",
         "0195019199",
         "Christopher Alexander's classic - 253 timeless patterns for designing homes and spaces people love.",
     ),
     (
-        "home_design",
+        AffiliateCategory.HOME_DESIGN,
         "101 Things I Learned in Architecture School",
         "0262062666",
         "Matthew Frederick's quick, illustrated lessons on design, drawing, and how buildings really work.",
     ),
     (
-        "home_design",
+        AffiliateCategory.HOME_DESIGN,
         "Architecture: Form, Space, and Order",
         "1119853370",
         "Francis D.K. Ching's beautifully illustrated introduction to the vocabulary of architectural design.",
     ),
     (
-        "home_design",
+        AffiliateCategory.HOME_DESIGN,
         "Architectural Graphics",
         "1394206240",
         "Ching's essential guide to drafting conventions and hand drawing for clear design presentations.",
     ),
     (
-        "home_design",
+        AffiliateCategory.HOME_DESIGN,
         "Sakura Pigma Micron Fineliner Pen Set (6 Sizes)",
         "B0008G8G8Y",
         "Archival, waterproof ink pens in assorted nib sizes - a go-to for crisp linework and inking plans.",
     ),
     (
-        "home_design",
+        AffiliateCategory.HOME_DESIGN,
         "Strathmore 400 Series Sketch Pad (9x12, 100 Sheets)",
         "B0027A39PY",
         "Heavyweight, fine-tooth sketch paper for concept sketches, elevations, and quick design studies.",
@@ -65,25 +65,25 @@ CURATED = [
 
     # --- Web / coding (shows on the Web Design page) ---
     (
-        "web_dev",
+        AffiliateCategory.WEB_DEV,
         "Python Crash Course, 3rd Edition",
         "1718502702",
         "Eric Matthes' hands-on, project-based intro to Python - the book I recommend to start with.",
     ),
     (
-        "web_dev",
+        AffiliateCategory.WEB_DEV,
         "HTML and CSS: Design and Build Websites",
         "1118008189",
         "Jon Duckett's full-color, beginner-friendly guide to writing clean HTML and CSS.",
     ),
     (
-        "web_dev",
+        AffiliateCategory.WEB_DEV,
         "Web Design with HTML, CSS, JavaScript and jQuery Set",
         "1118907442",
         "Jon Duckett's two-book set covering front-end structure, style, and interactivity.",
     ),
     (
-        "web_dev",
+        AffiliateCategory.WEB_DEV,
         "Automate the Boring Stuff with Python, 3rd Edition",
         "1718503407",
         "Al Sweigart's practical programming for total beginners - automate real-world tasks with Python.",
