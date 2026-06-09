@@ -33,6 +33,7 @@ from .models import (
     WEB_PROJECT_TYPE_CHOICES,
     PricingPage,
     AffiliateProduct,
+    AffiliateCategory,
 )
 from plans.models import Plans, HouseStyle
 from plans.session_utils import get_saved_plan_ids, get_comparison_plan_ids
@@ -143,7 +144,7 @@ def home(request: HttpRequest) -> HttpResponse:
     house_styles = HouseStyle.objects.only("slug", "style_name").order_by("style_name")[:8]
 
     affiliate_products = list(
-        AffiliateProduct.objects.filter(category="home_design", is_active=True)[:8]
+        AffiliateProduct.objects.filter(category=AffiliateCategory.HOME_DESIGN, is_active=True)[:8]
     )
 
     return render(
@@ -838,7 +839,7 @@ def web_design(request: HttpRequest) -> HttpResponse:
     ]
 
     affiliate_products = list(
-        AffiliateProduct.objects.filter(category="web_dev", is_active=True)[:8]
+        AffiliateProduct.objects.filter(category=AffiliateCategory.WEB_DEV, is_active=True)[:8]
     )
 
     return render(request, "pages/web_design.html", {

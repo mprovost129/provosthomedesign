@@ -451,10 +451,13 @@ class PricingItem(models.Model):
         return f"{self.label} — ${self.amount} ({type_label})"
 
 
-AFFILIATE_CATEGORY_CHOICES = [
-    ("home_design", "Home Design Products"),
-    ("web_dev", "Web / Coding Books & Tools"),
-]
+class AffiliateCategory(models.TextChoices):
+    HOME_DESIGN = "home_design", "Home Design Products"
+    WEB_DEV = "web_dev", "Web / Coding Books & Tools"
+
+
+# Backwards-compatible alias for any code/templates that referenced the old list.
+AFFILIATE_CATEGORY_CHOICES = AffiliateCategory.choices
 
 
 class AffiliateProduct(models.Model):
@@ -466,7 +469,7 @@ class AffiliateProduct(models.Model):
     title = models.CharField(max_length=200)
     category = models.CharField(
         max_length=20,
-        choices=AFFILIATE_CATEGORY_CHOICES,
+        choices=AffiliateCategory.choices,
         db_index=True,
         help_text="Which page section this product appears in.",
     )
@@ -479,7 +482,11 @@ class AffiliateProduct(models.Model):
         "Image URL",
         max_length=600,
         blank=True,
-        help_text="Optional. Paste a product image URL (e.g. the Amazon image address).",
+        help_text=(
+            "Optional. Use a compliant image link from Amazon SiteStripe "
+            "(Get Link → Image) or the Product Advertising API — do not hotlink "
+            "arbitrary product images. Leave blank to show a themed placeholder icon."
+        ),
     )
     description = models.CharField(
         max_length=300,
