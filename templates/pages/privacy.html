@@ -16,7 +16,7 @@
       <li class="list-inline-item"><a href="#use">How We Use Info</a></li>
       <li class="list-inline-item"><a href="#legal">Legal Bases (EEA/UK)</a></li>
       <li class="list-inline-item"><a href="#cookies">Cookies</a></li>
-      <li class="list-inline-item"><a href="#analytics">Analytics & Email</a></li>
+      <li class="list-inline-item"><a href="#analytics">Analytics & Affiliates</a></li>
       <li class="list-inline-item"><a href="#sharing">Data Sharing</a></li>
       <li class="list-inline-item"><a href="#security">Security</a></li>
       <li class="list-inline-item"><a href="#retention">Retention</a></li>
@@ -54,8 +54,11 @@
       <li><strong>Account & preferences:</strong> if you sign in or save items (e.g., saved plans/details), we store
           profile and preference data associated with your account.</li>
       <li><strong>Transaction information:</strong> if purchases are offered, we process order details (card data is handled by our payment processor).</li>
-      <li><strong>Technical information:</strong> IP address, device/browser type, pages visited, and similar usage data,
-          collected via cookies and similar technologies.</li>
+      <li><strong>Technical information:</strong> IP address, device/browser type, browser user-agent string, and pages visited,
+          collected via cookies and similar technologies. When you submit a contact or inquiry form, we also store your IP address
+          and browser user-agent in our database for spam prevention and security purposes.</li>
+      <li><strong>Uploaded files:</strong> if you attach files to an inquiry (e.g., existing plans or reference images),
+          those files are uploaded to and stored on Amazon Web Services (AWS) S3 cloud storage.</li>
       <li><strong>From third parties:</strong> we may receive information from service providers (e.g., analytics,
           email delivery, anti-spam/anti-abuse) or when you interact with us on social platforms.</li>
     </ul>
@@ -82,25 +85,54 @@
 
   <div class="mb-5" id="cookies">
     <h2 class="h4">6. Cookies & Similar Technologies</h2>
-    <p>
-      We use cookies to operate the site, remember preferences, and analyze usage. You can manage cookies in your browser.
-      Blocking cookies may affect site functionality. If we add a cookie banner or preference center, your choices there will be honored.
-    </p>
+    <p>We use cookies and similar technologies to operate the site, remember preferences, and analyze usage. Key cookies include:</p>
+    <ul>
+      <li><strong>Session cookie:</strong> a server-set cookie keeps track of plans you save to favorites or add to your comparison
+          list. This data is not linked to your identity and expires when your session ends or you clear cookies.</li>
+      <li><strong>Analytics cookies (<code>_ga</code>, <code>_gid</code>):</strong> Google Analytics 4 sets these cookies to
+          distinguish users and sessions for aggregate usage measurement. You can opt out via the
+          <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer">Google Analytics Opt-out Browser Add-on</a>.</li>
+      <li><strong>reCAPTCHA cookies:</strong> Google reCAPTCHA v3 runs on pages with forms to detect spam and abuse. It sets
+          cookies and collects device and behavioral data invisibly (no checkbox or challenge is shown) per
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google's Privacy Policy</a>.</li>
+    </ul>
+    <p>You can manage or disable cookies in your browser settings. Disabling session or reCAPTCHA cookies may affect form submissions
+    and the ability to save plans.</p>
   </div>
 
   <div class="mb-5" id="analytics">
-    <h2 class="h4">7. Analytics, Email & Social</h2>
+    <h2 class="h4">7. Analytics, Anti-Spam, Affiliates & Social</h2>
     <ul>
-      <li><strong>Analytics:</strong> we may use analytics tools to understand aggregate usage trends.</li>
-      <li><strong>Email delivery & marketing:</strong> providers may send transactional or marketing emails on our behalf. You can unsubscribe from marketing at any time.</li>
-      <li><strong>Social links:</strong> our site links to Facebook, Instagram, and LinkedIn. Your interactions are governed by those platforms’ policies.</li>
+      <li><strong>Google Analytics 4:</strong> we use GA4 to understand aggregate site usage (pages viewed, traffic sources, time on
+          site). GA4 processes data per <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google’s
+          Privacy Policy</a>. Data is anonymized and not used to identify you individually.</li>
+      <li><strong>Google reCAPTCHA v3:</strong> our forms use reCAPTCHA v3 to distinguish humans from bots. This involves processing
+          of IP addresses and behavioral data by Google, subject to
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google’s Privacy Policy</a> and
+          <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a>.</li>
+      <li><strong>Amazon Associates:</strong> some links on this site are Amazon affiliate links. Clicking these links may result in
+          Amazon placing tracking cookies on your device per
+          <a href="https://www.amazon.com/gp/help/customer/display.html?nodeId=468496" target="_blank" rel="noopener noreferrer">Amazon’s
+          Privacy Notice</a>. We earn a small commission on qualifying purchases at no cost to you.</li>
+      <li><strong>Email delivery:</strong> transactional emails (inquiry confirmations, etc.) are sent via our email service provider,
+          which receives only the name and address needed to deliver the message. Marketing emails include an unsubscribe link.</li>
+      <li><strong>Social links:</strong> our site links to Facebook, Instagram, and LinkedIn. Your interactions on those platforms are
+          governed by their respective privacy policies.</li>
     </ul>
   </div>
 
   <div class="mb-5" id="sharing">
     <h2 class="h4">8. Data Sharing</h2>
     <ul>
-      <li><strong>Service providers:</strong> vendors who help operate the site, deliver files, process email, host data, or provide analytics/anti-abuse.</li>
+      <li><strong>Cloud infrastructure:</strong> our site is hosted on Render.com; media files and inquiry attachments are stored
+          on Amazon Web Services (AWS) S3. Both vendors are bound by data-processing agreements.</li>
+      <li><strong>Analytics & anti-spam:</strong> Google (Analytics 4 and reCAPTCHA v3) processes usage and behavioral data to
+          provide those services per their own privacy policies.</li>
+      <li><strong>Affiliate networks:</strong> when you click an Amazon affiliate link, Amazon may associate that click with your
+          Amazon account or device per their own privacy practices. We do not receive personal data from Amazon as a result of
+          affiliate clicks.</li>
+      <li><strong>Email service:</strong> our transactional email provider receives the name and email address required to deliver
+          confirmations and notifications.</li>
       <li><strong>Legal & safety:</strong> to comply with law, enforce our Terms, or protect rights, property, and safety.</li>
       <li><strong>Business transfers:</strong> in connection with a merger, acquisition, or asset sale, with appropriate protections.</li>
       <li><strong>We do not sell or rent your personal information.</strong></li>
