@@ -33,6 +33,7 @@
 @media (min-width:1600px){
   .phd-nav .navbar-nav .nav-link{
     font-size:1rem;
+    white-space:nowrap;
   }
 }
 .phd-nav .navbar-nav .nav-link:hover,
