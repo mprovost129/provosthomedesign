@@ -13,6 +13,7 @@
   transition:background-color .2s,color .2s,box-shadow .2s;
   /* Responsive text sizing */
   font-size:0.875rem;
+  white-space:nowrap;
 }
 /* Compact sizing on medium desktops (like Chromebooks) */
 @media (min-width:1200px) and (max-width:1399px){
