@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}Pricing • Provost Home Design{% endblock %}
-{% block meta_description %}Transparent pricing for web design and development services. Flat-rate packages and hourly options — use the calculator to estimate your project cost.{% endblock %}
+{% block meta_description %}Transparent pricing for web design and development services. Flat-rate packages and hourly options - use the calculator to estimate your project cost.{% endblock %}
 {% block og_title %}Pricing • Provost Home Design{% endblock %}
 {% block og_description %}Web design pricing from Provost Home Design. Flat-rate and hourly options with a live pricing calculator.{% endblock %}
 
@@ -117,7 +117,7 @@
               </div>
               <div class="d-flex justify-content-end mt-1">
                 <span class="small text-muted line-total" data-for="{{ item.pk }}">
-                  —
+                  -
                 </span>
               </div>
             </div>
@@ -165,7 +165,7 @@
       var id = input.id.replace('calc-', '');
       var lineEl = document.querySelector('.line-total[data-for="' + id + '"]');
       if (lineEl) {
-        lineEl.textContent = qty > 0 ? fmt(lineTotal) : '—';
+        lineEl.textContent = qty > 0 ? fmt(lineTotal) : '-';
       }
     });
     document.getElementById('calc-total').textContent = fmt(total);
