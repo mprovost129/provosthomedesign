@@ -157,17 +157,24 @@
   </div>
 </nav>
 
-{# Optional: collapse the menu after choosing a link on mobile #}
+{# Collapse the menu after choosing a real link on mobile, but keep dropdown toggles open. #}
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     var mainNav = document.getElementById('mainNav');
-    if (!mainNav) return;
-    mainNav.querySelectorAll('a.nav-link').forEach(function (link) {
+    var navToggler = document.querySelector('.navbar-toggler');
+    if (!mainNav || !navToggler || typeof bootstrap === 'undefined') return;
+
+    mainNav.querySelectorAll('a.nav-link, a.dropdown-item').forEach(function (link) {
       link.addEventListener('click', function () {
-        var bsCollapse = bootstrap.Collapse.getInstance(mainNav);
-        if (bsCollapse && window.getComputedStyle(document.querySelector('.navbar-toggler')).display !== 'none') {
-          bsCollapse.hide();
+        if (link.classList.contains('dropdown-toggle') || link.getAttribute('data-bs-toggle') === 'dropdown') {
+          return;
         }
+
+        var isMobileNavOpen = window.getComputedStyle(navToggler).display !== 'none' && mainNav.classList.contains('show');
+        if (!isMobileNavOpen) return;
+
+        var bsCollapse = bootstrap.Collapse.getOrCreateInstance(mainNav, { toggle: false });
+        bsCollapse.hide();
       });
     });
   });
