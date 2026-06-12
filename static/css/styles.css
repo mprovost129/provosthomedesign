@@ -1,3 +1,61 @@
+/* Brand controls */
+:root {
+  --phd-primary-blue: #0d6efd;
+  --phd-primary-light-gray: #e9ecef;
+  --phd-primary-light-gray-hover: #dde2e6;
+  --phd-primary-light-gray-active: #d3d8dd;
+  --phd-primary-text-dark: #1f2933;
+}
+
+/* Bootstrap primary button override: Provost blue fades into light gray */
+.btn-primary {
+  --bs-btn-color: var(--phd-primary-text-dark);
+  --bs-btn-bg: var(--phd-primary-light-gray);
+  --bs-btn-border-color: #d7dde2;
+  --bs-btn-hover-color: var(--phd-primary-text-dark);
+  --bs-btn-hover-bg: var(--phd-primary-light-gray-hover);
+  --bs-btn-hover-border-color: #cfd6dc;
+  --bs-btn-focus-shadow-rgb: 13, 110, 253;
+  --bs-btn-active-color: var(--phd-primary-text-dark);
+  --bs-btn-active-bg: var(--phd-primary-light-gray-active);
+  --bs-btn-active-border-color: #c6cdd3;
+  --bs-btn-disabled-color: #6c757d;
+  --bs-btn-disabled-bg: #e9ecef;
+  --bs-btn-disabled-border-color: #d7dde2;
+
+  background-image: linear-gradient(
+    135deg,
+    var(--phd-primary-blue) 0%,
+    #8fb6dc 45%,
+    var(--phd-primary-light-gray) 100%
+  );
+  background-size: 200% 100%;
+  background-position: left center;
+  border-color: #cfd6dc;
+  transition:
+    background-position .35s ease,
+    background-color .2s ease,
+    border-color .2s ease,
+    color .2s ease,
+    box-shadow .2s ease,
+    transform .15s ease;
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
+  background-position: right center;
+  color: var(--phd-primary-text-dark);
+  border-color: #c6cdd3;
+}
+
+.btn-primary:active,
+.btn-primary.active,
+.show > .btn-primary.dropdown-toggle {
+  background-image: linear-gradient(135deg, #d3d8dd 0%, #e9ecef 100%);
+  color: var(--phd-primary-text-dark);
+  border-color: #c6cdd3;
+}
+
 /* 2 / 8 / 2 is handled by the grid above; this is spacing + hover */
 .phd-nav .nav-spaced{ gap:1rem; }
 /* Responsive spacing - tighter on smaller desktops, more generous on larger screens */
@@ -285,4 +343,3 @@
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
 }
-
