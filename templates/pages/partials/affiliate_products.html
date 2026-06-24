@@ -26,10 +26,9 @@ Context:
            class="d-block text-center pt-3 px-3" aria-label="{{ product.title }} on Amazon (opens in new tab)">
           {% if product.image_url %}
             <img src="{{ product.image_url }}" alt="{{ product.title }}"
-                 style="height:150px;object-fit:contain;max-width:100%;" loading="lazy" decoding="async">
+                 class="affiliate-thumb" loading="lazy" decoding="async">
           {% else %}
-            <div class="d-flex align-items-center justify-content-center bg-body-tertiary text-muted rounded-3"
-                 style="height:150px;">
+            <div class="d-flex align-items-center justify-content-center bg-body-tertiary text-muted rounded-3 affiliate-placeholder">
               <i class="bi bi-box-seam fs-1" aria-hidden="true"></i>
             </div>
           {% endif %}

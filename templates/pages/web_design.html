@@ -3,7 +3,7 @@
 
 {% block title %}Web Design & Development • Provost Home Design{% endblock %}
 
-{% block meta_description %}Custom web apps and business websites built with Python, Django, React, and Bootstrap. Fast, mobile-ready, and built by a real developer - not a template.{% endblock %}
+{% block meta_description %}Custom web apps and business websites built with Python, Django, and Bootstrap. Fast, mobile-ready, and built by a real developer — not a template.{% endblock %}
 {% block og_title %}Web Design & Development • Provost Home Design{% endblock %}
 {% block og_description %}Custom websites and web applications built with Python, Django, and modern front-end tools. No page builders - just clean, professional code.{% endblock %}
 {% block twitter_title %}Web Design & Development • Provost Home Design{% endblock %}
@@ -52,13 +52,13 @@
 {% block content %}
 
 {# ── Hero ─────────────────────────────────────────────────────────────────── #}
-<section class="py-5" style="background: linear-gradient(135deg, #0d1b2a 0%, #1a3350 100%);">
+<section class="py-5 bg-gradient-dark-navy">
   <div class="container-lg py-3">
     <div class="row align-items-center gy-4">
       <div class="col-lg-7">
-        <p class="text-uppercase fw-semibold mb-2" style="color:#7eb3d8; letter-spacing:.08em; font-size:.85rem;">Web Design & Development</p>
+        <p class="text-uppercase fw-semibold mb-2 web-section-label">Web Design & Development</p>
         <h1 class="display-5 fw-bold text-white mb-3">Sites and apps that actually work for your business</h1>
-        <p class="lead mb-4" style="color:#c8dce8;">
+        <p class="lead mb-4 web-section-lead">
           I build custom websites and web applications using Python, Django, and modern front-end tools.
           Fast-loading, mobile-ready, and built to grow with you - not a template, not a page builder.
         </p>
@@ -72,9 +72,9 @@
         </div>
       </div>
       <div class="col-lg-5 d-none d-lg-flex justify-content-center align-items-center">
-        <div class="d-flex flex-wrap gap-3 justify-content-center" style="max-width:320px;">
+        <div class="d-flex flex-wrap gap-3 justify-content-center tech-grid">
           {% for tech in tech_stack|slice:":6" %}
-          <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-3" style="background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12);">
+          <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-3 tech-badge">
             <img src="{{ tech.icon }}" alt="{{ tech.name }}" width="20" height="20" loading="lazy">
             <span class="text-white small fw-medium">{{ tech.name }}</span>
           </div>
@@ -142,7 +142,7 @@
 </section>
 
 {# ── Tech Stack ───────────────────────────────────────────────────────────── #}
-<section class="py-5" style="background:#f8fafc;">
+<section class="py-5 bg-off-white">
   <div class="container-lg">
     <div class="text-center mb-4">
       <h2 class="h3 fw-bold">Built With Modern Tools</h2>
@@ -151,9 +151,9 @@
     <div class="row g-3 justify-content-center">
       {% for tech in tech_stack %}
       <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-        <div class="card border rounded-3 text-center py-3 px-2 h-100 shadow-sm" style="transition:transform .15s;" onmouseenter="this.style.transform='translateY(-3px)'" onmouseleave="this.style.transform=''">
-          <img src="{{ tech.icon }}" alt="{{ tech.name }}" width="48" height="48" class="mx-auto mb-2" loading="lazy" style="display:block;">
-          <p class="small fw-medium mb-0" style="font-size:.8rem;">{{ tech.name }}</p>
+        <div class="card border rounded-3 text-center py-3 px-2 h-100 shadow-sm tech-card-lift">
+          <img src="{{ tech.icon }}" alt="{{ tech.name }}" width="48" height="48" class="d-block mx-auto mb-2" loading="lazy">
+          <p class="small fw-medium mb-0 tech-name">{{ tech.name }}</p>
         </div>
       </div>
       {% endfor %}
@@ -174,8 +174,7 @@
         <div class="card border rounded-3 shadow-sm h-100 overflow-hidden">
           <img src="{% static 'images/fisk_truck.jpeg' %}"
                alt="J. Fisk Construction"
-               class="card-img-top"
-               style="height:200px; object-fit:cover; object-position:center;"
+               class="card-img-top img-portfolio"
                loading="lazy" decoding="async">
           <div class="card-body">
             <h3 class="h6 fw-semibold mb-1">J. Fisk Construction</h3>
@@ -192,8 +191,7 @@
         <div class="card border rounded-3 shadow-sm h-100 overflow-hidden">
           <img src="{% static 'images/hero-blueprint.jpg' %}"
                alt="Provost Home Design"
-               class="card-img-top"
-               style="height:200px; object-fit:cover; object-position:center top;"
+               class="card-img-top img-portfolio-top"
                loading="lazy" decoding="async">
           <div class="card-body">
             <h3 class="h6 fw-semibold mb-1">Provost Home Design</h3>
@@ -211,7 +209,7 @@
 </section>
 
 {# ── How It Works ─────────────────────────────────────────────────────────── #}
-<section class="py-5" style="background:#f8fafc;">
+<section class="py-5 bg-off-white">
   <div class="container-lg">
     <div class="text-center mb-4">
       <h2 class="h3 fw-bold">How It Works</h2>
@@ -221,8 +219,7 @@
       {% for step in process_steps %}
       <div class="col-sm-6 col-lg-3">
         <div class="text-center px-2">
-          <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-               style="width:52px;height:52px;background:#0d6efd;color:#fff;font-size:1.2rem;font-weight:700;">
+          <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3 step-number">
             {{ forloop.counter }}
           </div>
           <h3 class="h6 fw-semibold mb-1">{{ step.title }}</h3>
@@ -266,7 +263,7 @@
             {% csrf_token %}
 
             {# Honeypot #}
-            <div style="display:none" aria-hidden="true">
+            <div class="d-none" aria-hidden="true">
               {{ form.website }}
             </div>
 

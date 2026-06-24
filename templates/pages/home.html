@@ -3,7 +3,7 @@
 
 {% block title %}Residential Home Designer | Provost Home Design{% endblock %}
 
-{% block meta_description %}Provost Home Design offers custom and stock house plans for New England homeowners and builders. Residential home design services including permit-ready plans, framing plans, and architectural building drawings.{% endblock %}
+{% block meta_description %}Custom and stock house plans for New England homeowners and builders. Permit-ready residential design including framing plans and architectural drawings.{% endblock %}
 {% block og_title %}Provost Home Design | Residential Home Designer{% endblock %}
 {% block og_description %}Custom and stock house plans for New England. Permit-ready, architectural residential design services from Provost Home Design.{% endblock %}
 
@@ -146,10 +146,9 @@
                     src="{{ thumb.url }}"
                     width="{{ thumb.width }}"
                     height="{{ thumb.height }}"
-                    class="card-img-top plan-thumb"
+                    class="card-img-top plan-thumb cursor-pointer"
                     alt="Front elevation of Plan {{ p.plan_number|default:'-' }}"
-                    loading="lazy" decoding="async"
-                    style="cursor: pointer;">
+                    loading="lazy" decoding="async">
                 {% else %}
                   <div class="bg-body-tertiary text-muted small plan-thumb-placeholder">
                     No image
@@ -263,7 +262,7 @@
 
       {# House Design card #}
       <div class="col-md-6">
-        <div class="rounded-3 shadow overflow-hidden h-100" style="background:linear-gradient(135deg,#1a3350 0%,#2d6a9f 100%);">
+        <div class="rounded-3 shadow overflow-hidden h-100 bg-gradient-navy">
           <div class="p-4 text-white h-100 d-flex flex-column">
             <div class="mb-3">
               <i class="bi bi-house-door fs-1 opacity-75" aria-hidden="true"></i>
@@ -287,13 +286,13 @@
 
       {# Web Design card #}
       <div class="col-md-6">
-        <div class="rounded-3 shadow overflow-hidden h-100" style="background:linear-gradient(135deg,#0d1b2a 0%,#1a3350 100%);">
+        <div class="rounded-3 shadow overflow-hidden h-100 bg-gradient-dark-navy">
           <div class="p-4 text-white h-100 d-flex flex-column">
             <div class="mb-3">
               <i class="bi bi-code-slash fs-1 opacity-75" aria-hidden="true"></i>
             </div>
             <h3 class="h5 fw-bold mb-2">Web Design &amp; Development</h3>
-            <p class="mb-3 flex-grow-1" style="opacity:.9;">
+            <p class="mb-3 flex-grow-1 opacity-90">
               Custom websites and web apps built with Python, Django, and modern front-end tools.
               Fast, mobile-ready, and built by a real developer - not a template.
             </p>

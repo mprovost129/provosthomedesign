@@ -1,8 +1,14 @@
 # core/templatetags/util_tags.py
 from django import template
+from django.utils.safestring import mark_safe
 from django.utils.timezone import now
 
 register = template.Library()
+
+@register.filter
+def obfuscate_email(email):
+    """Encode email as HTML decimal entities to deter address harvesters."""
+    return mark_safe("".join(f"&#{ord(c)};" for c in str(email)))
 
 @register.filter
 def tel_href(value):

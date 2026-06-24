@@ -6,7 +6,7 @@ from django.views.decorators.cache import cache_page
 from django.contrib.sitemaps.views import sitemap as sitemap_view
 
 from config.sitemaps import PlanSitemap, CorePagesSitemap
-from pages.views import robots_txt
+from pages.views import robots_txt, llms_txt
 
 sitemaps = {
     "pages": CorePagesSitemap,
@@ -28,6 +28,7 @@ urlpatterns = [
 
     # SEO endpoints
     path("robots.txt", robots_txt, name="robots_txt"),
+    path("llms.txt", llms_txt, name="llms_txt"),
     path(
         "sitemap.xml",
         cache_page(60 * 60)(sitemap_view),    # cache for 1 hour

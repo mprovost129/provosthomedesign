@@ -343,3 +343,57 @@
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
 }
+
+/* ===== Inline-style replacements ===== */
+
+/* Small badge for nav counters */
+.badge-xs { font-size: 0.65rem; }
+
+/* Cursor */
+.cursor-pointer { cursor: pointer; }
+
+/* Opacity (Bootstrap ships 25/50/75/100 only) */
+.opacity-90 { opacity: .9; }
+
+/* Whitespace utility */
+.ws-pre-line { white-space: pre-line; }
+
+/* Map embed — taller than Bootstrap default ratio */
+.ratio-map { --bs-aspect-ratio: 85%; }
+
+/* Image height utilities */
+.img-h-400 { height: 400px; }
+
+/* Sticky element offset below fixed navbar */
+.sticky-nav-offset { top: 80px; }
+
+/* Light off-white section background */
+.bg-off-white { background: #f8fafc; }
+
+/* Background gradient cards (home & web-design hero) */
+.bg-gradient-navy      { background: linear-gradient(135deg, #1a3350 0%, #2d6a9f 100%); }
+.bg-gradient-dark-navy { background: linear-gradient(135deg, #0d1b2a 0%, #1a3350 100%); }
+
+/* Compare page */
+.compare-feature-col { width: 200px; }
+.compare-thumb       { max-height: 200px; object-fit: cover; cursor: pointer; }
+
+/* Favorites page */
+.favorite-thumb       { height: 250px; object-fit: cover; }
+.favorite-placeholder { height: 250px; }
+
+/* Affiliate product images */
+.affiliate-thumb        { height: 150px; object-fit: contain; max-width: 100%; }
+.affiliate-placeholder  { height: 150px; }
+
+/* Web-design page */
+.web-section-label { color: #7eb3d8; letter-spacing: .08em; font-size: .85rem; }
+.web-section-lead  { color: #c8dce8; }
+.tech-grid         { max-width: 320px; }
+.tech-badge        { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); }
+.tech-card-lift    { transition: transform .15s; }
+.tech-card-lift:hover { transform: translateY(-3px); }
+.tech-name         { font-size: .8rem; }
+.img-portfolio     { height: 200px; object-fit: cover; object-position: center; }
+.img-portfolio-top { height: 200px; object-fit: cover; object-position: center top; }
+.step-number       { width: 52px; height: 52px; background: #0d6efd; color: #fff; font-size: 1.2rem; font-weight: 700; }

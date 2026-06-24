@@ -850,3 +850,25 @@ def robots_txt(request):
         f"Sitemap: {request.build_absolute_uri(reverse('sitemap'))}",
     ]
     return HttpResponse("\n".join(lines), content_type="text/plain")
+
+
+def llms_txt(request):
+    base = request.build_absolute_uri("/").rstrip("/")
+    content = f"""# Provost Home Design
+
+> Residential home design services and stock/custom house plans for New England homeowners and builders. Permit-ready, code-compliant architectural drawings for MA, RI, and NH.
+
+## Site sections
+
+- [Home]({base}/): Overview of services, featured house plans, and quick search.
+- [House Plans]({base}/plans/): Catalog of stock house plans — filter by style (Colonial, Cape, Ranch), square footage, bedrooms, bathrooms, and garage.
+- [Services]({base}/services/): Custom home design, plan modifications, framing plans, permit sets, and exterior renderings.
+- [About]({base}/about/): Background on Michael Provost, licensed residential home designer.
+- [Get Started]({base}/get-started/): Project intake form for new custom design inquiries.
+- [Web Design]({base}/web-design/): Custom web application and business website development using Python, Django, and Bootstrap.
+- [Pricing]({base}/pricing/): Pricing for web design services with an interactive cost calculator.
+- [Contact]({base}/contact/): Contact form, business hours, and location map.
+- [Testimonials]({base}/testimonials/): Client reviews and testimonials.
+- [Sitemap]({base}/sitemap.xml): Full XML sitemap.
+"""
+    return HttpResponse(content, content_type="text/plain; charset=utf-8")

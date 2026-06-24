@@ -108,7 +108,7 @@
                 {% endfor %}
               </ul>
             {% else %}
-              <p class="text-muted mb-0" style="white-space: pre-line">{{ hours }}</p>
+              <p class="text-muted mb-0 ws-pre-line">{{ hours }}</p>
             {% endif %}
           {% else %}
             <p class="text-muted mb-0">Hours coming soon.</p>
@@ -122,7 +122,7 @@
         <div class="card-body p-2">
           <h2 id="map-heading" class="visually-hidden">Map</h2>
           {# Make it taller by increasing the aspect ratio percentage #}
-          <div class="ratio" style="--bs-aspect-ratio: 85%;">
+          <div class="ratio ratio-map">
             <iframe
               src="https://www.google.com/maps?q={{ contact.address|urlencode }}&output=embed"
               loading="lazy"

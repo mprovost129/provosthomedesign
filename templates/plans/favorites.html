@@ -23,13 +23,11 @@
                     <div class="card h-100 shadow-sm plan-card" data-plan-id="{{ plan.id }}">
                         <a href="{{ plan.get_absolute_url }}">
                             {% if plan.main_image %}
-                                <img src="{{ plan.main_image.url }}" 
-                                     class="card-img-top" 
-                                     alt="Plan {{ plan.plan_number }}"
-                                     style="height: 250px; object-fit: cover;">
+                                <img src="{{ plan.main_image.url }}"
+                                     class="card-img-top favorite-thumb"
+                                     alt="Plan {{ plan.plan_number }}">
                             {% else %}
-                                <div class="bg-light d-flex align-items-center justify-content-center" 
-                                     style="height: 250px;">
+                                <div class="bg-light d-flex align-items-center justify-content-center favorite-placeholder">
                                     <span class="text-muted">No image</span>
                                 </div>
                             {% endif %}

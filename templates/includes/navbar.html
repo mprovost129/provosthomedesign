@@ -99,8 +99,7 @@
                  aria-label="My Favorites">
                 <i class="bi bi-heart{% if saved_plan_count > 0 %}-fill text-danger{% endif %}" aria-hidden="true"></i>
                 {% if saved_plan_count > 0 %}
-                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
-                        style="font-size: 0.65rem;">
+                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger badge-xs">
                     {{ saved_plan_count }}
                     <span class="visually-hidden">saved plans</span>
                   </span>
@@ -115,8 +114,7 @@
                  aria-label="Compare Plans">
                 <i class="bi bi-bar-chart-fill{% if comparison_count > 0 %} text-success{% endif %}" aria-hidden="true"></i>
                 {% if comparison_count > 0 %}
-                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success" 
-                        style="font-size: 0.65rem;">
+                  <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success badge-xs">
                     {{ comparison_count }}
                     <span class="visually-hidden">plans to compare</span>
                   </span>

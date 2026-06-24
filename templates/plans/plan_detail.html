@@ -161,7 +161,7 @@
             </div>
 
             {# Honeypot field - must be empty (hidden by CSS) #}
-            <input type="text" name="website" value="" style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <input type="text" name="website" value="" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
 
             <div class="form-check">
               <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
@@ -211,7 +211,7 @@
             {% empty %}
               {% if not plan.main_image %}
                 <div class="carousel-item active">
-                  <div class="d-flex justify-content-center align-items-center text-white" style="height:400px;">
+                  <div class="d-flex justify-content-center align-items-center text-white img-h-400">
                     No images available.
                   </div>
                 </div>
@@ -229,7 +229,7 @@
           </button>
 
           {% if plan.main_image or images %}
-            <div class="carousel-indicators mt-3" style="position: static;">
+            <div class="carousel-indicators mt-3 position-static">
               {% if plan.main_image %}
                 <button type="button" data-bs-target="#planGalleryCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Main"></button>
                 {% for img in images %}

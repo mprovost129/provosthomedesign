@@ -22,7 +22,7 @@
 
         {% if CONTACT_EMAIL %}
           <p class="text-muted small mb-1">
-            <a href="mailto:{{ CONTACT_EMAIL }}" class="text-muted text-decoration-none" itemprop="email">{{ CONTACT_EMAIL }}</a>
+            <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;{{ CONTACT_EMAIL|obfuscate_email }}" class="text-muted text-decoration-none" itemprop="email">{{ CONTACT_EMAIL|obfuscate_email }}</a>
           </p>
         {% endif %}
 

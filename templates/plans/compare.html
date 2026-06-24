@@ -34,7 +34,7 @@
             <table class="table table-bordered table-hover">
                 <thead class="table-light">
                     <tr>
-                        <th style="width: 200px;">Feature</th>
+                        <th class="compare-feature-col">Feature</th>
                         {% for plan in plans %}
                             <th class="text-center">
                                 <a href="{{ plan.get_absolute_url }}" 
@@ -58,10 +58,9 @@
                             <td class="text-center">
                                 {% if plan.main_image %}
                                     <a href="{{ plan.get_absolute_url }}" class="d-inline-block">
-                                        <img src="{{ plan.main_image.url }}" 
+                                        <img src="{{ plan.main_image.url }}"
                                              alt="Plan {{ plan.plan_number }}"
-                                             class="img-fluid rounded"
-                                             style="max-height: 200px; object-fit: cover; cursor: pointer;">
+                                             class="img-fluid rounded compare-thumb">
                                     </a>
                                 {% else %}
                                     <div class="bg-light p-4 text-muted">No image</div>
@@ -196,8 +195,7 @@
                             <a href="{{ plan.get_absolute_url }}" class="d-block mb-3">
                                 <img src="{{ plan.main_image.url }}" 
                                      alt="Plan {{ plan.plan_number }}"
-                                     class="img-fluid rounded"
-                                     style="cursor: pointer;">
+                                     class="img-fluid rounded cursor-pointer">
                             </a>
                         {% endif %}
                         
