@@ -150,7 +150,7 @@
           <h2 id="contact-form-heading" class="h6 fw-bold mb-2">Send us a message</h2>
           <p class="text-muted small mb-3">Tell us a bit about your project and how we can help.</p>
 
-          <form method="post" class="vstack gap-3" novalidate action="{% url 'pages:contact' %}" autocomplete="on">
+          <form id="contact-form" method="post" class="vstack gap-3" novalidate action="{% url 'pages:contact' %}" autocomplete="on">
             {% csrf_token %}
             {% if form.non_field_errors %}
               <div class="alert alert-danger" role="alert">
@@ -223,7 +223,7 @@
           <h2 id="testimonial-form-heading" class="h6 fw-bold mb-2">Leave a testimonial</h2>
           <p class="text-muted small mb-3">Share your experience working with us.</p>
 
-          <form method="post" class="vstack gap-3" novalidate action="{% url 'pages:contact' %}" autocomplete="on">
+          <form id="testimonial-form" method="post" class="vstack gap-3" novalidate action="{% url 'pages:contact' %}" autocomplete="on">
             {% csrf_token %}
             {% if tform.non_field_errors %}
               <div class="alert alert-danger" role="alert">
@@ -328,50 +328,25 @@
 
 {% block extra_js %}
 {% if recaptcha_site_key %}
-  <script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}"></script>
+  <script src="https://www.google.com/recaptcha/enterprise.js?render=6LdAVUEtAAAAANkmJS6XbgPzqDf_oX4Y45sUdmDV"></script>
   <script>
     (function () {
-      function setToken(actionName, targetId) {
-        return new Promise(function(resolve) {
-          grecaptcha.ready(function () {
-            grecaptcha.execute("{{ recaptcha_site_key }}", {action: actionName}).then(function (token) {
-              var el = document.getElementById(targetId);
-              if (el) el.value = token;
-              resolve(token);
-            });
+      function attachRecaptcha(formEl, tokenId, action) {
+        if (!formEl) return;
+        formEl.addEventListener('submit', function (e) {
+          e.preventDefault();
+          grecaptcha.enterprise.ready(async function () {
+            var token = await grecaptcha.enterprise.execute('6LdAVUEtAAAAANkmJS6XbgPzqDf_oX4Y45sUdmDV', {action: action});
+            var el = document.getElementById(tokenId);
+            if (el) el.value = token;
+            formEl.submit();
           });
         });
       }
 
-      document.addEventListener("DOMContentLoaded", function () {
-        setToken("contact_form", "contact_recaptcha_token");
-        setToken("testimonial_form", "testimonial_recaptcha_token");
-
-        var contactForm = document.querySelector('input[name="action"][value="send_message"]')?.closest("form");
-        var testimonialForm = document.querySelector('input[name="action"][value="submit_testimonial"]')?.closest("form");
-
-        function bindProtectedSubmit(form, actionName, targetId) {
-          if (!form) return;
-
-          form.addEventListener("submit", function (e) {
-            // First check HTML5 validation (including required checkbox)
-            if (!form.checkValidity()) {
-              // Let browser show validation messages
-              return;
-            }
-
-            var el = document.getElementById(targetId);
-            if (el && el.value) return;
-
-            e.preventDefault();
-            setToken(actionName, targetId).then(function () {
-              form.submit();
-            });
-          });
-        }
-
-        bindProtectedSubmit(contactForm, "contact_form", "contact_recaptcha_token");
-        bindProtectedSubmit(testimonialForm, "testimonial_form", "testimonial_recaptcha_token");
+      document.addEventListener('DOMContentLoaded', function () {
+        attachRecaptcha(document.getElementById('contact-form'), 'contact_recaptcha_token', 'contact_form');
+        attachRecaptcha(document.getElementById('testimonial-form'), 'testimonial_recaptcha_token', 'testimonial_form');
       });
     })();
   </script>

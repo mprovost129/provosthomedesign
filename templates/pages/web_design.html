@@ -259,7 +259,7 @@
         {% endif %}
 
         <div class="card border rounded-3 shadow-sm p-4">
-          <form method="post" novalidate>
+          <form id="web-design-form" method="post" novalidate>
             {% csrf_token %}
 
             {# Honeypot #}
@@ -268,7 +268,7 @@
             </div>
 
             {% if recaptcha_site_key %}
-              <input type="hidden" name="g-recaptcha-response" id="id_g_recaptcha_response_wd">
+              <input type="hidden" name="recaptcha_token" id="wd_recaptcha_token" value="">
             {% endif %}
 
             <div class="row g-3">
@@ -351,24 +351,24 @@
 </section>
 
 {% if recaptcha_site_key %}
-<script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}" async defer></script>
+<script src="https://www.google.com/recaptcha/enterprise.js?render=6LdAVUEtAAAAANkmJS6XbgPzqDf_oX4Y45sUdmDV"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    var form = document.querySelector('#inquiry form');
-    if (!form) return;
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var btn = form.querySelector('[type=submit]');
-      if (btn) btn.disabled = true;
-      grecaptcha.ready(function () {
-        grecaptcha.execute('{{ recaptcha_site_key }}', { action: 'web_design_form' }).then(function (token) {
-          var input = document.getElementById('id_g_recaptcha_response_wd');
-          if (input) input.value = token;
+  (function () {
+    document.addEventListener('DOMContentLoaded', function () {
+      var form = document.getElementById('web-design-form');
+      if (!form) return;
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        grecaptcha.enterprise.ready(async function () {
+          var token = await grecaptcha.enterprise.execute('6LdAVUEtAAAAANkmJS6XbgPzqDf_oX4Y45sUdmDV', {action: 'web_design_form'});
+          var el = document.getElementById('wd_recaptcha_token');
+          if (el) el.value = token;
           form.submit();
         });
       });
     });
-  });
+  })();
 </script>
 {% endif %}
 
