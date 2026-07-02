@@ -148,7 +148,7 @@ else:
 
 # --- Internationalization ---
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+TIME_ZONE = "America/New_York"
 USE_I18N = True
 USE_TZ = True
 
@@ -194,6 +194,15 @@ USE_MAILHOG = config("USE_MAILHOG", cast=bool, default=False)
 DEV_EMAIL_FILE = config("DEV_EMAIL_FILE", cast=bool, default=False)
 EXPLICIT_BACKEND = config("EMAIL_BACKEND", default="").strip() # type: ignore
 
+# --- SMTP credentials (read unconditionally so any backend can use them) ---
+EMAIL_HOST          = config("EMAIL_HOST", default="smtp.gmail.com")
+EMAIL_PORT          = config("EMAIL_PORT", cast=int, default=587)
+EMAIL_USE_TLS       = config("EMAIL_USE_TLS", cast=bool, default=True)
+EMAIL_USE_SSL       = config("EMAIL_USE_SSL", cast=bool, default=False)
+EMAIL_HOST_USER     = config("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+EMAIL_TIMEOUT       = config("EMAIL_TIMEOUT", cast=int, default=10)
+
 # --- Microsoft Graph Email (env → settings) ---
 MSGRAPH_USER_ID = config("MSGRAPH_USER_ID", default="")
 
@@ -226,7 +235,6 @@ elif USE_MAILHOG:
     EMAIL_HOST_PASSWORD = ""
     EMAIL_USE_TLS = False
     EMAIL_USE_SSL = False
-    EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", cast=int, default=10)
 elif DEV_EMAIL_FILE:
     EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
     EMAIL_FILE_PATH = BASE_DIR / "var" / "emails"
@@ -236,7 +244,7 @@ else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # From addresses
-DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default=(MSGRAPH_USER_ID or "no-reply@localhost"))
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default=(MSGRAPH_USER_ID or EMAIL_HOST_USER or "no-reply@localhost"))
 SERVER_EMAIL = config("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
 EMAIL_SUBJECT_PREFIX = config("EMAIL_SUBJECT_PREFIX", default="[Provost] ")
 AUTO_ACK_FROM_EMAIL = config("AUTO_ACK_FROM_EMAIL", default=DEFAULT_FROM_EMAIL)
@@ -289,6 +297,12 @@ RECAPTCHA_MIN_SCORE = float(config("RECAPTCHA_MIN_SCORE", "0.5"))
 # --- reCAPTCHA Enterprise ---
 RECAPTCHA_ENTERPRISE_API_KEY = config("RECAPTCHA_ENTERPRISE_API_KEY", default="")
 RECAPTCHA_ENTERPRISE_PROJECT_ID = config("RECAPTCHA_ENTERPRISE_PROJECT_ID", default="possible-arch-501217-r3")
+
+# --- Testimonial notifications ---
+# The contact view already sends the admin notification on creation,
+# so the signal-based duplicate is disabled by default.
+TESTIMONIAL_NOTIFY_ON_CREATE = config("TESTIMONIAL_NOTIFY_ON_CREATE", cast=bool, default=False)
+TESTIMONIAL_THANK_ON_PUBLISH = config("TESTIMONIAL_THANK_ON_PUBLISH", cast=bool, default=True)
 
 PLAN_CHANGE_RATE_LIMIT = config("PLAN_CHANGE_RATE_LIMIT", "3/h")
 PLAN_CHANGE_MIN_MESSAGE_LEN = int(config("PLAN_CHANGE_MIN_MESSAGE_LEN", "20"))
