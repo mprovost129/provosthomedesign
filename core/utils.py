@@ -4,9 +4,12 @@ Shared utility functions for the Django project.
 from __future__ import annotations
 from urllib.parse import urlparse
 from typing import Any
+import logging
 
 from django.conf import settings
 from django.http import HttpRequest
+
+logger = logging.getLogger(__name__)
 
 
 def get_client_ip(request: HttpRequest) -> str:
@@ -74,6 +77,7 @@ def verify_recaptcha_v3(request: HttpRequest, expected_action: str | None = None
         )
         data: dict[str, Any] = resp.json()
     except Exception:
+        logger.exception("reCAPTCHA API call failed")
         return False, 0.0
 
     success = bool(data.get("success"))
@@ -120,4 +124,12 @@ def verify_recaptcha_v3(request: HttpRequest, expected_action: str | None = None
                     break
 
     ok = success and score_f >= min_score and action_ok and hostname_ok
+    logger.info(
+        "reCAPTCHA result: ok=%s success=%s score=%.2f min_score=%.2f "
+        "action=%r expected=%r action_ok=%s response_host=%r request_host=%r hostname_ok=%s errors=%s",
+        ok, success, score_f, min_score,
+        action, expected_action, action_ok,
+        response_host, request_host, hostname_ok,
+        data.get("error-codes", []),
+    )
     return ok, score_f
