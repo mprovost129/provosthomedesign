@@ -280,9 +280,6 @@
         if (!form) return;
 
         form.addEventListener("submit", function (e) {
-          var el = document.getElementById("get_started_recaptcha_token");
-          if (el && el.value) return;
-
           e.preventDefault();
           setToken().then(function () {
             form.submit();
