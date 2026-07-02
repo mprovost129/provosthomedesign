@@ -282,7 +282,7 @@ RECAPTCHA_REQUIRED_SCORE = config("RECAPTCHA_MIN_SCORE", cast=float, default=0.8
 SILENCED_SYSTEM_CHECKS = ['django_recaptcha.recaptcha_test_key_error']  # Only for dev
 
 # --- Spam / form protection ---
-RECAPTCHA_SITE_KEY = config("RECAPTCHA_SITE_KEY", "")
+RECAPTCHA_SITE_KEY = config("RECAPTCHA_SITE_KEY", "6LdAVUEtAAAAANkmJS6XbgPzqDf_oX4Y45sUdmDV")
 RECAPTCHA_SECRET_KEY = config("RECAPTCHA_SECRET_KEY", "")
 RECAPTCHA_MIN_SCORE = float(config("RECAPTCHA_MIN_SCORE", "0.5"))
 
