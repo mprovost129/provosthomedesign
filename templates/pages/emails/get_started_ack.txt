@@ -1,0 +1,22 @@
+Hi {{ name }},
+
+Thanks for reaching out! We've received your project request and will be in touch soon.
+
+Here's a summary of what you submitted:
+
+Name:    {{ inquiry.first_name }} {{ inquiry.last_name }}
+Email:   {{ inquiry.email }}
+Phone:   {{ inquiry.phone_number|default:"-" }}
+
+{% if inquiry.house_style %}Style:   {{ inquiry.house_style }}
+{% endif %}{% if inquiry.min_square_footage or inquiry.max_square_footage %}Sq ft:   {{ inquiry.min_square_footage|default:"?" }} – {{ inquiry.max_square_footage|default:"?" }}
+{% endif %}{% if inquiry.number_of_bedrooms %}Beds:    {{ inquiry.number_of_bedrooms }}
+{% endif %}{% if inquiry.number_of_bathrooms %}Baths:   {{ inquiry.number_of_bathrooms }}
+{% endif %}{% if inquiry.budget %}Budget:  {{ inquiry.budget }}
+{% endif %}{% if inquiry.additional_notes %}
+Notes:
+{{ inquiry.additional_notes }}
+{% endif %}
+If anything looks incorrect or you have questions, just reply to this email.
+
+- {{ company }}

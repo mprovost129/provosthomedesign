@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>We received your project request</title>
+  </head>
+  <body style="margin:0; padding:0; background:#f6f7fb;">
+    <div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all;">
+      Thanks for reaching out — we received your project request and will be in touch soon.
+    </div>
+
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f6f7fb; padding:24px 0;">
+      <tr>
+        <td align="center">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px; width:600px; background:#ffffff; border:1px solid #e7e9ee; border-radius:8px; overflow:hidden;">
+
+            <!-- Header -->
+            <tr>
+              <td style="padding:18px 24px; background:#f8fafc; border-bottom:1px solid #e7e9ee;">
+                <div style="font:600 18px/1.2 Arial, Helvetica, sans-serif; color:#111827;">
+                  {{ company }}
+                </div>
+                <div style="font:400 12px/1.6 Arial, Helvetica, sans-serif; color:#6b7280;">
+                  We received your project request
+                </div>
+              </td>
+            </tr>
+
+            <!-- Body -->
+            <tr>
+              <td style="padding:20px 24px; font:400 14px/1.7 Arial, Helvetica, sans-serif; color:#111827;">
+                <p style="margin:0 0 14px 0;">Hi {{ name }},</p>
+                <p style="margin:0 0 18px 0;">
+                  Thanks for reaching out! We've received your project request and will be in touch soon.
+                </p>
+
+                <!-- Summary -->
+                <div style="padding:14px 16px; background:#f8fafc; border:1px solid #e7e9ee; border-radius:6px; margin:0 0 18px 0;">
+                  <div style="font:600 13px Arial, Helvetica, sans-serif; color:#374151; margin:0 0 10px 0;">Your submission</div>
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="font:400 13px/1.7 Arial, Helvetica, sans-serif; color:#111827;">
+                    <tr>
+                      <td style="color:#6b7280; white-space:nowrap; padding:2px 12px 2px 0; width:90px;">Name</td>
+                      <td style="padding:2px 0;">{{ inquiry.first_name }} {{ inquiry.last_name }}</td>
+                    </tr>
+                    <tr>
+                      <td style="color:#6b7280; white-space:nowrap; padding:2px 12px 2px 0;">Email</td>
+                      <td style="padding:2px 0;">{{ inquiry.email }}</td>
+                    </tr>
+                    {% if inquiry.phone_number %}
+                    <tr>
+                      <td style="color:#6b7280; white-space:nowrap; padding:2px 12px 2px 0;">Phone</td>
+                      <td style="padding:2px 0;">{{ inquiry.phone_number }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if inquiry.house_style %}
+                    <tr>
+                      <td style="color:#6b7280; white-space:nowrap; padding:2px 12px 2px 0;">Style</td>
+                      <td style="padding:2px 0;">{{ inquiry.house_style }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if inquiry.min_square_footage or inquiry.max_square_footage %}
+                    <tr>
+                      <td style="color:#6b7280; white-space:nowrap; padding:2px 12px 2px 0;">Sq ft</td>
+                      <td style="padding:2px 0;">{{ inquiry.min_square_footage|default:"?" }} – {{ inquiry.max_square_footage|default:"?" }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if inquiry.number_of_bedrooms %}
+                    <tr>
+                      <td style="color:#6b7280; white-space:nowrap; padding:2px 12px 2px 0;">Bedrooms</td>
+                      <td style="padding:2px 0;">{{ inquiry.number_of_bedrooms }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if inquiry.number_of_bathrooms %}
+                    <tr>
+                      <td style="color:#6b7280; white-space:nowrap; padding:2px 12px 2px 0;">Bathrooms</td>
+                      <td style="padding:2px 0;">{{ inquiry.number_of_bathrooms }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if inquiry.budget %}
+                    <tr>
+                      <td style="color:#6b7280; white-space:nowrap; padding:2px 12px 2px 0;">Budget</td>
+                      <td style="padding:2px 0;">{{ inquiry.budget }}</td>
+                    </tr>
+                    {% endif %}
+                  </table>
+                  {% if inquiry.additional_notes %}
+                  <div style="margin:10px 0 0 0; padding-top:10px; border-top:1px solid #e7e9ee;">
+                    <div style="font:600 12px Arial, Helvetica, sans-serif; color:#6b7280; margin:0 0 4px 0;">Additional notes</div>
+                    <div style="white-space:pre-wrap; word-break:break-word; font:400 13px/1.6 Arial, Helvetica, sans-serif;">{{ inquiry.additional_notes }}</div>
+                  </div>
+                  {% endif %}
+                </div>
+
+                <p style="margin:0; color:#6b7280; font:400 13px/1.6 Arial, Helvetica, sans-serif;">
+                  If anything looks incorrect or you have questions, just reply to this email.
+                </p>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td style="padding:14px 24px; border-top:1px solid #e7e9ee; font:400 12px/1.6 Arial, Helvetica, sans-serif; color:#6b7280;">
+                You received this because you submitted a project request on provosthomedesign.com.
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

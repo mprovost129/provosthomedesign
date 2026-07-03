@@ -197,6 +197,34 @@ def projectinquiry_post_save(sender, instance: ProjectInquiry, created: bool, **
         except Exception:
             logger.exception("Failed to send ProjectInquiry notification for #%s", instance.pk)
 
+        # Auto-acknowledgement to the submitter
+        if not (instance.email or "").strip():
+            return
+        try:
+            submitter_name = f"{(instance.first_name or '').strip()} {(instance.last_name or '').strip()}".strip() or "there"
+            ack_ctx = {
+                "inquiry": instance,
+                "name": submitter_name,
+                "company": getattr(settings, "COMPANY_NAME", "Provost Home Design"),
+            }
+            ack_text = render_to_string("pages/emails/get_started_ack.txt", ack_ctx)
+            try:
+                ack_html = render_to_string("pages/emails/get_started_ack.html", ack_ctx)
+            except Exception:
+                ack_html = None
+
+            ack = EmailMultiAlternatives(
+                subject="We received your project request — Provost Home Design",
+                body=ack_text,
+                from_email=getattr(settings, "AUTO_ACK_FROM_EMAIL", getattr(settings, "DEFAULT_FROM_EMAIL", None)),
+                to=[instance.email.strip()],
+            )
+            if ack_html:
+                ack.attach_alternative(ack_html, "text/html")
+            ack.send(fail_silently=True)
+        except Exception:
+            logger.exception("Failed to send Get Started ack for #%s", instance.pk)
+
     # Ensure we only send after the row is committed (avoid duplicates)
     try:
         transaction.on_commit(_send)
