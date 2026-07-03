@@ -255,10 +255,11 @@
   </div>
 </div>
 
+{% endblock %}
+
 {% block extra_scripts %}
 <script src="{% static 'js/plans.js' %}" defer></script>
 <script>
-  // Start the carousel at a specific index when a thumbnail/cover is clicked
   document.addEventListener("DOMContentLoaded", function () {
     const modal = document.getElementById("planGalleryModal");
     const carouselEl = document.getElementById("planGalleryCarousel");
@@ -301,7 +302,4 @@
     })();
   </script>
 {% endif %}
-
-
-{% endblock %}
 {% endblock %}
