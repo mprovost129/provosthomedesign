@@ -27,6 +27,32 @@ logger = logging.getLogger(__name__)
 SQFT_CHOICES = [str(n) for n in range(1000, 6001, 100)]
 BED_FILTER_CHOICES = ["1", "2", "3", "4", "5", "6+"]  # interpret 6+ as >=6
 BATH_FILTER_CHOICES = ["1", "1.5", "2", "2.5", "3", "3.5", "4", "4.5", "5+"]  # interpret 5+ as >=5
+STORY_FILTER_CHOICES = ["1", "2", "3+"]
+GARAGE_FILTER_CHOICES = ["0", "1", "2", "3+"]
+FEATURE_FILTERS = {
+    "adu": ("is_adu", "ADU / carriage house"),
+    "first-floor-primary": ("first_floor_primary", "First-floor primary suite"),
+    "office": ("has_home_office", "Home office"),
+    "pantry": ("has_walk_in_pantry", "Walk-in pantry"),
+    "mudroom": ("has_mudroom", "Mudroom"),
+    "porch-deck": ("has_porch_or_deck", "Porch or deck"),
+    "bonus-room": ("has_bonus_room", "Bonus room"),
+    "basement": ("basement_compatible", "Basement compatible"),
+    "narrow-lot": ("narrow_lot", "Narrow lot"),
+    "multigenerational": ("multigenerational", "Multigenerational"),
+}
+
+CATEGORY_PAGES = {
+    "ranch-house-plans": {"title": "Ranch House Plans", "meta": "Browse one-story ranch house plans designed for comfortable New England living.", "intro": "Ranch homes bring everyday living onto one accessible level. These plans emphasize efficient circulation, practical room relationships, and straightforward construction while leaving room for porches, attached garages, and varied exterior character.", "style": "ranch", "faqs": [("Why choose a ranch plan?", "Single-level living can simplify circulation, accessibility, and long-term use."), ("Can a ranch plan include a basement?", "Many can, depending on the plan, site, foundation design, and local requirements.")]},
+    "colonial-house-plans": {"title": "Colonial House Plans", "meta": "Explore Colonial house plans with efficient two-story layouts and enduring New England character.", "intro": "Colonial plans use a compact two-story form to create efficient footprints and a familiar New England presence. The style adapts well to formal or open interiors, attached garages, rear additions, and traditional exterior detailing.", "style": "colonial", "faqs": [("Are Colonial plans always symmetrical?", "Traditional examples often are, but interior needs and garage placement can lead to more flexible compositions."), ("Can the first floor be opened up?", "Yes. Many Colonial layouts can be adapted for larger kitchen, dining, and gathering spaces.")]},
+    "cape-cod-house-plans": {"title": "Cape Cod House Plans", "meta": "Browse Cape Cod house plans inspired by compact, practical New England homes.", "intro": "Cape Cod homes pair compact massing with steep roof forms that suit New England architectural traditions. Plans may begin with first-floor living and use dormers or future upper-level space to add bedrooms, work areas, or flexible rooms.", "style": "cape-cod", "faqs": [("Can upstairs space be finished later?", "Some Cape layouts can support phased upper-level finishing when planned into the structure and permit set."), ("Can dormers be changed?", "Dormer size and placement are common customization items, subject to structure and exterior proportions.")]},
+    "modern-farmhouse-plans": {"title": "Modern Farmhouse Plans", "meta": "Explore modern farmhouse plans with welcoming porches, practical layouts, and clean New England detailing.", "intro": "Modern farmhouse plans combine familiar gabled forms and welcoming outdoor spaces with open, practical interiors. The strongest versions balance contemporary living with restrained exterior details that will age well.", "style": "modern-farmhouse", "faqs": [("What defines a modern farmhouse?", "Common traits include simple gables, porches, strong indoor-outdoor connections, and an informal central living area."), ("Can the exterior be made more traditional?", "Yes. Materials, trim, windows, porch details, and roof elements can shift the character significantly.")]},
+    "adu-carriage-house-plans": {"title": "ADU and Carriage House Plans", "meta": "Browse ADU and carriage house plans for flexible living, guests, family, or rental use.", "intro": "Accessory dwelling units and carriage houses can add flexible living space without functioning like a full-size primary home. Successful plans respond closely to zoning, access, privacy, parking, utilities, and the relationship to the main residence.", "filters": {"is_adu": True}, "faqs": [("Are ADUs allowed everywhere?", "No. Zoning, dimensional, parking, occupancy, and utility rules must be checked for the property."), ("Can an ADU sit above a garage?", "Often, but stairs, structure, fire separation, height, and local rules shape the design.")]},
+    "narrow-lot-house-plans": {"title": "Narrow-Lot House Plans", "meta": "Find narrow-lot house plans that use limited frontage efficiently without sacrificing daily function.", "intro": "Narrow lots reward careful circulation, window placement, garage strategy, and room proportions. These plans concentrate useful living space within a slimmer footprint and can be adapted after confirming survey, setback, access, and utility constraints.", "filters": {"narrow_lot": True}, "faqs": [("What counts as a narrow lot?", "It depends on local setbacks and the buildable width, not only the total frontage."), ("Should I have a survey first?", "Yes. A current survey is one of the most useful inputs before adapting a plan to a constrained lot.")]},
+    "one-story-house-plans": {"title": "One-Story House Plans", "meta": "Browse one-story house plans for accessible, connected, and efficient daily living.", "intro": "One-story plans keep bedrooms, shared spaces, and everyday functions on a single level. They can support aging in place and simple circulation, though wider footprints make lot dimensions and roof development especially important.", "filters": {"stories": 1}, "faqs": [("Are one-story homes easier to build?", "They simplify some circulation and framing decisions but often require more foundation and roof area for the same square footage."), ("Can they include bonus space?", "Yes. Some designs use space over a garage or within the roof while retaining primary living on one floor.")]},
+    "small-house-plans-under-1500-square-feet": {"title": "House Plans Under 1,500 Square Feet", "meta": "Explore efficient house plans under 1,500 square feet for smaller households, lots, and budgets.", "intro": "Smaller homes work best when circulation is minimized and each room has a clear purpose. These plans prioritize useful storage, daylight, connected living spaces, and comfortable proportions rather than simply compressing a larger layout.", "filters": {"square_footage__lte": 1500}, "faqs": [("Can a small plan still have three bedrooms?", "Yes, but storage, room size, circulation, and shared-space priorities need careful balance."), ("Does smaller always mean less expensive?", "Usually less area helps, but foundation type, complexity, finishes, site work, and local costs remain major factors.")]},
+    "first-floor-primary-suite-plans": {"title": "House Plans With First-Floor Primary Suites", "meta": "Browse house plans featuring first-floor primary suites for privacy, convenience, and long-term flexibility.", "intro": "A first-floor primary suite separates everyday owner spaces from secondary bedrooms and can support long-term living without relying on stairs. Good layouts balance privacy with convenient access to laundry, living areas, and outdoor space.", "filters": {"first_floor_primary": True}, "faqs": [("Does the whole home need to be one story?", "No. Secondary bedrooms and flexible rooms can remain upstairs while the primary suite stays on the main level."), ("Can an existing plan be revised this way?", "Often, although the footprint, plumbing, circulation, and exterior may need meaningful changes.")]},
+}
 
 
 def _as_int(val: str | None) -> int | None:
@@ -120,10 +146,20 @@ def plan_list(request: HttpRequest, house_style_slug: str | None = None) -> Http
     beds_raw = request.GET.get("beds") or ""
     baths_raw = request.GET.get("baths") or ""
     sort = request.GET.get("sort", "newest")
+    stories_raw = request.GET.get("stories") or ""
+    garage_raw = request.GET.get("garage") or ""
+    max_width_raw = request.GET.get("max_width") or ""
+    max_depth_raw = request.GET.get("max_depth") or ""
+    selected_features = [key for key in request.GET.getlist("features") if key in FEATURE_FILTERS]
 
     # Apply filters
     if q_raw:
-        qs = qs.filter(Q(plan_number__icontains=q_raw) | Q(description__icontains=q_raw))
+        qs = qs.filter(
+            Q(plan_number__icontains=q_raw)
+            | Q(plan_name__icontains=q_raw)
+            | Q(description__icontains=q_raw)
+            | Q(key_features__icontains=q_raw)
+        )
 
     min_sqft = _as_int(min_sqft_raw)
     max_sqft = _as_int(max_sqft_raw)
@@ -138,6 +174,18 @@ def plan_list(request: HttpRequest, house_style_slug: str | None = None) -> Http
         qs = qs.filter(bedrooms__gte=beds_min)
     if baths_min is not None:
         qs = qs.filter(bathrooms__gte=baths_min)
+    if stories_raw in STORY_FILTER_CHOICES:
+        qs = qs.filter(stories__gte=3 if stories_raw == "3+" else _as_int(stories_raw))
+    if garage_raw in GARAGE_FILTER_CHOICES:
+        qs = qs.filter(garage_stalls__gte=3 if garage_raw == "3+" else _as_int(garage_raw))
+    max_width = _as_int(max_width_raw)
+    max_depth = _as_int(max_depth_raw)
+    if max_width is not None:
+        qs = qs.filter(house_width_in__lte=max_width * 12)
+    if max_depth is not None:
+        qs = qs.filter(house_depth_in__lte=max_depth * 12)
+    for feature in selected_features:
+        qs = qs.filter(**{FEATURE_FILTERS[feature][0]: True})
 
     # Sort
     if sort == "sqft_asc":
@@ -154,16 +202,24 @@ def plan_list(request: HttpRequest, house_style_slug: str | None = None) -> Http
     paginator = Paginator(qs, 12)  # 12 per page (3 across x 4 rows)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
+    query_without_page = request.GET.copy()
+    query_without_page.pop("page", None)
 
     ctx = {
         "page": {"title": "Plans", "description": "Explore our house plans."},
         "plans": page_obj,
         "plan_count": qs.count(),
         "styles": styles,
+        "categories": CATEGORY_PAGES,
         "active_style": active_style,
         "sqft_choices": SQFT_CHOICES,
         "bed_choices": BED_FILTER_CHOICES,
         "bath_choices": BATH_FILTER_CHOICES,
+        "story_choices": STORY_FILTER_CHOICES,
+        "garage_choices": GARAGE_FILTER_CHOICES,
+        "feature_choices": [(key, label) for key, (_, label) in FEATURE_FILTERS.items()],
+        "has_filters": bool(request.GET),
+        "filter_query": query_without_page.urlencode(),
         "filters": {
             "style": active_style.slug if active_style else style_q,
             "q": q_raw,
@@ -172,11 +228,37 @@ def plan_list(request: HttpRequest, house_style_slug: str | None = None) -> Http
             "beds": beds_raw,
             "baths": baths_raw,
             "sort": sort,
+            "stories": stories_raw,
+            "garage": garage_raw,
+            "max_width": max_width_raw,
+            "max_depth": max_depth_raw,
+            "features": selected_features,
         },
         "saved_plan_ids": get_saved_plan_ids(request),
         "comparison_plan_ids": get_comparison_plan_ids(request),
     }
     return render(request, "plans/plans.html", ctx)
+
+
+def plan_category(request: HttpRequest, category_slug: str) -> HttpResponse:
+    category = CATEGORY_PAGES.get(category_slug)
+    if not category:
+        from django.http import Http404
+        raise Http404("Plan category not found")
+
+    qs = Plans.objects.filter(is_available=True).prefetch_related("house_styles")
+    if category.get("style"):
+        qs = qs.filter(house_styles__slug=category["style"])
+    if category.get("filters"):
+        qs = qs.filter(**category["filters"])
+    qs = qs.distinct().order_by("-is_featured", "-created_date")
+    page_obj = Paginator(qs, 12).get_page(request.GET.get("page"))
+    return render(request, "plans/category.html", {
+        "category": category,
+        "plans": page_obj,
+        "saved_plan_ids": get_saved_plan_ids(request),
+        "comparison_plan_ids": get_comparison_plan_ids(request),
+    })
 
 
 def plan_detail(request: HttpRequest, house_style_slug: str, plan_slug: str) -> HttpResponse:
@@ -221,11 +303,18 @@ def search(request: HttpRequest) -> HttpResponse:
     q_raw = (request.GET.get("q") or "").strip()
     qs = Plans.objects.filter(is_available=True).prefetch_related("house_styles")
     if q_raw:
-        qs = qs.filter(Q(plan_number__icontains=q_raw) | Q(description__icontains=q_raw))
+        qs = qs.filter(
+            Q(plan_number__icontains=q_raw)
+            | Q(plan_name__icontains=q_raw)
+            | Q(description__icontains=q_raw)
+            | Q(key_features__icontains=q_raw)
+        )
 
     paginator = Paginator(qs.order_by("-created_date"), 12)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
+    query_without_page = request.GET.copy()
+    query_without_page.pop("page", None)
 
     ctx = {
         "page": {"title": "Plans", "description": f"Search results for '{q_raw}'"},
@@ -236,7 +325,14 @@ def search(request: HttpRequest) -> HttpResponse:
         "sqft_choices": SQFT_CHOICES,
         "bed_choices": BED_FILTER_CHOICES,
         "bath_choices": BATH_FILTER_CHOICES,
-        "filters": {"q": q_raw, "sort": "newest", "min_sqft": "", "max_sqft": "", "beds": "", "baths": "", "style": ""},
+        "story_choices": STORY_FILTER_CHOICES,
+        "garage_choices": GARAGE_FILTER_CHOICES,
+        "feature_choices": [(key, label) for key, (_, label) in FEATURE_FILTERS.items()],
+        "has_filters": True,
+        "filter_query": query_without_page.urlencode(),
+        "filters": {"q": q_raw, "sort": "newest", "min_sqft": "", "max_sqft": "", "beds": "", "baths": "", "style": "", "stories": "", "garage": "", "max_width": "", "max_depth": "", "features": []},
+        "saved_plan_ids": get_saved_plan_ids(request),
+        "comparison_plan_ids": get_comparison_plan_ids(request),
     }
     return render(request, "plans/plans.html", ctx)
 

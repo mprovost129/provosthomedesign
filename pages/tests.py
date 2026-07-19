@@ -73,3 +73,24 @@ class SubdomainRoutingTests(TestCase):
         self.assertNotContains(main_response, "web.provosthomedesign.com")
         self.assertContains(web_response, "web.provosthomedesign.com")
         self.assertNotContains(web_response, "/plans/")
+
+
+class ResourcePageTests(TestCase):
+    def test_resource_hub_links_to_initial_guides(self):
+        response = self.client.get("/resources/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Plan with fewer unknowns")
+        self.assertContains(response, "/resources/stock-plan-vs-custom-home-design/")
+
+    def test_resource_detail_has_scope_disclaimer(self):
+        response = self.client.get("/resources/what-is-included-in-a-framing-plan/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "What Is Included in a Residential Framing Plan?")
+        self.assertContains(response, "Project-specific requirements vary")
+
+    def test_unknown_resource_returns_404(self):
+        response = self.client.get("/resources/not-a-guide/")
+
+        self.assertEqual(response.status_code, 404)

@@ -67,6 +67,14 @@ class Plans(models.Model):
     house_depth_in = models.PositiveIntegerField(help_text="Overall depth in inches")
 
     description = models.TextField(blank=True)
+    ideal_for = models.TextField(blank=True, help_text="Who this plan suits, including lifestyle, lot, or buyer needs")
+    key_features = models.TextField(blank=True, help_text="One feature per line")
+    layout_highlights = models.TextField(blank=True, help_text="Room layout, circulation, and daily-living highlights")
+    foundation_framing = models.TextField(blank=True, help_text="Foundation options and framing assumptions")
+    exterior_character = models.TextField(blank=True, help_text="Roof form, materials, and architectural character")
+    package_contents = models.TextField(blank=True, help_text="One included plan-package item per line")
+    delivery_details = models.TextField(blank=True, help_text="File formats, delivery method, and typical timing")
+    common_modifications = models.TextField(blank=True, help_text="One common modification per line")
 
     # optional meta/marketing fields referenced by templates
     sku = models.CharField(max_length=50, blank=True, null=True, db_index=True)
@@ -85,6 +93,18 @@ class Plans(models.Model):
     main_image = models.ImageField(upload_to="plans/main", blank=True, null=True)
 
     house_styles = models.ManyToManyField(HouseStyle, related_name="plans", blank=True)
+
+    # Searchable design attributes used by the catalog and curated categories.
+    is_adu = models.BooleanField(default=False, verbose_name="ADU or carriage house")
+    first_floor_primary = models.BooleanField(default=False)
+    has_home_office = models.BooleanField(default=False)
+    has_walk_in_pantry = models.BooleanField(default=False)
+    has_mudroom = models.BooleanField(default=False)
+    has_porch_or_deck = models.BooleanField(default=False)
+    has_bonus_room = models.BooleanField(default=False)
+    basement_compatible = models.BooleanField(default=False)
+    narrow_lot = models.BooleanField(default=False)
+    multigenerational = models.BooleanField(default=False)
 
     is_available = models.BooleanField(default=True)
     # Hand-pick which plans to feature on the home page, etc.
@@ -165,6 +185,22 @@ class Plans(models.Model):
     def house_depth_display(self) -> str:
         ft, inch = self._inches_to_feet_inches(int(self.house_depth_in or 0))
         return f'{ft}′ {inch}″'
+
+    @staticmethod
+    def _nonempty_lines(value: str) -> list[str]:
+        return [line.strip() for line in (value or "").splitlines() if line.strip()]
+
+    @property
+    def key_features_list(self) -> list[str]:
+        return self._nonempty_lines(self.key_features)
+
+    @property
+    def package_contents_list(self) -> list[str]:
+        return self._nonempty_lines(self.package_contents)
+
+    @property
+    def common_modifications_list(self) -> list[str]:
+        return self._nonempty_lines(self.common_modifications)
 
 
 # -----------------------------

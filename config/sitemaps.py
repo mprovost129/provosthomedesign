@@ -3,6 +3,8 @@ from django.contrib.sitemaps import Sitemap
 from django.urls import reverse
 from typing import Iterable
 from plans.models import Plans  # adjust if your model path differs
+from plans.views import CATEGORY_PAGES
+from pages.views import RESOURCE_ARTICLES
 
 class PlanSitemap(Sitemap):
     changefreq = "weekly"
@@ -10,14 +12,14 @@ class PlanSitemap(Sitemap):
     protocol = "https"  # ensure https URLs
 
     def items(self) -> Iterable[Plans]: # type: ignore
-        # Adjust the filter if you have a publish flag
-        return Plans.objects.all().order_by("-id")[:2000]
+        return Plans.objects.filter(is_available=True).order_by("-id")[:2000]
 
     def lastmod(self, obj: Plans):
         return next(
             (
                 getattr(obj, field)
                 for field in (
+                    "modified_date",
                     "updated_at",
                     "modified",
                     "updated",
@@ -43,6 +45,7 @@ class CorePagesSitemap(Sitemap):
             "pages:about",
             "pages:contact",
             "pages:testimonials",
+            "pages:resources",
         ]
 
     def location(self, item): # type: ignore
@@ -79,3 +82,27 @@ class WebPagesSitemap(Sitemap):
 
     def location(self, item):
         return reverse(item)
+
+
+class PlanCategorySitemap(Sitemap):
+    changefreq = "weekly"
+    priority = 0.7
+    protocol = "https"
+
+    def items(self):
+        return list(CATEGORY_PAGES)
+
+    def location(self, item):
+        return reverse("plans:plan_category", args=[item])
+
+
+class ResourceSitemap(Sitemap):
+    changefreq = "monthly"
+    priority = 0.6
+    protocol = "https"
+
+    def items(self):
+        return list(RESOURCE_ARTICLES)
+
+    def location(self, item):
+        return reverse("pages:resource_detail", args=[item])

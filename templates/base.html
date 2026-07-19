@@ -10,7 +10,7 @@
     <link rel="icon" type="image/svg+xml" href="{% static 'images/phdlogo.svg' %}">
 
     {# ---- Canonical ---- #}
-    <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}"/>
+    <link rel="canonical" href="{% block canonical_url %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% endblock %}"/>
 
     {# ---- Meta description (override per page with {% block meta_description %}) ---- #}
     <meta name="description" content="{% block meta_description %}Custom house plans and home design services for New England builders and homeowners. Code-compliant plans built with care.{% endblock %}">

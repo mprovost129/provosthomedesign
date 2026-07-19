@@ -5,13 +5,21 @@ from django.conf.urls.static import static
 from django.views.decorators.cache import cache_page
 from django.contrib.sitemaps.views import sitemap as sitemap_view
 
-from config.sitemaps import PlanSitemap, CorePagesSitemap, ServicePagesSitemap
+from config.sitemaps import (
+    CorePagesSitemap,
+    PlanCategorySitemap,
+    PlanSitemap,
+    ResourceSitemap,
+    ServicePagesSitemap,
+)
 from pages.views import robots_txt, llms_txt
 
 sitemaps = {
     "pages": CorePagesSitemap,
     "services": ServicePagesSitemap,
     "plans": PlanSitemap,
+    "plan-categories": PlanCategorySitemap,
+    "resources": ResourceSitemap,
 }
 
 urlpatterns = [

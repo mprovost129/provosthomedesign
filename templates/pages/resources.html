@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Home Design Resources | Provost Home Design{% endblock %}
+{% block meta_description %}Practical guidance about residential plans, permit drawing sets, plan modifications, framing plans, and preparing for home design.{% endblock %}
+
+{% block content %}
+<div class="container-lg py-4">
+  <header class="row g-4 align-items-end mb-5">
+    <div class="col-lg-8">
+      <p class="text-uppercase small fw-semibold text-primary mb-2">Residential design library</p>
+      <h1 class="display-4 fw-semibold mb-3">Plan with fewer unknowns.</h1>
+      <p class="lead text-muted mb-0">Clear, practical introductions to house plans, residential drawing sets, modifications, and project preparation.</p>
+    </div>
+    <div class="col-lg-4 text-lg-end"><a class="btn btn-primary" href="{% url 'pages:get_started' %}">Discuss your project</a></div>
+  </header>
+
+  <div class="row row-cols-1 row-cols-md-2 g-4">
+    {% for article in articles %}
+      <div class="col">
+        <article class="card h-100 border-0 shadow-sm">
+          <div class="card-body p-4">
+            <p class="small text-uppercase fw-semibold text-primary mb-2">Guide</p>
+            <h2 class="h3"><a class="stretched-link text-decoration-none" href="{% url 'pages:resource_detail' article.slug %}">{{ article.title }}</a></h2>
+            <p class="text-muted mb-0">{{ article.summary }}</p>
+          </div>
+        </article>
+      </div>
+    {% endfor %}
+  </div>
+
+  <section class="rounded-4 bg-light border p-4 p-lg-5 mt-5">
+    <h2 class="h3">Guidance is a starting point</h2>
+    <p class="mb-0">Every property, jurisdiction, and project scope is different. Confirm requirements for the project address with the appropriate local authority and qualified professionals.</p>
+  </section>
+</div>
+{% endblock %}

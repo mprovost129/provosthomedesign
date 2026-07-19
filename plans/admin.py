@@ -54,6 +54,30 @@ class PlansAdmin(admin.ModelAdmin):
     list_per_page = 50
     inlines = [PlanGalleryInline]
     readonly_fields = ("created_date", "modified_date")
+    fieldsets = (
+        ("Identity", {"fields": ("plan_number", "plan_name", "slug", "sku", "house_styles")}),
+        ("Core specifications", {"fields": (
+            ("square_footage", "bedrooms", "bathrooms"),
+            ("stories", "garage_stalls"),
+            ("house_width_in", "house_depth_in"),
+            "plan_price",
+        )}),
+        ("Buyer-focused content", {"fields": (
+            "description", "ideal_for", "key_features", "layout_highlights",
+            "foundation_framing", "exterior_character", "package_contents",
+            "delivery_details", "common_modifications",
+        )}),
+        ("Search attributes", {"fields": (
+            ("is_adu", "narrow_lot", "first_floor_primary"),
+            ("has_home_office", "has_walk_in_pantry", "has_mudroom"),
+            ("has_porch_or_deck", "has_bonus_room", "basement_compatible"),
+            "multigenerational",
+        )}),
+        ("Publishing and SEO", {"fields": (
+            "main_image", "meta_description", ("is_available", "is_featured"),
+            "created_date", "modified_date",
+        )}),
+    )
 
     actions = ("make_featured", "remove_featured", "make_available", "make_unavailable")
 

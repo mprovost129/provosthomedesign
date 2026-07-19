@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load humanize plans_extras thumbnail %}
+
+{% block title %}{{ category.title }} | Provost Home Design{% endblock %}
+{% block meta_description %}{{ category.meta }}{% endblock %}
+{% block extra_meta %}{% if request.GET.page %}<meta name="robots" content="noindex,follow">{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-lg py-4">
+  <nav aria-label="Breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a href="{% url 'plans:plan_list' %}">House plans</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ category.title }}</li>
+    </ol>
+  </nav>
+
+  <header class="row align-items-end g-4 mb-5">
+    <div class="col-lg-8">
+      <p class="text-uppercase small fw-semibold text-primary mb-2">Curated house plans</p>
+      <h1 class="display-5 fw-semibold mb-3">{{ category.title }}</h1>
+      <p class="lead text-muted mb-0">{{ category.intro }}</p>
+    </div>
+    <div class="col-lg-4 text-lg-end">
+      <a class="btn btn-outline-primary" href="{% url 'plans:plan_list' %}">Browse all plans</a>
+    </div>
+  </header>
+
+  {% if plans.paginator.count %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+      {% for p in plans %}
+        <div class="col">
+          <article class="card h-100 shadow-sm">
+            <a href="{{ p.get_absolute_url }}">
+              {% if p.main_image %}
+                {% thumbnail p.main_image "plan_card" as thumb %}
+                <img src="{{ thumb.url }}" width="{{ thumb.width }}" height="{{ thumb.height }}" class="card-img-top plan-thumb" alt="Front elevation of Plan {{ p.plan_number }}" loading="lazy" decoding="async">
+              {% else %}
+                <div class="bg-light text-muted small plan-thumb-placeholder">No image</div>
+              {% endif %}
+            </a>
+            <div class="card-body">
+              <h2 class="h5 mb-1"><a class="text-decoration-none" href="{{ p.get_absolute_url }}">{% if p.plan_name %}{{ p.plan_name }}{% else %}Plan {{ p.plan_number }}{% endif %}</a></h2>
+              {% if p.plan_name %}<p class="small text-muted mb-2">Plan {{ p.plan_number }}</p>{% endif %}
+              <p class="text-muted mb-0">{{ p.square_footage|intcomma }} sq ft | {{ p.bedrooms }} bed | {{ p.bathrooms|bath_label }} bath</p>
+            </div>
+          </article>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if plans.paginator.num_pages > 1 %}
+      <nav class="mt-4" aria-label="Category pagination">
+        <ul class="pagination justify-content-center">
+          {% if plans.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ plans.previous_page_number }}">Previous</a></li>{% endif %}
+          <li class="page-item active"><span class="page-link">{{ plans.number }} of {{ plans.paginator.num_pages }}</span></li>
+          {% if plans.has_next %}<li class="page-item"><a class="page-link" href="?page={{ plans.next_page_number }}">Next</a></li>{% endif %}
+        </ul>
+      </nav>
+    {% endif %}
+  {% else %}
+    <div class="border rounded-3 bg-light p-4 mb-5">
+      <h2 class="h4">Plans are being added</h2>
+      <p class="mb-3">No available plans currently match this collection. A custom design or modification may still be a good fit.</p>
+      <a class="btn btn-primary" href="{% url 'pages:get_started' %}">Discuss your project</a>
+    </div>
+  {% endif %}
+
+  <section class="row g-4 mt-5" aria-labelledby="category-faq-title">
+    <div class="col-lg-4">
+      <p class="text-uppercase small fw-semibold text-primary mb-2">Planning guidance</p>
+      <h2 id="category-faq-title" class="h3">Questions about {{ category.title|lower }}</h2>
+    </div>
+    <div class="col-lg-8">
+      <div class="accordion" id="category-faq">
+        {% for question, answer in category.faqs %}
+          <div class="accordion-item">
+            <h3 class="accordion-header"><button class="accordion-button{% if not forloop.first %} collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#category-answer-{{ forloop.counter }}">{{ question }}</button></h3>
+            <div id="category-answer-{{ forloop.counter }}" class="accordion-collapse collapse{% if forloop.first %} show{% endif %}" data-bs-parent="#category-faq"><div class="accordion-body">{{ answer }}</div></div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="rounded-4 bg-dark text-white p-4 p-lg-5 mt-5 d-lg-flex align-items-center justify-content-between gap-4">
+    <div><h2 class="h3">Need a different layout?</h2><p class="mb-lg-0 text-white-50">Start with a plan modification or discuss a home designed around your site and priorities.</p></div>
+    <a class="btn btn-light flex-shrink-0" href="{% url 'pages:get_started' %}">Start your project</a>
+  </section>
+</div>
+{% endblock %}

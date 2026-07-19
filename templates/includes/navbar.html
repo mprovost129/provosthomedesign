@@ -57,6 +57,7 @@
                 <li><a class="dropdown-item" href="{% url 'pages:service_detail' 'additions-and-renovations' %}">Additions &amp; Renovations</a></li>
                 <li><a class="dropdown-item" href="{% url 'pages:service_detail' 'residential-framing-plans' %}">Framing Plans</a></li>
                 <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item {% if m and m.url_name == 'resources' or m and m.url_name == 'resource_detail' %}active{% endif %}" href="{% url 'pages:resources' %}">Resources</a></li>
                 <li>
                   <a class="dropdown-item {% if m and m.url_name == 'about' %}active{% endif %}"
                      href="{% url 'pages:about' %}">About</a>

@@ -6,6 +6,7 @@
 {% block meta_description %}Browse stock house plans — Colonial, Cape, Ranch, and more. Filter by style, square footage, bedrooms, and garage. Code-compliant and permit-ready.{% endblock %}
 {% block og_title %}House Plan Catalog • Provost Home Design{% endblock %}
 {% block og_description %}Browse dozens of stock house plans for New England. Filter by style, size, bedrooms, and more - or start a custom design.{% endblock %}
+{% block extra_meta %}{% if has_filters %}<meta name="robots" content="noindex,follow">{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container-lg py-4">
@@ -14,6 +15,12 @@
     <h1 class="h3 mb-1">{{ page.title|default:"Plans" }}</h1>
     <p class="text-muted mb-0">{{ page.description|default:"Explore our house plans." }}</p>
   </header>
+
+  <nav class="d-flex flex-wrap gap-2 mb-4" aria-label="Curated plan collections">
+    {% for slug, category in categories.items %}
+      <a class="btn btn-sm btn-outline-secondary rounded-pill" href="{% url 'plans:plan_category' slug %}">{{ category.title }}</a>
+    {% endfor %}
+  </nav>
 
   <!-- Filters -->
   <form class="row g-2 align-items-end mb-3" method="get" novalidate>
@@ -84,6 +91,19 @@
       </select>
     </div>
 
+    <div class="col-12">
+      <details class="border rounded-3 p-3"{% if filters.stories or filters.garage or filters.max_width or filters.max_depth or filters.features %} open{% endif %}>
+        <summary class="fw-semibold">More filters</summary>
+        <div class="row g-3 pt-3">
+          <div class="col-6 col-md-3"><label for="stories" class="form-label">Stories</label><select id="stories" name="stories" class="form-select"><option value="">Any</option>{% for value in story_choices %}<option value="{{ value }}"{% if filters.stories == value %} selected{% endif %}>{{ value }}</option>{% endfor %}</select></div>
+          <div class="col-6 col-md-3"><label for="garage" class="form-label">Garage stalls</label><select id="garage" name="garage" class="form-select"><option value="">Any</option>{% for value in garage_choices %}<option value="{{ value }}"{% if filters.garage == value %} selected{% endif %}>{{ value }}</option>{% endfor %}</select></div>
+          <div class="col-6 col-md-3"><label for="max_width" class="form-label">Maximum width</label><div class="input-group"><input id="max_width" name="max_width" type="number" min="10" step="1" value="{{ filters.max_width }}" class="form-control"><span class="input-group-text">ft</span></div></div>
+          <div class="col-6 col-md-3"><label for="max_depth" class="form-label">Maximum depth</label><div class="input-group"><input id="max_depth" name="max_depth" type="number" min="10" step="1" value="{{ filters.max_depth }}" class="form-control"><span class="input-group-text">ft</span></div></div>
+          <fieldset class="col-12"><legend class="form-label">Design features</legend><div class="d-flex flex-wrap gap-3">{% for key, label in feature_choices %}<div class="form-check"><input class="form-check-input" type="checkbox" name="features" value="{{ key }}" id="feature-{{ key }}"{% if key in filters.features %} checked{% endif %}><label class="form-check-label" for="feature-{{ key }}">{{ label }}</label></div>{% endfor %}</div></fieldset>
+        </div>
+      </details>
+    </div>
+
     <div class="col-6 col-md-2">
       <button type="submit" class="btn btn-primary w-100">Apply</button>
     </div>
@@ -126,12 +146,20 @@
             <div class="card-body">
               <h2 class="h6 card-title mb-1">
                 <a href="{{ p.get_absolute_url }}" class="text-decoration-none">
-                  Plan {{ p.plan_number }}
+                  {% if p.plan_name %}{{ p.plan_name }}{% else %}Plan {{ p.plan_number }}{% endif %}
                 </a>
               </h2>
+              {% if p.plan_name %}<p class="small text-muted mb-1">Plan {{ p.plan_number }}</p>{% endif %}
               <p class="text-muted small mb-0">
                 {{ p.square_footage|intcomma }} sq ft • {{ p.bedrooms }} bed • {{ p.bathrooms|bath_label }} bath
               </p>
+              {% if p.is_adu or p.narrow_lot or p.first_floor_primary %}
+                <div class="d-flex flex-wrap gap-1 mt-2">
+                  {% if p.is_adu %}<span class="badge text-bg-light border">ADU</span>{% endif %}
+                  {% if p.narrow_lot %}<span class="badge text-bg-light border">Narrow lot</span>{% endif %}
+                  {% if p.first_floor_primary %}<span class="badge text-bg-light border">First-floor primary</span>{% endif %}
+                </div>
+              {% endif %}
             </div>
             
             <div class="card-footer bg-transparent border-0 pt-0">
@@ -161,7 +189,7 @@
           <li class="page-item {% if not plans.has_previous %}disabled{% endif %}">
             {% if plans.has_previous %}
               <a class="page-link"
-                 href="?page={{ plans.previous_page_number }}{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}{% if filters.min_sqft %}&min_sqft={{ filters.min_sqft }}{% endif %}{% if filters.max_sqft %}&max_sqft={{ filters.max_sqft }}{% endif %}{% if filters.beds %}&beds={{ filters.beds }}{% endif %}{% if filters.baths %}&baths={{ filters.baths }}{% endif %}{% if filters.sort %}&sort={{ filters.sort }}{% endif %}{% if filters.style %}&style={{ filters.style|default_if_none:''|urlencode }}{% endif %}">
+                 href="?{% if filter_query %}{{ filter_query }}&amp;{% endif %}page={{ plans.previous_page_number }}">
                 Previous
               </a>
             {% else %}
@@ -175,7 +203,7 @@
             {% elif num >= plans.number|add:'-2' and num <= plans.number|add:'2' %}
               <li class="page-item">
                 <a class="page-link"
-                   href="?page={{ num }}{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}{% if filters.min_sqft %}&min_sqft={{ filters.min_sqft }}{% endif %}{% if filters.max_sqft %}&max_sqft={{ filters.max_sqft }}{% endif %}{% if filters.beds %}&beds={{ filters.beds }}{% endif %}{% if filters.baths %}&baths={{ filters.baths }}{% endif %}{% if filters.sort %}&sort={{ filters.sort }}{% endif %}{% if filters.style %}&style={{ filters.style|default_if_none:''|urlencode }}{% endif %}">
+                   href="?{% if filter_query %}{{ filter_query }}&amp;{% endif %}page={{ num }}">
                   {{ num }}
                 </a>
               </li>
@@ -185,7 +213,7 @@
           <li class="page-item {% if not plans.has_next %}disabled{% endif %}">
             {% if plans.has_next %}
               <a class="page-link"
-                 href="?page={{ plans.next_page_number }}{% if filters.q %}&q={{ filters.q|urlencode }}{% endif %}{% if filters.min_sqft %}&min_sqft={{ filters.min_sqft }}{% endif %}{% if filters.max_sqft %}&max_sqft={{ filters.max_sqft }}{% endif %}{% if filters.beds %}&beds={{ filters.beds }}{% endif %}{% if filters.baths %}&baths={{ filters.baths }}{% endif %}{% if filters.sort %}&sort={{ filters.sort }}{% endif %}{% if filters.style %}&style={{ filters.style|default_if_none:''|urlencode }}{% endif %}">
+                 href="?{% if filter_query %}{{ filter_query }}&amp;{% endif %}page={{ plans.next_page_number }}">
                 Next
               </a>
             {% else %}

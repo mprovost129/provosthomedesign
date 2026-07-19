@@ -15,7 +15,7 @@ from django.contrib import messages
 from django.core.cache import cache
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
-from django.http import HttpRequest, HttpResponse, HttpResponsePermanentRedirect
+from django.http import Http404, HttpRequest, HttpResponse, HttpResponsePermanentRedirect
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.templatetags.static import static
@@ -98,6 +98,64 @@ SERVICE_PAGES = {
         "intro": "Builders and contractors need drawings that support estimating, coordination, permitting, and field decisions. I provide responsive residential design support grounded in hands-on knowledge of framing, trusses, engineered wood, and the construction process.",
         "highlights": ["Repeatable stock-plan adaptation", "Client-requested plan revisions", "Framing and truss coordination", "Permit and field revision support"],
         "faqs": [("Do you support repeat builder work?", "Yes. We can establish a consistent handoff and drawing process for recurring residential projects."), ("Can you coordinate directly with clients and trades?", "Yes, with clear roles and communication agreed at the start of the project.")],
+    },
+}
+
+RESOURCE_ARTICLES = {
+    "what-is-included-in-residential-permit-set": {
+        "title": "What Is Included in a Residential Permit Drawing Set?",
+        "description": "A practical overview of the drawings commonly included in a residential permit set and the project-specific documents that may also be required.",
+        "summary": "A coordinated permit set explains the proposed work clearly enough for review, pricing, and construction. The exact sheet list depends on the project and local requirements.",
+        "reviewed": "July 2026",
+        "sections": [
+            ("Core architectural drawings", "A typical set may include a site or plot reference, dimensioned floor plans, exterior elevations, building sections, roof information, and construction details. The drawings should agree with one another and describe both the layout and the building envelope."),
+            ("Project and code information", "Cover sheets commonly identify the project, drawing index, applicable design criteria, and general notes. Energy, zoning, life-safety, or accessibility information may be shown in the set or supplied through separate documents."),
+            ("Documents outside the architectural set", "A survey, septic design, energy report, truss package, product approvals, or structural engineering may be required separately. Confirm the submission checklist with the authority having jurisdiction before filing."),
+        ],
+    },
+    "stock-plan-vs-custom-home-design": {
+        "title": "Stock House Plan or Custom Home Design?",
+        "description": "Compare stock house plans, plan modifications, and custom home design based on your lot, priorities, schedule, and desired level of personalization.",
+        "summary": "The best starting point is the one that fits both your site and the amount of change you need. A stock plan can save design time; a custom plan gives the site and household more influence from the beginning.",
+        "reviewed": "July 2026",
+        "sections": [
+            ("When a stock plan works well", "Choose a stock plan when the overall size, footprint, exterior, and room relationships already fit your needs. Allow time to verify zoning, site fit, code requirements, and builder preferences before treating it as permit-ready."),
+            ("When modifications are the middle ground", "Plan modifications are useful when the concept is right but several targeted changes are needed, such as resizing rooms, revising a garage, changing windows, or adapting the foundation."),
+            ("When custom design is worth it", "Custom design is usually the stronger route for unusual sites, specific views, complex programs, accessibility priorities, or changes extensive enough that the original plan would no longer provide a meaningful shortcut."),
+        ],
+    },
+    "can-a-stock-house-plan-be-modified": {
+        "title": "Can a Stock House Plan Be Modified?",
+        "description": "Learn which stock-plan changes are typically practical, what affects modification scope, and what to confirm before design work begins.",
+        "summary": "Most stock plans can be adjusted, but the right process depends on licensing, source files, structural impact, and how far the revised design moves from the original.",
+        "reviewed": "July 2026",
+        "sections": [
+            ("Common plan modifications", "Frequent requests include moving walls, changing room sizes, adding a garage or porch, adjusting windows, revising the exterior style, and adapting a foundation to site or builder needs."),
+            ("What makes a change more involved", "Moving stairs, changing bearing lines, reworking roof geometry, or significantly altering the footprint can affect many sheets. A coordinated update is more than changing one floor-plan drawing."),
+            ("What to provide", "Share the complete plan set, proof of the right to modify it, editable source files if available, a marked-up request list, and known site or jurisdiction requirements. This supports an accurate scope before work starts."),
+        ],
+    },
+    "what-to-have-before-contacting-home-designer": {
+        "title": "What to Have Before Contacting a Home Designer",
+        "description": "Prepare for a productive first residential design conversation with a concise project brief, site information, priorities, and budget context.",
+        "summary": "You do not need every answer before reaching out. A few organized inputs make the first conversation more useful and help identify missing information early.",
+        "reviewed": "July 2026",
+        "sections": [
+            ("Your project brief", "Outline who will use the home, desired rooms, approximate size, must-haves, preferences, and anything that does not work in your current space. Inspiration images are useful when paired with notes about what you like."),
+            ("Property information", "Provide the address, survey or plot plan if available, site photos, and known zoning or septic information. Existing-home projects also benefit from prior drawings and photos of affected areas."),
+            ("Budget and decision process", "A realistic construction range, target schedule, and list of decision-makers help keep early concepts grounded. If a builder is already involved, their input can be incorporated from the start."),
+        ],
+    },
+    "what-is-included-in-a-framing-plan": {
+        "title": "What Is Included in a Residential Framing Plan?",
+        "description": "Understand the purpose of residential framing plans, the information they coordinate, and when separate structural engineering may be required.",
+        "summary": "Framing plans communicate the intended arrangement of floors, roofs, openings, beams, and bearing conditions so architectural design and construction strategy stay coordinated.",
+        "reviewed": "July 2026",
+        "sections": [
+            ("Typical framing information", "Depending on scope, drawings may show joist or truss direction, bearing lines, major beams, headers, openings, floor elevations, roof framing intent, and references to related sections or details."),
+            ("Coordination value", "A framing layout helps identify conflicts among stairs, plumbing paths, open rooms, roof geometry, and mechanical needs before construction. It also gives builders, truss suppliers, and engineers a clearer coordination base."),
+            ("Framing plans and engineering", "Framing drawings do not replace calculations or sealed structural documents when those are required. Project location, loading, spans, materials, and local review determine what must be designed by a qualified engineer."),
+        ],
     },
 }
 
@@ -795,10 +853,25 @@ def services(request):
 def service_detail(request: HttpRequest, service_slug: str) -> HttpResponse:
     service = SERVICE_PAGES.get(service_slug)
     if not service:
-        from django.http import Http404
         raise Http404("Service page not found")
     featured_plans = Plans.objects.filter(is_available=True).order_by("-is_featured", "-created_date")[:3]
     return render(request, "pages/service_detail.html", {"service": service, "featured_plans": featured_plans})
+
+
+def resources(request: HttpRequest) -> HttpResponse:
+    articles = [dict(article, slug=slug) for slug, article in RESOURCE_ARTICLES.items()]
+    return render(request, "pages/resources.html", {"articles": articles})
+
+
+def resource_detail(request: HttpRequest, resource_slug: str) -> HttpResponse:
+    article = RESOURCE_ARTICLES.get(resource_slug)
+    if not article:
+        raise Http404("Resource not found")
+    return render(
+        request,
+        "pages/resource_detail.html",
+        {"article": article, "resource_slug": resource_slug},
+    )
 
 
 def web_design_legacy_redirect(request: HttpRequest) -> HttpResponse:

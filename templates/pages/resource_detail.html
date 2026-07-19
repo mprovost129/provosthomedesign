@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ article.title }} | Provost Home Design{% endblock %}
+{% block meta_description %}{{ article.description }}{% endblock %}
+{% block og_title %}{{ article.title }}{% endblock %}
+{% block og_description %}{{ article.description }}{% endblock %}
+
+{% block content %}
+<article class="container-lg py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+      <nav aria-label="Breadcrumb" class="mb-4"><ol class="breadcrumb small"><li class="breadcrumb-item"><a href="{% url 'pages:resources' %}">Resources</a></li><li class="breadcrumb-item active" aria-current="page">{{ article.title }}</li></ol></nav>
+      <header class="mb-5">
+        <p class="text-uppercase small fw-semibold text-primary mb-2">Home design guide</p>
+        <h1 class="display-5 fw-semibold mb-3">{{ article.title }}</h1>
+        <p class="lead text-muted">{{ article.summary }}</p>
+        <p class="small text-muted mb-0">Last reviewed {{ article.reviewed }}</p>
+      </header>
+
+      {% for heading, body in article.sections %}
+        <section class="mb-5">
+          <h2 class="h3">{{ heading }}</h2>
+          <p class="fs-5 lh-lg">{{ body }}</p>
+        </section>
+      {% endfor %}
+
+      <aside class="border-start border-4 border-primary bg-light p-4 mb-5">
+        <h2 class="h5">Project-specific requirements vary</h2>
+        <p class="mb-0">This general information is not a substitute for local code, zoning, engineering, legal, or permit guidance. Confirm requirements for your site and scope with the authority having jurisdiction and the appropriate qualified professionals.</p>
+      </aside>
+
+      <section class="rounded-4 bg-dark text-white p-4 p-lg-5">
+        <h2 class="h3">Ready to talk through your plans?</h2>
+        <p class="text-white-50">Share what you know so far. We can identify the next useful step together.</p>
+        <a class="btn btn-light" href="{% url 'pages:get_started' %}">Start your project</a>
+      </section>
+    </div>
+  </div>
+</article>
+{% endblock %}

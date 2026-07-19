@@ -34,16 +34,25 @@
   ],
   "sku": "{{ plan.plan_number }}",
   "brand": { "@type": "Brand", "name": "Provost Home Design" },
-  "url": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}",
+  "url": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}"{% if plan.plan_price %},
   "offers": {
     "@type": "Offer",
     "priceCurrency": "USD",
-    {% if plan.plan_price %}
-      "price": "{{ plan.plan_price|floatformat:2 }}",
-      "availability": "https://schema.org/InStock",
-    {% endif %}
+    "price": "{{ plan.plan_price|floatformat:2 }}",
+    "availability": "https://schema.org/InStock",
     "url": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}"
-  }
+  }{% endif %}
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type":"ListItem","position":1,"name":"Home","item":"{{ request.scheme }}://{{ request.get_host }}/"},
+    {"@type":"ListItem","position":2,"name":"House Plans","item":"{{ request.scheme }}://{{ request.get_host }}{% url 'plans:plan_list' %}"},
+    {"@type":"ListItem","position":3,"name":"{% if plan.plan_name %}{{ plan.plan_name|escapejs }}{% else %}Plan {{ plan.plan_number }}{% endif %}","item":"{{ request.scheme }}://{{ request.get_host }}{{ request.path }}"}
+  ]
 }
 </script>
 {% endblock %}
@@ -196,6 +205,32 @@
       </div>
     </div>
   </div>
+
+  {% if plan.key_features or plan.ideal_for or plan.layout_highlights or plan.foundation_framing or plan.exterior_character or plan.package_contents or plan.delivery_details or plan.common_modifications %}
+  <section class="mt-5" aria-labelledby="plan-details-heading">
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <h2 id="plan-details-heading" class="h3">About this house plan</h2>
+        {% if plan.ideal_for %}<div class="mb-4"><h3 class="h5">Designed for</h3>{{ plan.ideal_for|linebreaks }}</div>{% endif %}
+        {% if plan.layout_highlights %}<div class="mb-4"><h3 class="h5">Layout and daily living</h3>{{ plan.layout_highlights|linebreaks }}</div>{% endif %}
+        {% if plan.exterior_character %}<div class="mb-4"><h3 class="h5">Exterior character</h3>{{ plan.exterior_character|linebreaks }}</div>{% endif %}
+        {% if plan.foundation_framing %}<div class="mb-4"><h3 class="h5">Foundation and framing</h3>{{ plan.foundation_framing|linebreaks }}</div>{% endif %}
+      </div>
+      <aside class="col-lg-4">
+        {% if plan.key_features_list %}
+        <div class="card border shadow-sm mb-3"><div class="card-body"><h3 class="h5">Key features</h3><ul class="mb-0">{% for feature in plan.key_features_list %}<li class="mb-1">{{ feature }}</li>{% endfor %}</ul></div></div>
+        {% endif %}
+        {% if plan.package_contents_list %}
+        <div class="card border shadow-sm mb-3"><div class="card-body"><h3 class="h5">What the plan package includes</h3><ul class="mb-0">{% for item in plan.package_contents_list %}<li class="mb-1">{{ item }}</li>{% endfor %}</ul></div></div>
+        {% endif %}
+        {% if plan.delivery_details %}<div class="card border shadow-sm mb-3"><div class="card-body"><h3 class="h5">Files and delivery</h3>{{ plan.delivery_details|linebreaks }}</div></div>{% endif %}
+        {% if plan.common_modifications_list %}
+        <div class="card border shadow-sm"><div class="card-body"><h3 class="h5">Common modifications</h3><ul class="mb-0">{% for item in plan.common_modifications_list %}<li class="mb-1">{{ item }}</li>{% endfor %}</ul></div></div>
+        {% endif %}
+      </aside>
+    </div>
+  </section>
+  {% endif %}
 
   {% if related_plans %}
   <section class="mt-5" aria-labelledby="related-plans-heading">
