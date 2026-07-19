@@ -99,6 +99,57 @@ SERVICE_PAGES = {
         "highlights": ["Repeatable stock-plan adaptation", "Client-requested plan revisions", "Framing and truss coordination", "Permit and field revision support"],
         "faqs": [("Do you support repeat builder work?", "Yes. We can establish a consistent handoff and drawing process for recurring residential projects."), ("Can you coordinate directly with clients and trades?", "Yes, with clear roles and communication agreed at the start of the project.")],
     },
+    "massachusetts-adu-plans": {
+        "title": "Massachusetts ADU Plans",
+        "meta": "Custom and adaptable accessory dwelling unit plans for Massachusetts properties, homeowners, and builders.",
+        "eyebrow": "Accessory Dwelling Unit Design",
+        "intro": "Develop an accessory dwelling unit around your property, household needs, and intended use. ADU design starts with the site and local requirements, then coordinates privacy, access, parking, utilities, structure, and a practical compact layout.",
+        "highlights": ["Detached and attached ADU concepts", "Garage-apartment and carriage-house layouts", "Compact kitchens, baths, and storage", "Permit-set and consultant coordination"],
+        "faqs": [("Can I use a stock ADU plan on my property?", "A stock plan can be a useful starting point, but site fit, zoning, access, utilities, and local submission requirements must be confirmed."), ("Can an ADU be designed for aging in place?", "Yes. Single-level circulation, accessible entries, bathroom clearances, and adaptable features can be considered from the beginning.")],
+    },
+    "new-england-house-plans": {
+        "title": "New England House Plans",
+        "meta": "Stock, modified, and custom house plans informed by New England construction, climate, and architectural character.",
+        "eyebrow": "Regionally Informed Residential Design",
+        "intro": "Choose a house plan with the region in mind. Provost Home Design combines familiar New England forms with practical layouts, code-conscious documentation, and framing experience, then helps adapt the design to the site, builder, and permitting path.",
+        "highlights": ["Ranch, Colonial, Cape, and farmhouse plans", "Snow, roof, and framing coordination", "Plan modifications for site and lifestyle", "Direct collaboration with the designer"],
+        "faqs": [("What makes a plan suitable for New England?", "The site, climate, foundation, envelope, structural approach, local requirements, and builder practices all matter in addition to architectural style."), ("Can a national stock plan be adapted?", "Often, yes. The plan should be reviewed for the project location and revised where needed before permit submission or construction.")],
+    },
+}
+
+SERVICE_RELATED_LINKS = {
+    "custom-home-design-massachusetts": {"categories": ["ranch-house-plans", "colonial-house-plans", "modern-farmhouse-plans"], "resources": ["stock-plan-vs-custom-home-design", "what-to-have-before-contacting-home-designer"]},
+    "custom-home-design-rhode-island": {"categories": ["cape-cod-house-plans", "ranch-house-plans", "one-story-house-plans"], "resources": ["stock-plan-vs-custom-home-design", "what-is-included-in-residential-permit-set"]},
+    "house-plan-modifications": {"categories": ["narrow-lot-house-plans", "first-floor-primary-suite-plans"], "resources": ["can-a-stock-house-plan-be-modified", "stock-plan-vs-custom-home-design"]},
+    "additions-and-renovations": {"categories": ["ranch-house-plans", "cape-cod-house-plans"], "resources": ["what-to-have-before-contacting-home-designer", "what-is-included-in-residential-permit-set"]},
+    "residential-framing-plans": {"categories": ["one-story-house-plans", "modern-farmhouse-plans"], "resources": ["what-is-included-in-a-framing-plan", "what-is-included-in-residential-permit-set"]},
+    "permit-ready-house-plans": {"categories": ["one-story-house-plans", "small-house-plans-under-1500-square-feet"], "resources": ["what-is-included-in-residential-permit-set", "what-to-have-before-contacting-home-designer"]},
+    "builder-contractor-plan-services": {"categories": ["ranch-house-plans", "colonial-house-plans"], "resources": ["what-is-included-in-a-framing-plan", "can-a-stock-house-plan-be-modified"]},
+    "massachusetts-adu-plans": {"categories": ["adu-carriage-house-plans", "small-house-plans-under-1500-square-feet"], "resources": ["what-to-have-before-contacting-home-designer", "what-is-included-in-residential-permit-set"]},
+    "new-england-house-plans": {"categories": ["ranch-house-plans", "colonial-house-plans", "cape-cod-house-plans"], "resources": ["stock-plan-vs-custom-home-design", "can-a-stock-house-plan-be-modified"]},
+}
+
+PLAN_CATEGORY_LABELS = {
+    "ranch-house-plans": "Ranch House Plans",
+    "colonial-house-plans": "Colonial House Plans",
+    "cape-cod-house-plans": "Cape Cod House Plans",
+    "modern-farmhouse-plans": "Modern Farmhouse Plans",
+    "adu-carriage-house-plans": "ADU and Carriage House Plans",
+    "narrow-lot-house-plans": "Narrow-Lot House Plans",
+    "one-story-house-plans": "One-Story House Plans",
+    "small-house-plans-under-1500-square-feet": "House Plans Under 1,500 Square Feet",
+    "first-floor-primary-suite-plans": "Plans With First-Floor Primary Suites",
+}
+
+RESOURCE_RELATED_LINKS = {
+    "what-is-included-in-residential-permit-set": ("permit-ready-house-plans", "one-story-house-plans"),
+    "stock-plan-vs-custom-home-design": ("custom-home-design-massachusetts", "ranch-house-plans"),
+    "can-a-stock-house-plan-be-modified": ("house-plan-modifications", "first-floor-primary-suite-plans"),
+    "what-to-have-before-contacting-home-designer": ("custom-home-design-massachusetts", "modern-farmhouse-plans"),
+    "what-is-included-in-a-framing-plan": ("residential-framing-plans", "ranch-house-plans"),
+    "how-much-do-custom-house-plans-cost": ("custom-home-design-massachusetts", "colonial-house-plans"),
+    "how-long-does-house-design-take": ("custom-home-design-rhode-island", "cape-cod-house-plans"),
+    "how-to-choose-house-plan-for-narrow-lot": ("house-plan-modifications", "narrow-lot-house-plans"),
 }
 
 RESOURCE_ARTICLES = {
@@ -155,6 +206,39 @@ RESOURCE_ARTICLES = {
             ("Typical framing information", "Depending on scope, drawings may show joist or truss direction, bearing lines, major beams, headers, openings, floor elevations, roof framing intent, and references to related sections or details."),
             ("Coordination value", "A framing layout helps identify conflicts among stairs, plumbing paths, open rooms, roof geometry, and mechanical needs before construction. It also gives builders, truss suppliers, and engineers a clearer coordination base."),
             ("Framing plans and engineering", "Framing drawings do not replace calculations or sealed structural documents when those are required. Project location, loading, spans, materials, and local review determine what must be designed by a qualified engineer."),
+        ],
+    },
+    "how-much-do-custom-house-plans-cost": {
+        "title": "What Affects the Cost of Custom House Plans?",
+        "description": "Understand the scope, site, complexity, coordination, and deliverables that influence custom house-plan design fees.",
+        "summary": "Design fees reflect more than square footage. The project type, complexity, available information, revision process, and required drawing set all shape the scope.",
+        "reviewed": "July 2026",
+        "sections": [
+            ("Scope and starting point", "A new custom home, an addition, and a modification to an editable stock plan begin with different amounts of existing information. A clear written proposal should define the design phases, drawing deliverables, and included revisions."),
+            ("Complexity and coordination", "Roof geometry, site constraints, structural spans, unusual spaces, multiple consultants, and jurisdiction-specific submissions can add coordination time even when two projects have similar square footage."),
+            ("How to request a useful proposal", "Provide the project address, goals, approximate size, desired timing, available survey or existing drawings, and examples of the expected character. This makes it easier to compare scope rather than price alone."),
+        ],
+    },
+    "how-long-does-house-design-take": {
+        "title": "How Long Does the House Design Process Take?",
+        "description": "Learn what influences the residential design timeline from initial scope through concepts, revisions, coordination, and permit drawings.",
+        "summary": "The timeline depends on project readiness, complexity, decision speed, consultant coordination, and the level of documentation required.",
+        "reviewed": "July 2026",
+        "sections": [
+            ("Early planning", "The process moves more efficiently when the property information, room priorities, budget context, and decision-makers are identified early. Missing survey or site information can delay meaningful design decisions."),
+            ("Concepts and revisions", "Initial layouts establish the major relationships. Review time and the number or scale of revisions often have more schedule impact than drafting speed, so consolidated feedback is valuable."),
+            ("Permit-set coordination", "After the design is approved, the drawings are coordinated for the agreed deliverables. Engineering, energy documentation, septic, truss work, or municipal prerequisites may follow separate schedules."),
+        ],
+    },
+    "how-to-choose-house-plan-for-narrow-lot": {
+        "title": "How to Choose a House Plan for a Narrow Lot",
+        "description": "Evaluate buildable width, access, daylight, garage placement, circulation, and privacy when selecting a narrow-lot house plan.",
+        "summary": "The frontage shown on a listing is not the same as buildable width. Start with reliable property information, then evaluate how the plan uses its limited footprint.",
+        "reviewed": "July 2026",
+        "sections": [
+            ("Confirm the buildable area", "Use a current survey and verify setbacks, easements, access, utilities, and other site constraints before selecting a footprint. Small dimensional differences can determine whether a plan is practical."),
+            ("Study light, privacy, and circulation", "Side windows may be limited by neighboring homes, so front, rear, courtyard, or high-window strategies can matter. Efficient stairs and hallways preserve more of the narrow footprint for usable rooms."),
+            ("Plan the garage and outdoor connection", "Front-entry, rear-access, detached, and tandem garages affect the entire first-floor layout. Consider how vehicles, entries, trash, utilities, and outdoor living will work together."),
         ],
     },
 }
@@ -855,7 +939,23 @@ def service_detail(request: HttpRequest, service_slug: str) -> HttpResponse:
     if not service:
         raise Http404("Service page not found")
     featured_plans = Plans.objects.filter(is_available=True).order_by("-is_featured", "-created_date")[:3]
-    return render(request, "pages/service_detail.html", {"service": service, "featured_plans": featured_plans})
+    related = SERVICE_RELATED_LINKS.get(service_slug, {})
+    related_categories = [
+        {"slug": slug, "title": PLAN_CATEGORY_LABELS[slug]}
+        for slug in related.get("categories", [])
+        if slug in PLAN_CATEGORY_LABELS
+    ]
+    related_resources = [
+        {"slug": slug, "title": RESOURCE_ARTICLES[slug]["title"]}
+        for slug in related.get("resources", [])
+        if slug in RESOURCE_ARTICLES
+    ]
+    return render(request, "pages/service_detail.html", {
+        "service": service,
+        "featured_plans": featured_plans,
+        "related_categories": related_categories,
+        "related_resources": related_resources,
+    })
 
 
 def resources(request: HttpRequest) -> HttpResponse:
@@ -867,10 +967,25 @@ def resource_detail(request: HttpRequest, resource_slug: str) -> HttpResponse:
     article = RESOURCE_ARTICLES.get(resource_slug)
     if not article:
         raise Http404("Resource not found")
+    service_slug, category_slug = RESOURCE_RELATED_LINKS.get(
+        resource_slug,
+        ("custom-home-design-massachusetts", "ranch-house-plans"),
+    )
     return render(
         request,
         "pages/resource_detail.html",
-        {"article": article, "resource_slug": resource_slug},
+        {
+            "article": article,
+            "resource_slug": resource_slug,
+            "related_service": {
+                "slug": service_slug,
+                "title": SERVICE_PAGES[service_slug]["title"],
+            },
+            "related_category": {
+                "slug": category_slug,
+                "title": PLAN_CATEGORY_LABELS[category_slug],
+            },
+        },
     )
 
 

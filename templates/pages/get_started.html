@@ -13,9 +13,16 @@
   </header>
 
   {% if selected_plan %}
-    <aside class="alert alert-primary d-flex align-items-center justify-content-between flex-wrap gap-2" aria-label="Selected house plan">
-      <div><strong>Plan {{ selected_plan.plan_number }}</strong> will be included with this request.</div>
-      <a href="{{ selected_plan.get_absolute_url }}" class="alert-link">Review plan</a>
+    <aside class="card border-primary shadow-sm mb-4" aria-label="Selected house plan">
+      <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+          <p class="small text-uppercase fw-semibold text-primary mb-1">{% if intent == 'buy-as-shown' %}Purchase request{% else %}Plan modification request{% endif %}</p>
+          <h2 class="h5 mb-1">{% if selected_plan.plan_name %}{{ selected_plan.plan_name }} | {% endif %}Plan {{ selected_plan.plan_number }}</h2>
+          <p class="text-muted mb-0">{{ selected_plan.square_footage }} sq ft | {{ selected_plan.bedrooms }} bed | {{ selected_plan.bathrooms }} bath{% if selected_plan.plan_price %} | ${{ selected_plan.plan_price }}{% endif %}</p>
+        </div>
+        <a href="{{ selected_plan.get_absolute_url }}" class="btn btn-sm btn-outline-primary">Review plan</a>
+      </div>
+      {% if intent == 'buy-as-shown' %}<div class="card-footer small text-muted">After you submit, I will confirm the plan package, delivery format, single-use license, and any project-location requirements before payment.</div>{% endif %}
     </aside>
   {% endif %}
 
@@ -46,7 +53,7 @@
             <div class="col-12"><label class="form-label" for="{{ form.plan_files.id_for_label }}">Plans, sketches, or reference images</label>{{ form.plan_files }}<div class="form-text">Optional. PDF, PNG, JPG, or WebP; up to 10 MB each.</div>{% for error in form.plan_files.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
             <div class="col-12"><div class="form-check">{{ form.terms_accepted }}<label class="form-check-label" for="{{ form.terms_accepted.id_for_label }}">I agree to the <a href="{% url 'pages:terms' %}" target="_blank" rel="noopener">Terms &amp; Conditions</a>.</label>{% for error in form.terms_accepted.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></div>
             {% if recaptcha_site_key %}<input type="hidden" name="recaptcha_token" id="recaptcha_token" value="">{% endif %}
-            <div class="col-12 d-flex flex-wrap align-items-center gap-3"><button type="submit" class="btn btn-primary btn-lg px-4">Send Project Request</button><span class="small text-muted">No commitment required.</span></div>
+            <div class="col-12 d-flex flex-wrap align-items-center gap-3"><button type="submit" class="btn btn-primary btn-lg px-4">{% if selected_plan and intent == 'buy-as-shown' %}Request Purchase Confirmation{% else %}Send Project Request{% endif %}</button><span class="small text-muted">No commitment required.</span></div>
           </div>
         </div>
       </form>

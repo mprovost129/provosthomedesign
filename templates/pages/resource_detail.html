@@ -29,6 +29,11 @@
         <p class="mb-0">This general information is not a substitute for local code, zoning, engineering, legal, or permit guidance. Confirm requirements for your site and scope with the authority having jurisdiction and the appropriate qualified professionals.</p>
       </aside>
 
+      <nav class="row g-3 mb-5" aria-label="Related planning links">
+        <div class="col-md-6"><a class="d-block border rounded-3 p-3 h-100 text-decoration-none" href="{% url 'pages:service_detail' related_service.slug %}"><span class="small text-uppercase fw-semibold">Related service</span><strong class="d-block mt-1">{{ related_service.title }}</strong></a></div>
+        <div class="col-md-6"><a class="d-block border rounded-3 p-3 h-100 text-decoration-none" href="{% url 'plans:plan_category' related_category.slug %}"><span class="small text-uppercase fw-semibold">Explore plans</span><strong class="d-block mt-1">{{ related_category.title }}</strong></a></div>
+      </nav>
+
       <section class="rounded-4 bg-dark text-white p-4 p-lg-5">
         <h2 class="h3">Ready to talk through your plans?</h2>
         <p class="text-white-50">Share what you know so far. We can identify the next useful step together.</p>

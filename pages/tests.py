@@ -94,3 +94,18 @@ class ResourcePageTests(TestCase):
         response = self.client.get("/resources/not-a-guide/")
 
         self.assertEqual(response.status_code, 404)
+
+    def test_new_regional_service_pages_are_available(self):
+        adu_response = self.client.get("/services/massachusetts-adu-plans/")
+        regional_response = self.client.get("/services/new-england-house-plans/")
+
+        self.assertContains(adu_response, "Massachusetts ADU Plans")
+        self.assertContains(adu_response, "ADU and Carriage House Plans")
+        self.assertContains(regional_response, "New England House Plans")
+
+    def test_resource_detail_links_to_related_service_and_collection(self):
+        response = self.client.get("/resources/how-to-choose-house-plan-for-narrow-lot/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "/services/house-plan-modifications/")
+        self.assertContains(response, "/plans/category/narrow-lot-house-plans/")

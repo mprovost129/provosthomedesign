@@ -203,6 +203,21 @@ class Plans(models.Model):
         return self._nonempty_lines(self.common_modifications)
 
 
+class PlanFAQ(models.Model):
+    plan = models.ForeignKey(Plans, on_delete=models.CASCADE, related_name="faqs")
+    question = models.CharField(max_length=240)
+    answer = models.TextField()
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ("order", "id")
+        verbose_name = "plan FAQ"
+        verbose_name_plural = "plan FAQs"
+
+    def __str__(self) -> str:
+        return f"{self.plan.plan_number}: {self.question}"
+
+
 # -----------------------------
 # Plan Gallery
 # -----------------------------

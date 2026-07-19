@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Any
 
+import json
 import logging
 
 from django.conf import settings
@@ -266,7 +267,7 @@ def plan_detail(request: HttpRequest, house_style_slug: str, plan_slug: str) -> 
     Single plan detail + gallery + request changes form (no user deps).
     """
     plan = get_object_or_404(
-        Plans.objects.prefetch_related("house_styles"),
+        Plans.objects.prefetch_related("house_styles", "faqs"),
         house_styles__slug=house_style_slug,
         slug=plan_slug,
     )
@@ -283,6 +284,41 @@ def plan_detail(request: HttpRequest, house_style_slug: str, plan_slug: str) -> 
         .prefetch_related("house_styles")
         .distinct()[:3]
     )
+    plan_faqs = [
+        {
+            "question": "What is included with this house plan?",
+            "answer": plan.package_contents
+            or "The exact drawing set and delivery format will be confirmed before purchase so you know what is included for this plan.",
+        },
+        {
+            "question": "Can this plan be modified?",
+            "answer": "Yes. Common changes can be reviewed and quoted separately before the plan package is finalized.",
+        },
+        {
+            "question": "Can I build this plan more than once?",
+            "answer": "The standard purchase includes a single-use license to construct one home. Additional builds require additional permission or licensing.",
+        },
+        {
+            "question": "Will this plan meet requirements for my property?",
+            "answer": "Site, zoning, code, energy, engineering, and professional-stamp requirements vary by location and must be confirmed for the project address.",
+        },
+    ]
+    plan_faqs.extend(
+        {"question": faq.question, "answer": faq.answer}
+        for faq in plan.faqs.all()
+    )
+    faq_schema = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": faq["question"],
+                "acceptedAnswer": {"@type": "Answer", "text": faq["answer"]},
+            }
+            for faq in plan_faqs
+        ],
+    }
 
     ctx = {
         "plan": plan,
@@ -294,6 +330,13 @@ def plan_detail(request: HttpRequest, house_style_slug: str, plan_slug: str) -> 
         "is_saved": session_utils.is_plan_saved(request, plan.id),
         "is_in_comparison": session_utils.is_in_comparison(request, plan.id),
         "related_plans": related_plans,
+        "plan_faqs": plan_faqs,
+        "plan_faq_schema": (
+            json.dumps(faq_schema)
+            .replace("<", "\\u003c")
+            .replace(">", "\\u003e")
+            .replace("&", "\\u0026")
+        ),
     }
     return render(request, "plans/plan_detail.html", ctx)
 

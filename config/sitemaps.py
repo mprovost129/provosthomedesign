@@ -66,6 +66,8 @@ class ServicePagesSitemap(Sitemap):
             "residential-framing-plans",
             "permit-ready-house-plans",
             "builder-contractor-plan-services",
+            "massachusetts-adu-plans",
+            "new-england-house-plans",
         ]
 
     def location(self, item):

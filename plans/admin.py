@@ -3,7 +3,7 @@ from __future__ import annotations
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import HouseStyle, Plans, PlanGallery, SavedPlan, PlanComparison
+from .models import HouseStyle, PlanComparison, PlanFAQ, PlanGallery, Plans, SavedPlan
 
 
 @admin.register(HouseStyle)
@@ -29,6 +29,12 @@ class PlanGalleryInline(admin.TabularInline):
         return "-"
 
 
+class PlanFAQInline(admin.StackedInline):
+    model = PlanFAQ
+    extra = 1
+    fields = ("question", "answer", "order")
+
+
 @admin.register(Plans)
 class PlansAdmin(admin.ModelAdmin):
     list_display = (
@@ -52,7 +58,7 @@ class PlansAdmin(admin.ModelAdmin):
     ordering = ("-is_featured", "-modified_date", "-created_date")
     filter_horizontal = ("house_styles",)
     list_per_page = 50
-    inlines = [PlanGalleryInline]
+    inlines = [PlanGalleryInline, PlanFAQInline]
     readonly_fields = ("created_date", "modified_date")
     fieldsets = (
         ("Identity", {"fields": ("plan_number", "plan_name", "slug", "sku", "house_styles")}),

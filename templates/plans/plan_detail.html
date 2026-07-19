@@ -2,14 +2,12 @@
 {% load static humanize plans_extras thumbnail %}
 
 {% block title %}
-  {% with first_style=plan.house_styles.first %}
-    Plan {{ plan.plan_number }}{% if first_style %} - {{ first_style.style_name }}{% endif %} • Provost Home Design
-  {% endwith %}
+  {% if plan.plan_name %}{{ plan.plan_name }} | {% endif %}{{ plan.square_footage }} Sq. Ft. {{ plan.bedrooms }}-Bedroom House Plan | {{ plan.plan_number }}
 {% endblock %}
 
 {% block meta_description %}{% if plan.meta_description %}{{ plan.meta_description }}{% elif plan.description %}{{ plan.description|striptags|truncatechars:160 }}{% else %}House plan {{ plan.plan_number }} from Provost Home Design - view specs, images, and request a quote.{% endif %}{% endblock %}
 
-{% block og_title %}{% with first_style=plan.house_styles.first %}Plan {{ plan.plan_number }}{% if first_style %} – {{ first_style.style_name }}{% endif %} • Provost Home Design{% endwith %}{% endblock %}
+{% block og_title %}{% if plan.plan_name %}{{ plan.plan_name }} | {% endif %}House Plan {{ plan.plan_number }}{% endblock %}
 {% block og_description %}{% if plan.meta_description %}{{ plan.meta_description }}{% elif plan.description %}{{ plan.description|striptags|truncatechars:160 }}{% else %}House plan {{ plan.plan_number }} - view specs, pricing, and images.{% endif %}{% endblock %}
 {% block og_url %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% endblock %}
 {% block og_image %}{% if plan.main_image %}{{ plan.main_image.url }}{% elif images %}{{ images.0.image.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'images/og-image.jpg' %}{% endif %}{% endblock %}
@@ -55,6 +53,7 @@
   ]
 }
 </script>
+<script type="application/ld+json">{{ plan_faq_schema|safe }}</script>
 {% endblock %}
 
 {% block content %}
@@ -231,6 +230,26 @@
     </div>
   </section>
   {% endif %}
+
+  <section class="mt-5" aria-labelledby="plan-faq-heading">
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <p class="text-uppercase small fw-semibold text-primary mb-2">Before you purchase</p>
+        <h2 id="plan-faq-heading" class="h3">Questions about this plan</h2>
+        <p class="text-muted">I will confirm the final package and project-specific next steps before payment.</p>
+      </div>
+      <div class="col-lg-8">
+        <div class="accordion" id="plan-faqs">
+          {% for faq in plan_faqs %}
+            <div class="accordion-item">
+              <h3 class="accordion-header"><button class="accordion-button{% if not forloop.first %} collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#plan-faq-{{ forloop.counter }}">{{ faq.question }}</button></h3>
+              <div id="plan-faq-{{ forloop.counter }}" class="accordion-collapse collapse{% if forloop.first %} show{% endif %}" data-bs-parent="#plan-faqs"><div class="accordion-body">{{ faq.answer|linebreaksbr }}</div></div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
 
   {% if related_plans %}
   <section class="mt-5" aria-labelledby="related-plans-heading">

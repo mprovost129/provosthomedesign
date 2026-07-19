@@ -40,6 +40,16 @@
       </aside>
     </section>
 
+    {% if related_categories or related_resources %}
+    <section class="mt-5" aria-labelledby="service-next-heading">
+      <h2 id="service-next-heading" class="h3">Explore related plans and guidance</h2>
+      <div class="row g-4 mt-1">
+        {% if related_categories %}<div class="col-md-6"><div class="border rounded-3 p-4 h-100"><h3 class="h5">House plan collections</h3><ul class="list-unstyled mb-0">{% for item in related_categories %}<li class="mb-2"><a href="{% url 'plans:plan_category' item.slug %}">{{ item.title }}</a></li>{% endfor %}</ul></div></div>{% endif %}
+        {% if related_resources %}<div class="col-md-6"><div class="border rounded-3 p-4 h-100"><h3 class="h5">Planning resources</h3><ul class="list-unstyled mb-0">{% for item in related_resources %}<li class="mb-2"><a href="{% url 'pages:resource_detail' item.slug %}">{{ item.title }}</a></li>{% endfor %}</ul></div></div>{% endif %}
+      </div>
+    </section>
+    {% endif %}
+
     <section class="mt-5" aria-labelledby="service-faq-heading">
       <h2 id="service-faq-heading" class="h3">Common questions</h2>
       <div class="row g-3">

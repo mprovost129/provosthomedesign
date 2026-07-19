@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import HouseStyle, Plans
+from .models import HouseStyle, PlanFAQ, Plans
 
 
 class PublicPlanCatalogTests(TestCase):
@@ -29,6 +29,11 @@ class PublicPlanCatalogTests(TestCase):
             narrow_lot=True,
         )
         cls.plan.house_styles.add(cls.ranch)
+        PlanFAQ.objects.create(
+            plan=cls.plan,
+            question="Can the garage be removed?",
+            answer="Yes. The footprint and exterior would be coordinated as a modification.",
+        )
         Plans.objects.create(
             plan_number="PHD-202",
             slug="phd-202",
@@ -76,5 +81,18 @@ class PublicPlanCatalogTests(TestCase):
         self.assertContains(response, "Single-level daily living.")
         self.assertContains(response, "Home office")
         self.assertContains(response, "Floor plans")
+        self.assertContains(response, "Can the garage be removed?")
+        self.assertContains(response, '"@type": "FAQPage"')
+
+    def test_buy_as_shown_flow_summarizes_selected_plan(self):
+        response = self.client.get(
+            reverse("pages:get_started"),
+            {"plan": self.plan.id, "intent": "buy-as-shown"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Purchase request")
+        self.assertContains(response, "The Rehoboth Ranch")
+        self.assertContains(response, "Request Purchase Confirmation")
 
 # Create your tests here.
