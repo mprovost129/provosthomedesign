@@ -2,7 +2,8 @@
 {% block title %}Client Testimonials | Provost Home Design{% endblock %}
 {% block meta_description %}See what homeowners and builders say about working with Provost Home Design. Real reviews from clients across New England.{% endblock %}
 {% block content %}
-<h1>What clients say</h1>
+<div class="container-lg py-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4"><h1 class="h2 mb-0">What clients say</h1><a href="{% url 'pages:submit_testimonial' %}" class="btn btn-outline-primary">Share Your Experience</a></div>
 <div class="grid">
   {% for t in page.object_list %}
     <article class="card">
@@ -18,4 +19,5 @@
   <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
   {% if page.has_next %}<a href="?page={{ page.next_page_number }}">Next</a>{% endif %}
 </nav>
+</div>
 {% endblock %}

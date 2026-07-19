@@ -397,3 +397,10 @@
 .img-portfolio     { height: 200px; object-fit: cover; object-position: center; }
 .img-portfolio-top { height: 200px; object-fit: cover; object-position: center top; }
 .step-number       { width: 52px; height: 52px; background: #0d6efd; color: #fff; font-size: 1.2rem; font-weight: 700; }
+.mobile-project-cta {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 1030;
+  box-shadow: 0 0.5rem 1.5rem rgba(9, 30, 66, 0.24);
+}

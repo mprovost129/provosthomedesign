@@ -22,7 +22,7 @@
 {
   "@context": "https://schema.org",
   "@type": "Product",
-  "name": "Plan {{ plan.plan_number }}{% with first_style=plan.house_styles.first %}{% if first_style %} - {{ first_style.style_name|escape }}{% endif %}{% endwith %}",
+  "name": "{% if plan.plan_name %}{{ plan.plan_name|escapejs }} - {% endif %}Plan {{ plan.plan_number }}{% with first_style=plan.house_styles.first %}{% if first_style %} - {{ first_style.style_name|escape }}{% endif %}{% endwith %}",
   "description": "{{ plan.meta_description|default:plan.description|default:''|striptags|truncatechars:300|escapejs }}",
   "image": [
     {% if plan.main_image %}
@@ -86,7 +86,7 @@
 
     <!-- Right: specs + price + request changes form -->
     <div class="col-lg-5">
-      <h1 class="h3">Plan {{ plan.plan_number }}</h1>
+      <h1 class="h3">{% if plan.plan_name %}{{ plan.plan_name }} <span class="d-block h6 text-muted mt-1">{% endif %}House Plan {{ plan.plan_number }}{% if plan.plan_name %}</span>{% endif %}</h1>
       <p class="text-muted mb-2">
         {% for style in plan.house_styles.all %}
           {{ style.style_name }}{% if not forloop.last %}, {% endif %}
@@ -115,28 +115,38 @@
         </p>
       {% endif %}
 
-      {# Action Buttons #}
+      {# Primary buying paths #}
+      <div class="d-grid gap-2 mb-3">
+        <a href="{% url 'pages:get_started' %}?plan={{ plan.id }}&amp;intent=buy-as-shown" class="btn btn-primary btn-lg">
+          <i class="bi bi-bag-check me-1" aria-hidden="true"></i> Buy Plan As Shown
+        </a>
+        <a href="{% url 'pages:get_started' %}?plan={{ plan.id }}&amp;intent=plan-modifications" class="btn btn-outline-primary">Request Plan Modifications</a>
+        <a href="#plan-question" class="btn btn-link">Ask a Question About This Plan</a>
+      </div>
+
       <div class="d-flex gap-2 mb-4">
         <button class="btn btn-outline-danger flex-fill toggle-favorite" 
-                data-plan-id="{{ plan.id }}">
+                data-plan-id="{{ plan.id }}" aria-label="Save plan {{ plan.plan_number }} to favorites">
           <i class="bi bi-heart{% if is_saved %}-fill{% endif %}"></i>
           Save
         </button>
         
         <button class="btn btn-outline-success flex-fill toggle-comparison" 
-                data-plan-id="{{ plan.id }}">
+                data-plan-id="{{ plan.id }}" aria-label="Add plan {{ plan.plan_number }} to comparison">
           <i class="bi bi-{% if is_in_comparison %}check-square-fill{% else %}plus-square{% endif %}"></i>
           Compare
         </button>
         
-        <a href="{% url 'pages:get_started' %}?plan={{ plan.id }}" 
-           class="btn btn-primary flex-fill">
-          <i class="bi bi-envelope"></i> Get Started
-        </a>
+      </div>
+
+      <div class="border rounded-3 p-3 mb-4">
+        <h2 class="h6">Plan package and use</h2>
+        <p class="small text-muted mb-2">Before purchase, I’ll confirm the drawing set, file format, delivery timing, and any foundation or framing assumptions for this plan.</p>
+        <p class="small text-muted mb-0">Plan purchases include a single-use license for construction of one home. Local code review, site engineering, and required professional stamps are handled according to the project location.</p>
       </div>
 
       <!-- Request changes (email comment) -->
-      <div class="card border-0 shadow-sm">
+      <div class="card border-0 shadow-sm" id="plan-question">
         <div class="card-body">
           <h2 class="h6 mb-2">Request changes to this plan</h2>
           <p class="text-muted small mb-3">Describe what you’d like to change. We’ll email your note along with the plan #. Changes are in addition to the base price shown.</p>
@@ -186,6 +196,33 @@
       </div>
     </div>
   </div>
+
+  {% if related_plans %}
+  <section class="mt-5" aria-labelledby="related-plans-heading">
+    <div class="d-flex justify-content-between align-items-baseline mb-3">
+      <h2 id="related-plans-heading" class="h4 mb-0">Similar house plans</h2>
+      <a href="{% url 'plans:plan_list' %}">Browse all plans</a>
+    </div>
+    <div class="row g-3">
+      {% for related in related_plans %}
+      <div class="col-md-4">
+        <article class="card h-100 shadow-sm">
+          <a href="{{ related.get_absolute_url }}">
+            {% if related.main_image %}
+              {% thumbnail related.main_image "plan_card" as thumb %}
+              <img src="{{ thumb.url }}" width="{{ thumb.width }}" height="{{ thumb.height }}" class="card-img-top plan-thumb" alt="Front elevation of house plan {{ related.plan_number }}" loading="lazy">
+            {% endif %}
+          </a>
+          <div class="card-body">
+            <h3 class="h6"><a href="{{ related.get_absolute_url }}" class="text-decoration-none">Plan {{ related.plan_number }}</a></h3>
+            <p class="small text-muted mb-0">{{ related.square_footage|intcomma }} sq ft · {{ related.bedrooms }} bed · {{ related.bathrooms|bath_label }} bath</p>
+          </div>
+        </article>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 </div>
 
 <!-- Modal: lightbox gallery -->

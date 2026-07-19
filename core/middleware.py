@@ -1,6 +1,26 @@
 from __future__ import annotations
 
 from django.conf import settings
+from django.urls import get_urlconf, set_urlconf
+
+
+class SubdomainURLRoutingMiddleware:
+    """Use a small, separate URL surface for the temporary web-design site."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        host = request.get_host().partition(":")[0].lower()
+        if host == getattr(settings, "WEB_DESIGN_HOST", "web.provosthomedesign.com"):
+            request.urlconf = "config.web_urls"
+            previous_urlconf = get_urlconf()
+            set_urlconf(request.urlconf)
+            try:
+                return self.get_response(request)
+            finally:
+                set_urlconf(previous_urlconf)
+        return self.get_response(request)
 
 
 class ContentSecurityPolicyMiddleware:

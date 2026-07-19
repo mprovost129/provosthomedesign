@@ -181,7 +181,8 @@ class NewHouseForm(forms.Form):
 
     additional_notes = forms.CharField(
         widget=forms.Textarea(attrs={"placeholder": "Enter Additional Notes", "rows": 4}),
-        required=False,
+        required=True,
+        label="Project goals",
     )
 
     # Required Terms & Conditions consent

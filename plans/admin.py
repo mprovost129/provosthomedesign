@@ -33,6 +33,7 @@ class PlanGalleryInline(admin.TabularInline):
 class PlansAdmin(admin.ModelAdmin):
     list_display = (
         "plan_number",
+        "plan_name",
         "styles_list",
         "square_footage",
         "bedrooms",
@@ -46,7 +47,7 @@ class PlansAdmin(admin.ModelAdmin):
     list_display_links = ("plan_number",)  # keep booleans editable
     list_editable = ("is_available", "is_featured")
     list_filter = ("house_styles", "is_available", "is_featured", "bedrooms", "stories", "garage_stalls")
-    search_fields = ("plan_number", "description", "house_styles__style_name")
+    search_fields = ("plan_number", "plan_name", "description", "house_styles__style_name")
     prepopulated_fields = {"slug": ("plan_number",)}
     ordering = ("-is_featured", "-modified_date", "-created_date")
     filter_horizontal = ("house_styles",)

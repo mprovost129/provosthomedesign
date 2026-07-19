@@ -18,7 +18,20 @@ SECRET_KEY = config("SECRET_KEY", default="dev-insecure-change-me")
 DEBUG = config("DEBUG", cast=bool, default=False)  # set False in prod
 RENDER_EXTERNAL_HOSTNAME = config("RENDER_EXTERNAL_HOSTNAME", default="").strip()
 
+PUBLIC_SITE_SCHEME = config("PUBLIC_SITE_SCHEME", default="https").strip() or "https"
+MAIN_SITE_HOST = config("MAIN_SITE_HOST", default="www.provosthomedesign.com").strip().lower()
+WEB_DESIGN_HOST = config("WEB_DESIGN_HOST", default="web.provosthomedesign.com").strip().lower()
+MAIN_SITE_URL = config(
+    "MAIN_SITE_URL", default=f"{PUBLIC_SITE_SCHEME}://{MAIN_SITE_HOST}"
+).rstrip("/")
+WEB_DESIGN_URL = config(
+    "WEB_DESIGN_URL", default=f"{PUBLIC_SITE_SCHEME}://{WEB_DESIGN_HOST}"
+).rstrip("/")
+
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="127.0.0.1,localhost", cast=csv_list)
+for public_host in (MAIN_SITE_HOST, WEB_DESIGN_HOST):
+    if public_host and public_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(public_host)
 if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
@@ -31,6 +44,9 @@ if RENDER_EXTERNAL_HOSTNAME:
     render_origin = f"https://{RENDER_EXTERNAL_HOSTNAME}"
     if render_origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(render_origin)
+for public_origin in (MAIN_SITE_URL, WEB_DESIGN_URL):
+    if public_origin and public_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(public_origin)
 
 # CORS configuration for desktop app and optional production frontends
 CORS_ALLOWED_ORIGINS = config(
@@ -90,6 +106,7 @@ else:
 # --- Middleware ---
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "core.middleware.SubdomainURLRoutingMiddleware",
     "core.middleware.ContentSecurityPolicyMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",

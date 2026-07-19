@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Share Your Experience | Provost Home Design{% endblock %}
+{% block meta_description %}Submit a testimonial about your experience working with Provost Home Design.{% endblock %}
+
+{% block content %}
+<div class="container-lg py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <header class="text-center mb-4">
+        <h1 class="h2">Share your experience</h1>
+        <p class="text-muted">Thank you for taking a moment to tell others about your project.</p>
+      </header>
+      <form id="testimonial-form" method="post" class="card border shadow-sm rounded-3 p-4 vstack gap-3" novalidate>
+        {% csrf_token %}
+        {% if tform.non_field_errors %}<div class="alert alert-danger">{{ tform.non_field_errors|striptags }}</div>{% endif %}
+        <div class="row g-3">
+          <div class="col-md-6"><label class="form-label" for="{{ tform.name.id_for_label }}">Name</label>{{ tform.name }}{% for e in tform.name.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}</div>
+          <div class="col-md-6"><label class="form-label" for="{{ tform.email.id_for_label }}">Email (not published)</label>{{ tform.email }}{% for e in tform.email.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}</div>
+          <div class="col-md-6"><label class="form-label" for="{{ tform.role.id_for_label }}">Your role</label>{{ tform.role }}{% for e in tform.role.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}</div>
+          <div class="col-md-6"><label class="form-label" for="{{ tform.rating.id_for_label }}">Rating</label>{{ tform.rating }}{% for e in tform.rating.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}</div>
+          <div class="col-12"><label class="form-label" for="{{ tform.message.id_for_label }}">Your experience</label>{{ tform.message }}{% for e in tform.message.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}</div>
+          <div class="col-12"><div class="form-check">{{ tform.consent_to_publish }}<label class="form-check-label" for="{{ tform.consent_to_publish.id_for_label }}">I consent to publication of this testimonial.</label></div>{% for e in tform.consent_to_publish.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}</div>
+          <div class="col-12"><div class="form-check">{{ tform.terms_accepted }}<label class="form-check-label" for="{{ tform.terms_accepted.id_for_label }}">I agree to the <a href="{% url 'pages:terms' %}" target="_blank" rel="noopener">Terms &amp; Conditions</a>.</label></div>{% for e in tform.terms_accepted.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}</div>
+          {% if tform.website2 %}<div class="d-none" aria-hidden="true">{{ tform.website2 }}</div>{% endif %}
+          <input type="hidden" name="action" value="submit_testimonial">
+          {% if recaptcha_site_key %}<input type="hidden" name="recaptcha_token" id="testimonial_recaptcha_token" value="">{% endif %}
+          <div class="col-12"><button type="submit" class="btn btn-primary">Submit Testimonial</button></div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if recaptcha_site_key %}
+<script src="https://www.google.com/recaptcha/enterprise.js?render={{ recaptcha_site_key }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var form = document.getElementById('testimonial-form');
+  if (!form) return;
+  form.addEventListener('submit', function (event) {
+    if (!form.checkValidity()) return;
+    event.preventDefault();
+    grecaptcha.enterprise.ready(async function () {
+      document.getElementById('testimonial_recaptcha_token').value = await grecaptcha.enterprise.execute('{{ recaptcha_site_key }}', {action: 'testimonial_form'});
+      form.submit();
+    });
+  });
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -99,8 +99,12 @@ Update your production `.env` with:
 # Core
 SECRET_KEY=<new-generated-key>
 DEBUG=False
-ALLOWED_HOSTS=provosthomedesign.com,www.provosthomedesign.com
-CSRF_TRUSTED_ORIGINS=https://provosthomedesign.com,https://www.provosthomedesign.com
+ALLOWED_HOSTS=provosthomedesign.com,www.provosthomedesign.com,web.provosthomedesign.com
+CSRF_TRUSTED_ORIGINS=https://provosthomedesign.com,https://www.provosthomedesign.com,https://web.provosthomedesign.com
+MAIN_SITE_HOST=www.provosthomedesign.com
+WEB_DESIGN_HOST=web.provosthomedesign.com
+MAIN_SITE_URL=https://www.provosthomedesign.com
+WEB_DESIGN_URL=https://web.provosthomedesign.com
 
 # Database
 DB_ENGINE=django.db.backends.postgresql
@@ -231,7 +235,7 @@ BEHIND_PROXY=True
    ```nginx
    server {
        listen 80;
-       server_name provosthomedesign.com www.provosthomedesign.com;
+       server_name provosthomedesign.com www.provosthomedesign.com web.provosthomedesign.com;
        
        location /static/ {
            alias /var/www/provost_home_design/staticfiles/;
@@ -262,7 +266,7 @@ BEHIND_PROXY=True
 9. **Set up SSL with Let's Encrypt**
    ```bash
    sudo apt install certbot python3-certbot-nginx
-   sudo certbot --nginx -d provosthomedesign.com -d www.provosthomedesign.com
+   sudo certbot --nginx -d provosthomedesign.com -d www.provosthomedesign.com -d web.provosthomedesign.com
    ```
 
 ### Option B: Cloud Platform (Heroku, AWS, etc.)
@@ -272,6 +276,8 @@ Follow platform-specific deployment guides. The `Procfile` and `runtime.txt` are
 ## Post-Deployment Verification
 
 - [ ] **Test website loads** (https://provosthomedesign.com)
+- [ ] **Add `web.provosthomedesign.com` as a custom domain** on the same web service and create the DNS record requested by the hosting provider
+- [ ] **Test web-design subdomain** (https://web.provosthomedesign.com)
 - [ ] **Verify SSL certificate** (green padlock)
 - [ ] **Test contact form** (check reCAPTCHA works)
 - [ ] **Test email sending** (contact form, get started)

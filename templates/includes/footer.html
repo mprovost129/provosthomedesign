@@ -61,8 +61,6 @@
               <ul class="list-unstyled small mb-0">
                 <li><a href="{% url 'pages:about' %}" class="text-decoration-none text-muted">About Us</a></li>
                 <li><a href="{% url 'pages:services' %}" class="text-decoration-none text-muted">Services</a></li>
-                <li><a href="{% url 'pages:pricing' %}" class="text-decoration-none text-muted">Pricing</a></li>
-                <li><a href="{% url 'pages:web_design' %}" class="text-decoration-none text-muted">Web Design</a></li>
                 <li><a href="{% url 'pages:privacy' %}" class="text-decoration-none text-muted">Privacy Policy</a></li>
                 <li><a href="{% url 'pages:terms' %}" class="text-decoration-none text-muted">Terms &amp; Conditions</a></li>
                 {% if request.user.is_authenticated and request.user.is_staff %}
@@ -96,7 +94,6 @@
             <i class="bi bi-linkedin"></i>
           </a>
         </div>
-        <p class="text-muted small mb-0 text-md-end">Website design by {{ COMPANY_NAME }}</p>
         <p class="text-muted small mb-0 text-md-end">© {% current_year %} {{ COMPANY_NAME }}</p>
       </div>
 

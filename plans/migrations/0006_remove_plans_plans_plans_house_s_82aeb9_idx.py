@@ -10,8 +10,14 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveIndex(
-            model_name='plans',
-            name='plans_plans_house_s_82aeb9_idx',
+        migrations.SeparateDatabaseAndState(
+            # Removing house_style in 0005 already removes its database index.
+            database_operations=[],
+            state_operations=[
+                migrations.RemoveIndex(
+                    model_name='plans',
+                    name='plans_plans_house_s_82aeb9_idx',
+                ),
+            ],
         ),
     ]

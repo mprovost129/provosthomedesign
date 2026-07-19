@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load humanize thumbnail plans_extras %}
+
+{% block title %}{{ service.title }} | Provost Home Design{% endblock %}
+{% block meta_description %}{{ service.meta }}{% endblock %}
+{% block og_title %}{{ service.title }} | Provost Home Design{% endblock %}
+{% block og_description %}{{ service.meta }}{% endblock %}
+
+{% block content %}
+<article>
+  <header class="bg-gradient-navy text-white py-5">
+    <div class="container-lg py-3">
+      <p class="text-uppercase small fw-semibold opacity-75">{{ service.eyebrow }}</p>
+      <h1 class="display-5 fw-bold col-lg-9">{{ service.title }}</h1>
+      <p class="lead col-lg-8 mb-4">{{ service.intro }}</p>
+      <div class="d-flex flex-wrap gap-2 align-items-center">
+        <a href="{% url 'pages:get_started' %}" class="btn btn-light btn-lg">Start Your Project</a>
+        <a href="tel:+15082437912" class="btn btn-outline-light btn-lg">Call (508) 243-7912</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container-lg py-5">
+    <section class="row g-4 align-items-start" aria-labelledby="service-includes-heading">
+      <div class="col-lg-7">
+        <h2 id="service-includes-heading" class="h3">How I can help</h2>
+        <p>Every project starts with a review of the site, scope, available information, and required deliverables. From there, we establish a clear path for design decisions, documentation, coordination, and revisions.</p>
+        <div class="row g-3 mt-2">
+          {% for item in service.highlights %}
+          <div class="col-sm-6"><div class="border rounded-3 p-3 h-100"><i class="bi bi-check-circle text-success me-2" aria-hidden="true"></i>{{ item }}</div></div>
+          {% endfor %}
+        </div>
+      </div>
+      <aside class="col-lg-5">
+        <div class="card border shadow-sm p-4">
+          <h2 class="h5">A straightforward first step</h2>
+          <p class="text-muted">Send a short project summary, location, target timing, and any plans or sketches you already have. Detailed preferences can follow after we confirm the fit and scope.</p>
+          <a href="{% url 'pages:get_started' %}" class="btn btn-primary">Send Project Details</a>
+        </div>
+      </aside>
+    </section>
+
+    <section class="mt-5" aria-labelledby="service-faq-heading">
+      <h2 id="service-faq-heading" class="h3">Common questions</h2>
+      <div class="row g-3">
+        {% for question, answer in service.faqs %}
+        <div class="col-md-6"><div class="bg-body-tertiary rounded-3 p-4 h-100"><h3 class="h6">{{ question }}</h3><p class="mb-0 text-muted">{{ answer }}</p></div></div>
+        {% endfor %}
+      </div>
+    </section>
+
+    {% if featured_plans %}
+    <section class="mt-5" aria-labelledby="service-plans-heading">
+      <div class="d-flex justify-content-between align-items-baseline mb-3"><h2 id="service-plans-heading" class="h3">Explore a starting point</h2><a href="{% url 'plans:plan_list' %}">Browse all house plans</a></div>
+      <div class="row g-3">
+        {% for plan in featured_plans %}
+        <div class="col-md-4"><div class="card h-100 shadow-sm">{% if plan.main_image %}<a href="{{ plan.get_absolute_url }}">{% thumbnail plan.main_image "plan_card" as thumb %}<img src="{{ thumb.url }}" width="{{ thumb.width }}" height="{{ thumb.height }}" class="card-img-top plan-thumb" alt="Front elevation of house plan {{ plan.plan_number }}" loading="lazy"></a>{% endif %}<div class="card-body"><h3 class="h6"><a href="{{ plan.get_absolute_url }}" class="text-decoration-none">Plan {{ plan.plan_number }}</a></h3><p class="small text-muted mb-0">{{ plan.square_footage|intcomma }} sq ft · {{ plan.bedrooms }} bed · {{ plan.bathrooms|bath_label }} bath</p></div></div></div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+  </div>
+</article>
+{% endblock %}

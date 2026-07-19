@@ -30,9 +30,9 @@
       <div class="d-inline-flex align-items-center gap-2 mb-2 small opacity-75"></div>
 
       <h1 class="display-5 fw-bold mb-2">
-        Stock &amp; Custom House Plans
+        New England House Plans &amp; Residential Design
       </h1>
-      <p class="lead mb-4">Designed for code compliance, with form, function, and style in mind.</p>
+      <p class="lead mb-4">Stock plans, custom homes, and plan modifications informed by New England construction and permitting.</p>
 
       <!-- Advanced Search Form -->
       <form class="mb-3" action="{% url 'plans:plan_list' %}" method="get" novalidate>
@@ -254,60 +254,42 @@
   </section>
   {% endif %}
 
-  <section class="mt-5">
-    <div class="d-flex align-items-baseline justify-content-between mb-2">
-      <h2 class="h5 mb-0">Two things I do well</h2>
+  <section class="mt-5" aria-labelledby="project-paths-heading">
+    <div class="text-center mb-3">
+      <h2 id="project-paths-heading" class="h4 mb-1">Choose the right path for your project</h2>
+      <p class="text-muted mb-0">Work directly with an experienced residential designer serving Massachusetts, Rhode Island, and nearby New England communities.</p>
     </div>
     <div class="row g-3">
-
-      {# House Design card #}
-      <div class="col-md-6">
+      <div class="col-md-4">
         <div class="rounded-3 shadow overflow-hidden h-100 bg-gradient-navy">
           <div class="p-4 text-white h-100 d-flex flex-column">
-            <div class="mb-3">
-              <i class="bi bi-house-door fs-1 opacity-75" aria-hidden="true"></i>
-            </div>
-            <h3 class="h5 fw-bold mb-2">Architectural Home Design</h3>
-            <p class="mb-3 opacity-90 flex-grow-1">
-              Architectural home design - stock and custom house plans that are code-compliant, permit-ready, and built for New England.
-              Modifications, framing plans, and permit sets included.
-            </p>
-            <div class="d-flex gap-2 flex-wrap">
-              <a href="{% url 'plans:plan_list' %}" class="btn btn-light btn-sm px-3">
-                <i class="bi bi-grid me-1" aria-hidden="true"></i> Browse Plans
-              </a>
-              <a href="{% url 'pages:services' %}" class="btn btn-outline-light btn-sm px-3">
-                View Services
-              </a>
-            </div>
+            <i class="bi bi-grid fs-1 opacity-75 mb-3" aria-hidden="true"></i>
+            <h3 class="h5 fw-bold mb-2">Start with a stock plan</h3>
+            <p class="mb-3 opacity-90 flex-grow-1">Explore ready-to-adapt house plans, compare layouts, and find a strong starting point for your lot and lifestyle.</p>
+            <a href="{% url 'plans:plan_list' %}" class="btn btn-light btn-sm align-self-start px-3">Browse House Plans</a>
           </div>
         </div>
       </div>
-
-      {# Web Design card #}
-      <div class="col-md-6">
+      <div class="col-md-4">
         <div class="rounded-3 shadow overflow-hidden h-100 bg-gradient-dark-navy">
           <div class="p-4 text-white h-100 d-flex flex-column">
-            <div class="mb-3">
-              <i class="bi bi-code-slash fs-1 opacity-75" aria-hidden="true"></i>
-            </div>
-            <h3 class="h5 fw-bold mb-2">Web Design &amp; Development</h3>
-            <p class="mb-3 flex-grow-1 opacity-90">
-              Custom websites and web apps built with Python, Django, and modern front-end tools.
-              Fast, mobile-ready, and built by a real developer - not a template.
-            </p>
-            <div class="d-flex gap-2 flex-wrap">
-              <a href="{% url 'pages:web_design' %}" class="btn btn-light btn-sm px-3">
-                <i class="bi bi-arrow-right me-1" aria-hidden="true"></i> Learn More
-              </a>
-              <a href="{% url 'pages:web_design' %}#inquiry" class="btn btn-outline-light btn-sm px-3">
-                Get a Quote
-              </a>
-            </div>
+            <i class="bi bi-pencil-square fs-1 opacity-75 mb-3" aria-hidden="true"></i>
+            <h3 class="h5 fw-bold mb-2">Design a custom home</h3>
+            <p class="mb-3 flex-grow-1 opacity-90">Develop a home around your needs, site, budget, and preferred architectural character.</p>
+            <a href="{% url 'pages:services' %}#custom-home-design" class="btn btn-light btn-sm align-self-start px-3">Custom Home Design</a>
           </div>
         </div>
       </div>
-
+      <div class="col-md-4">
+        <div class="rounded-3 shadow overflow-hidden h-100 bg-gradient-navy">
+          <div class="p-4 text-white h-100 d-flex flex-column">
+            <i class="bi bi-rulers fs-1 opacity-75 mb-3" aria-hidden="true"></i>
+            <h3 class="h5 fw-bold mb-2">Modify or expand</h3>
+            <p class="mb-3 flex-grow-1 opacity-90">Adapt an existing plan or create drawings for an addition, renovation, framing package, or permit submission.</p>
+            <a href="{% url 'pages:services' %}#plan-modifications" class="btn btn-light btn-sm align-self-start px-3">Modification Services</a>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -374,23 +356,23 @@
     <div class="row g-3">
       <div class="col-md-4">
         <div class="bg-white border shadow rounded-3 p-4 h-100">
-          <h3 class="h6">Have existing plans?</h3>
+          <h3 class="h6">Modify an existing plan</h3>
           <p class="text-muted mb-3">Upload your drawings and we’ll tailor them to your needs.</p>
           <a class="btn btn-outline-primary" href="{% url 'pages:get_started' %}">Get Started</a>
         </div>
       </div>
       <div class="col-md-4">
         <div class="bg-white border shadow rounded-3 p-4 h-100">
-          <h3 class="h6">Need something custom?</h3>
+          <h3 class="h6">Plan a custom home</h3>
           <p class="text-muted mb-3">Work directly with our designer to create the perfect plan.</p>
           <a class="btn btn-outline-primary" href="{% url 'pages:contact' %}">Contact Us</a>
         </div>
       </div>
       <div class="col-md-4">
         <div class="bg-white border shadow rounded-3 p-4 h-100">
-          <h3 class="h6">Need a website or web app?</h3>
-          <p class="text-muted mb-3">Custom sites and applications built with Python, Django, and modern front-end tools.</p>
-          <a class="btn btn-outline-primary" href="{% url 'pages:web_design' %}">Web Design</a>
+          <h3 class="h6">Builder or contractor?</h3>
+          <p class="text-muted mb-3">Get practical plan, framing, and construction-document support.</p>
+          <a class="btn btn-outline-primary" href="{% url 'pages:services' %}#framing-plans">View Services</a>
         </div>
       </div>
     </div>

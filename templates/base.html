@@ -35,6 +35,7 @@
     {# ---- Additional per-page head (schemas, preloads, extra meta) ---- #}
     {% block extra_meta %}{% endblock %}
 
+    {% if not IS_WEB_DESIGN_SITE %}
     {# LocalBusiness: richer local/brand details; uses same @id as Organization #}
     <script type="application/ld+json">
     {
@@ -69,6 +70,7 @@
       ]
     }
     </script>
+    {% endif %}
 
     {# Organization: lightweight entity info; enrich if globals are present #}
     <script type="application/ld+json">
@@ -118,7 +120,11 @@
   </head>
 
   <body class="d-flex flex-column min-vh-100 {% block body_class %}{% endblock %}">
-    {% include "includes/navbar.html" %}
+    {% if IS_WEB_DESIGN_SITE %}
+      {% include "includes/web_navbar.html" %}
+    {% else %}
+      {% include "includes/navbar.html" %}
+    {% endif %}
 
     <main id="content" class="flex-grow-1 py-4">
       {% if messages %}
@@ -131,7 +137,15 @@
       {% block content %}{% endblock %}
     </main>
 
-    {% include "includes/footer.html" %}
+    {% if not IS_WEB_DESIGN_SITE %}
+      <a href="{% url 'pages:get_started' %}" class="btn btn-primary mobile-project-cta d-md-none">Start Your Project</a>
+    {% endif %}
+
+    {% if IS_WEB_DESIGN_SITE %}
+      {% include "includes/web_footer.html" %}
+    {% else %}
+      {% include "includes/footer.html" %}
+    {% endif %}
 
     <!-- JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>

@@ -15,8 +15,14 @@ def csv_list(v: str) -> list[str]:
 SECRET_KEY = config("SECRET_KEY", default="dev-insecure-change-me")
 DEBUG = True
 
+PUBLIC_SITE_SCHEME = "https"
+MAIN_SITE_HOST = "www.provosthomedesign.com"
+WEB_DESIGN_HOST = "web.provosthomedesign.com"
+MAIN_SITE_URL = f"{PUBLIC_SITE_SCHEME}://{MAIN_SITE_HOST}"
+WEB_DESIGN_URL = f"{PUBLIC_SITE_SCHEME}://{WEB_DESIGN_HOST}"
+
 # Make sure localhost is correct and add common local IPs
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "0.0.0.0", "[::1]"]
+ALLOWED_HOSTS = ["127.0.0.1", "localhost", "0.0.0.0", "[::1]", MAIN_SITE_HOST, WEB_DESIGN_HOST]
 
 # Accept both host-only and :8000 forms for convenience
 CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1, http://localhost, http://127.0.0.1:8000, http://localhost:8000"]
@@ -52,6 +58,7 @@ THUMBNAIL_QUALITY = config("THUMBNAIL_QUALITY", cast=int, default=85)
 # --- Middleware ---
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "core.middleware.SubdomainURLRoutingMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",

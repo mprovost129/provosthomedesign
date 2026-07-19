@@ -39,8 +39,6 @@ class CorePagesSitemap(Sitemap):
             "pages:home",
             "plans:plan_list",
             "pages:services",
-            "pages:web_design",
-            "pages:pricing",
             "pages:get_started",
             "pages:about",
             "pages:contact",
@@ -48,4 +46,36 @@ class CorePagesSitemap(Sitemap):
         ]
 
     def location(self, item): # type: ignore
+        return reverse(item)
+
+
+class ServicePagesSitemap(Sitemap):
+    changefreq = "monthly"
+    priority = 0.7
+    protocol = "https"
+
+    def items(self):
+        return [
+            "custom-home-design-massachusetts",
+            "custom-home-design-rhode-island",
+            "house-plan-modifications",
+            "additions-and-renovations",
+            "residential-framing-plans",
+            "permit-ready-house-plans",
+            "builder-contractor-plan-services",
+        ]
+
+    def location(self, item):
+        return reverse("pages:service_detail", args=[item])
+
+
+class WebPagesSitemap(Sitemap):
+    changefreq = "monthly"
+    priority = 0.6
+    protocol = "https"
+
+    def items(self):
+        return ["pages:web_design", "pages:pricing"]
+
+    def location(self, item):
         return reverse(item)

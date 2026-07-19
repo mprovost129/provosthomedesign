@@ -195,6 +195,12 @@ def plan_detail(request: HttpRequest, house_style_slug: str, plan_slug: str) -> 
 
     images = list(PlanGallery.objects.filter(plan=plan).order_by("order", "id"))
     base_price: Decimal = plan.plan_price or Decimal("0")
+    related_plans = (
+        Plans.objects.filter(is_available=True, house_styles__in=plan.house_styles.all())
+        .exclude(pk=plan.pk)
+        .prefetch_related("house_styles")
+        .distinct()[:3]
+    )
 
     ctx = {
         "plan": plan,
@@ -205,6 +211,7 @@ def plan_detail(request: HttpRequest, house_style_slug: str, plan_slug: str) -> 
         "recaptcha_site_key": (getattr(settings, "RECAPTCHA_SITE_KEY", "") or "").strip(),
         "is_saved": session_utils.is_plan_saved(request, plan.id),
         "is_in_comparison": session_utils.is_in_comparison(request, plan.id),
+        "related_plans": related_plans,
     }
     return render(request, "plans/plan_detail.html", ctx)
 

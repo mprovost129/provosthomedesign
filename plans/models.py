@@ -47,6 +47,7 @@ class PlansQuerySet(models.QuerySet):
 class Plans(models.Model):
     # identifiers
     plan_number = models.CharField(max_length=50, unique=True)
+    plan_name = models.CharField(max_length=120, blank=True, help_text="Descriptive public name, such as 'The Rehoboth Ranch'")
     slug = models.SlugField(max_length=80, unique=True)
 
     # specs

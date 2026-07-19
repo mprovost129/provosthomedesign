@@ -15,7 +15,7 @@ from django.contrib import messages
 from django.core.cache import cache
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, HttpResponsePermanentRedirect
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.templatetags.static import static
@@ -41,6 +41,65 @@ from plans.session_utils import get_saved_plan_ids, get_comparison_plan_ids
 from django.core.paginator import Paginator
 
 logger = logging.getLogger(__name__)
+
+SERVICE_PAGES = {
+    "custom-home-design-massachusetts": {
+        "title": "Custom Home Design in Massachusetts",
+        "meta": "Custom residential home design and permit drawing services for Massachusetts homeowners and builders.",
+        "eyebrow": "Massachusetts Residential Design",
+        "intro": "Create a home around your site, priorities, and budget with direct guidance from concept through a coordinated residential drawing set. The process accounts for New England construction practices and the practical questions that arise during local permit review.",
+        "highlights": ["Site- and lifestyle-driven floor plans", "Exterior elevations and roof development", "Permit-set coordination", "Builder-friendly framing information"],
+        "faqs": [("When should I get in touch?", "Early concept work is ideal, especially before committing to a floor plan or final construction budget."), ("Are local requirements the same in every town?", "No. The applicable code, zoning, site, and documentation requirements must be confirmed for the project address.")],
+    },
+    "custom-home-design-rhode-island": {
+        "title": "Custom Home Design in Rhode Island",
+        "meta": "Custom house plans and residential permit drawings for Rhode Island homeowners, builders, and contractors.",
+        "eyebrow": "Rhode Island Residential Design",
+        "intro": "Develop a custom Rhode Island home with a clear design process centered on function, buildability, and architectural character. Plans are prepared with regional construction experience and coordinated around the needs of the owner, builder, and permitting path.",
+        "highlights": ["Custom floor-plan development", "Coastal and New England design context", "Construction-document coordination", "Plan revisions during design"],
+        "faqs": [("Can you work with my builder?", "Yes. Builder input can be incorporated early so design decisions stay grounded in construction approach and budget."), ("Do projects require other professionals?", "Some sites and scopes require an architect, engineer, surveyor, or other specialist. Those needs are identified as early as practical.")],
+    },
+    "house-plan-modifications": {
+        "title": "House Plan Modification Services",
+        "meta": "Modify a stock house plan for your lot, lifestyle, builder, and New England project requirements.",
+        "eyebrow": "Adapt a Plan You Already Like",
+        "intro": "A strong stock plan can be an efficient starting point. I help homeowners and builders adjust room layouts, dimensions, garages, porches, rooflines, and exterior character while keeping the revised design coordinated and buildable.",
+        "highlights": ["Floor-plan and room-layout changes", "Garage, porch, and entry revisions", "Exterior and roofline options", "Plan-set updates for the revised scope"],
+        "faqs": [("Can any stock plan be modified?", "Most can, but the original file format, license, structural impact, and amount of change affect the best approach."), ("How is modification pricing determined?", "Pricing is based on the plan, requested changes, available source files, and required deliverables.")],
+    },
+    "additions-and-renovations": {
+        "title": "Residential Addition and Renovation Plans",
+        "meta": "Residential addition and renovation drawings for New England homes, homeowners, and contractors.",
+        "eyebrow": "Improve the Home You Have",
+        "intro": "Additions and renovations need to connect new ideas to an existing structure. The design process documents existing conditions, develops a practical layout, and coordinates the new exterior and construction drawings with the character of the home.",
+        "highlights": ["Existing-condition and proposed plans", "Additions, dormers, and interior reconfiguration", "Exterior elevation coordination", "Clear drawings for pricing and permits"],
+        "faqs": [("What should I provide first?", "Photos, available plans, a property survey, and a short description of what is not working are useful starting points."), ("Will an engineer be needed?", "Structural changes may require engineering. The need depends on the existing building and proposed work.")],
+    },
+    "residential-framing-plans": {
+        "title": "Residential Framing Plans",
+        "meta": "Practical residential framing plans coordinated for New England builders, contractors, and home projects.",
+        "eyebrow": "Construction-Minded Documentation",
+        "intro": "Framing drawings translate design intent into information a builder can use in the field. My background with residential construction, engineered wood, and truss coordination helps surface conflicts and clarify the structural layout before they become job-site questions.",
+        "highlights": ["Floor and roof framing layouts", "Beam, header, and opening coordination", "Truss and engineered-wood coordination", "Builder and engineer collaboration"],
+        "faqs": [("Are framing plans engineering?", "Framing plans communicate layout and design intent. Calculations or stamped structural engineering must be provided by a qualified engineer when required."), ("Can framing be added to an existing plan?", "Yes, after reviewing the architectural set, project location, structural approach, and builder requirements.")],
+    },
+    "permit-ready-house-plans": {
+        "title": "Permit-Ready House Plans for New England",
+        "meta": "Coordinated residential permit drawing sets for Massachusetts, Rhode Island, and New England projects.",
+        "eyebrow": "Clear Residential Drawing Sets",
+        "intro": "A permit submission needs more than an attractive floor plan. I prepare coordinated residential drawings that communicate the proposed work, dimensions, elevations, and construction intent, then help address reasonable drawing comments that arise during review.",
+        "highlights": ["Dimensioned plans and exterior elevations", "Building sections and construction details", "Project-specific code information", "Coordination with required specialists"],
+        "faqs": [("Does permit-ready guarantee approval?", "No designer can guarantee approval. Zoning, site conditions, local interpretation, and required outside professionals can affect a permit."), ("What is included in my set?", "The exact sheet list and deliverables are confirmed in the proposal because project and municipal requirements vary.")],
+    },
+    "builder-contractor-plan-services": {
+        "title": "Plan Services for Builders and Contractors",
+        "meta": "Residential plan, modification, framing, and construction-document support for New England builders and contractors.",
+        "eyebrow": "A Practical Design Partner",
+        "intro": "Builders and contractors need drawings that support estimating, coordination, permitting, and field decisions. I provide responsive residential design support grounded in hands-on knowledge of framing, trusses, engineered wood, and the construction process.",
+        "highlights": ["Repeatable stock-plan adaptation", "Client-requested plan revisions", "Framing and truss coordination", "Permit and field revision support"],
+        "faqs": [("Do you support repeat builder work?", "Yes. We can establish a consistent handoff and drawing process for recurring residential projects."), ("Can you coordinate directly with clients and trades?", "Yes, with clear roles and communication agreed at the start of the project.")],
+    },
+}
 
 # ----- Helpers ---------------------------------------------------------------
 
@@ -162,6 +221,8 @@ def home(request: HttpRequest) -> HttpResponse:
 
 @ratelimit(key="ip", rate="5/m", block=True)
 def contact(request: HttpRequest) -> HttpResponse:
+    testimonial_page = bool(getattr(request, "testimonial_page", False))
+    testimonial_redirect = "pages:submit_testimonial" if testimonial_page else "pages:contact"
     # Brand/contact settings
     s = SiteSettings.load()
     company = s.company_name or getattr(settings, "COMPANY_NAME", "Provost Home Design")
@@ -233,7 +294,7 @@ def contact(request: HttpRequest) -> HttpResponse:
                 if _is_htmx(request):
                     return _htmx_status(request, "warning", msg)
                 messages.warning(request, msg)
-                return redirect("pages:contact")
+                return redirect(testimonial_redirect)
 
             # 2) "Too fast" submission (likely bot)
             started = float(request.session.get("contact_started_ts", 0))
@@ -248,7 +309,7 @@ def contact(request: HttpRequest) -> HttpResponse:
                 if _is_htmx(request):
                     return _htmx_status(request, "error", "Spam protection triggered. Please try again.")
                 messages.error(request, "Spam protection triggered. Please try again.")
-                return redirect("pages:contact")
+                return redirect(testimonial_redirect)
 
             # refresh seed to avoid reusing the same timestamp
             request.session["contact_started_ts"] = time()
@@ -260,7 +321,7 @@ def contact(request: HttpRequest) -> HttpResponse:
                 if _is_htmx(request):
                     return _htmx_status(request, "error", msg)
                 messages.error(request, msg)
-                return redirect("pages:contact")
+                return redirect(testimonial_redirect)
 
             if not request.POST.get(f"{contact_form.prefix}-terms_accepted") and hasattr(contact_form, "fields") and "terms_accepted" in contact_form.fields:
                 contact_form.add_error("terms_accepted", "You must accept the Terms & Conditions.")
@@ -366,7 +427,7 @@ def contact(request: HttpRequest) -> HttpResponse:
                     resp["X-Contact-Success"] = "1"
                     return resp
                 messages.success(request, success_msg)
-                return redirect("pages:contact")
+                return redirect(testimonial_redirect)
 
             # invalid
             request.session["contact_started_ts"] = time()  # Reset timer for retry
@@ -385,7 +446,7 @@ def contact(request: HttpRequest) -> HttpResponse:
                 if _is_htmx(request):
                     return _htmx_status(request, "warning", msg)
                 messages.warning(request, msg)
-                return redirect("pages:contact")
+                return redirect(testimonial_redirect)
 
             # 2) "Too fast" submission (likely bot)
             started = float(request.session.get("testimonial_started_ts", 0))
@@ -400,7 +461,7 @@ def contact(request: HttpRequest) -> HttpResponse:
                 if _is_htmx(request):
                     return _htmx_status(request, "error", "Spam protection triggered. Please try again.")
                 messages.error(request, "Spam protection triggered. Please try again.")
-                return redirect("pages:contact")
+                return redirect(testimonial_redirect)
 
             # refresh seed to avoid reusing the same timestamp
             request.session["testimonial_started_ts"] = time()
@@ -412,7 +473,7 @@ def contact(request: HttpRequest) -> HttpResponse:
                 if _is_htmx(request):
                     return _htmx_status(request, "error", msg)
                 messages.error(request, msg)
-                return redirect("pages:contact")
+                return redirect(testimonial_redirect)
 
             if not request.POST.get(f"{tform.prefix}-terms_accepted") and hasattr(tform, "fields") and "terms_accepted" in tform.fields:
                 tform.add_error("terms_accepted", "You must accept the Terms & Conditions.")
@@ -480,7 +541,7 @@ def contact(request: HttpRequest) -> HttpResponse:
                 if _is_htmx(request):
                     return _htmx_status(request, "success", "Thanks! Your testimonial was submitted and will appear once approved.")
                 messages.success(request, "Thanks! Your testimonial was submitted and will appear once approved.")
-                return redirect("pages:contact")
+                return redirect(testimonial_redirect)
 
             # invalid testimonial form
             request.session["testimonial_started_ts"] = time()  # Reset timer for retry
@@ -529,9 +590,20 @@ def contact(request: HttpRequest) -> HttpResponse:
             or (getattr(settings, "RECAPTCHA_PUBLIC_KEY", "") or "").strip()
         ),
     }
-    return render(request, "pages/contact.html", context)
+    template_name = "pages/testimonial_submit.html" if testimonial_page else "pages/contact.html"
+    return render(request, template_name, context)
+
+
+def submit_testimonial(request: HttpRequest) -> HttpResponse:
+    request.testimonial_page = True
+    return contact(request)
 
 def get_started(request: HttpRequest) -> HttpResponse:
+    selected_plan_id = request.POST.get("plan_id") if request.method == "POST" else request.GET.get("plan")
+    selected_plan = None
+    if selected_plan_id:
+        selected_plan = Plans.objects.filter(pk=selected_plan_id, is_available=True).first()
+
     if request.method == "POST":
         # reCAPTCHA v3 verification (enforced if secret is configured)
         recaptcha_ok, score = verify_recaptcha_v3(request, expected_action="get_started")
@@ -595,14 +667,18 @@ def get_started(request: HttpRequest) -> HttpResponse:
                     ceiling_feature_1=cd.get("ceiling_feature_1") or "",
                     ceiling_feature_2=cd.get("ceiling_feature_2") or "",
                     ceiling_feature_3=cd.get("ceiling_feature_3") or "",
-                    additional_notes=cd.get("additional_notes") or "",
+                    additional_notes=(
+                        f"Selected plan: {selected_plan.plan_number}\n"
+                        f"Request type: {request.POST.get('intent', 'project inquiry')}\n\n"
+                        if selected_plan else ""
+                    ) + (cd.get("additional_notes") or ""),
                     terms_accepted=bool(cd.get("terms_accepted")),
                 )
                 for f in request.FILES.getlist("plan_files"):
                     InquiryAttachment.objects.create(inquiry=inquiry, file=f)
 
             messages.success(request, "Thanks! Your request was received. We’ll reach out soon.")
-            return redirect("pages:get_started")
+            return redirect("pages:project_thanks")
 
         messages.error(request, "Please fix the errors below.")
     else:
@@ -614,12 +690,18 @@ def get_started(request: HttpRequest) -> HttpResponse:
         {
             "page": {"title": "Get Started", "description": "Tell us about your project."},
             "form": form,
+            "selected_plan": selected_plan,
+            "intent": request.POST.get("intent", request.GET.get("intent", "project inquiry")),
             "recaptcha_site_key": (
                 (getattr(settings, "RECAPTCHA_SITE_KEY", "") or "").strip()
                 or (getattr(settings, "RECAPTCHA_PUBLIC_KEY", "") or "").strip()
             ),
         },
     )
+
+
+def project_thanks(request: HttpRequest) -> HttpResponse:
+    return render(request, "pages/project_thanks.html")
 
 def terms(request: HttpRequest) -> HttpResponse:
     return render(
@@ -645,6 +727,17 @@ def about(request: HttpRequest) -> HttpResponse:
         # before the page can render. Use the existing checked-in static image.
         photos = [static("images/michael.jpg")]
 
+    knowledge_skills = ap.knowledge_skills_list() if ap else [
+        "Schematic design", "Construction documents", "Residential code literacy",
+        "Site planning", "Framing details", "MEP coordination (residential)",
+        "Energy compliance basics", "Client communication",
+    ]
+    technology_terms = ("python", "django", "html", "css", "javascript", "bootstrap", "react", "web development", "postgres")
+    residential_skills = [
+        skill for skill in knowledge_skills
+        if not any(term in skill.lower() for term in technology_terms)
+    ]
+
     about_ctx = {
         "title": ap.title if ap else "About",
         "company": s.company_name or getattr(settings, "COMPANY_NAME", "Provost Home Design"),
@@ -657,11 +750,7 @@ def about(request: HttpRequest) -> HttpResponse:
         ],
         "highlights": ap.highlights_list() if ap else ["Residential design", "Plan revisions", "Permit sets", "Builder coordination"],
         "badges": ap.badges_list() if ap else [],
-        "knowledge_skills": ap.knowledge_skills_list() if ap else [
-            "Schematic design", "Construction documents", "Residential code literacy",
-            "Site planning", "Framing details", "MEP coordination (residential)",
-            "Energy compliance basics", "Client communication",
-        ],
+        "knowledge_skills": residential_skills,
         "licenses": ap.licenses_list() if ap else [
             "Construction Supervisor – Unrestricted – License # CS-097686",
             "Real Estate Salesperson - Heritage Realty - License # 9581505",
@@ -701,6 +790,23 @@ def testimonials_list(request):
 
 def services(request):
     return render(request, "pages/services.html")
+
+
+def service_detail(request: HttpRequest, service_slug: str) -> HttpResponse:
+    service = SERVICE_PAGES.get(service_slug)
+    if not service:
+        from django.http import Http404
+        raise Http404("Service page not found")
+    featured_plans = Plans.objects.filter(is_available=True).order_by("-is_featured", "-created_date")[:3]
+    return render(request, "pages/service_detail.html", {"service": service, "featured_plans": featured_plans})
+
+
+def web_design_legacy_redirect(request: HttpRequest) -> HttpResponse:
+    return HttpResponsePermanentRedirect(f"{settings.WEB_DESIGN_URL}/")
+
+
+def web_pricing_legacy_redirect(request: HttpRequest) -> HttpResponse:
+    return HttpResponsePermanentRedirect(f"{settings.WEB_DESIGN_URL}/pricing/")
 
 @ratelimit(key="ip", rate="5/m", block=True)
 def web_design(request: HttpRequest) -> HttpResponse:
@@ -865,10 +971,31 @@ def llms_txt(request):
 - [Services]({base}/services/): Custom home design, plan modifications, framing plans, permit sets, and exterior renderings.
 - [About]({base}/about/): Background on Michael Provost, licensed residential home designer.
 - [Get Started]({base}/get-started/): Project intake form for new custom design inquiries.
-- [Web Design]({base}/web-design/): Custom web application and business website development using Python, Django, and Bootstrap.
-- [Pricing]({base}/pricing/): Pricing for web design services with an interactive cost calculator.
 - [Contact]({base}/contact/): Contact form, business hours, and location map.
 - [Testimonials]({base}/testimonials/): Client reviews and testimonials.
 - [Sitemap]({base}/sitemap.xml): Full XML sitemap.
+"""
+    return HttpResponse(content, content_type="text/plain; charset=utf-8")
+
+
+def web_robots_txt(request):
+    lines = [
+        "User-agent: *",
+        "Allow: /",
+        f"Sitemap: {request.build_absolute_uri(reverse('sitemap'))}",
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain")
+
+
+def web_llms_txt(request):
+    base = request.build_absolute_uri("/").rstrip("/")
+    content = f"""# Provost Home Design - Web Design
+
+> Custom business websites and web applications. This service is temporarily hosted under the Provost Home Design name while a standalone brand is developed.
+
+## Site sections
+
+- [Web Design]({base}/): Services, portfolio, process, and project inquiry form.
+- [Pricing]({base}/pricing/): Web design pricing and interactive cost calculator.
 """
     return HttpResponse(content, content_type="text/plain; charset=utf-8")

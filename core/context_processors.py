@@ -36,5 +36,12 @@ def _branding_values():
     }
 
 def branding(request):
-    # constant mapping; safe to reuse per-request
-    return _branding_values()
+    values = dict(_branding_values())
+    host = request.get_host().partition(":")[0].lower()
+    web_host = getattr(settings, "WEB_DESIGN_HOST", "web.provosthomedesign.com")
+    values.update({
+        "IS_WEB_DESIGN_SITE": host == web_host,
+        "MAIN_SITE_URL": getattr(settings, "MAIN_SITE_URL", "https://www.provosthomedesign.com"),
+        "WEB_DESIGN_URL": getattr(settings, "WEB_DESIGN_URL", "https://web.provosthomedesign.com"),
+    })
+    return values

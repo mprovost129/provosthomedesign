@@ -1,0 +1,24 @@
+{% load static %}
+{% with m=request.resolver_match %}
+<a class="visually-hidden-focusable position-absolute top-0 start-0 m-2 px-3 py-2 bg-light border rounded" href="#content">Skip to content</a>
+<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom sticky-top shadow-sm phd-nav" aria-label="Web design">
+  <div class="container-lg">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'pages:web_design' %}" rel="home">
+      <img src="{% static 'images/phdlogo.svg' %}" alt="" height="44" width="44">
+      <span class="small fw-semibold">Provost Home Design <span class="text-muted">Web</span></span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#webNav" aria-controls="webNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="webNav">
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+        <li class="nav-item"><a class="nav-link{% if m.url_name == 'web_design' %} active{% endif %}" href="{% url 'pages:web_design' %}"{% if m.url_name == 'web_design' %} aria-current="page"{% endif %}>Web Design</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'pages:web_design' %}#portfolio">Work</a></li>
+        <li class="nav-item"><a class="nav-link{% if m.url_name == 'pricing' %} active{% endif %}" href="{% url 'pages:pricing' %}"{% if m.url_name == 'pricing' %} aria-current="page"{% endif %}>Pricing</a></li>
+        <li class="nav-item"><a class="btn btn-primary btn-sm px-3" href="{% url 'pages:web_design' %}#inquiry">Start a Project</a></li>
+        <li class="nav-item"><a class="nav-link small" href="{{ MAIN_SITE_URL }}/">Home Design <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+{% endwith %}

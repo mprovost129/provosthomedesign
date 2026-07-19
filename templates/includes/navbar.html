@@ -41,26 +41,22 @@
                  href="{% url 'plans:plan_list' %}"
                  {% if m and m.namespace == 'plans' %}aria-current="page"{% endif %}>Plans</a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link {% if m and m.url_name == 'web_design' %}active{% endif %}"
-                 href="{% url 'pages:web_design' %}"
-                 {% if m and m.url_name == 'web_design' %}aria-current="page"{% endif %}>Web Design</a>
-            </li>
-            {# Company dropdown #}
+            {# Residential services dropdown #}
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle {% if m and m.url_name == 'services' or m and m.url_name == 'pricing' or m and m.url_name == 'about' %}active{% endif %}"
+              <a class="nav-link dropdown-toggle {% if m and m.url_name == 'services' or m and m.url_name == 'about' %}active{% endif %}"
                  href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                Company
+                 Services
               </a>
               <ul class="dropdown-menu dropdown-menu-end">
                 <li>
                   <a class="dropdown-item {% if m and m.url_name == 'services' %}active{% endif %}"
-                     href="{% url 'pages:services' %}">Services</a>
+                     href="{% url 'pages:services' %}">All Services</a>
                 </li>
-                <li>
-                  <a class="dropdown-item {% if m and m.url_name == 'pricing' %}active{% endif %}"
-                     href="{% url 'pages:pricing' %}">Pricing</a>
-                </li>
+                <li><a class="dropdown-item" href="{% url 'pages:service_detail' 'custom-home-design-massachusetts' %}">Custom Home Design</a></li>
+                <li><a class="dropdown-item" href="{% url 'pages:service_detail' 'house-plan-modifications' %}">Plan Modifications</a></li>
+                <li><a class="dropdown-item" href="{% url 'pages:service_detail' 'additions-and-renovations' %}">Additions &amp; Renovations</a></li>
+                <li><a class="dropdown-item" href="{% url 'pages:service_detail' 'residential-framing-plans' %}">Framing Plans</a></li>
+                <li><hr class="dropdown-divider"></li>
                 <li>
                   <a class="dropdown-item {% if m and m.url_name == 'about' %}active{% endif %}"
                      href="{% url 'pages:about' %}">About</a>
