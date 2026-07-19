@@ -29,7 +29,17 @@
                   Email: <a href="mailto:{{ inquiry.email }}" style="color:#0d6efd;text-decoration:none;">{{ inquiry.email }}</a>
                   {% if inquiry.phone_number %} &nbsp;|&nbsp; Phone: <a href="tel:{{ inquiry.phone_number }}" style="color:#0d6efd;text-decoration:none;">{{ inquiry.phone_number }}</a>{% endif %}
                   <br>Preferred contact: {{ inquiry.get_preferred_contact_method_display|default:"-" }}
+                  <br>15-minute consultation requested: {{ inquiry.consultation_requested|yesno:"Yes,No" }}
                 </p>
+
+                <h3 style="margin:12px 0 6px;font:600 14px Arial, sans-serif;">Project overview</h3>
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:4px 0 12px 0;">
+                  <tr><td style="padding:6px 0;color:#6b7280;width:180px;">Project type:</td><td style="padding:6px 0;">{{ inquiry.get_project_type_display|default:"-" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Location:</td><td style="padding:6px 0;">{{ inquiry.project_location|default:"-" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Approximate size:</td><td style="padding:6px 0;">{{ inquiry.get_approximate_size_display|default:"-" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Timeline:</td><td style="padding:6px 0;">{{ inquiry.get_project_timeline_display|default:"-" }}</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280;">Budget range:</td><td style="padding:6px 0;">{{ inquiry.get_budget_range_display|default:"-" }}</td></tr>
+                </table>
 
                 {% if inquiry.street_address or inquiry.city or inquiry.state or inquiry.zip_code %}
                 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin:8px 0 16px 0;">

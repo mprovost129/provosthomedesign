@@ -23,7 +23,7 @@ from django_ratelimit.decorators import ratelimit
 from core.utils import verify_recaptcha_v3, get_client_ip
 from .models import HouseStyle as HouseStyleModel, Plans, PlanGallery
 from .forms import PlanQuickForm, PlanCommentForm
-from .session_utils import get_saved_plan_ids, get_comparison_plan_ids
+from .session_utils import get_saved_plan_ids, get_comparison_plan_ids, get_recently_viewed_ids
 
 logger = logging.getLogger(__name__)
 # ----- Filter choice lists -----
@@ -63,6 +63,49 @@ def _as_int(val: str | None) -> int | None:
         return int(val) if val not in (None, "") else None
     except Exception:
         return None
+
+
+def _recently_viewed_plans(
+    request: HttpRequest,
+    *,
+    exclude_ids: set[int] | None = None,
+    limit: int = 4,
+) -> list[Plans]:
+    """Return available plans in session recency order, ignoring stale IDs."""
+    excluded = exclude_ids or set()
+    recent_ids: list[int] = []
+    for raw_id in get_recently_viewed_ids(request):
+        try:
+            plan_id = int(raw_id)
+        except (TypeError, ValueError):
+            continue
+        if plan_id not in excluded and plan_id not in recent_ids:
+            recent_ids.append(plan_id)
+
+    plans_by_id = {
+        plan.id: plan
+        for plan in Plans.objects.filter(
+            is_available=True,
+            id__in=recent_ids,
+        ).prefetch_related("house_styles")
+    }
+    return [plans_by_id[plan_id] for plan_id in recent_ids if plan_id in plans_by_id][:limit]
+
+
+def _catalog_canonical_path(house_style_slug: str | None = None) -> str:
+    """Point style-filter URLs at an equivalent curated page when one exists."""
+    if house_style_slug:
+        category_slug = next(
+            (
+                slug
+                for slug, category in CATEGORY_PAGES.items()
+                if category.get("style") == house_style_slug
+            ),
+            None,
+        )
+        if category_slug:
+            return reverse("plans:plan_category", args=[category_slug])
+    return reverse("plans:plan_list")
 
 
 def _as_decimal(val: str | None) -> Decimal | None:
@@ -221,7 +264,10 @@ def plan_list(request: HttpRequest, house_style_slug: str | None = None) -> Http
         "story_choices": STORY_FILTER_CHOICES,
         "garage_choices": GARAGE_FILTER_CHOICES,
         "feature_choices": [(key, label) for key, (_, label) in FEATURE_FILTERS.items()],
-        "has_filters": bool(request.GET),
+        "has_filters": bool(request.GET or house_style_slug),
+        "canonical_path": _catalog_canonical_path(
+            active_style.slug if active_style and house_style_slug else None
+        ),
         "filter_query": query_without_page.urlencode(),
         "filters": {
             "style": active_style.slug if active_style else style_q,
@@ -239,6 +285,7 @@ def plan_list(request: HttpRequest, house_style_slug: str | None = None) -> Http
         },
         "saved_plan_ids": get_saved_plan_ids(request),
         "comparison_plan_ids": get_comparison_plan_ids(request),
+        "recently_viewed_plans": _recently_viewed_plans(request),
     }
     return render(request, "plans/plans.html", ctx)
 
@@ -258,9 +305,11 @@ def plan_category(request: HttpRequest, category_slug: str) -> HttpResponse:
     page_obj = Paginator(qs, 12).get_page(request.GET.get("page"))
     return render(request, "plans/category.html", {
         "category": category,
+        "canonical_path": reverse("plans:plan_category", args=[category_slug]),
         "plans": page_obj,
         "saved_plan_ids": get_saved_plan_ids(request),
         "comparison_plan_ids": get_comparison_plan_ids(request),
+        "recently_viewed_plans": _recently_viewed_plans(request),
     })
 
 
@@ -277,6 +326,7 @@ def plan_detail(request: HttpRequest, house_style_slug: str, plan_slug: str) -> 
     """
     plan = get_object_or_404(
         Plans.objects.prefetch_related("house_styles", "faqs"),
+        is_available=True,
         house_styles__slug=house_style_slug,
         slug=plan_slug,
     )
@@ -339,6 +389,7 @@ def plan_detail(request: HttpRequest, house_style_slug: str, plan_slug: str) -> 
         "is_saved": session_utils.is_plan_saved(request, plan.id),
         "is_in_comparison": session_utils.is_in_comparison(request, plan.id),
         "related_plans": related_plans,
+        "recently_viewed_plans": _recently_viewed_plans(request, exclude_ids={plan.id}),
         "plan_faqs": plan_faqs,
         "plan_faq_schema": (
             json.dumps(faq_schema)
@@ -381,10 +432,12 @@ def search(request: HttpRequest) -> HttpResponse:
         "garage_choices": GARAGE_FILTER_CHOICES,
         "feature_choices": [(key, label) for key, (_, label) in FEATURE_FILTERS.items()],
         "has_filters": True,
+        "canonical_path": reverse("plans:plan_list"),
         "filter_query": query_without_page.urlencode(),
         "filters": {"q": q_raw, "sort": "newest", "min_sqft": "", "max_sqft": "", "beds": "", "baths": "", "style": "", "stories": "", "garage": "", "max_width": "", "max_depth": "", "features": []},
         "saved_plan_ids": get_saved_plan_ids(request),
         "comparison_plan_ids": get_comparison_plan_ids(request),
+        "recently_viewed_plans": _recently_viewed_plans(request),
     }
     return render(request, "plans/plans.html", ctx)
 

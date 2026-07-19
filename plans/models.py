@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
@@ -109,6 +110,11 @@ class Plans(models.Model):
     is_available = models.BooleanField(default=True)
     # Hand-pick which plans to feature on the home page, etc.
     is_featured = models.BooleanField(default=False, db_index=True)
+    is_popular = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text="Display a Popular label on public plan cards and detail pages.",
+    )
 
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
@@ -201,6 +207,10 @@ class Plans(models.Model):
     @property
     def common_modifications_list(self) -> list[str]:
         return self._nonempty_lines(self.common_modifications)
+
+    @property
+    def is_new(self) -> bool:
+        return bool(self.created_date and self.created_date >= dj_timezone.now() - timedelta(days=60))
 
 
 class PlanFAQ(models.Model):

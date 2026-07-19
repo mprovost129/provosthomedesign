@@ -172,6 +172,7 @@
                 <p class="text-muted small mb-0">
                   {{ p.square_footage|intcomma }} sq ft • {{ p.bedrooms }} bed • {{ p.bathrooms|bath_label }} bath
                 </p>
+                {% include "plans/_plan_badges.html" with plan=p only %}
               </div>
               
               <div class="card-footer bg-transparent border-0 pt-0">
@@ -386,7 +387,10 @@
         <div class="bg-white border shadow rounded-3 p-4 h-100">
           <h3 class="h6">Plan a custom home</h3>
           <p class="text-muted mb-3">Work directly with our designer to create the perfect plan.</p>
-          <a class="btn btn-outline-primary" href="{% url 'pages:contact' %}">Contact Us</a>
+          <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-primary" href="{% url 'pages:get_started' %}?intent=new-home">Start a Custom Design</a>
+            <a class="btn btn-link px-0" href="{% url 'pages:get_started' %}?intent=consultation">Request a 15-minute call</a>
+          </div>
         </div>
       </div>
       <div class="col-md-4">

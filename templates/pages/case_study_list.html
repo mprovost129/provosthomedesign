@@ -3,6 +3,7 @@
 
 {% block title %}Residential Design Projects | Provost Home Design{% endblock %}
 {% block meta_description %}Explore residential design case studies from Provost Home Design, including project goals, design challenges, drawings, solutions, and outcomes.{% endblock %}
+{% block extra_meta %}{% if request.GET.page %}<meta name="robots" content="noindex,follow">{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container-lg py-4">

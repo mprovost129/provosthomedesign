@@ -2,6 +2,8 @@
 {% load humanize plans_extras thumbnail %}
 
 {% block title %}{{ category.title }} | Provost Home Design{% endblock %}
+{% block canonical_url %}{{ request.scheme }}://{{ request.get_host }}{{ canonical_path }}{% endblock %}
+{% block og_url %}{{ request.scheme }}://{{ request.get_host }}{{ canonical_path }}{% endblock %}
 {% block meta_description %}{{ category.meta }}{% endblock %}
 {% block extra_meta %}{% if request.GET.page %}<meta name="robots" content="noindex,follow">{% endif %}{% endblock %}
 
@@ -43,6 +45,7 @@
               <h2 class="h5 mb-1"><a class="text-decoration-none" href="{{ p.get_absolute_url }}">{% if p.plan_name %}{{ p.plan_name }}{% else %}Plan {{ p.plan_number }}{% endif %}</a></h2>
               {% if p.plan_name %}<p class="small text-muted mb-2">Plan {{ p.plan_number }}</p>{% endif %}
               <p class="text-muted mb-0">{{ p.square_footage|intcomma }} sq ft | {{ p.bedrooms }} bed | {{ p.bathrooms|bath_label }} bath</p>
+              {% include "plans/_plan_badges.html" with plan=p only %}
             </div>
           </article>
         </div>
@@ -65,6 +68,8 @@
       <a class="btn btn-primary" href="{% url 'pages:get_started' %}">Discuss your project</a>
     </div>
   {% endif %}
+
+  {% include "plans/_recently_viewed.html" %}
 
   <section class="row g-4 mt-5" aria-labelledby="category-faq-title">
     <div class="col-lg-4">

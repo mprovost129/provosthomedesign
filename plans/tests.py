@@ -1,7 +1,9 @@
+from datetime import timedelta
 from decimal import Decimal
 
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from .models import HouseStyle, PlanFAQ, Plans
 
@@ -63,6 +65,30 @@ class PublicPlanCatalogTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["plan_count"], 2)
 
+    def test_filtered_and_search_pages_canonicalize_to_catalog(self):
+        catalog_url = reverse("plans:plan_list")
+        expected = f'rel="canonical" href="http://testserver{catalog_url}"'
+
+        filtered = self.client.get(catalog_url, {"beds": "3", "page": "2"})
+        searched = self.client.get(reverse("plans:search"), {"q": "ranch"})
+
+        self.assertContains(filtered, 'name="robots" content="noindex,follow"')
+        self.assertContains(filtered, expected)
+        self.assertContains(searched, 'name="robots" content="noindex,follow"')
+        self.assertContains(searched, expected)
+
+    def test_style_filter_canonicalizes_to_curated_category(self):
+        response = self.client.get(
+            reverse("plans:plan_list_by_style", args=[self.ranch.slug])
+        )
+        category_url = reverse("plans:plan_category", args=["ranch-house-plans"])
+
+        self.assertContains(response, 'name="robots" content="noindex,follow"')
+        self.assertContains(
+            response,
+            f'rel="canonical" href="http://testserver{category_url}"',
+        )
+
     def test_curated_category_has_unique_content_and_matching_plan(self):
         response = self.client.get(
             reverse("plans:plan_category", args=["small-house-plans-under-1500-square-feet"])
@@ -72,6 +98,19 @@ class PublicPlanCatalogTests(TestCase):
         self.assertContains(response, "House Plans Under 1,500 Square Feet")
         self.assertContains(response, "The Rehoboth Ranch")
         self.assertNotContains(response, "PHD-202")
+
+    def test_paginated_category_keeps_its_canonical_url(self):
+        category_url = reverse(
+            "plans:plan_category",
+            args=["small-house-plans-under-1500-square-feet"],
+        )
+        response = self.client.get(category_url, {"page": "2"})
+
+        self.assertContains(response, 'name="robots" content="noindex,follow"')
+        self.assertContains(
+            response,
+            f'rel="canonical" href="http://testserver{category_url}"',
+        )
 
     def test_plan_detail_displays_optional_merchandising_content(self):
         response = self.client.get(self.plan.get_absolute_url())
@@ -83,6 +122,52 @@ class PublicPlanCatalogTests(TestCase):
         self.assertContains(response, "Floor plans")
         self.assertContains(response, "Can the garage be removed?")
         self.assertContains(response, '"@type": "FAQPage"')
+
+    def test_new_and_admin_selected_popular_labels_are_displayed(self):
+        self.plan.is_popular = True
+        self.plan.save(update_fields=["is_popular"])
+        Plans.objects.filter(pk=self.other_plan.pk).update(
+            created_date=timezone.now() - timedelta(days=61)
+        )
+
+        catalog = self.client.get(reverse("plans:plan_list"))
+        detail = self.client.get(self.plan.get_absolute_url())
+
+        self.assertContains(catalog, "New")
+        self.assertContains(catalog, "Popular")
+        self.assertContains(detail, "Popular")
+        self.other_plan.refresh_from_db()
+        self.assertFalse(self.other_plan.is_new)
+
+    def test_recently_viewed_plans_are_shown_in_recency_order(self):
+        self.other_plan.house_styles.add(self.ranch)
+
+        self.client.get(self.plan.get_absolute_url())
+        response = self.client.get(self.other_plan.get_absolute_url())
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Recently viewed plans")
+        self.assertEqual(
+            [plan.id for plan in response.context["recently_viewed_plans"]],
+            [self.plan.id],
+        )
+
+    def test_unavailable_plans_are_not_public_or_recently_viewed(self):
+        self.other_plan.house_styles.add(self.ranch)
+        self.other_plan.is_available = False
+        self.other_plan.save(update_fields=["is_available"])
+        session = self.client.session
+        session["recently_viewed"] = ["invalid", self.other_plan.id, self.plan.id]
+        session.save()
+
+        self.assertEqual(self.client.get(self.other_plan.get_absolute_url()).status_code, 404)
+        response = self.client.get(reverse("plans:plan_list"))
+
+        self.assertEqual(
+            [plan.id for plan in response.context["recently_viewed_plans"]],
+            [self.plan.id],
+        )
+        self.assertNotContains(response, self.other_plan.plan_number)
 
     def test_buy_as_shown_flow_summarizes_selected_plan(self):
         response = self.client.get(

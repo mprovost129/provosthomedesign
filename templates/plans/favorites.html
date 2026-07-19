@@ -64,6 +64,7 @@
                                 <span class="badge bg-primary">{{ plan.square_footage|default:"-" }} sq ft</span>
                                 <span class="badge bg-secondary">{{ plan.bedrooms }} bed | {{ plan.bathrooms }} bath</span>
                             </div>
+                            {% include "plans/_plan_badges.html" with plan=plan only %}
                             
                             {% if plan.plan_price %}
                                 <p class="h5 text-primary mb-3">${{ plan.plan_price|floatformat:2 }}</p>

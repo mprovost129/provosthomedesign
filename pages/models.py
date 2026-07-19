@@ -15,6 +15,40 @@ CONTACT_METHOD_CHOICES = [
     ("text", "Text"),
 ]
 
+PROJECT_TYPE_CHOICES = [
+    ("new-home", "New custom home"),
+    ("stock-plan", "Stock plan purchase"),
+    ("addition", "Addition or renovation"),
+    ("plan-modification", "Stock plan modification"),
+    ("framing", "Framing plans"),
+    ("adu", "ADU or accessory building"),
+    ("not-sure", "Not sure yet"),
+]
+
+PROJECT_SIZE_CHOICES = [
+    ("under-1000", "Under 1,000 sq ft"),
+    ("1000-1999", "1,000-1,999 sq ft"),
+    ("2000-2999", "2,000-2,999 sq ft"),
+    ("3000-plus", "3,000+ sq ft"),
+    ("not-sure", "Not sure yet"),
+]
+
+PROJECT_TIMELINE_CHOICES = [
+    ("asap", "As soon as practical"),
+    ("3-6-months", "Within 3-6 months"),
+    ("6-12-months", "Within 6-12 months"),
+    ("12-plus-months", "More than 12 months"),
+    ("researching", "Researching options"),
+]
+
+BUDGET_RANGE_CHOICES = [
+    ("under-250k", "Under $250,000"),
+    ("250k-500k", "$250,000-$500,000"),
+    ("500k-750k", "$500,000-$750,000"),
+    ("750k-plus", "$750,000+"),
+    ("not-sure", "Not sure yet"),
+]
+
 FOUNDATION_CHOICES = [
     ("crawl_space", "Crawl Space"),
     ("8_ft", "8 ft"),
@@ -103,6 +137,13 @@ class SiteSettings(models.Model):
 
 
 class ProjectInquiry(models.Model):
+    project_type = models.CharField(max_length=30, choices=PROJECT_TYPE_CHOICES, blank=True)
+    project_location = models.CharField(max_length=120, blank=True)
+    approximate_size = models.CharField(max_length=20, choices=PROJECT_SIZE_CHOICES, blank=True)
+    project_timeline = models.CharField(max_length=20, choices=PROJECT_TIMELINE_CHOICES, blank=True)
+    budget_range = models.CharField(max_length=20, choices=BUDGET_RANGE_CHOICES, blank=True)
+    consultation_requested = models.BooleanField(default=False)
+
     # Contact
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)

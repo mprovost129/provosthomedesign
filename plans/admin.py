@@ -49,10 +49,11 @@ class PlansAdmin(admin.ModelAdmin):
         "price",
         "is_available",
         "is_featured",
+        "is_popular",
     )
     list_display_links = ("plan_number",)  # keep booleans editable
-    list_editable = ("is_available", "is_featured")
-    list_filter = ("house_styles", "is_available", "is_featured", "bedrooms", "stories", "garage_stalls")
+    list_editable = ("is_available", "is_featured", "is_popular")
+    list_filter = ("house_styles", "is_available", "is_featured", "is_popular", "bedrooms", "stories", "garage_stalls")
     search_fields = ("plan_number", "plan_name", "description", "house_styles__style_name")
     prepopulated_fields = {"slug": ("plan_number",)}
     ordering = ("-is_featured", "-modified_date", "-created_date")
@@ -80,12 +81,15 @@ class PlansAdmin(admin.ModelAdmin):
             "multigenerational",
         )}),
         ("Publishing and SEO", {"fields": (
-            "main_image", "meta_description", ("is_available", "is_featured"),
+            "main_image", "meta_description", ("is_available", "is_featured", "is_popular"),
             "created_date", "modified_date",
         )}),
     )
 
-    actions = ("make_featured", "remove_featured", "make_available", "make_unavailable")
+    actions = (
+        "make_featured", "remove_featured", "make_popular", "remove_popular",
+        "make_available", "make_unavailable",
+    )
 
     @admin.display(description="Styles")
     def styles_list(self, obj):
@@ -104,6 +108,16 @@ class PlansAdmin(admin.ModelAdmin):
     def remove_featured(self, request, queryset):
         updated = queryset.update(is_featured=False)
         self.message_user(request, f"{updated} plan(s) unfeatured.")
+
+    @admin.action(description="Mark selected plans as Popular")
+    def make_popular(self, request, queryset):
+        updated = queryset.update(is_popular=True)
+        self.message_user(request, f"{updated} plan(s) marked as popular.")
+
+    @admin.action(description="Remove Popular from selected plans")
+    def remove_popular(self, request, queryset):
+        updated = queryset.update(is_popular=False)
+        self.message_user(request, f"{updated} plan(s) no longer marked as popular.")
 
     @admin.action(description="Mark selected plans as Available")
     def make_available(self, request, queryset):

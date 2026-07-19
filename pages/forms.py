@@ -7,6 +7,12 @@ from django_recaptcha.widgets import ReCaptchaV2Checkbox
 
 # dynamic styles from admin
 from plans.models import HouseStyle
+from .models import (
+    BUDGET_RANGE_CHOICES,
+    PROJECT_SIZE_CHOICES,
+    PROJECT_TIMELINE_CHOICES,
+    PROJECT_TYPE_CHOICES,
+)
 
 # ---- Phone validation ----
 PHONE_RE = r"^[0-9\-\+\(\)\.\s]{7,}$"
@@ -15,6 +21,16 @@ phone_validator = RegexValidator(PHONE_RE, "Enter a valid phone number.")
 # ---- Multi-file input widget (enables multiple uploads safely) ----
 class MultiFileInput(ClearableFileInput):
     allow_multiple_selected = True
+
+
+class MultiFileField(forms.FileField):
+    """Validate each upload while retaining Django's standard file checks."""
+
+    def clean(self, data, initial=None):
+        if isinstance(data, (list, tuple)):
+            return [super(MultiFileField, self).clean(item, initial) for item in data]
+        cleaned = super().clean(data, initial)
+        return [cleaned] if cleaned else []
 
 # ---- File constraints for uploaded plans ----
 ALLOWED_PLAN_CONTENT_TYPES = {
@@ -25,6 +41,7 @@ ALLOWED_PLAN_CONTENT_TYPES = {
 }
 MAX_PLAN_FILE_MB = 10        # per-file limit
 MAX_PLAN_TOTAL_MB = 20       # combined files limit
+MAX_PLAN_FILE_COUNT = 5      # avoid oversized multipart submissions
 
 _zip_validator = RegexValidator(
     regex=r"^\d{5}(-\d{4})?$",
@@ -36,6 +53,35 @@ SQFT_CHOICES = [(str(n), f"{n:,} sq ft") for n in range(1000, 6001, 100)]
 
 
 class NewHouseForm(forms.Form):
+    project_type = forms.ChoiceField(
+        choices=[("", "Select your project type"), *PROJECT_TYPE_CHOICES],
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    project_location = forms.CharField(
+        max_length=120,
+        widget=forms.TextInput(attrs={"placeholder": "Town and state, or 'not sure'"}),
+    )
+    approximate_size = forms.ChoiceField(
+        choices=[("", "Select approximate size"), *PROJECT_SIZE_CHOICES],
+        required=False,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    project_timeline = forms.ChoiceField(
+        choices=[("", "Select anticipated timing"), *PROJECT_TIMELINE_CHOICES],
+        required=False,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    budget_range = forms.ChoiceField(
+        choices=[("", "Select construction budget"), *BUDGET_RANGE_CHOICES],
+        required=False,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    consultation_requested = forms.BooleanField(
+        required=False,
+        label="I'd like a 15-minute introductory call",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+
     # -------- Contact --------
     first_name = forms.CharField(max_length=50, required=True)
     last_name = forms.CharField(max_length=50, required=True)
@@ -130,13 +176,14 @@ class NewHouseForm(forms.Form):
     # -------- Plans / structure --------
     pre_existing_plans = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={"class": "form-check-input"}))
 
-    plan_files = forms.FileField(
+    plan_files = MultiFileField(
         required=False,
         widget=MultiFileInput(
             attrs={
                 "multiple": True,
                 "accept": ".pdf,.png,.jpg,.jpeg,.webp",
                 "class": "form-control",
+                "aria-describedby": "plan-files-help",
             }
         ),
         label="Upload pre-existing plan(s)",
@@ -180,8 +227,8 @@ class NewHouseForm(forms.Form):
     )
 
     additional_notes = forms.CharField(
-        widget=forms.Textarea(attrs={"placeholder": "Enter Additional Notes", "rows": 4}),
-        required=True,
+        widget=forms.Textarea(attrs={"placeholder": "Enter Additional Notes", "rows": 4, "aria-describedby": "project-goals-help"}),
+        required=False,
         label="Project goals",
     )
 
@@ -238,6 +285,21 @@ class NewHouseForm(forms.Form):
                     choices.insert(0, ("", placeholder))
                     field.choices = choices
 
+    def full_clean(self):
+        super().full_clean()
+        for name in self.errors:
+            if name not in self.fields:
+                continue
+            attrs = self.fields[name].widget.attrs
+            classes = set(attrs.get("class", "").split())
+            classes.add("is-invalid")
+            attrs["class"] = " ".join(sorted(classes))
+            attrs["aria-invalid"] = "true"
+            error_id = f"id_{name}_error"
+            described_by = set(attrs.get("aria-describedby", "").split())
+            described_by.add(error_id)
+            attrs["aria-describedby"] = " ".join(sorted(described_by))
+
     # -------- Validation --------
     def clean(self):
         cleaned = super().clean()
@@ -260,6 +322,11 @@ class NewHouseForm(forms.Form):
         # validate uploaded plan files (multi-file)
         files = self.files.getlist("plan_files")
         if files:
+            if len(files) > MAX_PLAN_FILE_COUNT:
+                self.add_error(
+                    "plan_files",
+                    f"Upload no more than {MAX_PLAN_FILE_COUNT} files at a time.",
+                )
             total_bytes = 0
             for f in files:
                 size = getattr(f, "size", 0) or 0

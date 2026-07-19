@@ -7,6 +7,11 @@ Here's a summary of what you submitted:
 Name:    {{ inquiry.first_name }} {{ inquiry.last_name }}
 Email:   {{ inquiry.email }}
 Phone:   {{ inquiry.phone_number|default:"-" }}
+Project: {{ inquiry.get_project_type_display|default:"-" }}
+Location: {{ inquiry.project_location|default:"-" }}
+Timing:  {{ inquiry.get_project_timeline_display|default:"-" }}
+{% if inquiry.consultation_requested %}Consultation: Requested
+{% endif %}
 
 {% if inquiry.house_style %}Style:   {{ inquiry.house_style }}
 {% endif %}{% if inquiry.min_square_footage or inquiry.max_square_footage %}Sq ft:   {{ inquiry.min_square_footage|default:"?" }} – {{ inquiry.max_square_footage|default:"?" }}

@@ -12,6 +12,11 @@
   outline-offset: 3px;
 }
 
+.form-error-summary:focus {
+  outline: 3px solid rgba(var(--bs-danger-rgb), .65);
+  outline-offset: 3px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     scroll-behavior: auto !important;

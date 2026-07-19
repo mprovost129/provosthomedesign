@@ -114,6 +114,9 @@
                     {% if plan.is_featured %}
                     <span class="badge bg-warning text-dark"><i class="fas fa-star"></i> Featured</span>
                     {% endif %}
+                    {% if plan.is_popular %}
+                    <span class="badge bg-info text-dark"><i class="fas fa-fire"></i> Popular</span>
+                    {% endif %}
                     {% if plan.is_available %}
                     <span class="badge bg-success">Available</span>
                     {% else %}

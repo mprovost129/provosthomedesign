@@ -1,0 +1,9 @@
+{% if plan.is_new or plan.is_popular or plan.is_adu or plan.narrow_lot or plan.first_floor_primary %}
+<div class="d-flex flex-wrap gap-1 mt-2" aria-label="Plan attributes">
+  {% if plan.is_new %}<span class="badge text-bg-primary">New</span>{% endif %}
+  {% if plan.is_popular %}<span class="badge text-bg-warning">Popular</span>{% endif %}
+  {% if plan.is_adu %}<span class="badge text-bg-light border">ADU</span>{% endif %}
+  {% if plan.narrow_lot %}<span class="badge text-bg-light border">Narrow lot</span>{% endif %}
+  {% if plan.first_floor_primary %}<span class="badge text-bg-light border">First-floor primary</span>{% endif %}
+</div>
+{% endif %}

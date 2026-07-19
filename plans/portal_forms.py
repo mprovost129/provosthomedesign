@@ -18,7 +18,7 @@ class PlanForm(forms.ModelForm):
             'is_adu', 'first_floor_primary', 'has_home_office',
             'has_walk_in_pantry', 'has_mudroom', 'has_porch_or_deck',
             'has_bonus_room', 'basement_compatible', 'narrow_lot',
-            'multigenerational', 'is_available', 'is_featured'
+            'multigenerational', 'is_available', 'is_featured', 'is_popular'
         ]
         widgets = {
             'plan_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., PHD-2024-001'}),
@@ -46,6 +46,7 @@ class PlanForm(forms.ModelForm):
             'house_styles': forms.CheckboxSelectMultiple(),
             'is_available': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'is_featured': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_popular': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
         help_texts = {
             'house_width_in': 'Overall width in inches',

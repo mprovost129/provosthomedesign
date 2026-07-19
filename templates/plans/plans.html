@@ -2,6 +2,8 @@
 {% load static humanize plans_extras thumbnail %}
 
 {% block title %}Stock & Custom House Plans | Provost Home Design{% endblock %}
+{% block canonical_url %}{{ request.scheme }}://{{ request.get_host }}{{ canonical_path }}{% endblock %}
+{% block og_url %}{{ request.scheme }}://{{ request.get_host }}{{ canonical_path }}{% endblock %}
 
 {% block meta_description %}Browse stock house plans — Colonial, Cape, Ranch, and more. Filter by style, square footage, bedrooms, and garage. Code-compliant and permit-ready.{% endblock %}
 {% block og_title %}House Plan Catalog • Provost Home Design{% endblock %}
@@ -157,13 +159,7 @@
               <p class="text-muted small mb-0">
                 {{ p.square_footage|intcomma }} sq ft • {{ p.bedrooms }} bed • {{ p.bathrooms|bath_label }} bath
               </p>
-              {% if p.is_adu or p.narrow_lot or p.first_floor_primary %}
-                <div class="d-flex flex-wrap gap-1 mt-2">
-                  {% if p.is_adu %}<span class="badge text-bg-light border">ADU</span>{% endif %}
-                  {% if p.narrow_lot %}<span class="badge text-bg-light border">Narrow lot</span>{% endif %}
-                  {% if p.first_floor_primary %}<span class="badge text-bg-light border">First-floor primary</span>{% endif %}
-                </div>
-              {% endif %}
+              {% include "plans/_plan_badges.html" with plan=p only %}
             </div>
             
             <div class="card-footer bg-transparent border-0 pt-0">
@@ -236,6 +232,8 @@
   {% else %}
     <div class="alert alert-info">No plans match your filters.</div>
   {% endif %}
+
+  {% include "plans/_recently_viewed.html" %}
 
 </div>
 {% endblock %}

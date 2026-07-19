@@ -747,6 +747,7 @@ def submit_testimonial(request: HttpRequest) -> HttpResponse:
 
 def get_started(request: HttpRequest) -> HttpResponse:
     selected_plan_id = request.POST.get("plan_id") if request.method == "POST" else request.GET.get("plan")
+    intent = request.POST.get("intent", request.GET.get("intent", "project-inquiry"))
     selected_plan = None
     if selected_plan_id:
         selected_plan = Plans.objects.filter(pk=selected_plan_id, is_available=True).first()
@@ -780,6 +781,12 @@ def get_started(request: HttpRequest) -> HttpResponse:
             # email includes all uploaded files.
             with transaction.atomic():
                 inquiry = ProjectInquiry.objects.create(
+                    project_type=cd.get("project_type") or "",
+                    project_location=cd.get("project_location") or "",
+                    approximate_size=cd.get("approximate_size") or "",
+                    project_timeline=cd.get("project_timeline") or "",
+                    budget_range=cd.get("budget_range") or "",
+                    consultation_requested=bool(cd.get("consultation_requested")),
                     first_name=cd["first_name"],
                     last_name=cd["last_name"],
                     email=cd["email"],
@@ -829,7 +836,20 @@ def get_started(request: HttpRequest) -> HttpResponse:
 
         messages.error(request, "Please fix the errors below.")
     else:
-        form = NewHouseForm()
+        initial = {}
+        intent_project_types = {
+            "buy-as-shown": "stock-plan",
+            "plan-modifications": "plan-modification",
+            "new-home": "new-home",
+            "addition": "addition",
+            "framing": "framing",
+            "adu": "adu",
+        }
+        if intent in intent_project_types:
+            initial["project_type"] = intent_project_types[intent]
+        if intent == "consultation":
+            initial["consultation_requested"] = True
+        form = NewHouseForm(initial=initial)
 
     return render(
         request,
@@ -838,7 +858,7 @@ def get_started(request: HttpRequest) -> HttpResponse:
             "page": {"title": "Get Started", "description": "Tell us about your project."},
             "form": form,
             "selected_plan": selected_plan,
-            "intent": request.POST.get("intent", request.GET.get("intent", "project inquiry")),
+            "intent": intent,
             "recaptcha_site_key": (
                 (getattr(settings, "RECAPTCHA_SITE_KEY", "") or "").strip()
                 or (getattr(settings, "RECAPTCHA_PUBLIC_KEY", "") or "").strip()

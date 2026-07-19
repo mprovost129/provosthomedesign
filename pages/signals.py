@@ -76,6 +76,7 @@ def projectinquiry_pre_save(sender, instance: ProjectInquiry, **kwargs):
         [
             "first_name", "last_name", "email", "alt_email", "company",
             "phone_number", "alt_phone_number",
+            "project_location",
             "street_address", "city", "state", "zip_code",
             "land_address", "land_city", "land_state", "land_zip_code", "land_size",
             "additional_notes",

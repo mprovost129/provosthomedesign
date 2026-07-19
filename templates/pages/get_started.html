@@ -35,26 +35,51 @@
           <input type="hidden" name="intent" value="{{ intent }}">
           <div class="d-none" aria-hidden="true">{{ form.website }}</div>
 
-          {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors|striptags }}</div>{% endif %}
+          {% if form.errors %}
+            <div id="form-error-summary" class="alert alert-danger form-error-summary" role="alert" tabindex="-1">
+              <h2 class="h5 alert-heading">Please review your project request</h2>
+              <p class="mb-2">Your information is still here. Correct the items below and resubmit{% if form.plan_files.errors %}; for security, choose your files again{% endif %}.</p>
+              <ul class="mb-0">
+                {% for field in form %}{% for error in field.errors %}<li><a class="alert-link" href="#{{ field.id_for_label }}">{{ field.label }}: {{ error }}</a></li>{% endfor %}{% endfor %}
+                {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+              </ul>
+            </div>
+          {% endif %}
 
-          <h2 class="h5 mb-3">How can I reach you?</h2>
-          <div class="row g-3 mb-4">
-            <div class="col-md-6"><label class="form-label" for="{{ form.first_name.id_for_label }}">First name <span class="text-danger">*</span></label>{{ form.first_name }}{% for error in form.first_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
-            <div class="col-md-6"><label class="form-label" for="{{ form.last_name.id_for_label }}">Last name <span class="text-danger">*</span></label>{{ form.last_name }}{% for error in form.last_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
-            <div class="col-md-6"><label class="form-label" for="{{ form.email.id_for_label }}">Email <span class="text-danger">*</span></label>{{ form.email }}{% for error in form.email.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
-            <div class="col-md-6"><label class="form-label" for="{{ form.phone_number.id_for_label }}">Phone <span class="text-danger">*</span></label>{{ form.phone_number }}{% for error in form.phone_number.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
-            <div class="col-md-6"><label class="form-label" for="{{ form.preferred_contact_method.id_for_label }}">Preferred contact method</label>{{ form.preferred_contact_method }}{% for error in form.preferred_contact_method.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
-          </div>
+          <fieldset class="mb-5">
+            <legend class="h5 mb-3"><span class="badge rounded-pill text-bg-primary me-2">1</span>What are you planning?</legend>
+            <div class="row g-3">
+              <div class="col-md-6"><label class="form-label" for="{{ form.project_type.id_for_label }}">Project type <span class="text-danger">*</span></label>{{ form.project_type }}{% if form.project_type.errors %}<div id="{{ form.project_type.id_for_label }}_error" class="invalid-feedback d-block">{% for error in form.project_type.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}</div>
+              <div class="col-md-6"><label class="form-label" for="{{ form.house_style.id_for_label }}">House style, if known</label>{{ form.house_style }}{% if form.house_style.errors %}<div id="{{ form.house_style.id_for_label }}_error" class="invalid-feedback d-block">{% for error in form.house_style.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}</div>
+              <div class="col-12"><label class="form-label" for="{{ form.additional_notes.id_for_label }}">Project goals or questions</label>{{ form.additional_notes }}<div id="project-goals-help" class="form-text">Optional. Share priorities, constraints, or the kind of help you need.</div>{% if form.additional_notes.errors %}<div id="{{ form.additional_notes.id_for_label }}_error" class="invalid-feedback d-block">{% for error in form.additional_notes.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}</div>
+            </div>
+          </fieldset>
 
-          <h2 class="h5 mb-3">What are you working on?</h2>
-          <div class="row g-3">
-            <div class="col-md-6"><label class="form-label" for="{{ form.house_style.id_for_label }}">House style, if known</label>{{ form.house_style }}{% for error in form.house_style.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
-            <div class="col-12"><label class="form-label" for="{{ form.additional_notes.id_for_label }}">Project goals <span class="text-danger">*</span></label>{{ form.additional_notes }}<div class="form-text">Include the project location, approximate size, timing, and the help you need.</div>{% for error in form.additional_notes.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
-            <div class="col-12"><label class="form-label" for="{{ form.plan_files.id_for_label }}">Plans, sketches, or reference images</label>{{ form.plan_files }}<div class="form-text">Optional. PDF, PNG, JPG, or WebP; up to 10 MB each.</div>{% for error in form.plan_files.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
-            <div class="col-12"><div class="form-check">{{ form.terms_accepted }}<label class="form-check-label" for="{{ form.terms_accepted.id_for_label }}">I agree to the <a href="{% url 'pages:terms' %}" target="_blank" rel="noopener">Terms &amp; Conditions</a>.</label>{% for error in form.terms_accepted.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div></div>
-            {% if recaptcha_site_key %}<input type="hidden" name="recaptcha_token" id="recaptcha_token" value="">{% endif %}
-            <div class="col-12 d-flex flex-wrap align-items-center gap-3"><button type="submit" class="btn btn-primary btn-lg px-4">{% if selected_plan and intent == 'buy-as-shown' %}Request Purchase Confirmation{% else %}Send Project Request{% endif %}</button><span class="small text-muted">No commitment required.</span></div>
-          </div>
+          <fieldset class="mb-5">
+            <legend class="h5 mb-3"><span class="badge rounded-pill text-bg-primary me-2">2</span>Basic project information</legend>
+            <div class="row g-3">
+              <div class="col-md-6"><label class="form-label" for="{{ form.project_location.id_for_label }}">Project location <span class="text-danger">*</span></label>{{ form.project_location }}{% if form.project_location.errors %}<div id="{{ form.project_location.id_for_label }}_error" class="invalid-feedback d-block">{% for error in form.project_location.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}</div>
+              <div class="col-md-6"><label class="form-label" for="{{ form.approximate_size.id_for_label }}">Approximate size</label>{{ form.approximate_size }}{% if form.approximate_size.errors %}<div id="{{ form.approximate_size.id_for_label }}_error" class="invalid-feedback d-block">{% for error in form.approximate_size.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}</div>
+              <div class="col-md-6"><label class="form-label" for="{{ form.project_timeline.id_for_label }}">Anticipated timing</label>{{ form.project_timeline }}{% if form.project_timeline.errors %}<div id="{{ form.project_timeline.id_for_label }}_error" class="invalid-feedback d-block">{% for error in form.project_timeline.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}</div>
+              <div class="col-md-6"><label class="form-label" for="{{ form.budget_range.id_for_label }}">Approximate construction budget</label>{{ form.budget_range }}{% if form.budget_range.errors %}<div id="{{ form.budget_range.id_for_label }}_error" class="invalid-feedback d-block">{% for error in form.budget_range.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}</div>
+              <div class="col-12"><label class="form-label" for="{{ form.plan_files.id_for_label }}">Plans, sketches, or reference images</label>{{ form.plan_files }}<div id="plan-files-help" class="form-text">Optional. Upload up to 5 PDF, PNG, JPG, or WebP files; maximum 10 MB each and 20 MB combined.</div>{% if form.plan_files.errors %}<div id="{{ form.plan_files.id_for_label }}_error" class="invalid-feedback d-block">{% for error in form.plan_files.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}</div>
+              <div class="col-12"><div class="form-check">{{ form.consultation_requested }}<label class="form-check-label" for="{{ form.consultation_requested.id_for_label }}">I'd like a 15-minute introductory phone call.</label></div></div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend class="h5 mb-3"><span class="badge rounded-pill text-bg-primary me-2">3</span>How can I reach you?</legend>
+            <div class="row g-3">
+              <div class="col-md-6"><label class="form-label" for="{{ form.first_name.id_for_label }}">First name <span class="text-danger">*</span></label>{{ form.first_name }}{% if form.first_name.errors %}<div id="{{ form.first_name.id_for_label }}_error" class="invalid-feedback d-block">{% for error in form.first_name.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}</div>
+              <div class="col-md-6"><label class="form-label" for="{{ form.last_name.id_for_label }}">Last name <span class="text-danger">*</span></label>{{ form.last_name }}{% if form.last_name.errors %}<div id="{{ form.last_name.id_for_label }}_error" class="invalid-feedback d-block">{% for error in form.last_name.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}</div>
+              <div class="col-md-6"><label class="form-label" for="{{ form.email.id_for_label }}">Email <span class="text-danger">*</span></label>{{ form.email }}{% if form.email.errors %}<div id="{{ form.email.id_for_label }}_error" class="invalid-feedback d-block">{% for error in form.email.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}</div>
+              <div class="col-md-6"><label class="form-label" for="{{ form.phone_number.id_for_label }}">Phone <span class="text-danger">*</span></label>{{ form.phone_number }}{% if form.phone_number.errors %}<div id="{{ form.phone_number.id_for_label }}_error" class="invalid-feedback d-block">{% for error in form.phone_number.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}</div>
+              <div class="col-md-6"><label class="form-label" for="{{ form.preferred_contact_method.id_for_label }}">Preferred contact method</label>{{ form.preferred_contact_method }}{% if form.preferred_contact_method.errors %}<div id="{{ form.preferred_contact_method.id_for_label }}_error" class="invalid-feedback d-block">{% for error in form.preferred_contact_method.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}</div>
+              <div class="col-12"><div class="form-check">{{ form.terms_accepted }}<label class="form-check-label" for="{{ form.terms_accepted.id_for_label }}">I agree to the <a href="{% url 'pages:terms' %}" target="_blank" rel="noopener">Terms &amp; Conditions</a>.</label>{% if form.terms_accepted.errors %}<div id="{{ form.terms_accepted.id_for_label }}_error" class="invalid-feedback d-block">{% for error in form.terms_accepted.errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}</div></div>
+              {% if recaptcha_site_key %}<input type="hidden" name="recaptcha_token" id="recaptcha_token" value="">{% endif %}
+              <div class="col-12 d-flex flex-wrap align-items-center gap-3"><button type="submit" class="btn btn-primary btn-lg px-4">{% if selected_plan and intent == 'buy-as-shown' %}Request Purchase Confirmation{% else %}Send Project Request{% endif %}</button><span class="small text-muted">No commitment required.</span></div>
+            </div>
+          </fieldset>
         </div>
       </form>
     </div>
@@ -63,6 +88,12 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var summary = document.getElementById('form-error-summary');
+  if (summary) summary.focus();
+});
+</script>
 {% if recaptcha_site_key %}
 <script src="https://www.google.com/recaptcha/enterprise.js?render={{ recaptcha_site_key }}"></script>
 <script>

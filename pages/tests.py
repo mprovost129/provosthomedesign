@@ -1,7 +1,97 @@
 from django.test import TestCase, override_settings
 from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils.datastructures import MultiValueDict
 
-from .models import ProjectCaseStudy
+from .forms import NewHouseForm
+from .models import ProjectCaseStudy, ProjectInquiry
+
+
+@override_settings(
+    RECAPTCHA_ENTERPRISE_API_KEY="",
+    RECAPTCHA_SECRET_KEY="",
+    RECAPTCHA_PRIVATE_KEY="",
+    GET_STARTED_NOTIFY_VIA_SIGNALS=False,
+)
+class ProjectInquiryFormTests(TestCase):
+    def test_invalid_submission_retains_values_and_links_error_summary(self):
+        response = self.client.post(
+            "/get-started/",
+            {
+                "first_name": "Morgan",
+                "last_name": "",
+                "email": "not-an-email",
+                "phone_number": "508-555-0100",
+                "preferred_contact_method": "email",
+                "additional_notes": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="form-error-summary"')
+        self.assertContains(response, 'href="#id_email"')
+        self.assertContains(response, 'value="Morgan"')
+        self.assertContains(response, 'aria-invalid="true"')
+
+    def test_upload_count_limit_matches_visible_guidance(self):
+        files = MultiValueDict({
+            "plan_files": [
+                SimpleUploadedFile(
+                    f"plan-{number}.pdf",
+                    b"%PDF-1.4 test",
+                    content_type="application/pdf",
+                )
+                for number in range(6)
+            ]
+        })
+        form = NewHouseForm(
+            data={
+                "first_name": "Morgan",
+                "last_name": "Lee",
+                "email": "morgan@example.com",
+                "phone_number": "508-555-0100",
+                "preferred_contact_method": "email",
+                "project_type": "new-home",
+                "project_location": "Rehoboth, MA",
+                "additional_notes": "A small addition in Massachusetts.",
+                "terms_accepted": "on",
+            },
+            files=files,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("Upload no more than 5 files", form.errors["plan_files"][0])
+
+    def test_consultation_intent_preselects_short_call(self):
+        response = self.client.get("/get-started/", {"intent": "consultation"})
+
+        self.assertContains(response, "15-minute introductory phone call")
+        self.assertTrue(response.context["form"].initial["consultation_requested"])
+
+    def test_structured_project_answers_are_saved(self):
+        response = self.client.post(
+            "/get-started/",
+            {
+                "project_type": "addition",
+                "project_location": "Swansea, MA",
+                "approximate_size": "under-1000",
+                "project_timeline": "3-6-months",
+                "budget_range": "250k-500k",
+                "consultation_requested": "on",
+                "first_name": "Morgan",
+                "last_name": "Lee",
+                "email": "morgan@example.com",
+                "phone_number": "508-555-0100",
+                "preferred_contact_method": "phone",
+                "terms_accepted": "on",
+            },
+        )
+
+        self.assertRedirects(response, "/get-started/thanks/")
+        inquiry = ProjectInquiry.objects.get()
+        self.assertEqual(inquiry.project_type, "addition")
+        self.assertEqual(inquiry.project_location, "Swansea, MA")
+        self.assertTrue(inquiry.consultation_requested)
 
 
 @override_settings(
@@ -178,3 +268,15 @@ class ProjectCaseStudyTests(TestCase):
 
         self.assertContains(response, self.study.get_absolute_url())
         self.assertContains(response, "projects/hero/compact-ranch.jpg")
+
+    def test_paginated_project_index_is_noindex_with_clean_canonical(self):
+        self.study.is_published = True
+        self.study.save(update_fields=["is_published", "updated_at"])
+
+        response = self.client.get("/projects/", {"page": "2"})
+
+        self.assertContains(response, 'name="robots" content="noindex,follow"')
+        self.assertContains(
+            response,
+            'rel="canonical" href="http://testserver/projects/"',
+        )

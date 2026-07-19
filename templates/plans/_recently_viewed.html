@@ -1,0 +1,35 @@
+{% load humanize plans_extras thumbnail %}
+{% if recently_viewed_plans %}
+<section class="mt-5 pt-4 border-top" aria-labelledby="recently-viewed-heading">
+  <div class="d-flex flex-wrap justify-content-between align-items-baseline gap-2 mb-3">
+    <div>
+      <p class="text-uppercase small fw-semibold text-primary mb-1">Continue exploring</p>
+      <h2 id="recently-viewed-heading" class="h4 mb-0">Recently viewed plans</h2>
+    </div>
+    <a href="{% url 'plans:plan_list' %}">Browse all house plans</a>
+  </div>
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3">
+    {% for recent in recently_viewed_plans %}
+      <div class="col">
+        <article class="card h-100 shadow-sm">
+          <a href="{{ recent.get_absolute_url }}">
+            {% if recent.main_image %}
+              {% thumbnail recent.main_image "plan_thumb_sm" as small_thumb %}
+              {% thumbnail recent.main_image "plan_card" as thumb %}
+              <img src="{{ thumb.url }}" srcset="{{ small_thumb.url }} {{ small_thumb.width }}w, {{ thumb.url }} {{ thumb.width }}w" sizes="(max-width: 575px) 100vw, (max-width: 991px) 50vw, 25vw" width="{{ thumb.width }}" height="{{ thumb.height }}" class="card-img-top plan-thumb" alt="Front elevation of Plan {{ recent.plan_number }}" loading="lazy" decoding="async">
+            {% else %}
+              <div class="bg-light text-muted small plan-thumb-placeholder">No image</div>
+            {% endif %}
+          </a>
+          <div class="card-body">
+            <h3 class="h6 mb-1"><a href="{{ recent.get_absolute_url }}" class="stretched-link text-decoration-none">{% if recent.plan_name %}{{ recent.plan_name }}{% else %}Plan {{ recent.plan_number }}{% endif %}</a></h3>
+            {% if recent.plan_name %}<p class="small text-muted mb-1">Plan {{ recent.plan_number }}</p>{% endif %}
+            <p class="small text-muted mb-0">{{ recent.square_footage|intcomma }} sq ft | {{ recent.bedrooms }} bed | {{ recent.bathrooms|bath_label }} bath</p>
+            {% include "plans/_plan_badges.html" with plan=recent only %}
+          </div>
+        </article>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}

@@ -101,6 +101,7 @@
           {{ style.style_name }}{% if not forloop.last %}, {% endif %}
         {% endfor %}
       </p>
+      {% include "plans/_plan_badges.html" with plan=plan only %}
 
       <ul class="list-group mb-3">
         <li class="list-group-item d-flex justify-content-between"><span>Square footage</span><strong>{{ plan.square_footage|intcomma }} sq ft</strong></li>
@@ -283,6 +284,8 @@
     </div>
   </section>
   {% endif %}
+
+  {% include "plans/_recently_viewed.html" %}
 </div>
 
 <!-- Modal: lightbox gallery -->

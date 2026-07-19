@@ -54,6 +54,26 @@
                       <td style="padding:2px 0;">{{ inquiry.phone_number }}</td>
                     </tr>
                     {% endif %}
+                    <tr>
+                      <td style="color:#6b7280; white-space:nowrap; padding:2px 12px 2px 0;">Project</td>
+                      <td style="padding:2px 0;">{{ inquiry.get_project_type_display|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                      <td style="color:#6b7280; white-space:nowrap; padding:2px 12px 2px 0;">Location</td>
+                      <td style="padding:2px 0;">{{ inquiry.project_location|default:"-" }}</td>
+                    </tr>
+                    {% if inquiry.project_timeline %}
+                    <tr>
+                      <td style="color:#6b7280; white-space:nowrap; padding:2px 12px 2px 0;">Timing</td>
+                      <td style="padding:2px 0;">{{ inquiry.get_project_timeline_display }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if inquiry.consultation_requested %}
+                    <tr>
+                      <td style="color:#6b7280; white-space:nowrap; padding:2px 12px 2px 0;">Consultation</td>
+                      <td style="padding:2px 0;">Requested</td>
+                    </tr>
+                    {% endif %}
                     {% if inquiry.house_style %}
                     <tr>
                       <td style="color:#6b7280; white-space:nowrap; padding:2px 12px 2px 0;">Style</td>

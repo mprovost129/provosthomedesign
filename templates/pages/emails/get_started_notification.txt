@@ -5,6 +5,13 @@ New Get Started submission
 Name: {{ inquiry.first_name }} {{ inquiry.last_name }}
 Email: {{ inquiry.email }}{% if inquiry.phone_number %} | Phone: {{ inquiry.phone_number }}{% endif %}
 Preferred contact: {{ inquiry.get_preferred_contact_method_display|default:"-" }}
+Consultation requested: {{ inquiry.consultation_requested|yesno:"Yes,No" }}
+
+Project type: {{ inquiry.get_project_type_display|default:"-" }}
+Project location: {{ inquiry.project_location|default:"-" }}
+Approximate size: {{ inquiry.get_approximate_size_display|default:"-" }}
+Timeline: {{ inquiry.get_project_timeline_display|default:"-" }}
+Budget range: {{ inquiry.get_budget_range_display|default:"-" }}
 
 Address:
 {{ inquiry.street_address|default_if_none:""|default:"" }}{% if inquiry.city %} {{ inquiry.city }}{% endif %}{% if inquiry.state %} {{ inquiry.state }}{% endif %}{% if inquiry.zip_code %} {{ inquiry.zip_code }}{% endif %}
