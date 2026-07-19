@@ -28,6 +28,7 @@ urlpatterns = [
     path("", views.plan_list, name="plan_list"),
     path("style/<slug:house_style_slug>/", views.plan_list, name="plan_list_by_style"),
     path("category/<slug:category_slug>/", views.plan_category, name="plan_category"),
+    path("finder/", views.plan_finder, name="plan_finder"),
     path("search/", views.search, name="search"),
     path("<int:plan_id>/comment/", views.send_plan_comment, name="send_plan_comment"),
     

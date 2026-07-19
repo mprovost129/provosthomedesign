@@ -259,7 +259,7 @@
         {% endif %}
 
         <div class="card border rounded-3 shadow-sm p-4">
-          <form id="web-design-form" method="post" novalidate>
+          <form id="web-design-form" method="post" data-analytics-form="web_design_inquiry" novalidate>
             {% csrf_token %}
 
             {# Honeypot #}

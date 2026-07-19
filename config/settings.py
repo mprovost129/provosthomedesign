@@ -74,6 +74,7 @@ THUMBNAIL_ALIASES = {
         "plan_card":     {"size": (640, 400), "crop": "center", "quality": 85},
         "plan_thumb_sm": {"size": (400, 250), "crop": "center", "quality": 80},
         "gallery_thumb": {"size": (440, 330), "crop": "center", "quality": 85},
+        "plan_detail":   {"size": (1200, 900), "quality": 88},
     }
 }
 

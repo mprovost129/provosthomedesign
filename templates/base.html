@@ -149,6 +149,7 @@
 
     <!-- JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+    {% if GA_MEASUREMENT_ID and not DEBUG %}{% get_static_prefix as static_prefix %}<script src="{{ static_prefix }}js/analytics-events.js" defer></script>{% endif %}
     {% block extra_scripts %}{% endblock %}
   </body>
 </html>

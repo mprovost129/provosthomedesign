@@ -1,9 +1,10 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static thumbnail %}
 
 {% block title %}Compare Plans • Provost Home Design{% endblock %}
 
 {% block extra_meta %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+{% block extra_head %}<style>@media print {.navbar, footer, .mobile-project-cta, .comparison-tools, .remove-from-comparison, .comparison-help, .comparison-card {display:none!important} main {padding:0!important} .container {max-width:none!important} .table-responsive {display:block!important;overflow:visible!important} }</style>{% endblock %}
 
 {% block content %}
 <div class="container py-5">
@@ -16,10 +17,9 @@
                 <p class="text-muted">Comparing {{ plans|length }} plan{% if plans|length != 1 %}s{% endif %}</p>
             </div>
             {% if plans %}
-                <div>
-                    <a href="{% url 'plans:clear_comparison' %}" class="btn btn-outline-danger">
-                        <i class="bi bi-trash"></i> Clear All
-                    </a>
+                <div class="comparison-tools d-flex flex-wrap gap-2 justify-content-end">
+                    <button type="button" class="btn btn-outline-secondary" onclick="window.print()" data-analytics-event="comparison_print"><i class="bi bi-printer"></i> Print</button>
+                    {% if not is_shared_comparison %}<form method="post" action="{% url 'plans:clear_comparison' %}">{% csrf_token %}<button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash"></i> Clear All</button></form>{% endif %}
                     <a href="{% url 'plans:plan_list' %}" class="btn btn-outline-primary">
                         <i class="bi bi-plus-circle"></i> Add More
                     </a>
@@ -29,6 +29,7 @@
     </div>
 
     {% if plans %}
+        <div class="comparison-tools card border-0 bg-light mb-4"><div class="card-body"><label for="comparison-share-url" class="form-label fw-semibold">Share this comparison</label><div class="input-group"><input id="comparison-share-url" class="form-control" type="text" value="{{ share_url }}" readonly><button id="copy-comparison-link" class="btn btn-primary" type="button" data-analytics-event="comparison_share">Copy link</button></div><div id="comparison-copy-status" class="form-text" aria-live="polite">Anyone with this link can view these available plans.</div></div></div>
         <!-- Comparison Table (Desktop) -->
         <div class="table-responsive d-none d-lg-block">
             <table class="table table-bordered table-hover">
@@ -39,13 +40,13 @@
                             <th class="text-center">
                                 <a href="{{ plan.get_absolute_url }}" 
                                    class="text-decoration-none">
-                                    Plan {{ plan.plan_number }}
+                                    {% if plan.plan_name %}{{ plan.plan_name }}<br><span class="small text-muted">{% endif %}Plan {{ plan.plan_number }}{% if plan.plan_name %}</span>{% endif %}
                                 </a>
                                 <br>
-                                <button class="btn btn-sm btn-outline-danger mt-2 remove-from-comparison" 
+                                {% if not is_shared_comparison %}<button class="btn btn-sm btn-outline-danger mt-2 remove-from-comparison"
                                         data-plan-id="{{ plan.id }}">
                                     Remove
-                                </button>
+                                </button>{% endif %}
                             </th>
                         {% endfor %}
                     </tr>
@@ -58,9 +59,9 @@
                             <td class="text-center">
                                 {% if plan.main_image %}
                                     <a href="{{ plan.get_absolute_url }}" class="d-inline-block">
-                                        <img src="{{ plan.main_image.url }}"
+                                        {% thumbnail plan.main_image "plan_card" as thumb %}<img src="{{ thumb.url }}" width="{{ thumb.width }}" height="{{ thumb.height }}"
                                              alt="Plan {{ plan.plan_number }}"
-                                             class="img-fluid rounded compare-thumb">
+                                             class="img-fluid rounded compare-thumb" loading="lazy" decoding="async">
                                     </a>
                                 {% else %}
                                     <div class="bg-light p-4 text-muted">No image</div>
@@ -184,18 +185,18 @@
             {% for plan in plans %}
                 <div class="card mb-4 comparison-card" data-plan-id="{{ plan.id }}">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Plan {{ plan.plan_number }}</h5>
-                        <button class="btn btn-sm btn-outline-danger remove-from-comparison" 
+                        <h5 class="mb-0">{% if plan.plan_name %}{{ plan.plan_name }} <span class="d-block small text-muted">{% endif %}Plan {{ plan.plan_number }}{% if plan.plan_name %}</span>{% endif %}</h5>
+                        {% if not is_shared_comparison %}<button class="btn btn-sm btn-outline-danger remove-from-comparison"
                                 data-plan-id="{{ plan.id }}">
                             <i class="bi bi-x-circle"></i>
-                        </button>
+                        </button>{% endif %}
                     </div>
                     <div class="card-body">
                         {% if plan.main_image %}
                             <a href="{{ plan.get_absolute_url }}" class="d-block mb-3">
-                                <img src="{{ plan.main_image.url }}" 
+                                {% thumbnail plan.main_image "plan_card" as thumb %}<img src="{{ thumb.url }}" width="{{ thumb.width }}" height="{{ thumb.height }}"
                                      alt="Plan {{ plan.plan_number }}"
-                                     class="img-fluid rounded cursor-pointer">
+                                     class="img-fluid rounded cursor-pointer" loading="lazy" decoding="async">
                             </a>
                         {% endif %}
                         
@@ -238,7 +239,7 @@
         </div>
         
         {% if plans|length < 4 %}
-            <div class="alert alert-info">
+            <div class="alert alert-info comparison-help">
                 <i class="bi bi-info-circle"></i> 
                 You can compare up to 4 plans. <a href="{% url 'plans:plan_list' %}" class="alert-link">Add more plans</a> to compare.
             </div>
@@ -281,6 +282,21 @@ document.querySelectorAll('.remove-from-comparison').forEach(btn => {
         .catch(error => console.error('Error:', error));
     });
 });
+
+const copyButton = document.getElementById('copy-comparison-link');
+if (copyButton) {
+    copyButton.addEventListener('click', async function () {
+        const input = document.getElementById('comparison-share-url');
+        const status = document.getElementById('comparison-copy-status');
+        try {
+            await navigator.clipboard.writeText(input.value);
+            status.textContent = 'Comparison link copied.';
+        } catch (error) {
+            input.select();
+            status.textContent = 'Select and copy the link above.';
+        }
+    });
+}
 </script>
 {% endblock %}
 

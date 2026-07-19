@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load thumbnail %}
+
+{% block title %}Residential Design Projects | Provost Home Design{% endblock %}
+{% block meta_description %}Explore residential design case studies from Provost Home Design, including project goals, design challenges, drawings, solutions, and outcomes.{% endblock %}
+
+{% block content %}
+<div class="container-lg py-4">
+  <header class="row g-4 align-items-end mb-5">
+    <div class="col-lg-8"><p class="text-uppercase small fw-semibold text-primary mb-2">Selected work</p><h1 class="display-4 fw-semibold mb-3">Residential design case studies.</h1><p class="lead text-muted mb-0">See how project goals, site constraints, layout decisions, and construction coordination become a clear set of residential drawings.</p></div>
+    <div class="col-lg-4 text-lg-end"><a class="btn btn-primary" href="{% url 'pages:get_started' %}">Discuss your project</a></div>
+  </header>
+
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% for study in case_studies %}
+      <div class="col"><article class="card h-100 border-0 shadow-sm">
+        <a href="{{ study.get_absolute_url }}">{% if study.hero_image %}{% thumbnail study.hero_image "plan_card" as thumb %}<img src="{{ thumb.url }}" width="{{ thumb.width }}" height="{{ thumb.height }}" class="card-img-top plan-thumb" alt="{{ study.title }}" loading="lazy" decoding="async">{% else %}<div class="bg-light plan-thumb-placeholder text-muted">Project imagery coming soon</div>{% endif %}</a>
+        <div class="card-body"><p class="small text-uppercase fw-semibold text-primary mb-2">{{ study.get_project_type_display }}{% if study.location %} | {{ study.location }}{% endif %}</p><h2 class="h4"><a class="stretched-link text-decoration-none" href="{{ study.get_absolute_url }}">{{ study.title }}</a></h2><p class="text-muted mb-0">{{ study.summary }}</p></div>
+      </article></div>
+    {% endfor %}
+  </div>
+
+  {% if case_studies.paginator.num_pages > 1 %}<nav class="mt-5" aria-label="Project pagination"><ul class="pagination justify-content-center">{% if case_studies.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ case_studies.previous_page_number }}">Previous</a></li>{% endif %}<li class="page-item active"><span class="page-link">{{ case_studies.number }} of {{ case_studies.paginator.num_pages }}</span></li>{% if case_studies.has_next %}<li class="page-item"><a class="page-link" href="?page={{ case_studies.next_page_number }}">Next</a></li>{% endif %}</ul></nav>{% endif %}
+</div>
+{% endblock %}

@@ -28,7 +28,7 @@
 
   <div class="row justify-content-center">
     <div class="col-xl-9">
-      <form id="get-started-form" method="post" enctype="multipart/form-data" class="card border shadow-sm rounded-3" novalidate>
+      <form id="get-started-form" method="post" enctype="multipart/form-data" class="card border shadow-sm rounded-3" data-analytics-form="residential_project_inquiry" novalidate>
         <div class="card-body p-4 p-md-5">
           {% csrf_token %}
           {% if selected_plan %}<input type="hidden" name="plan_id" value="{{ selected_plan.id }}">{% endif %}

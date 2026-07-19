@@ -16,7 +16,7 @@ from django.core.cache import cache
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
 from django.http import Http404, HttpRequest, HttpResponse, HttpResponsePermanentRedirect
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.templatetags.static import static
 from django.urls import reverse
@@ -35,6 +35,7 @@ from .models import (
     PricingPage,
     AffiliateProduct,
     AffiliateCategory,
+    ProjectCaseStudy,
 )
 from plans.models import Plans, HouseStyle
 from plans.session_utils import get_saved_plan_ids, get_comparison_plan_ids
@@ -347,6 +348,9 @@ def home(request: HttpRequest) -> HttpResponse:
     affiliate_products = list(
         AffiliateProduct.objects.filter(category=AffiliateCategory.HOME_DESIGN, is_active=True)[:8]
     )
+    featured_case_studies = list(
+        ProjectCaseStudy.objects.filter(is_published=True, is_featured=True)[:3]
+    )
 
     return render(
         request,
@@ -356,6 +360,7 @@ def home(request: HttpRequest) -> HttpResponse:
             "recent_testimonials": recent_testimonials,
             "house_styles": house_styles,
             "affiliate_products": affiliate_products,
+            "featured_case_studies": featured_case_studies,
             "saved_plan_ids": get_saved_plan_ids(request),
             "comparison_plan_ids": get_comparison_plan_ids(request),
         },
@@ -960,7 +965,10 @@ def service_detail(request: HttpRequest, service_slug: str) -> HttpResponse:
 
 def resources(request: HttpRequest) -> HttpResponse:
     articles = [dict(article, slug=slug) for slug, article in RESOURCE_ARTICLES.items()]
-    return render(request, "pages/resources.html", {"articles": articles})
+    return render(request, "pages/resources.html", {
+        "articles": articles,
+        "has_case_studies": ProjectCaseStudy.objects.filter(is_published=True).exists(),
+    })
 
 
 def resource_detail(request: HttpRequest, resource_slug: str) -> HttpResponse:
@@ -987,6 +995,33 @@ def resource_detail(request: HttpRequest, resource_slug: str) -> HttpResponse:
             },
         },
     )
+
+
+def case_study_list(request: HttpRequest) -> HttpResponse:
+    studies = ProjectCaseStudy.objects.filter(is_published=True).prefetch_related("images")
+    page_obj = Paginator(studies, 12).get_page(request.GET.get("page"))
+    return render(request, "pages/case_study_list.html", {"case_studies": page_obj})
+
+
+def case_study_detail(request: HttpRequest, case_study_slug: str) -> HttpResponse:
+    case_study = get_object_or_404(
+        ProjectCaseStudy.objects.prefetch_related("images"),
+        slug=case_study_slug,
+        is_published=True,
+    )
+    related_case_studies = ProjectCaseStudy.objects.filter(
+        is_published=True,
+        project_type=case_study.project_type,
+    ).exclude(pk=case_study.pk)[:3]
+    image_url = (
+        request.build_absolute_uri(case_study.hero_image.url)
+        if case_study.hero_image else ""
+    )
+    return render(request, "pages/case_study_detail.html", {
+        "case_study": case_study,
+        "related_case_studies": related_case_studies,
+        "case_study_image_url": image_url,
+    })
 
 
 def web_design_legacy_redirect(request: HttpRequest) -> HttpResponse:
@@ -1142,6 +1177,7 @@ def robots_txt(request):
         "User-agent: *",
         "Allow: /",
         f"Sitemap: {request.build_absolute_uri(reverse('sitemap'))}",
+        f"Sitemap: {request.build_absolute_uri(reverse('image_sitemap'))}",
     ]
     return HttpResponse("\n".join(lines), content_type="text/plain")
 
@@ -1155,6 +1191,8 @@ def llms_txt(request):
 ## Site sections
 
 - [Home]({base}/): Overview of services, featured house plans, and quick search.
+- [Plan Finder]({base}/plans/finder/): Guided search for narrowing the house-plan catalog.
+- [Resources]({base}/resources/): Residential planning guides covering plan selection, permit sets, modifications, framing, timelines, and site fit.
 - [House Plans]({base}/plans/): Catalog of stock house plans — filter by style (Colonial, Cape, Ranch), square footage, bedrooms, bathrooms, and garage.
 - [Services]({base}/services/): Custom home design, plan modifications, framing plans, permit sets, and exterior renderings.
 - [About]({base}/about/): Background on Michael Provost, licensed residential home designer.
@@ -1162,6 +1200,7 @@ def llms_txt(request):
 - [Contact]({base}/contact/): Contact form, business hours, and location map.
 - [Testimonials]({base}/testimonials/): Client reviews and testimonials.
 - [Sitemap]({base}/sitemap.xml): Full XML sitemap.
+- [Image Sitemap]({base}/image-sitemap.xml): Cover and gallery images associated with canonical house-plan pages.
 """
     return HttpResponse(content, content_type="text/plain; charset=utf-8")
 

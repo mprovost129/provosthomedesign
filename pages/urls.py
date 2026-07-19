@@ -17,6 +17,8 @@ urlpatterns = [
     path("services/<slug:service_slug>/", views.service_detail, name="service_detail"),
     path("resources/", views.resources, name="resources"),
     path("resources/<slug:resource_slug>/", views.resource_detail, name="resource_detail"),
+    path("projects/", views.case_study_list, name="case_study_list"),
+    path("projects/<slug:case_study_slug>/", views.case_study_detail, name="case_study_detail"),
     path("web-design/", views.web_design_legacy_redirect, name="web_design_legacy"),
     path("pricing/", views.web_pricing_legacy_redirect, name="pricing_legacy"),
 ]

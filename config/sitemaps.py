@@ -4,6 +4,7 @@ from django.urls import reverse
 from typing import Iterable
 from plans.models import Plans  # adjust if your model path differs
 from plans.views import CATEGORY_PAGES
+from pages.models import ProjectCaseStudy
 from pages.views import RESOURCE_ARTICLES
 
 class PlanSitemap(Sitemap):
@@ -37,9 +38,10 @@ class CorePagesSitemap(Sitemap):
     protocol = "https"
 
     def items(self):
-        return [
+        items = [
             "pages:home",
             "plans:plan_list",
+            "plans:plan_finder",
             "pages:services",
             "pages:get_started",
             "pages:about",
@@ -47,6 +49,9 @@ class CorePagesSitemap(Sitemap):
             "pages:testimonials",
             "pages:resources",
         ]
+        if ProjectCaseStudy.objects.filter(is_published=True).exists():
+            items.append("pages:case_study_list")
+        return items
 
     def location(self, item): # type: ignore
         return reverse(item)
@@ -108,3 +113,15 @@ class ResourceSitemap(Sitemap):
 
     def location(self, item):
         return reverse("pages:resource_detail", args=[item])
+
+
+class CaseStudySitemap(Sitemap):
+    changefreq = "monthly"
+    priority = 0.7
+    protocol = "https"
+
+    def items(self):
+        return ProjectCaseStudy.objects.filter(is_published=True)
+
+    def lastmod(self, item):
+        return item.updated_at

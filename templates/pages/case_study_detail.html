@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load thumbnail %}
+
+{% block title %}{{ case_study.title }} | Provost Home Design{% endblock %}
+{% block meta_description %}{{ case_study.meta_description|default:case_study.summary }}{% endblock %}
+{% block og_title %}{{ case_study.title }} | Provost Home Design{% endblock %}
+{% block og_description %}{{ case_study.meta_description|default:case_study.summary }}{% endblock %}
+{% block og_image %}{% if case_study_image_url %}{{ case_study_image_url }}{% else %}{{ block.super }}{% endif %}{% endblock %}
+{% block jsonld %}<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"{{ case_study.title|escapejs }}","description":"{{ case_study.summary|escapejs }}","datePublished":"{{ case_study.created_at|date:'c' }}","dateModified":"{{ case_study.updated_at|date:'c' }}","author":{"@type":"Organization","name":"Provost Home Design"},"mainEntityOfPage":"{{ request.scheme }}://{{ request.get_host }}{{ request.path }}"{% if case_study_image_url %},"image":"{{ case_study_image_url|escapejs }}"{% endif %}}</script>{% endblock %}
+
+{% block content %}
+<article>
+  <header class="container-lg py-4 py-lg-5">
+    <nav aria-label="Breadcrumb"><ol class="breadcrumb small"><li class="breadcrumb-item"><a href="{% url 'pages:case_study_list' %}">Projects</a></li><li class="breadcrumb-item active" aria-current="page">{{ case_study.title }}</li></ol></nav>
+    <div class="row g-4 align-items-end"><div class="col-lg-8"><p class="text-uppercase small fw-semibold text-primary mb-2">{{ case_study.get_project_type_display }}{% if case_study.location %} | {{ case_study.location }}{% endif %}</p><h1 class="display-4 fw-semibold">{{ case_study.title }}</h1><p class="lead text-muted mb-0">{{ case_study.summary }}</p></div>{% if case_study.completed_date %}<div class="col-lg-4 text-lg-end text-muted">Completed {{ case_study.completed_date|date:"Y" }}</div>{% endif %}</div>
+  </header>
+
+  {% if case_study.hero_image %}<div class="container-lg mb-5">{% thumbnail case_study.hero_image "plan_detail" as hero %}<img src="{{ hero.url }}" width="{{ hero.width }}" height="{{ hero.height }}" class="img-fluid rounded-4 shadow-sm w-100" alt="{{ case_study.title }}" fetchpriority="high" decoding="async"></div>{% endif %}
+
+  <div class="container-lg">
+    <div class="row g-5">
+      <div class="col-lg-8">
+        <section class="mb-5"><p class="text-uppercase small fw-semibold text-primary mb-2">Client objective</p><h2 class="h3">What the project needed</h2>{{ case_study.client_objective|linebreaks }}</section>
+        <section class="mb-5"><p class="text-uppercase small fw-semibold text-primary mb-2">Design challenge</p><h2 class="h3">The constraint to solve</h2>{{ case_study.design_challenge|linebreaks }}</section>
+        <section class="mb-5"><p class="text-uppercase small fw-semibold text-primary mb-2">Solution</p><h2 class="h3">How the design responded</h2>{{ case_study.solution|linebreaks }}</section>
+        <section class="mb-5"><p class="text-uppercase small fw-semibold text-primary mb-2">Outcome</p><h2 class="h3">What the work delivered</h2>{{ case_study.outcome|linebreaks }}</section>
+        {% if case_study.client_quote %}<blockquote class="border-start border-4 border-primary bg-light p-4 fs-5">{{ case_study.client_quote|linebreaksbr }}</blockquote>{% endif %}
+      </div>
+      <aside class="col-lg-4">{% if case_study.deliverables_list %}<div class="card shadow-sm"><div class="card-body p-4"><h2 class="h5">Project deliverables</h2><ul class="mb-0">{% for item in case_study.deliverables_list %}<li class="mb-2">{{ item }}</li>{% endfor %}</ul></div></div>{% endif %}</aside>
+    </div>
+
+    {% if case_study.images.all %}<section class="mt-5" aria-labelledby="project-gallery-heading"><h2 id="project-gallery-heading" class="h3">Project drawings and progress</h2><div class="row g-3">{% for item in case_study.images.all %}<figure class="col-md-6 col-lg-4">{% thumbnail item.image "gallery_thumb" as thumb %}<a href="{{ item.image.url }}"><img src="{{ thumb.url }}" width="{{ thumb.width }}" height="{{ thumb.height }}" class="img-fluid rounded-3 border" alt="{{ item.alt_text }}" loading="lazy" decoding="async"></a><figcaption class="small text-muted mt-2"><strong>{{ item.get_image_type_display }}</strong>{% if item.caption %}: {{ item.caption }}{% endif %}</figcaption></figure>{% endfor %}</div></section>{% endif %}
+
+    {% if related_case_studies %}<section class="mt-5"><h2 class="h3">Related project studies</h2><div class="d-flex flex-wrap gap-2">{% for related in related_case_studies %}<a class="btn btn-outline-primary" href="{{ related.get_absolute_url }}">{{ related.title }}</a>{% endfor %}</div></section>{% endif %}
+    <section class="rounded-4 bg-dark text-white p-4 p-lg-5 mt-5 d-lg-flex justify-content-between align-items-center gap-4"><div><h2 class="h3">Have a residential design challenge?</h2><p class="text-white-50 mb-lg-0">Share the site, goals, and information you already have.</p></div><a class="btn btn-light flex-shrink-0" href="{% url 'pages:get_started' %}">Start your project</a></section>
+  </div>
+</article>
+{% endblock %}

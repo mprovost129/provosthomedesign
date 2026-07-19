@@ -41,6 +41,7 @@ THUMBNAIL_ALIASES = {
     "": {
         "plan_card":     {"size": (800, 500), "crop": True, "quality": 85},
         "plan_card@2x":  {"size": (1200, 750), "crop": True, "quality": 82},
+        "plan_detail":   {"size": (1200, 900), "quality": 88},
     }
 }
 # Simple cache + defaults for sorl

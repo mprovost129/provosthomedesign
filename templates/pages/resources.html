@@ -11,7 +11,7 @@
       <h1 class="display-4 fw-semibold mb-3">Plan with fewer unknowns.</h1>
       <p class="lead text-muted mb-0">Clear, practical introductions to house plans, residential drawing sets, modifications, and project preparation.</p>
     </div>
-    <div class="col-lg-4 text-lg-end"><a class="btn btn-primary" href="{% url 'pages:get_started' %}">Discuss your project</a></div>
+    <div class="col-lg-4 text-lg-end d-flex flex-wrap gap-2 justify-content-lg-end"><a class="btn btn-primary" href="{% url 'pages:get_started' %}">Discuss your project</a>{% if has_case_studies %}<a class="btn btn-outline-primary" href="{% url 'pages:case_study_list' %}">View project studies</a>{% endif %}</div>
   </header>
 
   <div class="row row-cols-1 row-cols-md-2 g-4">

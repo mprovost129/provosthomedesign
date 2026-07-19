@@ -5,6 +5,8 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.templatetags.static import static
 from plans.models import HouseStyle  # dynamic link to plans app
 from django.db.models import Case, When, Value, IntegerField
+from django.urls import reverse
+from django.utils.text import slugify
 
 
 CONTACT_METHOD_CHOICES = [
@@ -237,6 +239,94 @@ class Testimonial(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.rating}/5)"
+
+
+class ProjectCaseStudy(models.Model):
+    PROJECT_TYPES = [
+        ("custom-home", "Custom Home"),
+        ("addition", "Addition"),
+        ("renovation", "Renovation"),
+        ("adu", "ADU / Carriage House"),
+        ("plan-modification", "Plan Modification"),
+        ("framing", "Framing / Structural Coordination"),
+        ("other", "Other Residential Project"),
+    ]
+
+    title = models.CharField(max_length=160)
+    slug = models.SlugField(max_length=180, unique=True, blank=True)
+    project_type = models.CharField(max_length=30, choices=PROJECT_TYPES, db_index=True)
+    location = models.CharField(
+        max_length=120,
+        blank=True,
+        help_text="Town and state only when the client permits disclosure.",
+    )
+    summary = models.CharField(max_length=320)
+    client_objective = models.TextField()
+    design_challenge = models.TextField()
+    solution = models.TextField()
+    deliverables = models.TextField(blank=True, help_text="One deliverable per line.")
+    outcome = models.TextField()
+    client_quote = models.TextField(blank=True)
+    hero_image = models.ImageField(upload_to="projects/hero/", blank=True, null=True)
+    meta_description = models.CharField(max_length=180, blank=True)
+    completed_date = models.DateField(blank=True, null=True)
+    is_published = models.BooleanField(default=False, db_index=True)
+    is_featured = models.BooleanField(default=False, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-is_featured", "-completed_date", "-created_at")
+        verbose_name = "project case study"
+        verbose_name_plural = "project case studies"
+        indexes = [models.Index(fields=("is_published", "is_featured", "completed_date"))]
+
+    def __str__(self) -> str:
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return reverse("pages:case_study_detail", args=[self.slug])
+
+    @property
+    def deliverables_list(self) -> list[str]:
+        return [line.strip() for line in self.deliverables.splitlines() if line.strip()]
+
+
+class ProjectCaseStudyImage(models.Model):
+    IMAGE_TYPES = [
+        ("completed", "Completed Project"),
+        ("construction", "Construction Progress"),
+        ("drawing", "Drawing / Plan Detail"),
+        ("existing", "Existing Condition"),
+        ("rendering", "Rendering"),
+    ]
+
+    case_study = models.ForeignKey(
+        ProjectCaseStudy,
+        on_delete=models.CASCADE,
+        related_name="images",
+    )
+    image = models.ImageField(upload_to="projects/gallery/")
+    image_type = models.CharField(max_length=20, choices=IMAGE_TYPES, default="completed")
+    caption = models.CharField(max_length=200, blank=True)
+    alt_text = models.CharField(
+        max_length=200,
+        help_text="Describe what is visibly useful in this image.",
+    )
+    order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ("order", "id")
+        verbose_name = "case study image"
+        verbose_name_plural = "case study images"
+
+    def __str__(self) -> str:
+        return f"{self.case_study.title}: {self.get_image_type_display()}"
 
 
 class AboutPage(models.Model):

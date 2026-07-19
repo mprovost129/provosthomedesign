@@ -11,7 +11,7 @@
         <h1 class="h2">Share your experience</h1>
         <p class="text-muted">Thank you for taking a moment to tell others about your project.</p>
       </header>
-      <form id="testimonial-form" method="post" class="card border shadow-sm rounded-3 p-4 vstack gap-3" novalidate>
+      <form id="testimonial-form" method="post" class="card border shadow-sm rounded-3 p-4 vstack gap-3" data-analytics-form="testimonial_submission" novalidate>
         {% csrf_token %}
         {% if tform.non_field_errors %}<div class="alert alert-danger">{{ tform.non_field_errors|striptags }}</div>{% endif %}
         <div class="row g-3">

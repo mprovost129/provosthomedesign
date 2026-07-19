@@ -20,6 +20,8 @@ from .models import (
     PricingPage,
     PricingItem,
     AffiliateProduct,
+    ProjectCaseStudy,
+    ProjectCaseStudyImage,
 )
 
 # ----------------------------
@@ -55,6 +57,23 @@ class BusinessHourInline(admin.TabularInline):
                 output_field=IntegerField(),
             )
         ).order_by("_pos")
+
+
+class ProjectCaseStudyImageInline(admin.TabularInline):
+    model = ProjectCaseStudyImage
+    extra = 1
+    fields = ("image", "image_type", "caption", "alt_text", "order", "preview")
+    readonly_fields = ("preview",)
+    ordering = ("order", "id")
+
+    @admin.display(description="Preview")
+    def preview(self, obj):
+        if obj and obj.image:
+            return format_html(
+                '<img src="{}" style="height:70px;width:100px;object-fit:cover;border-radius:5px;" />',
+                obj.image.url,
+            )
+        return "-"
 
 # ----------------------------
 # Singleton admin helper
@@ -372,3 +391,19 @@ class TestimonialAdmin(admin.ModelAdmin):
     @admin.action(description="Revoke consent to publish")
     def revoke_consent(self, request, queryset):
         queryset.update(consent_to_publish=False)
+
+
+@admin.register(ProjectCaseStudy)
+class ProjectCaseStudyAdmin(admin.ModelAdmin):
+    list_display = ("title", "project_type", "location", "completed_date", "is_published", "is_featured", "updated_at")
+    list_filter = ("project_type", "is_published", "is_featured", "completed_date")
+    search_fields = ("title", "location", "summary", "client_objective", "design_challenge", "solution", "outcome")
+    prepopulated_fields = {"slug": ("title",)}
+    list_editable = ("is_published", "is_featured")
+    readonly_fields = ("created_at", "updated_at")
+    inlines = [ProjectCaseStudyImageInline]
+    fieldsets = (
+        ("Project identity", {"fields": ("title", "slug", "project_type", "location", "completed_date", "hero_image")} ),
+        ("Case study", {"fields": ("summary", "client_objective", "design_challenge", "solution", "deliverables", "outcome", "client_quote")} ),
+        ("Publishing and SEO", {"fields": ("meta_description", ("is_published", "is_featured"), "created_at", "updated_at")} ),
+    )

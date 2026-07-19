@@ -6,6 +6,7 @@ from django.views.decorators.cache import cache_page
 from django.contrib.sitemaps.views import sitemap as sitemap_view
 
 from config.sitemaps import (
+    CaseStudySitemap,
     CorePagesSitemap,
     PlanCategorySitemap,
     PlanSitemap,
@@ -13,6 +14,7 @@ from config.sitemaps import (
     ServicePagesSitemap,
 )
 from pages.views import robots_txt, llms_txt
+from plans.seo_views import image_sitemap
 
 sitemaps = {
     "pages": CorePagesSitemap,
@@ -20,6 +22,7 @@ sitemaps = {
     "plans": PlanSitemap,
     "plan-categories": PlanCategorySitemap,
     "resources": ResourceSitemap,
+    "case-studies": CaseStudySitemap,
 }
 
 urlpatterns = [
@@ -38,6 +41,7 @@ urlpatterns = [
     # SEO endpoints
     path("robots.txt", robots_txt, name="robots_txt"),
     path("llms.txt", llms_txt, name="llms_txt"),
+    path("image-sitemap.xml", cache_page(60 * 60)(image_sitemap), name="image_sitemap"),
     path(
         "sitemap.xml",
         cache_page(60 * 60)(sitemap_view),    # cache for 1 hour

@@ -64,7 +64,7 @@
     <div class="col-lg-7">
       {% if plan.main_image %}
         <a href="#" class="d-block" data-bs-toggle="modal" data-bs-target="#planGalleryModal" data-start-index="0">
-          <img src="{{ plan.main_image.url }}" class="img-fluid rounded-3 border shadow mb-3" alt="Plan {{ plan.plan_number }} main image">
+          {% thumbnail plan.main_image "plan_detail" as detail_image %}<img src="{{ detail_image.url }}" width="{{ detail_image.width }}" height="{{ detail_image.height }}" class="img-fluid rounded-3 border shadow mb-3" alt="Front elevation of house plan {{ plan.plan_number }}" fetchpriority="high" decoding="async">
         </a>
       {% endif %}
 
@@ -125,10 +125,10 @@
 
       {# Primary buying paths #}
       <div class="d-grid gap-2 mb-3">
-        <a href="{% url 'pages:get_started' %}?plan={{ plan.id }}&amp;intent=buy-as-shown" class="btn btn-primary btn-lg">
+        <a href="{% url 'pages:get_started' %}?plan={{ plan.id }}&amp;intent=buy-as-shown" class="btn btn-primary btn-lg" data-analytics-event="plan_purchase_request_start" data-analytics-label="{{ plan.plan_number }}">
           <i class="bi bi-bag-check me-1" aria-hidden="true"></i> Buy Plan As Shown
         </a>
-        <a href="{% url 'pages:get_started' %}?plan={{ plan.id }}&amp;intent=plan-modifications" class="btn btn-outline-primary">Request Plan Modifications</a>
+        <a href="{% url 'pages:get_started' %}?plan={{ plan.id }}&amp;intent=plan-modifications" class="btn btn-outline-primary" data-analytics-event="plan_modification_request_start" data-analytics-label="{{ plan.plan_number }}">Request Plan Modifications</a>
         <a href="#plan-question" class="btn btn-link">Ask a Question About This Plan</a>
       </div>
 
@@ -159,7 +159,7 @@
           <h2 class="h6 mb-2">Request changes to this plan</h2>
           <p class="text-muted small mb-3">Describe what you’d like to change. We’ll email your note along with the plan #. Changes are in addition to the base price shown.</p>
 
-          <form action="{% url 'plans:send_plan_comment' plan.id %}" method="post" class="vstack gap-3" novalidate>
+          <form action="{% url 'plans:send_plan_comment' plan.id %}" method="post" class="vstack gap-3" data-analytics-form="plan_question" novalidate>
             {% csrf_token %}
 
             <div class="row g-3">
@@ -292,12 +292,12 @@
           <div class="carousel-inner">
             {% if plan.main_image %}
               <div class="carousel-item active">
-                <img src="{{ plan.main_image.url }}" class="d-block w-100" alt="Main image">
+                <img src="{{ plan.main_image.url }}" class="d-block w-100" alt="Front elevation of house plan {{ plan.plan_number }}" loading="lazy" decoding="async">
               </div>
             {% endif %}
             {% for img in images %}
               <div class="carousel-item {% if not plan.main_image and forloop.first %}active{% endif %}">
-                <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ img.caption|default:'Gallery image' }}">
+                <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ img.caption|default:'Plan gallery image' }}" loading="lazy" decoding="async">
               </div>
             {% empty %}
               {% if not plan.main_image %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}House Plan Finder | Provost Home Design{% endblock %}
+{% block meta_description %}Use the guided house plan finder to narrow Provost Home Design plans by size, style, stories, garage, lot width, and everyday features.{% endblock %}
+
+{% block content %}
+<div class="container-lg py-4">
+  <header class="row g-4 align-items-end mb-5">
+    <div class="col-lg-8">
+      <p class="text-uppercase small fw-semibold text-primary mb-2">Guided plan search</p>
+      <h1 class="display-4 fw-semibold mb-3">Find a practical starting point.</h1>
+      <p class="lead text-muted mb-0">Three quick decisions will narrow the catalog. Leave anything open when you are not sure.</p>
+    </div>
+    <div class="col-lg-4 text-lg-end"><a href="{% url 'plans:plan_list' %}" class="btn btn-outline-primary">Browse without filters</a></div>
+  </header>
+
+  <form method="get" action="{% url 'plans:plan_list' %}" class="vstack gap-4">
+    <fieldset class="card border-0 shadow-sm">
+      <div class="card-body p-4 p-lg-5">
+        <legend class="h3"><span class="badge rounded-pill text-bg-primary me-2">1</span>Choose the basic fit</legend>
+        <p class="text-muted">Start with the shape of the home and the amount of living space.</p>
+        <div class="row g-3">
+          <div class="col-md-4"><label class="form-label" for="finder-style">Architectural style</label><select class="form-select" id="finder-style" name="style"><option value="">Any style</option>{% for style in styles %}<option value="{{ style.slug }}">{{ style.style_name }}</option>{% endfor %}</select></div>
+          <div class="col-md-4"><label class="form-label" for="finder-min-sqft">Minimum square feet</label><select class="form-select" id="finder-min-sqft" name="min_sqft"><option value="">No minimum</option><option value="1000">1,000</option><option value="1500">1,500</option><option value="2000">2,000</option><option value="2500">2,500</option><option value="3000">3,000</option></select></div>
+          <div class="col-md-4"><label class="form-label" for="finder-max-sqft">Maximum square feet</label><select class="form-select" id="finder-max-sqft" name="max_sqft"><option value="">No maximum</option><option value="1500">1,500</option><option value="2000">2,000</option><option value="2500">2,500</option><option value="3000">3,000</option><option value="4000">4,000</option><option value="5000">5,000</option></select></div>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="card border-0 shadow-sm">
+      <div class="card-body p-4 p-lg-5">
+        <legend class="h3"><span class="badge rounded-pill text-bg-primary me-2">2</span>Set everyday needs</legend>
+        <p class="text-muted">Choose minimums rather than an exact room count when you want more options.</p>
+        <div class="row g-3">
+          <div class="col-6 col-md-3"><label class="form-label" for="finder-beds">Bedrooms</label><select class="form-select" id="finder-beds" name="beds"><option value="">Any</option><option value="1">1+</option><option value="2">2+</option><option value="3">3+</option><option value="4">4+</option><option value="5">5+</option></select></div>
+          <div class="col-6 col-md-3"><label class="form-label" for="finder-baths">Bathrooms</label><select class="form-select" id="finder-baths" name="baths"><option value="">Any</option><option value="1">1+</option><option value="1.5">1.5+</option><option value="2">2+</option><option value="2.5">2.5+</option><option value="3">3+</option></select></div>
+          <div class="col-6 col-md-3"><label class="form-label" for="finder-stories">Stories</label><select class="form-select" id="finder-stories" name="stories"><option value="">Any</option><option value="1">1</option><option value="2">2</option><option value="3+">3+</option></select></div>
+          <div class="col-6 col-md-3"><label class="form-label" for="finder-garage">Garage stalls</label><select class="form-select" id="finder-garage" name="garage"><option value="">Any</option><option value="0">None</option><option value="1">1</option><option value="2">2</option><option value="3+">3+</option></select></div>
+          <div class="col-md-4"><label class="form-label" for="finder-width">Maximum house width</label><div class="input-group"><input class="form-control" id="finder-width" name="max_width" type="number" min="10" step="1" placeholder="For example, 50"><span class="input-group-text">ft</span></div><div class="form-text">Use the buildable width, not only lot frontage.</div></div>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="card border-0 shadow-sm">
+      <div class="card-body p-4 p-lg-5">
+        <legend class="h3"><span class="badge rounded-pill text-bg-primary me-2">3</span>Add priority features</legend>
+        <p class="text-muted">Selecting several features may produce fewer results. Start with the ones that matter most.</p>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3">
+          {% for key, label in feature_choices %}
+            <div class="col"><div class="form-check border rounded-3 p-3 ps-5 h-100"><input class="form-check-input" type="checkbox" name="features" value="{{ key }}" id="finder-feature-{{ key }}"><label class="form-check-label" for="finder-feature-{{ key }}">{{ label }}</label></div></div>
+          {% endfor %}
+        </div>
+      </div>
+    </fieldset>
+
+    <div class="rounded-4 bg-dark text-white p-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div><h2 class="h4 mb-1">Ready to see your matches?</h2><p class="text-white-50 mb-0">You can adjust every filter from the results page.</p></div>
+      <button class="btn btn-light btn-lg px-4" type="submit">Show Matching Plans</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

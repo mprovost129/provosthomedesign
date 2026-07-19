@@ -150,7 +150,7 @@
           <h2 id="contact-form-heading" class="h6 fw-bold mb-2">Send us a message</h2>
           <p class="text-muted small mb-3">Tell us a bit about your project and how we can help.</p>
 
-          <form id="contact-form" method="post" class="vstack gap-3" novalidate action="{% url 'pages:contact' %}" autocomplete="on">
+          <form id="contact-form" method="post" class="vstack gap-3" data-analytics-form="contact_message" novalidate action="{% url 'pages:contact' %}" autocomplete="on">
             {% csrf_token %}
             {% if form.non_field_errors %}
               <div class="alert alert-danger" role="alert">

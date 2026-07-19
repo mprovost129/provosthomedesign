@@ -1,4 +1,7 @@
 from django.test import TestCase, override_settings
+from django.core.cache import cache
+
+from .models import ProjectCaseStudy
 
 
 @override_settings(
@@ -70,9 +73,18 @@ class SubdomainRoutingTests(TestCase):
         web_response = self.client.get("/sitemap.xml", HTTP_HOST=self.web_host)
 
         self.assertContains(main_response, "/services/house-plan-modifications/")
+        self.assertContains(main_response, "/plans/finder/")
         self.assertNotContains(main_response, "web.provosthomedesign.com")
         self.assertContains(web_response, "web.provosthomedesign.com")
         self.assertNotContains(web_response, "/plans/")
+
+    def test_each_host_advertises_only_its_own_sitemaps(self):
+        main_response = self.client.get("/robots.txt", HTTP_HOST=self.main_host)
+        web_response = self.client.get("/robots.txt", HTTP_HOST=self.web_host)
+
+        self.assertContains(main_response, "/image-sitemap.xml")
+        self.assertNotContains(web_response, "/image-sitemap.xml")
+        self.assertContains(web_response, "web.provosthomedesign.com/sitemap.xml")
 
 
 class ResourcePageTests(TestCase):
@@ -109,3 +121,60 @@ class ResourcePageTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "/services/house-plan-modifications/")
         self.assertContains(response, "/plans/category/narrow-lot-house-plans/")
+
+
+class ProjectCaseStudyTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.study = ProjectCaseStudy.objects.create(
+            title="Compact Ranch on a Constrained Lot",
+            project_type="custom-home",
+            location="Rehoboth, MA",
+            summary="A practical single-level home coordinated around a constrained buildable area.",
+            client_objective="Create comfortable single-level living with useful storage.",
+            design_challenge="Fit the program within the available width while preserving daylight.",
+            solution="Organize service spaces along one side and open living toward the rear yard.",
+            deliverables="Floor plans\nExterior elevations\nBuilding sections",
+            outcome="A coordinated permit drawing set ready for the client's next project steps.",
+            is_featured=True,
+            is_published=False,
+        )
+
+    def setUp(self):
+        cache.clear()
+
+    def test_unpublished_case_study_is_private_and_not_promoted(self):
+        detail_response = self.client.get(self.study.get_absolute_url())
+        home_response = self.client.get("/")
+        sitemap_response = self.client.get("/sitemap.xml")
+
+        self.assertEqual(detail_response.status_code, 404)
+        self.assertNotContains(home_response, self.study.title)
+        self.assertNotContains(sitemap_response, self.study.get_absolute_url())
+
+    def test_published_case_study_appears_across_public_surfaces(self):
+        self.study.is_published = True
+        self.study.save(update_fields=["is_published", "updated_at"])
+
+        detail_response = self.client.get(self.study.get_absolute_url())
+        home_response = self.client.get("/")
+        resources_response = self.client.get("/resources/")
+        sitemap_response = self.client.get("/sitemap.xml")
+
+        self.assertContains(detail_response, "What the project needed")
+        self.assertContains(detail_response, "Floor plans")
+        self.assertContains(detail_response, '"@type":"Article"')
+        self.assertContains(home_response, self.study.title)
+        self.assertContains(resources_response, "View project studies")
+        self.assertContains(sitemap_response, self.study.get_absolute_url())
+
+    def test_published_project_image_is_in_image_sitemap(self):
+        ProjectCaseStudy.objects.filter(pk=self.study.pk).update(
+            is_published=True,
+            hero_image="projects/hero/compact-ranch.jpg",
+        )
+
+        response = self.client.get("/image-sitemap.xml")
+
+        self.assertContains(response, self.study.get_absolute_url())
+        self.assertContains(response, "projects/hero/compact-ranch.jpg")

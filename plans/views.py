@@ -5,6 +5,7 @@ from typing import Any
 
 import json
 import logging
+from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib import messages
@@ -14,6 +15,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from django_ratelimit.decorators import ratelimit
@@ -259,6 +261,13 @@ def plan_category(request: HttpRequest, category_slug: str) -> HttpResponse:
         "plans": page_obj,
         "saved_plan_ids": get_saved_plan_ids(request),
         "comparison_plan_ids": get_comparison_plan_ids(request),
+    })
+
+
+def plan_finder(request: HttpRequest) -> HttpResponse:
+    return render(request, "plans/plan_finder.html", {
+        "styles": HouseStyleModel.objects.all().order_by("style_name"),
+        "feature_choices": [(key, label) for key, (_, label) in FEATURE_FILTERS.items()],
     })
 
 
@@ -685,9 +694,23 @@ def toggle_comparison(request: HttpRequest, plan_id: int) -> HttpResponse:
 
 def compare_plans(request: HttpRequest) -> HttpResponse:
     """Compare multiple plans side-by-side."""
+    shared_slugs = []
+    for raw_slug in (request.GET.get("plans") or "").split(","):
+        slug = raw_slug.strip()
+        if slug and slug not in shared_slugs:
+            shared_slugs.append(slug)
+        if len(shared_slugs) == 4:
+            break
     comparison_ids = session_utils.get_comparison_plan_ids(request)
-    
-    if comparison_ids:
+
+    if shared_slugs:
+        plans = Plans.objects.filter(
+            slug__in=shared_slugs,
+            is_available=True,
+        ).prefetch_related("house_styles", "images")
+        plans_dict = {plan.slug: plan for plan in plans}
+        plans_ordered = [plans_dict[slug] for slug in shared_slugs if slug in plans_dict]
+    elif comparison_ids:
         plans = Plans.objects.filter(
             id__in=comparison_ids,
             is_available=True
@@ -698,11 +721,17 @@ def compare_plans(request: HttpRequest) -> HttpResponse:
         plans_ordered = [plans_dict[pid] for pid in comparison_ids if pid in plans_dict]
     else:
         plans_ordered = []
-    
+
+    share_query = urlencode({"plans": ",".join(plan.slug for plan in plans_ordered)})
+    share_url = request.build_absolute_uri(
+        f"{reverse('plans:compare_plans')}?{share_query}"
+    ) if plans_ordered else ""
     context = {
         "page": {"title": "Compare Plans", "description": "Side-by-side plan comparison"},
         "plans": plans_ordered,
         "comparison_count": len(comparison_ids),
+        "share_url": share_url,
+        "is_shared_comparison": bool(shared_slugs),
     }
     return render(request, "plans/compare.html", context)
 

@@ -1,0 +1,51 @@
+(function () {
+  "use strict";
+
+  function sendEvent(name, parameters) {
+    if (typeof window.gtag !== "function") return;
+    window.gtag("event", name, parameters || {});
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("[data-analytics-page-event]").forEach(function (element) {
+      sendEvent(element.dataset.analyticsPageEvent, {
+        page_location: window.location.href,
+      });
+    });
+
+    document.querySelectorAll("form[data-analytics-form]").forEach(function (form) {
+      var started = false;
+      var formName = form.dataset.analyticsForm;
+      form.addEventListener("focusin", function () {
+        if (started) return;
+        started = true;
+        sendEvent("form_start", { form_name: formName });
+      });
+      form.addEventListener("submit", function () {
+        sendEvent("form_submit", { form_name: formName });
+      });
+    });
+
+    document.addEventListener("click", function (event) {
+      var target = event.target.closest("a, button");
+      if (!target) return;
+
+      var eventName = target.dataset.analyticsEvent;
+      var label = target.dataset.analyticsLabel || target.textContent.trim().slice(0, 100);
+      if (eventName) {
+        sendEvent(eventName, { event_label: label });
+        return;
+      }
+
+      if (target.matches("a[href^='tel:']")) {
+        sendEvent("phone_click", { link_url: target.getAttribute("href") });
+      } else if (target.matches("a[href^='mailto:']")) {
+        sendEvent("email_click", { link_url: target.getAttribute("href") });
+      } else if (target.classList.contains("toggle-favorite")) {
+        sendEvent("plan_favorite_toggle", { plan_id: target.dataset.planId });
+      } else if (target.classList.contains("toggle-comparison")) {
+        sendEvent("plan_comparison_toggle", { plan_id: target.dataset.planId });
+      }
+    });
+  });
+})();

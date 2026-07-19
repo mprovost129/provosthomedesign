@@ -34,7 +34,7 @@ class PublicPlanCatalogTests(TestCase):
             question="Can the garage be removed?",
             answer="Yes. The footprint and exterior would be coordinated as a modification.",
         )
-        Plans.objects.create(
+        cls.other_plan = Plans.objects.create(
             plan_number="PHD-202",
             slug="phd-202",
             square_footage=2400,
@@ -94,5 +94,48 @@ class PublicPlanCatalogTests(TestCase):
         self.assertContains(response, "Purchase request")
         self.assertContains(response, "The Rehoboth Ranch")
         self.assertContains(response, "Request Purchase Confirmation")
+
+    def test_plan_finder_submits_to_catalog_filters(self):
+        response = self.client.get(reverse("plans:plan_finder"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Find a practical starting point")
+        self.assertContains(response, 'action="/plans/"')
+        self.assertContains(response, 'name="features"')
+
+    def test_shared_comparison_works_without_session_state(self):
+        response = self.client.get(
+            reverse("plans:compare_plans"),
+            {"plans": f"{self.plan.slug},{self.other_plan.slug},{self.plan.slug}"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "PHD-101")
+        self.assertContains(response, "PHD-202")
+        self.assertContains(response, "Share this comparison")
+        self.assertNotContains(response, "Clear All")
+        self.assertEqual(len(response.context["plans"]), 2)
+
+    def test_clear_comparison_requires_post_and_clears_session(self):
+        session = self.client.session
+        session["comparison_plans"] = [self.plan.id]
+        session.save()
+
+        self.assertEqual(self.client.get(reverse("plans:clear_comparison")).status_code, 405)
+        response = self.client.post(reverse("plans:clear_comparison"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.client.session["comparison_plans"], [])
+
+    def test_image_sitemap_lists_available_plan_images(self):
+        Plans.objects.filter(pk=self.plan.pk).update(main_image="plans/main/phd-101.jpg")
+
+        response = self.client.get(reverse("image_sitemap"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/xml")
+        self.assertContains(response, self.plan.get_absolute_url())
+        self.assertContains(response, "plans/main/phd-101.jpg")
+        self.assertContains(response, "Front elevation of house plan PHD-101")
 
 # Create your tests here.

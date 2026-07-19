@@ -123,6 +123,11 @@
             <i class="bi bi-pencil-square me-1"></i> Get Started
           </a>
         </div>
+        <div class="col-12 col-md-auto">
+          <a class="btn btn-outline-light btn-lg w-100" href="{% url 'plans:plan_finder' %}">
+            <i class="bi bi-signpost-split me-1"></i> Help Me Choose
+          </a>
+        </div>
       </div>
     </div>
   </section>
@@ -292,6 +297,13 @@
       </div>
     </div>
   </section>
+
+  {% if featured_case_studies %}
+  <section class="mt-5" aria-labelledby="featured-projects-heading">
+    <div class="d-flex justify-content-between align-items-baseline mb-3"><div><p class="text-uppercase small fw-semibold text-primary mb-1">Selected work</p><h2 id="featured-projects-heading" class="h3 mb-0">Residential design in context</h2></div><a href="{% url 'pages:case_study_list' %}">View all projects</a></div>
+    <div class="row g-4">{% for study in featured_case_studies %}<div class="col-md-4"><article class="card h-100 border-0 shadow-sm">{% if study.hero_image %}{% thumbnail study.hero_image "plan_card" as thumb %}<a href="{{ study.get_absolute_url }}"><img src="{{ thumb.url }}" width="{{ thumb.width }}" height="{{ thumb.height }}" class="card-img-top plan-thumb" alt="{{ study.title }}" loading="lazy" decoding="async"></a>{% endif %}<div class="card-body"><p class="small text-uppercase fw-semibold text-primary mb-2">{{ study.get_project_type_display }}{% if study.location %} | {{ study.location }}{% endif %}</p><h3 class="h5"><a class="stretched-link text-decoration-none" href="{{ study.get_absolute_url }}">{{ study.title }}</a></h3><p class="text-muted mb-0">{{ study.summary }}</p></div></article></div>{% endfor %}</div>
+  </section>
+  {% endif %}
 
   <!-- Trending Design Products (Amazon affiliate) -->
   {% if affiliate_products %}
