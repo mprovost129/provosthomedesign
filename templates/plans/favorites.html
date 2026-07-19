@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static thumbnail %}
 
 {% block title %}My Favorites • Provost Home Design{% endblock %}
 
@@ -23,9 +23,14 @@
                     <div class="card h-100 shadow-sm plan-card" data-plan-id="{{ plan.id }}">
                         <a href="{{ plan.get_absolute_url }}">
                             {% if plan.main_image %}
-                                <img src="{{ plan.main_image.url }}"
+                                {% thumbnail plan.main_image "plan_thumb_sm" as small_thumb %}
+                                {% thumbnail plan.main_image "plan_card" as thumb %}
+                                <img src="{{ thumb.url }}"
+                                     srcset="{{ small_thumb.url }} {{ small_thumb.width }}w, {{ thumb.url }} {{ thumb.width }}w"
+                                     sizes="(max-width: 767px) 100vw, 33vw"
+                                     width="{{ thumb.width }}" height="{{ thumb.height }}"
                                      class="card-img-top favorite-thumb"
-                                     alt="Plan {{ plan.plan_number }}">
+                                     alt="Front elevation of Plan {{ plan.plan_number }}" loading="lazy" decoding="async">
                             {% else %}
                                 <div class="bg-light d-flex align-items-center justify-content-center favorite-placeholder">
                                     <span class="text-muted">No image</span>
@@ -43,8 +48,9 @@
                                 </h5>
                                 <button class="btn btn-sm btn-outline-danger remove-favorite" 
                                         data-plan-id="{{ plan.id }}"
+                                        aria-label="Remove Plan {{ plan.plan_number }} from favorites"
                                         title="Remove from favorites">
-                                    <i class="bi bi-heart-fill"></i>
+                                    <i class="bi bi-heart-fill" aria-hidden="true"></i>
                                 </button>
                             </div>
                             
@@ -69,8 +75,10 @@
                                     View Details
                                 </a>
                                 <button class="btn btn-outline-primary btn-sm toggle-comparison" 
-                                        data-plan-id="{{ plan.id }}">
-                                    <i class="bi bi-{% if plan.id in comparison_plan_ids %}check-square-fill{% else %}plus-square{% endif %}"></i>
+                                        data-plan-id="{{ plan.id }}" data-plan-label="Plan {{ plan.plan_number }}"
+                                        aria-pressed="{% if plan.id in comparison_plan_ids %}true{% else %}false{% endif %}"
+                                        aria-label="{% if plan.id in comparison_plan_ids %}Remove Plan {{ plan.plan_number }} from{% else %}Add Plan {{ plan.plan_number }} to{% endif %} comparison">
+                                    <i class="bi bi-{% if plan.id in comparison_plan_ids %}check-square-fill{% else %}plus-square{% endif %}" aria-hidden="true"></i>
                                     Compare
                                 </button>
                             </div>
@@ -106,74 +114,6 @@
     {% endif %}
 </div>
 
-<script>
-// Remove from favorites (AJAX)
-document.querySelectorAll('.remove-favorite').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        const planId = this.dataset.planId;
-        const card = this.closest('.plan-card');
-        
-        fetch(`/plans/favorite/toggle/${planId}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Fade out and remove card
-                card.style.transition = 'opacity 0.3s';
-                card.style.opacity = '0';
-                setTimeout(() => {
-                    card.remove();
-                    // Reload if no cards left
-                    if (document.querySelectorAll('.plan-card').length === 0) {
-                        location.reload();
-                    }
-                }, 300);
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    });
-});
-
-// Toggle comparison
-document.querySelectorAll('.toggle-comparison').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        const planId = this.dataset.planId;
-        const icon = this.querySelector('i');
-        
-        fetch(`/plans/compare/toggle/${planId}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update icon
-                if (data.in_comparison) {
-                    icon.className = 'bi bi-check-square-fill';
-                } else {
-                    icon.className = 'bi bi-plus-square';
-                }
-                
-                // Show notification if limit reached
-                if (data.message && data.message.includes('maximum')) {
-                    alert(data.message);
-                }
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    });
-});
-</script>
 {% endblock %}
 
 {% block extra_scripts %}

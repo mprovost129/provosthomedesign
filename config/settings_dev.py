@@ -40,7 +40,9 @@ INSTALLED_APPS = [
 THUMBNAIL_ALIASES = {
     "": {
         "plan_card":     {"size": (800, 500), "crop": True, "quality": 85},
+        "plan_thumb_sm": {"size": (400, 250), "crop": True, "quality": 80},
         "plan_card@2x":  {"size": (1200, 750), "crop": True, "quality": 82},
+        "gallery_thumb": {"size": (480, 360), "crop": True, "quality": 82},
         "plan_detail":   {"size": (1200, 900), "quality": 88},
     }
 }

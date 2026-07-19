@@ -63,7 +63,7 @@
     <!-- Left: images -->
     <div class="col-lg-7">
       {% if plan.main_image %}
-        <a href="#" class="d-block" data-bs-toggle="modal" data-bs-target="#planGalleryModal" data-start-index="0">
+        <a href="{{ plan.main_image.url }}" class="d-block" data-bs-toggle="modal" data-bs-target="#planGalleryModal" data-start-index="0" aria-label="Open larger front elevation of house plan {{ plan.plan_number }}">
           {% thumbnail plan.main_image "plan_detail" as detail_image %}<img src="{{ detail_image.url }}" width="{{ detail_image.width }}" height="{{ detail_image.height }}" class="img-fluid rounded-3 border shadow mb-3" alt="Front elevation of house plan {{ plan.plan_number }}" fetchpriority="high" decoding="async">
         </a>
       {% endif %}
@@ -73,8 +73,9 @@
           {% for img in images %}
             <div class="col-4">
               <a
-                href="#"
+                href="{{ img.image.url }}"
                 class="d-block"
+                aria-label="Open larger image: {{ img.caption|default:'plan gallery image' }}"
                 data-bs-toggle="modal"
                 data-bs-target="#planGalleryModal"
                 data-start-index="{% if plan.main_image %}{{ forloop.counter0|add:1 }}{% else %}{{ forloop.counter0 }}{% endif %}">
@@ -134,14 +135,18 @@
 
       <div class="d-flex gap-2 mb-4">
         <button class="btn btn-outline-danger flex-fill toggle-favorite" 
-                data-plan-id="{{ plan.id }}" aria-label="Save plan {{ plan.plan_number }} to favorites">
-          <i class="bi bi-heart{% if is_saved %}-fill{% endif %}"></i>
+                data-plan-id="{{ plan.id }}" data-plan-label="Plan {{ plan.plan_number }}"
+                aria-pressed="{% if is_saved %}true{% else %}false{% endif %}"
+                aria-label="{% if is_saved %}Remove Plan {{ plan.plan_number }} from{% else %}Save Plan {{ plan.plan_number }} to{% endif %} favorites">
+          <i class="bi bi-heart{% if is_saved %}-fill{% endif %}" aria-hidden="true"></i>
           Save
         </button>
         
         <button class="btn btn-outline-success flex-fill toggle-comparison" 
-                data-plan-id="{{ plan.id }}" aria-label="Add plan {{ plan.plan_number }} to comparison">
-          <i class="bi bi-{% if is_in_comparison %}check-square-fill{% else %}plus-square{% endif %}"></i>
+                data-plan-id="{{ plan.id }}" data-plan-label="Plan {{ plan.plan_number }}"
+                aria-pressed="{% if is_in_comparison %}true{% else %}false{% endif %}"
+                aria-label="{% if is_in_comparison %}Remove Plan {{ plan.plan_number }} from{% else %}Add Plan {{ plan.plan_number }} to{% endif %} comparison">
+          <i class="bi bi-{% if is_in_comparison %}check-square-fill{% else %}plus-square{% endif %}" aria-hidden="true"></i>
           Compare
         </button>
         
@@ -263,8 +268,9 @@
         <article class="card h-100 shadow-sm">
           <a href="{{ related.get_absolute_url }}">
             {% if related.main_image %}
+              {% thumbnail related.main_image "plan_thumb_sm" as small_thumb %}
               {% thumbnail related.main_image "plan_card" as thumb %}
-              <img src="{{ thumb.url }}" width="{{ thumb.width }}" height="{{ thumb.height }}" class="card-img-top plan-thumb" alt="Front elevation of house plan {{ related.plan_number }}" loading="lazy">
+              <img src="{{ thumb.url }}" srcset="{{ small_thumb.url }} {{ small_thumb.width }}w, {{ thumb.url }} {{ thumb.width }}w" sizes="(max-width: 767px) 100vw, 33vw" width="{{ thumb.width }}" height="{{ thumb.height }}" class="card-img-top plan-thumb" alt="Front elevation of house plan {{ related.plan_number }}" loading="lazy" decoding="async">
             {% endif %}
           </a>
           <div class="card-body">

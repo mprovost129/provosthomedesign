@@ -18,6 +18,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     const csrftoken = getCookie('csrftoken');
 
+    function updateToggleState(button, isActive, action) {
+        const planLabel = button.dataset.planLabel || 'this plan';
+        const activeLabel = action === 'favorite'
+            ? `Remove ${planLabel} from favorites`
+            : `Remove ${planLabel} from comparison`;
+        const inactiveLabel = action === 'favorite'
+            ? `Save ${planLabel} to favorites`
+            : `Add ${planLabel} to comparison`;
+
+        button.setAttribute('aria-pressed', String(isActive));
+        button.setAttribute('aria-label', isActive ? activeLabel : inactiveLabel);
+        button.title = isActive ? activeLabel : inactiveLabel;
+    }
+
     // Show toast notification
     function showToast(message, type = 'success') {
         // Create toast container if it doesn't exist
@@ -75,16 +89,16 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Update icon only
                     if (data.is_saved) {
                         icon.classList.add('bi-heart-fill');
                         icon.classList.remove('bi-heart');
-                        showToast('Saved to Favorites ❤️', 'success');
+                        showToast('Saved to favorites', 'success');
                     } else {
                         icon.classList.add('bi-heart');
                         icon.classList.remove('bi-heart-fill');
-                        showToast('Removed from Favorites', 'success');
+                        showToast('Removed from favorites', 'success');
                     }
+                    updateToggleState(this, data.is_saved, 'favorite');
                     
                     // Update navbar counter
                     updateNavbarCounters();
@@ -112,14 +126,14 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Update icon only
                     if (data.in_comparison) {
                         icon.className = 'bi bi-check-square-fill';
-                        showToast('Added to Compare ✓', 'success');
+                        showToast('Added to comparison', 'success');
                     } else {
                         icon.className = 'bi bi-plus-square';
-                        showToast('Removed from Compare', 'success');
+                        showToast('Removed from comparison', 'success');
                     }
+                    updateToggleState(this, data.in_comparison, 'comparison');
                     
                     // Update navbar counter
                     updateNavbarCounters();
@@ -131,6 +145,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else if (data.error) {
                     showToast(data.error, 'danger');
                 }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    });
+
+    document.querySelectorAll('.remove-favorite').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const card = this.closest('.plan-card');
+
+            fetch(`/plans/favorite/toggle/${this.dataset.planId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) return;
+                card.style.opacity = '0';
+                setTimeout(() => {
+                    card.remove();
+                    if (!document.querySelector('.plan-card')) window.location.reload();
+                }, 300);
+                updateNavbarCounters();
+                showToast('Removed from favorites', 'success');
             })
             .catch(error => console.error('Error:', error));
         });

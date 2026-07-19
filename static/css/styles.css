@@ -7,6 +7,20 @@
   --phd-primary-text-dark: #1f2933;
 }
 
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid rgba(var(--bs-primary-rgb), .75);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
 /* Bootstrap primary button override: Provost blue fades into light gray */
 .btn-primary {
   --bs-btn-color: var(--phd-primary-text-dark);
@@ -190,6 +204,10 @@
 /* Button hover effects */
 .toggle-favorite, .toggle-comparison {
   transition: all 0.3s ease;
+}
+
+.plan-card {
+  transition: opacity .3s ease;
 }
 
 .toggle-favorite:hover,

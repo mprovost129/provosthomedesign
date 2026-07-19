@@ -32,8 +32,9 @@
           <article class="card h-100 shadow-sm">
             <a href="{{ p.get_absolute_url }}">
               {% if p.main_image %}
+                {% thumbnail p.main_image "plan_thumb_sm" as small_thumb %}
                 {% thumbnail p.main_image "plan_card" as thumb %}
-                <img src="{{ thumb.url }}" width="{{ thumb.width }}" height="{{ thumb.height }}" class="card-img-top plan-thumb" alt="Front elevation of Plan {{ p.plan_number }}" loading="lazy" decoding="async">
+                <img src="{{ thumb.url }}" srcset="{{ small_thumb.url }} {{ small_thumb.width }}w, {{ thumb.url }} {{ thumb.width }}w" sizes="(max-width: 767px) 100vw, (max-width: 1199px) 50vw, 33vw" width="{{ thumb.width }}" height="{{ thumb.height }}" class="card-img-top plan-thumb" alt="Front elevation of Plan {{ p.plan_number }}" loading="lazy" decoding="async">
               {% else %}
                 <div class="bg-light text-muted small plan-thumb-placeholder">No image</div>
               {% endif %}

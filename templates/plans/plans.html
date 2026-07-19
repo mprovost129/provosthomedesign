@@ -131,9 +131,12 @@
           <div class="card h-100 shadow-sm">
             <a href="{{ p.get_absolute_url }}" class="d-block">
               {% if p.main_image %}
+                {% thumbnail p.main_image "plan_thumb_sm" as small_thumb %}
                 {% thumbnail p.main_image "plan_card" as thumb %}
                 <img
                   src="{{ thumb.url }}"
+                  srcset="{{ small_thumb.url }} {{ small_thumb.width }}w, {{ thumb.url }} {{ thumb.width }}w"
+                  sizes="(max-width: 767px) 100vw, (max-width: 1199px) 50vw, 33vw"
                   width="{{ thumb.width }}"
                   height="{{ thumb.height }}"
                   class="card-img-top plan-thumb cursor-pointer"
@@ -167,14 +170,20 @@
               <div class="d-flex gap-2">
                 <button class="btn btn-sm btn-outline-danger flex-fill toggle-favorite" 
                         data-plan-id="{{ p.id }}"
-                        title="Save to favorites">
-                  <i class="bi bi-heart{% if p.id in saved_plan_ids %}-fill{% endif %}"></i>
+                        data-plan-label="Plan {{ p.plan_number }}"
+                        aria-pressed="{% if p.id in saved_plan_ids %}true{% else %}false{% endif %}"
+                        aria-label="{% if p.id in saved_plan_ids %}Remove Plan {{ p.plan_number }} from{% else %}Save Plan {{ p.plan_number }} to{% endif %} favorites"
+                        title="{% if p.id in saved_plan_ids %}Remove from{% else %}Save to{% endif %} favorites">
+                  <i class="bi bi-heart{% if p.id in saved_plan_ids %}-fill{% endif %}" aria-hidden="true"></i>
                   <span class="d-none d-md-inline">Save</span>
                 </button>
                 <button class="btn btn-sm btn-outline-success flex-fill toggle-comparison" 
                         data-plan-id="{{ p.id }}"
-                        title="Add to comparison">
-                  <i class="bi bi-{% if p.id in comparison_plan_ids %}check-square-fill{% else %}plus-square{% endif %}"></i>
+                        data-plan-label="Plan {{ p.plan_number }}"
+                        aria-pressed="{% if p.id in comparison_plan_ids %}true{% else %}false{% endif %}"
+                        aria-label="{% if p.id in comparison_plan_ids %}Remove Plan {{ p.plan_number }} from{% else %}Add Plan {{ p.plan_number }} to{% endif %} comparison"
+                        title="{% if p.id in comparison_plan_ids %}Remove from{% else %}Add to{% endif %} comparison">
+                  <i class="bi bi-{% if p.id in comparison_plan_ids %}check-square-fill{% else %}plus-square{% endif %}" aria-hidden="true"></i>
                   <span class="d-none d-md-inline">Compare</span>
                 </button>
               </div>

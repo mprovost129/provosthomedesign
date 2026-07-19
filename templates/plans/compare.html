@@ -44,7 +44,7 @@
                                 </a>
                                 <br>
                                 {% if not is_shared_comparison %}<button class="btn btn-sm btn-outline-danger mt-2 remove-from-comparison"
-                                        data-plan-id="{{ plan.id }}">
+                                        data-plan-id="{{ plan.id }}" aria-label="Remove Plan {{ plan.plan_number }} from comparison">
                                     Remove
                                 </button>{% endif %}
                             </th>
@@ -187,8 +187,8 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">{% if plan.plan_name %}{{ plan.plan_name }} <span class="d-block small text-muted">{% endif %}Plan {{ plan.plan_number }}{% if plan.plan_name %}</span>{% endif %}</h5>
                         {% if not is_shared_comparison %}<button class="btn btn-sm btn-outline-danger remove-from-comparison"
-                                data-plan-id="{{ plan.id }}">
-                            <i class="bi bi-x-circle"></i>
+                                data-plan-id="{{ plan.id }}" aria-label="Remove Plan {{ plan.plan_number }} from comparison">
+                            <i class="bi bi-x-circle" aria-hidden="true"></i>
                         </button>{% endif %}
                     </div>
                     <div class="card-body">
