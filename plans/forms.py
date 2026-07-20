@@ -135,3 +135,14 @@ class PlanCommentForm(forms.Form):
             self.add_error("message", "Please provide a bit more detail.")
 
         return cleaned
+
+
+class SavedPlansEmailForm(forms.Form):
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={"class": "form-control", "autocomplete": "email"})
+    )
+    consent = forms.BooleanField(
+        required=True,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        error_messages={"required": "Please confirm that you want the saved-plan emails."},
+    )

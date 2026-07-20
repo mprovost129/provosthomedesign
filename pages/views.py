@@ -6,6 +6,7 @@ from django_ratelimit.decorators import ratelimit
 
 
 import contextlib
+import json
 import logging
 import re
 from typing import Iterable
@@ -119,14 +120,14 @@ SERVICE_PAGES = {
 }
 
 SERVICE_RELATED_LINKS = {
-    "custom-home-design-massachusetts": {"categories": ["ranch-house-plans", "colonial-house-plans", "modern-farmhouse-plans"], "resources": ["stock-plan-vs-custom-home-design", "what-to-have-before-contacting-home-designer"]},
+    "custom-home-design-massachusetts": {"categories": ["ranch-house-plans", "colonial-house-plans", "modern-farmhouse-plans"], "resources": ["stock-plan-vs-custom-home-design", "what-to-have-before-contacting-home-designer", "do-i-need-an-architect-for-residential-project"]},
     "custom-home-design-rhode-island": {"categories": ["cape-cod-house-plans", "ranch-house-plans", "one-story-house-plans"], "resources": ["stock-plan-vs-custom-home-design", "what-is-included-in-residential-permit-set"]},
     "house-plan-modifications": {"categories": ["narrow-lot-house-plans", "first-floor-primary-suite-plans"], "resources": ["can-a-stock-house-plan-be-modified", "stock-plan-vs-custom-home-design"]},
     "additions-and-renovations": {"categories": ["ranch-house-plans", "cape-cod-house-plans"], "resources": ["what-to-have-before-contacting-home-designer", "what-is-included-in-residential-permit-set"]},
     "residential-framing-plans": {"categories": ["one-story-house-plans", "modern-farmhouse-plans"], "resources": ["what-is-included-in-a-framing-plan", "what-is-included-in-residential-permit-set"]},
-    "permit-ready-house-plans": {"categories": ["one-story-house-plans", "small-house-plans-under-1500-square-feet"], "resources": ["what-is-included-in-residential-permit-set", "what-to-have-before-contacting-home-designer"]},
+    "permit-ready-house-plans": {"categories": ["one-story-house-plans", "small-house-plans-under-1500-square-feet"], "resources": ["what-is-included-in-residential-permit-set", "common-reasons-building-department-comments", "massachusetts-stretch-code-energy-design"]},
     "builder-contractor-plan-services": {"categories": ["ranch-house-plans", "colonial-house-plans"], "resources": ["what-is-included-in-a-framing-plan", "can-a-stock-house-plan-be-modified"]},
-    "massachusetts-adu-plans": {"categories": ["adu-carriage-house-plans", "small-house-plans-under-1500-square-feet"], "resources": ["what-to-have-before-contacting-home-designer", "what-is-included-in-residential-permit-set"]},
+    "massachusetts-adu-plans": {"categories": ["adu-carriage-house-plans", "small-house-plans-under-1500-square-feet"], "resources": ["massachusetts-adu-planning-considerations", "what-to-have-before-contacting-home-designer", "what-is-included-in-residential-permit-set"]},
     "new-england-house-plans": {"categories": ["ranch-house-plans", "colonial-house-plans", "cape-cod-house-plans"], "resources": ["stock-plan-vs-custom-home-design", "can-a-stock-house-plan-be-modified"]},
 }
 
@@ -151,6 +152,10 @@ RESOURCE_RELATED_LINKS = {
     "how-much-do-custom-house-plans-cost": ("custom-home-design-massachusetts", "colonial-house-plans"),
     "how-long-does-house-design-take": ("custom-home-design-rhode-island", "cape-cod-house-plans"),
     "how-to-choose-house-plan-for-narrow-lot": ("house-plan-modifications", "narrow-lot-house-plans"),
+    "do-i-need-an-architect-for-residential-project": ("custom-home-design-massachusetts", "ranch-house-plans"),
+    "massachusetts-adu-planning-considerations": ("massachusetts-adu-plans", "adu-carriage-house-plans"),
+    "massachusetts-stretch-code-energy-design": ("permit-ready-house-plans", "modern-farmhouse-plans"),
+    "common-reasons-building-department-comments": ("permit-ready-house-plans", "one-story-house-plans"),
 }
 
 RESOURCE_ARTICLES = {
@@ -240,6 +245,50 @@ RESOURCE_ARTICLES = {
             ("Confirm the buildable area", "Use a current survey and verify setbacks, easements, access, utilities, and other site constraints before selecting a footprint. Small dimensional differences can determine whether a plan is practical."),
             ("Study light, privacy, and circulation", "Side windows may be limited by neighboring homes, so front, rear, courtyard, or high-window strategies can matter. Efficient stairs and hallways preserve more of the narrow footprint for usable rooms."),
             ("Plan the garage and outdoor connection", "Front-entry, rear-access, detached, and tandem garages affect the entire first-floor layout. Consider how vehicles, entries, trash, utilities, and outdoor living will work together."),
+        ],
+    },
+    "do-i-need-an-architect-for-residential-project": {
+        "title": "Do I Need an Architect for My Residential Project?",
+        "description": "Learn when a residential designer may be an appropriate fit and when an architect, engineer, surveyor, or other specialist may be required.",
+        "summary": "The right design team depends on the project type, location, complexity, and local submission requirements. Confirm the required professionals before committing to a drawing scope.",
+        "reviewed": "July 2026",
+        "sections": [
+            ("Start with the project and jurisdiction", "Requirements vary by state, municipality, building type, size, use, and scope. A straightforward one- or two-family home may follow a different professional-design path than a mixed-use property, multifamily building, unusual structure, or project involving a change of use."),
+            ("When other professionals may be needed", "A surveyor may be needed for property and site information, a professional engineer for structural or civil work, and an energy specialist for compliance documentation. An architect may be required by the applicable law or requested because the project would benefit from that professional scope."),
+            ("Confirm responsibilities in writing", "Before design begins, identify who will prepare each drawing, calculation, report, and permit submission. The local building department can clarify its submission checklist, while each retained professional should define the limits of their own services."),
+        ],
+    },
+    "massachusetts-adu-planning-considerations": {
+        "title": "Massachusetts ADU Planning Considerations",
+        "description": "Plan a Massachusetts accessory dwelling unit around the property, household, access, utilities, code requirements, and local permitting process.",
+        "summary": "A successful ADU starts with more than a compact floor plan. Property constraints, access, privacy, parking, utilities, life safety, and local review all shape the practical design.",
+        "reviewed": "July 2026",
+        "sections": [
+            ("Verify the property constraints", "Begin with reliable site information and current requirements for the project address. Review setbacks, easements, septic or sewer capacity, utilities, parking, emergency access, and whether an attached, detached, or conversion approach fits the property."),
+            ("Design for independent daily use", "Consider a clear entrance, privacy from the primary home, daylight, storage, laundry, mechanical systems, and a comfortable connection to outdoor space. If aging in place is a goal, discuss step-free access, circulation widths, and adaptable bathroom features early."),
+            ("Coordinate the permit path", "The required drawings and supporting documents depend on the proposed work and municipality. Confirm zoning and building submission requirements, utility coordination, energy documentation, and any need for survey, septic, fire-protection, or engineering services before finalizing the scope."),
+        ],
+    },
+    "massachusetts-stretch-code-energy-design": {
+        "title": "Massachusetts Stretch Code and Energy-Design Coordination",
+        "description": "Understand why energy requirements should be coordinated early when planning a Massachusetts new home, addition, renovation, or ADU.",
+        "summary": "Energy compliance affects assemblies, equipment, documentation, and sometimes the design itself. The applicable code and compliance path should be confirmed for the project address early.",
+        "reviewed": "July 2026",
+        "sections": [
+            ("Confirm the applicable requirements", "Massachusetts energy requirements and municipal adoption can change. Determine which base, stretch, or specialized provisions apply to the project and permit date, then confirm the accepted compliance path with the authority having jurisdiction and the project energy professional."),
+            ("Coordinate design decisions early", "Window area and performance, insulation assemblies, air sealing, mechanical systems, ventilation, water heating, and renewable-energy readiness can affect drawings, specifications, pricing, and available space. Early coordination reduces late redesign."),
+            ("Plan the documentation handoff", "Clarify who will prepare energy models, compliance reports, testing, certificates, and field verification. Architectural drawings should align with the selected assemblies and equipment assumptions, but required analysis or certification must come from the appropriately qualified provider."),
+        ],
+    },
+    "common-reasons-building-department-comments": {
+        "title": "Common Reasons Residential Plans Receive Building-Department Comments",
+        "description": "Reduce avoidable permit-review questions by coordinating site information, drawing consistency, code details, and supporting documents before submission.",
+        "summary": "A review comment is not necessarily a design failure. Many comments result from missing information, conflicting sheets, or project-specific documents that were not included in the submission.",
+        "reviewed": "July 2026",
+        "sections": [
+            ("Incomplete project information", "Comments often request clearer property data, scope descriptions, code references, dimensions, elevations, sections, or construction details. Use the municipality's current checklist and make sure the application and drawings describe the same work."),
+            ("Coordination conflicts", "Floor plans, elevations, sections, structural information, energy documents, and manufacturer layouts must agree. Changes made on one sheet but not carried through the set can create questions about heights, openings, bearing, egress, or assemblies."),
+            ("Missing supporting documents", "The permit package may also need a survey, septic approval, energy report, structural calculations, truss documents, product information, or approvals from other departments. Confirm who owns each deliverable and respond to comments as one coordinated package."),
         ],
     },
 }
@@ -999,11 +1048,60 @@ def resource_detail(request: HttpRequest, resource_slug: str) -> HttpResponse:
         resource_slug,
         ("custom-home-design-massachusetts", "ranch-house-plans"),
     )
+    canonical_url = request.build_absolute_uri()
+    resources_url = request.build_absolute_uri(reverse("pages:resources"))
+    home_url = request.build_absolute_uri(reverse("pages:home"))
+    about_url = request.build_absolute_uri(reverse("pages:about"))
+    resource_schema = json.dumps(
+        {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "Article",
+                    "headline": article["title"],
+                    "description": article["description"],
+                    "dateModified": "2026-07-19",
+                    "author": {
+                        "@type": "Person",
+                        "name": "Michael Provost",
+                        "url": about_url,
+                    },
+                    "publisher": {
+                        "@type": "Organization",
+                        "@id": f"{home_url}#org",
+                        "name": "Provost Home Design",
+                    },
+                    "mainEntityOfPage": {
+                        "@type": "WebPage",
+                        "@id": canonical_url,
+                    },
+                },
+                {
+                    "@type": "BreadcrumbList",
+                    "itemListElement": [
+                        {
+                            "@type": "ListItem",
+                            "position": 1,
+                            "name": "Resources",
+                            "item": resources_url,
+                        },
+                        {
+                            "@type": "ListItem",
+                            "position": 2,
+                            "name": article["title"],
+                            "item": canonical_url,
+                        },
+                    ],
+                },
+            ],
+        }
+    ).replace("</", "<\\/")
     return render(
         request,
         "pages/resource_detail.html",
         {
             "article": article,
+            "resource_schema": resource_schema,
             "resource_slug": resource_slug,
             "related_service": {
                 "slug": service_slug,
@@ -1215,7 +1313,7 @@ def llms_txt(request):
 - [Resources]({base}/resources/): Residential planning guides covering plan selection, permit sets, modifications, framing, timelines, and site fit.
 - [House Plans]({base}/plans/): Catalog of stock house plans — filter by style (Colonial, Cape, Ranch), square footage, bedrooms, bathrooms, and garage.
 - [Services]({base}/services/): Custom home design, plan modifications, framing plans, permit sets, and exterior renderings.
-- [About]({base}/about/): Background on Michael Provost, licensed residential home designer.
+- [About]({base}/about/): Background on Michael Provost, a residential designer with construction, framing, and engineered-wood experience.
 - [Get Started]({base}/get-started/): Project intake form for new custom design inquiries.
 - [Contact]({base}/contact/): Contact form, business hours, and location map.
 - [Testimonials]({base}/testimonials/): Client reviews and testimonials.

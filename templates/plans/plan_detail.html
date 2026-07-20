@@ -109,8 +109,10 @@
         <li class="list-group-item d-flex justify-content-between"><span>Bathrooms</span><strong>{{ plan.bathrooms|bath_label }}</strong></li>
         <li class="list-group-item d-flex justify-content-between"><span>Stories</span><strong>{{ plan.stories }}</strong></li>
         <li class="list-group-item d-flex justify-content-between"><span>Garage stalls</span><strong>{{ plan.garage_stalls }}</strong></li>
+        {% if plan.has_publishable_dimensions %}
         <li class="list-group-item d-flex justify-content-between"><span>Width</span><strong>{{ plan.house_width_in|feet_inches }}</strong></li>
         <li class="list-group-item d-flex justify-content-between"><span>Depth</span><strong>{{ plan.house_depth_in|feet_inches }}</strong></li>
+        {% endif %}
       </ul>
 
       {% if plan.description %}

@@ -3,7 +3,7 @@ from __future__ import annotations
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import HouseStyle, PlanComparison, PlanFAQ, PlanGallery, Plans, SavedPlan
+from .models import HouseStyle, PlanComparison, PlanFAQ, PlanGallery, Plans, SavedPlan, SavedPlanEmailReminder
 
 
 @admin.register(HouseStyle)
@@ -47,6 +47,7 @@ class PlansAdmin(admin.ModelAdmin):
         "stories",
         "garage_stalls",
         "price",
+        "content_readiness",
         "is_available",
         "is_featured",
         "is_popular",
@@ -99,6 +100,17 @@ class PlansAdmin(admin.ModelAdmin):
     def price(self, obj):
         return f"${obj.plan_price:,.2f}" if obj.plan_price else "-"
 
+    @admin.display(description="Content", ordering="plan_name")
+    def content_readiness(self, obj):
+        missing = obj.content_missing_fields
+        if not missing:
+            return format_html('<span style="color:#198754;font-weight:600">Ready</span>')
+        return format_html(
+            '<span style="color:#b02a37;font-weight:600" title="Missing: {}">{} missing</span>',
+            ", ".join(missing),
+            len(missing),
+        )
+
     @admin.action(description="Mark selected plans as Featured")
     def make_featured(self, request, queryset):
         updated = queryset.update(is_featured=True)
@@ -145,6 +157,19 @@ class SavedPlanAdmin(admin.ModelAdmin):
     
     def has_add_permission(self, request):
         return False
+
+
+@admin.register(SavedPlanEmailReminder)
+class SavedPlanEmailReminderAdmin(admin.ModelAdmin):
+    list_display = ("email", "plan_count", "is_active", "consented_at", "next_send_at", "sent_at")
+    list_filter = ("is_active", "consented_at", "next_send_at")
+    search_fields = ("email", "plans__plan_number")
+    readonly_fields = ("token", "consented_at", "sent_at")
+    filter_horizontal = ("plans",)
+
+    @admin.display(description="Plans")
+    def plan_count(self, obj):
+        return obj.plans.count()
 
 
 @admin.register(PlanComparison)

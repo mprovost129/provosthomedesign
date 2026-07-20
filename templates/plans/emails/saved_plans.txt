@@ -1,0 +1,11 @@
+{% if follow_up %}Here is the one-time reminder you requested about your saved house plans.{% else %}Here is a copy of the house plans you saved on Provost Home Design. You will receive one reminder in seven days.{% endif %}
+
+{% for plan in plans %}{% if plan.plan_name %}{{ plan.plan_name }} - {% endif %}Plan {{ plan.plan_number }}
+{{ plan.square_footage }} sq ft | {{ plan.bedrooms }} bed | {{ plan.bathrooms }} bath
+{{ base_url }}{{ plan.get_absolute_url }}
+
+{% endfor %}Need help choosing or modifying a plan? Reply to this email or start a project:
+{{ base_url }}/get-started/
+
+Unsubscribe or cancel the reminder:
+{{ unsubscribe_url }}

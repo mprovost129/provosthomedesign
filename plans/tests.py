@@ -2,10 +2,12 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.test import TestCase
+from django.core import mail
+from django.core.management import call_command
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import HouseStyle, PlanFAQ, Plans
+from .models import HouseStyle, PlanFAQ, Plans, SavedPlanEmailReminder
 
 
 class PublicPlanCatalogTests(TestCase):
@@ -64,6 +66,27 @@ class PublicPlanCatalogTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["plan_count"], 2)
+
+    def test_content_readiness_identifies_missing_merchandising_fields(self):
+        self.assertFalse(self.plan.is_content_ready)
+        self.assertIn("overview", self.plan.content_missing_fields)
+        self.assertIn("delivery details", self.plan.content_missing_fields)
+
+        for field, _label in Plans.CONTENT_FIELD_LABELS:
+            setattr(self.plan, field, f"Complete {field}")
+
+        self.assertTrue(self.plan.is_content_ready)
+        self.assertEqual(self.plan.content_missing_fields, [])
+
+    def test_placeholder_dimensions_are_not_published_or_filterable(self):
+        self.other_plan.house_width_in = 1
+        self.other_plan.house_depth_in = 1
+        self.other_plan.save(update_fields=["house_width_in", "house_depth_in"])
+
+        self.assertFalse(self.other_plan.has_publishable_dimensions)
+        self.assertIn("verified dimensions", self.other_plan.content_missing_fields)
+        response = self.client.get(reverse("plans:plan_list"), {"max_width": "100"})
+        self.assertNotContains(response, "PHD-202")
 
     def test_filtered_and_search_pages_canonicalize_to_catalog(self):
         catalog_url = reverse("plans:plan_list")
@@ -222,5 +245,51 @@ class PublicPlanCatalogTests(TestCase):
         self.assertContains(response, self.plan.get_absolute_url())
         self.assertContains(response, "plans/main/phd-101.jpg")
         self.assertContains(response, "Front elevation of house plan PHD-101")
+
+    def test_saved_plan_email_opt_in_sends_summary_and_schedules_once(self):
+        session = self.client.session
+        session["saved_plans"] = [self.plan.id]
+        session.save()
+
+        response = self.client.post(
+            reverse("plans:email_saved_plans"),
+            {"email": "buyer@example.com", "consent": "on"},
+        )
+
+        self.assertRedirects(response, reverse("plans:favorites_list"))
+        reminder = SavedPlanEmailReminder.objects.get(email="buyer@example.com")
+        self.assertTrue(reminder.is_active)
+        self.assertEqual(list(reminder.plans.all()), [self.plan])
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Your saved house plans", mail.outbox[0].subject)
+
+    def test_saved_plan_reminder_requires_post_to_unsubscribe(self):
+        reminder = SavedPlanEmailReminder.objects.create(
+            email="buyer@example.com",
+            next_send_at=timezone.now() + timedelta(days=7),
+        )
+        reminder.plans.add(self.plan)
+        url = reverse("plans:saved_plan_reminder_unsubscribe", args=[reminder.token])
+
+        self.assertEqual(self.client.get(url).status_code, 200)
+        reminder.refresh_from_db()
+        self.assertTrue(reminder.is_active)
+        self.client.post(url)
+        reminder.refresh_from_db()
+        self.assertFalse(reminder.is_active)
+
+    def test_due_saved_plan_reminder_command_sends_once(self):
+        reminder = SavedPlanEmailReminder.objects.create(
+            email="buyer@example.com",
+            next_send_at=timezone.now() - timedelta(minutes=1),
+        )
+        reminder.plans.add(self.plan)
+
+        call_command("send_saved_plan_reminders")
+
+        reminder.refresh_from_db()
+        self.assertFalse(reminder.is_active)
+        self.assertIsNotNone(reminder.sent_at)
+        self.assertEqual(len(mail.outbox), 1)
 
 # Create your tests here.

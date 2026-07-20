@@ -101,6 +101,21 @@
                 {% endif %}
             </div>
         </div>
+
+        <section class="row justify-content-center mt-5" aria-labelledby="email-saved-plans-heading">
+            <div class="col-lg-8">
+                <div class="card border-primary-subtle bg-primary-subtle shadow-sm"><div class="card-body p-4">
+                    <h2 id="email-saved-plans-heading" class="h4">Email these plans to yourself</h2>
+                    <p class="text-muted">Receive a copy now and one reminder in seven days. No recurring marketing emails.</p>
+                    <form method="post" action="{% url 'plans:email_saved_plans' %}" class="row g-3" data-analytics-form="saved_plan_email">
+                        {% csrf_token %}
+                        <div class="col-md-7"><label class="form-label" for="{{ reminder_form.email.id_for_label }}">Email address</label>{{ reminder_form.email }}</div>
+                        <div class="col-12"><div class="form-check">{{ reminder_form.consent }}<label class="form-check-label" for="{{ reminder_form.consent.id_for_label }}">Send my saved-plan summary now and one reminder in seven days. I can unsubscribe at any time.</label></div></div>
+                        <div class="col-12"><button type="submit" class="btn btn-primary"><i class="bi bi-envelope me-1" aria-hidden="true"></i>Email My Saved Plans</button></div>
+                    </form>
+                </div></div>
+            </div>
+        </section>
     {% else %}
         <div class="row">
             <div class="col-md-12 text-center py-5">

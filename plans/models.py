@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 from decimal import Decimal, InvalidOperation
+import uuid
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -46,6 +47,21 @@ class PlansQuerySet(models.QuerySet):
 
 
 class Plans(models.Model):
+    CONTENT_FIELD_LABELS = (
+        ("plan_name", "plan name"),
+        ("description", "overview"),
+        ("ideal_for", "ideal buyer or use"),
+        ("key_features", "key features"),
+        ("layout_highlights", "layout highlights"),
+        ("foundation_framing", "foundation and framing"),
+        ("exterior_character", "exterior character"),
+        ("package_contents", "package contents"),
+        ("delivery_details", "delivery details"),
+        ("common_modifications", "common modifications"),
+        ("meta_description", "meta description"),
+        ("main_image", "main image"),
+    )
+
     # identifiers
     plan_number = models.CharField(max_length=50, unique=True)
     plan_name = models.CharField(max_length=120, blank=True, help_text="Descriptive public name, such as 'The Rehoboth Ranch'")
@@ -192,6 +208,11 @@ class Plans(models.Model):
         ft, inch = self._inches_to_feet_inches(int(self.house_depth_in or 0))
         return f'{ft}′ {inch}″'
 
+    @property
+    def has_publishable_dimensions(self) -> bool:
+        """Reject legacy placeholder dimensions without guessing public values."""
+        return bool(self.house_width_in >= 120 and self.house_depth_in >= 120)
+
     @staticmethod
     def _nonempty_lines(value: str) -> list[str]:
         return [line.strip() for line in (value or "").splitlines() if line.strip()]
@@ -211,6 +232,21 @@ class Plans(models.Model):
     @property
     def is_new(self) -> bool:
         return bool(self.created_date and self.created_date >= dj_timezone.now() - timedelta(days=60))
+
+    @property
+    def content_missing_fields(self) -> list[str]:
+        missing = [
+            label
+            for field, label in self.CONTENT_FIELD_LABELS
+            if not getattr(self, field, None)
+        ]
+        if not self.has_publishable_dimensions:
+            missing.append("verified dimensions")
+        return missing
+
+    @property
+    def is_content_ready(self) -> bool:
+        return not self.content_missing_fields
 
 
 class PlanFAQ(models.Model):
@@ -276,6 +312,25 @@ class SavedPlan(models.Model):
     
     def __str__(self) -> str:
         return f"{self.session_key[:8]}... saved {self.plan.plan_number}"
+
+
+class SavedPlanEmailReminder(models.Model):
+    """Consent record for one saved-plan summary and one scheduled follow-up."""
+
+    email = models.EmailField(unique=True)
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    plans = models.ManyToManyField(Plans, related_name="email_reminders")
+    is_active = models.BooleanField(default=True, db_index=True)
+    consented_at = models.DateTimeField(auto_now_add=True)
+    next_send_at = models.DateTimeField(db_index=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("next_send_at",)
+        indexes = [models.Index(fields=("is_active", "next_send_at"))]
+
+    def __str__(self) -> str:
+        return self.email
 
 
 # -----------------------------

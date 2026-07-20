@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><body style="margin:0;background:#f4f1eb;color:#1f2933;font-family:Arial,sans-serif;">
+  <div style="max-width:680px;margin:0 auto;padding:28px 18px;">
+    <div style="background:#fff;border:1px solid #d7dde2;border-radius:12px;padding:28px;">
+      <h1 style="font-size:24px;margin:0 0 12px;">{% if follow_up %}Your saved-plan reminder{% else %}Your saved house plans{% endif %}</h1>
+      <p style="line-height:1.6;color:#52606d;">{% if follow_up %}Here is the one-time reminder you requested.{% else %}Keep this email for easy access. I will send one reminder in seven days.{% endif %}</p>
+      {% for plan in plans %}
+        <div style="border-top:1px solid #e5e7eb;padding:16px 0;">
+          <h2 style="font-size:18px;margin:0 0 6px;"><a href="{{ base_url }}{{ plan.get_absolute_url }}" style="color:#0d6efd;">{% if plan.plan_name %}{{ plan.plan_name }} | {% endif %}Plan {{ plan.plan_number }}</a></h2>
+          <p style="margin:0;color:#52606d;">{{ plan.square_footage }} sq ft | {{ plan.bedrooms }} bed | {{ plan.bathrooms }} bath{% if plan.plan_price %} | ${{ plan.plan_price }}{% endif %}</p>
+        </div>
+      {% endfor %}
+      <p style="margin:18px 0 0;"><a href="{{ base_url }}/get-started/" style="display:inline-block;background:#0d6efd;color:#fff;text-decoration:none;padding:11px 18px;border-radius:6px;">Ask about these plans</a></p>
+      <p style="font-size:12px;color:#6b7280;margin:24px 0 0;">You requested these emails from your Favorites page. <a href="{{ unsubscribe_url }}">Unsubscribe or cancel the reminder</a>.</p>
+    </div>
+  </div>
+</body></html>

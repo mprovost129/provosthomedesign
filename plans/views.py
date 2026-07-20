@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -16,13 +17,15 @@ from django.db.models import Q
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from django_ratelimit.decorators import ratelimit
 
 from core.utils import verify_recaptcha_v3, get_client_ip
-from .models import HouseStyle as HouseStyleModel, Plans, PlanGallery
-from .forms import PlanQuickForm, PlanCommentForm
+from .models import HouseStyle as HouseStyleModel, Plans, PlanGallery, SavedPlanEmailReminder
+from .forms import PlanQuickForm, PlanCommentForm, SavedPlansEmailForm
+from .reminders import send_saved_plan_email
 from .session_utils import get_saved_plan_ids, get_comparison_plan_ids, get_recently_viewed_ids
 
 logger = logging.getLogger(__name__)
@@ -227,9 +230,9 @@ def plan_list(request: HttpRequest, house_style_slug: str | None = None) -> Http
     max_width = _as_int(max_width_raw)
     max_depth = _as_int(max_depth_raw)
     if max_width is not None:
-        qs = qs.filter(house_width_in__lte=max_width * 12)
+        qs = qs.filter(house_width_in__gte=120, house_width_in__lte=max_width * 12)
     if max_depth is not None:
-        qs = qs.filter(house_depth_in__lte=max_depth * 12)
+        qs = qs.filter(house_depth_in__gte=120, house_depth_in__lte=max_depth * 12)
     for feature in selected_features:
         qs = qs.filter(**{FEATURE_FILTERS[feature][0]: True})
 
@@ -704,8 +707,55 @@ def favorites_list(request: HttpRequest) -> HttpResponse:
         "saved_plans": plans_ordered,  # Template expects 'saved_plans', not 'plans'
         "saved_count": len(saved_ids),
         "comparison_plan_ids": session_utils.get_comparison_plan_ids(request),
+        "reminder_form": SavedPlansEmailForm(),
     }
     return render(request, "plans/favorites.html", context)
+
+
+@require_POST
+@ratelimit(key="ip", rate="3/h", block=True)
+def email_saved_plans(request: HttpRequest) -> HttpResponse:
+    form = SavedPlansEmailForm(request.POST)
+    saved_ids = session_utils.get_saved_plan_ids(request)
+    plans = list(Plans.objects.filter(id__in=saved_ids, is_available=True))
+    if not plans:
+        messages.warning(request, "Save at least one available plan before requesting an email.")
+        return redirect("plans:favorites_list")
+    if not form.is_valid():
+        messages.error(request, "Enter a valid email and confirm the reminder request.")
+        return redirect("plans:favorites_list")
+
+    email = form.cleaned_data["email"].strip().lower()
+    reminder, _ = SavedPlanEmailReminder.objects.update_or_create(
+        email=email,
+        defaults={
+            "is_active": True,
+            "consented_at": timezone.now(),
+            "next_send_at": timezone.now() + timedelta(days=7),
+            "sent_at": None,
+        },
+    )
+    reminder.plans.set(plans)
+    try:
+        send_saved_plan_email(reminder, follow_up=False)
+    except Exception:
+        logger.exception("Could not email saved plans to %s", email)
+        reminder.is_active = False
+        reminder.save(update_fields=["is_active"])
+        messages.error(request, "The email could not be sent right now. Please try again shortly.")
+    else:
+        messages.success(request, "Your saved plans were emailed. One reminder will follow in seven days.")
+    return redirect("plans:favorites_list")
+
+
+def saved_plan_reminder_unsubscribe(request: HttpRequest, token) -> HttpResponse:
+    reminder = get_object_or_404(SavedPlanEmailReminder, token=token)
+    if request.method == "POST" and reminder.is_active:
+        reminder.is_active = False
+        reminder.save(update_fields=["is_active"])
+        messages.success(request, "The saved-plan reminder has been canceled.")
+        return redirect("plans:saved_plan_reminder_unsubscribe", token=token)
+    return render(request, "plans/reminder_unsubscribe.html", {"reminder": reminder})
 
 
 # -----------------------------

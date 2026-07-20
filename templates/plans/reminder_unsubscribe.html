@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Saved Plan Email Preferences | Provost Home Design{% endblock %}
+{% block extra_meta %}<meta name="robots" content="noindex,nofollow">{% endblock %}
+{% block content %}
+<div class="container-lg py-5"><div class="row justify-content-center"><div class="col-lg-7">
+  <div class="card shadow-sm"><div class="card-body p-4 p-md-5">
+    <h1 class="h3">Saved-plan email preferences</h1>
+    {% if reminder.is_active %}
+      <p>Cancel the one-time reminder for <strong>{{ reminder.email }}</strong>?</p>
+      <form method="post">{% csrf_token %}<button class="btn btn-outline-danger" type="submit">Cancel reminder</button></form>
+    {% else %}
+      <p class="mb-0">This reminder is already inactive. No additional saved-plan reminder will be sent.</p>
+    {% endif %}
+  </div></div>
+</div></div></div>
+{% endblock %}

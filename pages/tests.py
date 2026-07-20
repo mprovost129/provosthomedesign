@@ -1,3 +1,7 @@
+from io import StringIO
+
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -184,6 +188,8 @@ class ResourcePageTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Plan with fewer unknowns")
         self.assertContains(response, "/resources/stock-plan-vs-custom-home-design/")
+        self.assertContains(response, "/resources/massachusetts-adu-planning-considerations/")
+        self.assertContains(response, "/resources/common-reasons-building-department-comments/")
 
     def test_resource_detail_has_scope_disclaimer(self):
         response = self.client.get("/resources/what-is-included-in-a-framing-plan/")
@@ -191,6 +197,21 @@ class ResourcePageTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "What Is Included in a Residential Framing Plan?")
         self.assertContains(response, "Project-specific requirements vary")
+        self.assertContains(response, "Michael Provost")
+        self.assertContains(response, "Last reviewed")
+
+    def test_resource_detail_has_article_and_breadcrumb_schema(self):
+        response = self.client.get(
+            "/resources/massachusetts-adu-planning-considerations/",
+            secure=True,
+            HTTP_HOST="www.provosthomedesign.com",
+        )
+
+        self.assertContains(response, 'property="og:type"        content="article"')
+        self.assertContains(response, '"@type": "Article"')
+        self.assertContains(response, '"@type": "BreadcrumbList"')
+        self.assertContains(response, '"@type": "Person"')
+        self.assertContains(response, "https://www.provosthomedesign.com/about/")
 
     def test_unknown_resource_returns_404(self):
         response = self.client.get("/resources/not-a-guide/")
@@ -211,6 +232,51 @@ class ResourcePageTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "/services/house-plan-modifications/")
         self.assertContains(response, "/plans/category/narrow-lot-house-plans/")
+
+    def test_new_regional_guides_are_available_and_in_sitemap(self):
+        guide_paths = (
+            "/resources/do-i-need-an-architect-for-residential-project/",
+            "/resources/massachusetts-adu-planning-considerations/",
+            "/resources/massachusetts-stretch-code-energy-design/",
+            "/resources/common-reasons-building-department-comments/",
+        )
+
+        for path in guide_paths:
+            with self.subTest(path=path):
+                self.assertEqual(self.client.get(path).status_code, 200)
+
+        sitemap_response = self.client.get("/sitemap.xml")
+        for path in guide_paths:
+            with self.subTest(sitemap_path=path):
+                self.assertContains(sitemap_response, path)
+
+
+class MainSiteTrustContentTests(TestCase):
+    def test_about_page_uses_project_specific_professional_guidance(self):
+        response = self.client.get("/about/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Who needs to be involved in your project?")
+        self.assertContains(
+            response,
+            "/resources/do-i-need-an-architect-for-residential-project/",
+        )
+        self.assertNotContains(response, "can legally prepare")
+
+    def test_content_audit_reports_authentic_content_gaps(self):
+        output = StringIO()
+
+        call_command("audit_main_site_content", stdout=output)
+
+        report = output.getvalue()
+        self.assertIn("No available house plans", report)
+        self.assertIn("No published project case studies", report)
+        with self.assertRaises(CommandError):
+            call_command(
+                "audit_main_site_content",
+                "--fail-on-gaps",
+                stdout=StringIO(),
+            )
 
 
 class ProjectCaseStudyTests(TestCase):

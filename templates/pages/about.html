@@ -3,9 +3,9 @@
 
 {% block title %}About Michael Provost | Provost Home Design{% endblock %}
 
-{% block meta_description %}Meet Michael Provost, a licensed residential home designer serving MA, RI, and NH. Permit-ready house plans, architectural drawings, and custom design services.{% endblock %}
+{% block meta_description %}Meet Michael Provost, a residential designer serving MA, RI, and NH with experience in construction, framing, engineered wood, and permit drawings.{% endblock %}
 {% block og_title %}About Michael Provost | Provost Home Design{% endblock %}
-{% block og_description %}Michael Provost brings structural engineering and residential construction experience to every project - code-compliant, buildable house plans for New England.{% endblock %}
+{% block og_description %}Michael Provost brings residential construction, framing, and engineered-wood experience to practical house plans for New England.{% endblock %}
 
 {% block content %}
 <div class="container-lg py-4">
@@ -152,20 +152,16 @@
     </div>
   </div>
 
-  <!-- Licensing Explanation -->
+  <!-- Professional-scope guidance -->
   <section class="mt-5">
     <div class="bg-white border rounded-3 shadow p-4">
-      <h2 class="h5 mb-3">Do You Need a Licensed Architect in Massachusetts?</h2>
-      <p>Many homeowners start their project by searching for an architect, and that's a reasonable instinct. But in Massachusetts and most of New England, a licensed architect is <strong>not required</strong> for most single-family residential homes.</p>
-      <p>Massachusetts building law (780 CMR) exempts most one and two-family dwellings from the architect stamp requirement. A <strong>residential designer</strong> can legally prepare and submit a complete permit set for your new home, addition, or renovation.</p>
-      <p>The practical difference for most homeowners:</p>
-      <ul class="mb-3">
-        <li class="mb-1"><strong>Cost</strong> - Residential designers typically charge significantly less than licensed architects for the same permit-ready drawings.</li>
-        <li class="mb-1"><strong>Focus</strong> - A residential designer specializes exclusively in houses, not commercial or institutional work.</li>
-        <li class="mb-1"><strong>Access</strong> - You work directly with the person drawing your plans, not a firm's junior staff.</li>
-      </ul>
-      <p class="mb-3">If your project falls outside the residential exemption; such as a home exceeding certain size or complexity thresholds, I'll let you know upfront and can refer you to a licensed architect when needed.</p>
-      <a href="{% url 'pages:contact' %}" class="btn btn-outline-primary btn-sm">Ask about your project</a>
+      <h2 class="h5 mb-3">Who needs to be involved in your project?</h2>
+      <p>The right team depends on the project type, location, complexity, and local submission requirements. Some projects also require services from an architect, professional engineer, surveyor, energy specialist, or other qualified professional.</p>
+      <p>Early in the process, I help identify the available information, expected drawing scope, and coordination questions so responsibilities can be confirmed before the work advances.</p>
+      <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'pages:resource_detail' 'do-i-need-an-architect-for-residential-project' %}" class="btn btn-outline-primary btn-sm">Read the professional-scope guide</a>
+        <a href="{% url 'pages:get_started' %}" class="btn btn-primary btn-sm">Discuss your project</a>
+      </div>
     </div>
   </section>
 

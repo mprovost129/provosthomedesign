@@ -34,6 +34,8 @@ urlpatterns = [
     
     # ── Favorites & Comparison (BEFORE detail route) ─────────────────────────
     path("favorites/", views.favorites_list, name="favorites_list"),
+    path("favorites/email/", views.email_saved_plans, name="email_saved_plans"),
+    path("favorites/reminders/<uuid:token>/", views.saved_plan_reminder_unsubscribe, name="saved_plan_reminder_unsubscribe"),
     path("favorite/toggle/<int:plan_id>/", views.toggle_favorite, name="toggle_favorite"),
     path("compare/", views.compare_plans, name="compare_plans"),
     path("compare/toggle/<int:plan_id>/", views.toggle_comparison, name="toggle_comparison"),

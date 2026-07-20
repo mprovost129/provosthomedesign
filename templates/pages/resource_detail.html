@@ -4,6 +4,8 @@
 {% block meta_description %}{{ article.description }}{% endblock %}
 {% block og_title %}{{ article.title }}{% endblock %}
 {% block og_description %}{{ article.description }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block jsonld %}<script type="application/ld+json">{{ resource_schema|safe }}</script>{% endblock %}
 
 {% block content %}
 <article class="container-lg py-4">
@@ -14,7 +16,11 @@
         <p class="text-uppercase small fw-semibold text-primary mb-2">Home design guide</p>
         <h1 class="display-5 fw-semibold mb-3">{{ article.title }}</h1>
         <p class="lead text-muted">{{ article.summary }}</p>
-        <p class="small text-muted mb-0">Last reviewed {{ article.reviewed }}</p>
+        <div class="d-flex flex-wrap align-items-center gap-2 small text-muted">
+          <span>By <a href="{% url 'pages:about' %}">Michael Provost</a>, residential designer with construction, framing, and engineered-wood experience</span>
+          <span aria-hidden="true">|</span>
+          <span>Last reviewed {{ article.reviewed }}</span>
+        </div>
       </header>
 
       {% for heading, body in article.sections %}

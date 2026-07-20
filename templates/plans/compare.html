@@ -118,13 +118,13 @@
                     <tr>
                         <th>Width</th>
                         {% for plan in plans %}
-                            <td class="text-center">{{ plan.house_width_display|default:"-" }}</td>
+                            <td class="text-center">{% if plan.has_publishable_dimensions %}{{ plan.house_width_display }}{% else %}Confirm before purchase{% endif %}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <th>Depth</th>
                         {% for plan in plans %}
-                            <td class="text-center">{{ plan.house_depth_display|default:"-" }}</td>
+                            <td class="text-center">{% if plan.has_publishable_dimensions %}{{ plan.house_depth_display }}{% else %}Confirm before purchase{% endif %}</td>
                         {% endfor %}
                     </tr>
 
@@ -213,7 +213,7 @@
                             <tr><th>Bedrooms:</th><td>{{ plan.bedrooms }}</td></tr>
                             <tr><th>Bathrooms:</th><td>{{ plan.bathrooms }}</td></tr>
                             <tr><th>Floors:</th><td>{{ plan.stories|default:"-" }}</td></tr>
-                            <tr><th>Dimensions:</th><td>{{ plan.house_width_display|default:"-" }} × {{ plan.house_depth_display|default:"-" }}</td></tr>
+                            <tr><th>Dimensions:</th><td>{% if plan.has_publishable_dimensions %}{{ plan.house_width_display }} × {{ plan.house_depth_display }}{% else %}Confirm before purchase{% endif %}</td></tr>
                             <tr><th>Garage:</th><td>{{ plan.garage_stalls|default:"-" }}{% if plan.garage_stalls %} car{% if plan.garage_stalls > 1 %}s{% endif %}{% endif %}</td></tr>
                             <tr><th>Base Price:</th><td>{% if plan.plan_price %}${{ plan.plan_price|floatformat:2 }}{% else %}Call for pricing{% endif %}</td></tr>
                         </table>
