@@ -8,6 +8,7 @@ Current site: {{ current_website|default:"-" }}
 Project type: {{ project_type|default:"Not specified" }}
 Budget:       {{ budget_range|default:"Not specified" }}
 Timing:       {{ timeline|default:"Not specified" }}
+Source:       {{ source|default:"Direct / not specified" }}
 
 --- Project Description ---
 

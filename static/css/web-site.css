@@ -84,6 +84,7 @@ body.web-site {
 .web-calc-row .line-total { text-align: right; }
 .web-about-principle { height: 100%; padding: 1.5rem 0; border-top: 1px solid rgba(255, 250, 241, .25); }
 .web-about-principle h3 { color: var(--web-cream); }
+.web-context-note { display: inline-block; padding: .75rem 1rem; background: rgba(70, 102, 77, .1); border-left: 4px solid var(--web-moss); color: var(--web-ink); }
 
 @media (prefers-reduced-motion: no-preference) {
   .web-reveal { animation: web-rise .65s ease both; }

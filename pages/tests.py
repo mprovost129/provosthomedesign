@@ -292,6 +292,50 @@ class SubdomainRoutingTests(TestCase):
         self.assertContains(response, "configured\\u002Dweb\\u002Dkey")
         self.assertNotContains(response, "6LdAVUEtAAAAANkmJS6XbgPzqDf_oX4Y45sUdmDV")
 
+    def test_service_contact_link_prefills_project_and_safe_source(self):
+        services_response = self.client.get("/services/", HTTP_HOST=self.web_host)
+        self.assertContains(
+            services_response,
+            "/contact/?project_type=redesign&amp;source=services_redesign",
+        )
+
+        response = self.client.get(
+            "/contact/?project_type=redesign&source=services_redesign",
+            HTTP_HOST=self.web_host,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Starting point:")
+        self.assertContains(response, "Redesign / Refresh")
+        self.assertContains(response, 'value="redesign" selected')
+        self.assertContains(response, 'name="source" value="services_redesign"')
+        self.assertContains(response, 'data-analytics-source="services_redesign"')
+
+    def test_web_contact_rejects_unknown_attribution_source(self):
+        cache.clear()
+        session = self.client.session
+        session["web_design_started_ts"] = time() - 3
+        session.save()
+
+        response = self.client.post(
+            "/contact/",
+            {
+                "name": "Alex Builder",
+                "email": "alex@example.com",
+                "project_type": "business_site",
+                "source": "untrusted-source",
+                "message": "This would otherwise be a valid inquiry.",
+                "terms_accepted": "on",
+            },
+            HTTP_HOST=self.web_host,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "The project link could not be verified")
+        self.assertContains(response, 'data-analytics-source="direct"')
+        self.assertNotContains(response, 'data-analytics-source="untrusted-source"')
+        self.assertEqual(WebDesignInquiry.objects.count(), 0)
+
     def test_invalid_web_inquiry_preserves_entered_data(self):
         cache.clear()
         session = self.client.session
@@ -338,6 +382,7 @@ class SubdomainRoutingTests(TestCase):
                 "project_type": "business_site",
                 "budget_range": "3k_7k",
                 "timeline": "1_2_months",
+                "source": "services_business",
                 "message": "We need a clearer site for our construction business.",
                 "terms_accepted": "on",
             },
@@ -355,6 +400,7 @@ class SubdomainRoutingTests(TestCase):
         self.assertEqual(inquiry.current_website, "https://alexbuilding.example.com")
         self.assertEqual(inquiry.budget_range, "3k_7k")
         self.assertEqual(inquiry.timeline, "1_2_months")
+        self.assertEqual(inquiry.source, "services_business")
         self.assertEqual(len(mail.outbox), 2)
         notification = next(
             message for message in mail.outbox
@@ -366,6 +412,7 @@ class SubdomainRoutingTests(TestCase):
         )
         self.assertIn("Alex Building Co.", notification.body)
         self.assertIn("$3,000-$7,000", notification.body)
+        self.assertIn("Services - business websites", notification.body)
         self.assertEqual(acknowledgment.to, ["alex@example.com"])
         self.assertIn("Your web project inquiry has been received", acknowledgment.body)
         self.assertIn("do not email passwords", acknowledgment.body)

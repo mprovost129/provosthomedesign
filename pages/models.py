@@ -503,6 +503,18 @@ WEB_TIMELINE_CHOICES = [
     ("flexible", "Flexible / exploring"),
 ]
 
+WEB_INQUIRY_SOURCE_CHOICES = [
+    ("", "Direct / not specified"),
+    ("home", "Web homepage"),
+    ("services_business", "Services - business websites"),
+    ("services_redesign", "Services - redesigns"),
+    ("services_app", "Services - custom applications"),
+    ("services_general", "Services - general"),
+    ("work", "Selected work"),
+    ("about", "About"),
+    ("pricing", "Pricing"),
+]
+
 
 class WebDesignInquiry(models.Model):
     name = models.CharField(max_length=120)
@@ -513,6 +525,12 @@ class WebDesignInquiry(models.Model):
     project_type = models.CharField(max_length=30, choices=WEB_PROJECT_TYPE_CHOICES, blank=True)
     budget_range = models.CharField(max_length=20, choices=WEB_BUDGET_RANGE_CHOICES, blank=True)
     timeline = models.CharField(max_length=20, choices=WEB_TIMELINE_CHOICES, blank=True)
+    source = models.CharField(
+        max_length=32,
+        choices=WEB_INQUIRY_SOURCE_CHOICES,
+        blank=True,
+        db_index=True,
+    )
     message = models.TextField()
     terms_accepted = models.BooleanField(default=False)
     ip_address = models.GenericIPAddressField(null=True, blank=True)

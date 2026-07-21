@@ -13,6 +13,7 @@ from .models import (
     PROJECT_TIMELINE_CHOICES,
     PROJECT_TYPE_CHOICES,
     WEB_BUDGET_RANGE_CHOICES,
+    WEB_INQUIRY_SOURCE_CHOICES,
     WEB_TIMELINE_CHOICES,
 )
 
@@ -390,6 +391,11 @@ class ContactForm(forms.Form):
 
 class WebDesignInquiryForm(forms.Form):
     website = forms.CharField(required=False, widget=forms.HiddenInput())  # honeypot
+    source = forms.ChoiceField(
+        choices=WEB_INQUIRY_SOURCE_CHOICES,
+        required=False,
+        widget=forms.HiddenInput(),
+    )
 
     name = forms.CharField(max_length=120)
     company_name = forms.CharField(max_length=150, required=False, label="Business name")

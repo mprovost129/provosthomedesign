@@ -305,8 +305,8 @@ class AffiliateProductAdmin(admin.ModelAdmin):
 
 @admin.register(WebDesignInquiry)
 class WebDesignInquiryAdmin(admin.ModelAdmin):
-    list_display = ("submitted_at", "name", "company_name", "project_type", "budget_range", "timeline", "status")
-    list_filter = ("status", "project_type", "budget_range", "timeline", "submitted_at")
+    list_display = ("submitted_at", "name", "company_name", "project_type", "source", "budget_range", "timeline", "status")
+    list_filter = ("status", "project_type", "source", "budget_range", "timeline", "submitted_at")
     search_fields = ("name", "company_name", "email", "phone", "current_website", "message")
     readonly_fields = ("submitted_at", "ip_address")
     date_hierarchy = "submitted_at"

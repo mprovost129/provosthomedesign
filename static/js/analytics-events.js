@@ -19,10 +19,16 @@
       form.addEventListener("focusin", function () {
         if (started) return;
         started = true;
-        sendEvent("form_start", { form_name: formName });
+        sendEvent("form_start", {
+          form_name: formName,
+          inquiry_source: form.dataset.analyticsSource || "direct",
+        });
       });
       form.addEventListener("submit", function () {
-        sendEvent("form_submit", { form_name: formName });
+        sendEvent("form_submit", {
+          form_name: formName,
+          inquiry_source: form.dataset.analyticsSource || "direct",
+        });
       });
     });
 

@@ -32,6 +32,7 @@ from .models import (
     AboutPage,
     SiteSettings,
     WebDesignInquiry,
+    WEB_INQUIRY_SOURCE_CHOICES,
     WEB_PROJECT_TYPE_CHOICES,
     PricingPage,
     AffiliateProduct,
@@ -1399,6 +1400,19 @@ def web_contact(request: HttpRequest) -> HttpResponse:
         _as_list(getattr(settings, "CONTACT_TO_EMAILS", None))
         or [email or getattr(settings, "DEFAULT_FROM_EMAIL", "")]
     )
+    source_labels = dict(WEB_INQUIRY_SOURCE_CHOICES)
+    project_type_labels = dict(WEB_PROJECT_TYPE_CHOICES)
+    requested_project_type = (
+        request.POST.get("project_type", "")
+        if request.method == "POST"
+        else request.GET.get("project_type", "")
+    )
+    requested_source = (
+        request.POST.get("source", "")
+        if request.method == "POST"
+        else request.GET.get("source", "")
+    )
+    selected_project_label = project_type_labels.get(requested_project_type, "")
 
     if request.method == "POST":
         form = WebDesignInquiryForm(request.POST)
@@ -1440,6 +1454,7 @@ def web_contact(request: HttpRequest) -> HttpResponse:
                 project_type=cd.get("project_type") or "",
                 budget_range=cd.get("budget_range") or "",
                 timeline=cd.get("timeline") or "",
+                source=cd.get("source") or "",
                 message=cd["message"],
                 terms_accepted=bool(cd.get("terms_accepted")),
                 ip_address=get_client_ip(request),
@@ -1456,6 +1471,7 @@ def web_contact(request: HttpRequest) -> HttpResponse:
                 "project_type": pt_label,
                 "budget_range": inquiry.get_budget_range_display() or "Not specified",
                 "timeline": inquiry.get_timeline_display() or "Not specified",
+                "source": inquiry.get_source_display() or "Direct / not specified",
                 "message": cd["message"],
                 "admin_url": request.build_absolute_uri(f"/admin/pages/webdesigninquiry/{inquiry.pk}/change/"),
                 "request_url": request.build_absolute_uri(),
@@ -1521,13 +1537,20 @@ def web_contact(request: HttpRequest) -> HttpResponse:
         messages.error(request, "Please correct the errors below.")
     else:
         request.session["web_design_started_ts"] = time()
-        form = WebDesignInquiryForm()
+        form = WebDesignInquiryForm(initial={
+            "project_type": requested_project_type if selected_project_label else "",
+            "source": requested_source if requested_source in source_labels else "",
+        })
 
     return render(request, "pages/web_contact.html", {
         "form": form,
         "recaptcha_site_key": (
             (getattr(settings, "RECAPTCHA_SITE_KEY", "") or "").strip()
             or (getattr(settings, "RECAPTCHA_PUBLIC_KEY", "") or "").strip()
+        ),
+        "selected_project_label": selected_project_label,
+        "analytics_source": (
+            requested_source if requested_source in source_labels else "direct"
         ),
     })
 
