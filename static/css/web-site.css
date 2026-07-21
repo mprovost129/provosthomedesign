@@ -91,6 +91,9 @@ body.web-site {
 .web-deliverable-list { border-top: 1px solid rgba(255, 250, 241, .25); }
 .web-deliverable-list li { display: grid; grid-template-columns: 3rem 1fr; gap: 1rem; padding: 1.15rem 0; border-bottom: 1px solid rgba(255, 250, 241, .25); color: #e2e7e4; }
 .web-deliverable-list span { color: var(--web-orange); font-size: .8rem; font-weight: 800; letter-spacing: .12em; }
+.web-error-stage { position: relative; overflow: hidden; min-height: 70vh; padding: clamp(5rem, 10vw, 8rem) 0; }
+.web-error-code { position: absolute; right: 2vw; top: -5rem; color: rgba(70, 102, 77, .1); font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif; font-size: clamp(14rem, 34vw, 30rem); font-weight: 700; line-height: 1; }
+.web-error-card { position: relative; max-width: 760px; }
 
 @media (prefers-reduced-motion: no-preference) {
   .web-reveal { animation: web-rise .65s ease both; }

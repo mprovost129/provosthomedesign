@@ -4,7 +4,8 @@ from time import time
 from django.core import mail
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import Client, TestCase, override_settings
+from django.test import Client, RequestFactory, TestCase, override_settings
+from django.urls import get_resolver, get_urlconf, set_urlconf
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils.datastructures import MultiValueDict
@@ -231,6 +232,48 @@ class SubdomainRoutingTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 404)
+
+    @override_settings(DEBUG=False)
+    def test_production_web_404_uses_branded_recovery_page(self):
+        response = Client().get(
+            "/missing-web-page/",
+            HTTP_HOST=self.web_host,
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertContains(response, "That page is not part of this site.", status_code=404)
+        self.assertContains(response, 'name="robots" content="noindex,follow"', status_code=404)
+        self.assertContains(response, 'href="/services/"', status_code=404)
+        self.assertContains(response, 'href="/contact/"', status_code=404)
+        self.assertContains(response, "/static/images/web-mark.svg", status_code=404)
+        self.assertNotContains(response, "Search Plans", status_code=404)
+
+    def test_web_urlconf_registers_all_branded_error_handlers(self):
+        resolver = get_resolver("config.web_urls")
+        expected = {
+            "400": "web_bad_request",
+            "403": "web_permission_denied",
+            "404": "web_page_not_found",
+            "500": "web_server_error",
+        }
+
+        for status, function_name in expected.items():
+            with self.subTest(status=status):
+                handler = resolver.resolve_error_handler(status)
+                self.assertEqual(handler.__name__, function_name)
+
+        request = RequestFactory().get("/broken/", HTTP_HOST=self.web_host)
+        request.session = {}
+        previous_urlconf = get_urlconf()
+        set_urlconf("config.web_urls")
+        try:
+            response = resolver.resolve_error_handler("500")(request)
+        finally:
+            set_urlconf(previous_urlconf)
+
+        self.assertEqual(response.status_code, 500)
+        self.assertContains(response, "The site could not complete that request.", status_code=500)
+        self.assertContains(response, "/static/images/web-mark.svg", status_code=500)
 
     def test_web_about_leads_with_durable_positioning_and_real_work(self):
         response = self.client.get("/about/", HTTP_HOST=self.web_host)

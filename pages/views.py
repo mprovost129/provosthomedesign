@@ -1534,6 +1534,63 @@ def web_privacy(request: HttpRequest) -> HttpResponse:
     return render(request, "pages/web_privacy.html")
 
 
+def _web_error_response(
+    request: HttpRequest,
+    *,
+    status: int,
+    title: str,
+    heading: str,
+    message: str,
+) -> HttpResponse:
+    return render(request, "pages/web_error.html", {
+        "IS_WEB_DESIGN_SITE": True,
+        "error_status": status,
+        "error_title": title,
+        "error_heading": heading,
+        "error_message": message,
+    }, status=status)
+
+
+def web_bad_request(request: HttpRequest, exception=None) -> HttpResponse:
+    return _web_error_response(
+        request,
+        status=400,
+        title="Request Could Not Be Completed",
+        heading="That request could not be understood.",
+        message="Nothing has been submitted. Return to the previous page or start again from a service page.",
+    )
+
+
+def web_permission_denied(request: HttpRequest, exception=None) -> HttpResponse:
+    return _web_error_response(
+        request,
+        status=403,
+        title="Access Not Available",
+        heading="This page is not available to this request.",
+        message="If you expected access, contact me with the page address and what you were trying to do.",
+    )
+
+
+def web_page_not_found(request: HttpRequest, exception=None) -> HttpResponse:
+    return _web_error_response(
+        request,
+        status=404,
+        title="Page Not Found",
+        heading="That page is not part of this site.",
+        message="The address may have changed, or the link may point to a service that is no longer at this location.",
+    )
+
+
+def web_server_error(request: HttpRequest) -> HttpResponse:
+    return _web_error_response(
+        request,
+        status=500,
+        title="Page Could Not Be Completed",
+        heading="The site could not complete that request.",
+        message="Please try again. If the problem continues, contact me and include the page address you were visiting.",
+    )
+
+
 @ratelimit(key="ip", rate="5/m", block=True)
 def web_contact(request: HttpRequest) -> HttpResponse:
     s = SiteSettings.load()

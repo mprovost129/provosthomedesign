@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block body_class %}web-site{% endblock %}
+{% block title %}{{ error_title }} | Provost Home Design Web{% endblock %}
+{% block meta_description %}{{ error_message }}{% endblock %}
+{% block extra_meta %}<meta name="robots" content="noindex,follow">{% endblock %}
+
+{% block content %}
+<section class="web-error-stage">
+  <div class="container-lg position-relative">
+    <div class="web-error-code" aria-hidden="true">{{ error_status }}</div>
+    <div class="web-card web-error-card">
+      <p class="web-kicker">Error {{ error_status }}</p>
+      <h1 class="web-section-title">{{ error_heading }}</h1>
+      <p class="lead text-muted mt-4">{{ error_message }}</p>
+      <div class="d-flex flex-wrap gap-2 mt-4">
+        <a class="btn web-btn-primary btn-lg" href="{% url 'pages:web_design' %}">Return home</a>
+        <a class="btn btn-outline-dark btn-lg" href="{% url 'pages:web_services' %}">Review services</a>
+        <a class="btn btn-link text-dark" href="{% url 'pages:web_contact' %}">Contact me</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
