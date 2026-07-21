@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>We received your web project inquiry</title>
+  </head>
+  <body style="margin:0; padding:0; background:#f3efe7; color:#20241f;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f3efe7; padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px; width:100%; background:#fffdf8; border:1px solid #d9d1c3;">
+            <tr>
+              <td style="padding:24px 28px; background:#1e2b24; color:#fffdf8; font:700 20px/1.3 Georgia, serif;">
+                Provost Home Design
+                <div style="margin-top:5px; color:#e4a853; font:400 12px/1.5 Arial, sans-serif; letter-spacing:.08em; text-transform:uppercase;">Web services</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:30px 28px; font:400 15px/1.7 Arial, sans-serif;">
+                <h1 style="margin:0 0 16px; color:#20241f; font:700 26px/1.25 Georgia, serif;">Your inquiry is in good hands.</h1>
+                <p style="margin:0 0 18px;">Hi {{ from_name }},</p>
+                <p style="margin:0 0 20px;">Thanks for reaching out about {{ company_name|default:"your business" }}. Your web project inquiry has been received.</p>
+
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 24px; background:#f3efe7; border-left:4px solid #c96f3b;">
+                  <tr><td style="padding:16px 18px; font:400 14px/1.7 Arial, sans-serif;"><strong>Project type:</strong> {{ project_type }}<br><strong>Budget:</strong> {{ budget_range }}<br><strong>Timing:</strong> {{ timeline }}</td></tr>
+                </table>
+
+                <h2 style="margin:0 0 10px; color:#20241f; font:700 18px/1.3 Georgia, serif;">What happens next</h2>
+                <p style="margin:0 0 20px;">I will review your goals and follow up with any questions or suggest a short introductory call. Before work begins, you will receive a written scope covering deliverables, timing, and cost.</p>
+                <p style="margin:0 0 24px; padding:12px 14px; border:1px solid #d9d1c3; color:#5b5f58; font-size:13px;"><strong>Security note:</strong> Please do not email passwords, login details, or other sensitive credentials.</p>
+                <a href="{{ web_url }}" style="display:inline-block; padding:12px 18px; background:#c96f3b; color:#ffffff; font-weight:700; text-decoration:none;">View web services</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:18px 28px; border-top:1px solid #d9d1c3; color:#6d706a; font:400 12px/1.5 Arial, sans-serif;">
+                Provost Home Design web services
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

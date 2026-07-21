@@ -1,0 +1,17 @@
+Hi {{ from_name }},
+
+Thanks for reaching out about {{ company_name|default:"your business" }}. Your web project inquiry has been received.
+
+Project type: {{ project_type }}
+Budget: {{ budget_range }}
+Timing: {{ timeline }}
+
+What happens next
+
+I will review your goals and follow up with any questions or suggest a short introductory call. Before work begins, you will receive a written scope covering deliverables, timing, and cost.
+
+For your security, please do not email passwords, login details, or other sensitive credentials.
+
+Learn more: {{ web_url }}
+
+Provost Home Design

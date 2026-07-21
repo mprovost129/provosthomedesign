@@ -4,7 +4,7 @@ from time import time
 from django.core import mail
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import TestCase, override_settings
+from django.test import Client, TestCase, override_settings
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils.datastructures import MultiValueDict
@@ -150,6 +150,28 @@ class SubdomainRoutingTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, text)
 
+    def test_web_case_studies_have_detail_pages_and_schema(self):
+        expected = {
+            "/work/j-fisk-construction/": "What the project had to accomplish",
+            "/work/provost-home-design-platform/": "A working production result",
+        }
+
+        for path, text in expected.items():
+            with self.subTest(path=path):
+                response = self.client.get(path, HTTP_HOST=self.web_host)
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, text)
+                self.assertContains(response, '"@type": "Article"')
+                self.assertContains(response, '"@type": "BreadcrumbList"')
+
+    def test_unknown_web_case_study_returns_404(self):
+        response = self.client.get(
+            "/work/not-a-project/",
+            HTTP_HOST=self.web_host,
+        )
+
+        self.assertEqual(response.status_code, 404)
+
     def test_web_subdomain_pricing_uses_web_url_surface(self):
         response = self.client.get("/pricing/", HTTP_HOST=self.web_host)
 
@@ -174,6 +196,11 @@ class SubdomainRoutingTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Web Design &amp; Development")
         self.assertContains(response, "New England House Plans")
+        self.assertContains(
+            response,
+            'href="https://web.provosthomedesign.com/"',
+        )
+        self.assertContains(response, "Web Services")
 
     def test_web_subdomain_does_not_expose_house_plan_catalog(self):
         response = self.client.get("/plans/", HTTP_HOST=self.web_host)
@@ -268,9 +295,31 @@ class SubdomainRoutingTests(TestCase):
         self.assertEqual(inquiry.current_website, "https://alexbuilding.example.com")
         self.assertEqual(inquiry.budget_range, "3k_7k")
         self.assertEqual(inquiry.timeline, "1_2_months")
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertIn("Alex Building Co.", mail.outbox[0].body)
-        self.assertIn("$3,000-$7,000", mail.outbox[0].body)
+        self.assertEqual(len(mail.outbox), 2)
+        notification = next(
+            message for message in mail.outbox
+            if message.subject.startswith("[Web Design]")
+        )
+        acknowledgment = next(
+            message for message in mail.outbox
+            if message.subject == "We received your web project inquiry"
+        )
+        self.assertIn("Alex Building Co.", notification.body)
+        self.assertIn("$3,000-$7,000", notification.body)
+        self.assertEqual(acknowledgment.to, ["alex@example.com"])
+        self.assertIn("Your web project inquiry has been received", acknowledgment.body)
+        self.assertIn("do not email passwords", acknowledgment.body)
+
+    @override_settings(DEBUG=False)
+    def test_production_csp_allows_analytics_and_recaptcha_connections(self):
+        response = Client().get("/", HTTP_HOST=self.web_host)
+
+        policy = response["Content-Security-Policy"]
+        self.assertIn("www.google-analytics.com", policy)
+        self.assertIn("region1.google-analytics.com", policy)
+        self.assertIn("www.googletagmanager.com", policy)
+        self.assertIn("www.google.com", policy)
+        self.assertIn("www.gstatic.com", policy)
 
     def test_regional_service_page_is_available_on_main_site(self):
         response = self.client.get(
@@ -291,6 +340,8 @@ class SubdomainRoutingTests(TestCase):
         self.assertContains(web_response, "web.provosthomedesign.com")
         self.assertContains(web_response, "/services/")
         self.assertContains(web_response, "/contact/")
+        self.assertContains(web_response, "/work/j-fisk-construction/")
+        self.assertContains(web_response, "/work/provost-home-design-platform/")
         self.assertNotContains(web_response, "/plans/")
 
     def test_each_host_advertises_only_its_own_sitemaps(self):

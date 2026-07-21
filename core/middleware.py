@@ -83,6 +83,11 @@ class ContentSecurityPolicyMiddleware:
             ],
             "connect-src": [
                 "'self'",
+                "www.google-analytics.com",  # GA4 collection
+                "region1.google-analytics.com",
+                "www.googletagmanager.com",
+                "www.google.com",             # reCAPTCHA verification
+                "www.gstatic.com",
                 *extra("CSP_EXTRA_CONNECT_SRC"),
             ],
             "base-uri":    ["'self'"],

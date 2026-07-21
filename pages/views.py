@@ -1157,6 +1157,55 @@ WEB_PROCESS_STEPS = [
     {"title": "Launch", "desc": "Test, deploy, hand off access, and define support after the site goes live."},
 ]
 
+WEB_CASE_STUDIES = {
+    "j-fisk-construction": {
+        "title": "J. Fisk Construction",
+        "category": "Local business website",
+        "summary": "A focused, responsive website that gives a local construction company a credible online home and a direct path from service interest to contact.",
+        "image": "images/fisk_truck.jpeg",
+        "image_alt": "J. Fisk Construction truck and business branding",
+        "live_url": "https://www.jfiskconstruction.com/",
+        "client_need": "Create a professional web presence that clearly introduces the construction business, makes its services understandable, and gives prospective customers an easy way to reach out.",
+        "challenge": "A contractor website has to build confidence quickly without burying visitors in copy. The structure needed to work on phones, keep service information easy to scan, and move interested visitors toward a real conversation.",
+        "approach": [
+            "Lead with the company and its construction work rather than technical features.",
+            "Organize service information into a simple, mobile-friendly path.",
+            "Use direct contact actions so visitors do not have to hunt for the next step.",
+            "Keep the presentation practical and aligned with the existing business identity.",
+        ],
+        "deliverables": [
+            "Responsive business website",
+            "Service-focused page structure",
+            "Contact and lead path",
+            "Domain launch and production deployment",
+        ],
+        "outcome": "The finished site is live and gives J. Fisk Construction a clear destination to share with referrals and prospective customers across desktop and mobile devices.",
+    },
+    "provost-home-design-platform": {
+        "title": "Provost Home Design Platform",
+        "category": "Custom Django application",
+        "summary": "A public website and operational platform built around house-plan discovery, structured inquiries, customer workflows, administration, and long-term growth.",
+        "image": "images/hero-blueprint.jpg",
+        "image_alt": "House plans representing the Provost Home Design web platform",
+        "live_url": "https://www.provosthomedesign.com/",
+        "client_need": "Support both sides of a residential-design business: help visitors discover plans and services while giving the owner practical tools to manage content, inquiries, customers, and ongoing operations.",
+        "challenge": "A brochure site could not support a searchable plan catalog, saved plans, comparisons, structured project intake, protected workflows, media management, and business administration in one coordinated system.",
+        "approach": [
+            "Build the public plan catalog around useful search, filtering, comparison, and inquiry paths.",
+            "Create structured forms and protected workflows instead of relying on unorganized email alone.",
+            "Use Django administration and custom business tools for maintainable day-to-day control.",
+            "Coordinate media storage, SEO, accessibility, analytics, security, and deployment as one platform.",
+        ],
+        "deliverables": [
+            "Responsive public website and plan catalog",
+            "Favorites, comparisons, and guided plan discovery",
+            "Project intake and customer workflows",
+            "Administration, media storage, email, analytics, and automation",
+        ],
+        "outcome": "The platform is live as the working digital foundation of Provost Home Design and can continue evolving as the residential business adds plans, content, and operational tools.",
+    },
+}
+
 
 def web_design(request: HttpRequest) -> HttpResponse:
     return render(request, "pages/web_design.html", {"process_steps": WEB_PROCESS_STEPS})
@@ -1167,7 +1216,39 @@ def web_services(request: HttpRequest) -> HttpResponse:
 
 
 def web_work(request: HttpRequest) -> HttpResponse:
-    return render(request, "pages/web_work.html")
+    studies = [dict(study, slug=slug) for slug, study in WEB_CASE_STUDIES.items()]
+    return render(request, "pages/web_work.html", {"case_studies": studies})
+
+
+def web_case_study(request: HttpRequest, case_study_slug: str) -> HttpResponse:
+    case_study = WEB_CASE_STUDIES.get(case_study_slug)
+    if not case_study:
+        raise Http404("Web case study not found")
+    canonical_url = request.build_absolute_uri()
+    schema = json.dumps({
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "Article",
+                "headline": case_study["title"],
+                "description": case_study["summary"],
+                "author": {"@type": "Person", "name": "Michael Provost"},
+                "publisher": {"@id": f"{request.build_absolute_uri('/')}#org"},
+                "mainEntityOfPage": {"@type": "WebPage", "@id": canonical_url},
+            },
+            {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    {"@type": "ListItem", "position": 1, "name": "Work", "item": request.build_absolute_uri(reverse("pages:web_work"))},
+                    {"@type": "ListItem", "position": 2, "name": case_study["title"], "item": canonical_url},
+                ],
+            },
+        ],
+    }).replace("</", "<\\/")
+    return render(request, "pages/web_case_study.html", {
+        "case_study": case_study,
+        "case_study_schema": schema,
+    })
 
 
 def web_about(request: HttpRequest) -> HttpResponse:
@@ -1284,6 +1365,35 @@ def web_contact(request: HttpRequest) -> HttpResponse:
                 messages.warning(request, "Your inquiry was saved, but the email notification was delayed. Please do not resubmit it.")
                 return redirect("pages:web_thanks")
 
+            ack_ctx = {
+                **ctx,
+                "web_url": getattr(
+                    settings,
+                    "WEB_DESIGN_URL",
+                    request.build_absolute_uri("/"),
+                ).rstrip("/"),
+            }
+            try:
+                ack_text = render_to_string("pages/emails/web_design_ack.txt", ack_ctx)
+                ack_html = render_to_string("pages/emails/web_design_ack.html", ack_ctx)
+                acknowledgment = EmailMultiAlternatives(
+                    subject="We received your web project inquiry",
+                    body=ack_text,
+                    from_email=getattr(
+                        settings,
+                        "AUTO_ACK_FROM_EMAIL",
+                        getattr(settings, "DEFAULT_FROM_EMAIL", None),
+                    ),
+                    to=[cd["email"]],
+                )
+                acknowledgment.attach_alternative(ack_html, "text/html")
+                acknowledgment.send(fail_silently=False)
+            except Exception:
+                logger.exception(
+                    "Web design inquiry acknowledgment failed for inquiry %s",
+                    inquiry.pk,
+                )
+
             messages.success(request, "Thanks! Your inquiry has been sent. I'll be in touch soon.")
             return redirect("pages:web_thanks")
 
@@ -1365,6 +1475,8 @@ def web_llms_txt(request):
 - [Home]({base}/): Local-business website positioning, process, and primary project paths.
 - [Services]({base}/services/): Business websites, redesigns, and custom Django applications.
 - [Work]({base}/work/): Selected live website and application projects.
+- [J. Fisk Construction Case Study]({base}/work/j-fisk-construction/): Focused local-contractor business website.
+- [Provost Home Design Platform Case Study]({base}/work/provost-home-design-platform/): Custom Django catalog and business platform.
 - [About]({base}/about/): Michael Provost's approach to practical business websites and software.
 - [Pricing]({base}/pricing/): Published web-service pricing and interactive estimates when available.
 - [Contact]({base}/contact/): Web project inquiry form.
