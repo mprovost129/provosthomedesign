@@ -189,7 +189,35 @@ class SubdomainRoutingTests(TestCase):
         response = self.client.get("/pricing/", HTTP_HOST=self.web_host)
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Web Design Pricing", html=False)
+        self.assertContains(response, "Pricing starts with a defined scope.")
+        self.assertContains(response, "Public packages are not published yet.")
+        self.assertContains(response, "Know what the price covers.")
+        self.assertContains(response, 'data-analytics-label="pricing final"')
+
+    def test_published_web_rate_uses_the_planning_estimate_surface(self):
+        page = PricingPage.load()
+        page.title = "Web Services Pricing"
+        page.subtitle = "Published planning rates."
+        page.is_published = True
+        page.save()
+        page.items.create(
+            label="Additional content page",
+            description="A page using the approved design system.",
+            amount="250.00",
+            unit_label="per page",
+            show_in_calculator=True,
+            default_quantity="1.0",
+            is_active=True,
+        )
+
+        response = self.client.get("/pricing/", HTTP_HOST=self.web_host)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Published planning rates.")
+        self.assertContains(response, "Additional content page")
+        self.assertContains(response, "$250")
+        self.assertContains(response, "Build a rough estimate.")
+        self.assertContains(response, "Final scope and price are confirmed in writing")
 
     def test_main_domain_legacy_web_page_redirects_permanently(self):
         response = self.client.get("/web-design/", HTTP_HOST=self.main_host)
@@ -235,6 +263,7 @@ class SubdomainRoutingTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'href="/contact/"')
+        self.assertContains(response, 'href="/services/"')
         self.assertNotContains(response, "/get-started/")
 
     @override_settings(RECAPTCHA_SITE_KEY="configured-web-key")

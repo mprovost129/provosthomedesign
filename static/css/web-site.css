@@ -72,6 +72,16 @@ body.web-site {
 .web-faq summary::after { content: "+"; position: absolute; right: .5rem; color: var(--web-orange-dark); font-family: "Avenir Next", "Century Gothic", Calibri, sans-serif; font-size: 1.4rem; }
 .web-faq[open] summary::after { content: "-"; }
 .web-faq p { padding: 0 3rem 1.5rem 0; color: var(--web-muted); }
+.web-scope-note { padding: 1.5rem; border: 1px solid rgba(255, 250, 241, .35); border-left: 5px solid var(--web-orange); color: var(--web-cream); }
+.web-rate-inclusions { padding: 1.5rem; border: 1px solid rgba(255, 250, 241, .25); }
+.web-rate-inclusions li + li { margin-top: .5rem; }
+.web-rate-list { border-top: 1px solid rgba(255, 250, 241, .25); }
+.web-rate-row { display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; padding: 1.25rem 0; border-bottom: 1px solid rgba(255, 250, 241, .25); }
+.web-rate-row h3 { color: var(--web-cream); }
+.web-rate-price { color: var(--web-cream); font-weight: 800; text-align: right; }
+.web-rate-price small { display: block; color: #bdc6c2; font-size: .75rem; font-weight: 400; }
+.web-calc-row { display: grid; grid-template-columns: 1fr 10rem 6rem; gap: 1rem; align-items: center; padding: 1rem 0; }
+.web-calc-row .line-total { text-align: right; }
 
 @media (prefers-reduced-motion: no-preference) {
   .web-reveal { animation: web-rise .65s ease both; }
@@ -84,4 +94,6 @@ body.web-site {
   .web-hero::after { width: 20rem; height: 20rem; right: -13rem; top: 1rem; }
   .web-card { padding: 1.4rem; }
   .web-process-step { grid-template-columns: 2.5rem 1fr; gap: .75rem; }
+  .web-calc-row { grid-template-columns: 1fr 8.5rem; }
+  .web-calc-row .line-total { grid-column: 2; }
 }

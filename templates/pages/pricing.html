@@ -1,205 +1,119 @@
 {% extends "base.html" %}
-{% load static %}
 {% block body_class %}web-site{% endblock %}
-
-{% block title %}Web Design Pricing | Provost Home Design{% endblock %}
-{% block meta_description %}Transparent pricing for web design and development services. Flat-rate packages and hourly options - use the calculator to estimate your project cost.{% endblock %}
-{% block og_title %}Pricing • Provost Home Design{% endblock %}
-{% block og_description %}Web design pricing from Provost Home Design. Flat-rate and hourly options with a live pricing calculator.{% endblock %}
+{% block title %}Website Project Pricing | Provost Home Design Web{% endblock %}
+{% block meta_description %}Understand how business website, redesign, and custom application projects are scoped and priced before requesting a written proposal.{% endblock %}
+{% block og_title %}Website Project Pricing | Provost Home Design Web{% endblock %}
+{% block og_description %}Clear scope, cost drivers, and written proposals for website and custom application projects.{% endblock %}
 
 {% block content %}
-<div class="container-lg py-4">
+<header class="web-section pb-5">
+  <div class="container-lg">
+    <p class="web-kicker">Pricing approach</p>
+    <h1 class="web-section-title col-lg-9">Pricing starts with a defined scope.</h1>
+    <p class="lead text-muted col-lg-8 mt-4">A five-page business website and a customer portal should not be priced from the same formula. The proposal connects cost to the work, responsibilities, and outcome.</p>
+  </div>
+</header>
 
-  {# ── Header ────────────────────────────────────────────────────────────── #}
-  <header class="mb-4">
-    <h1 class="h3 mb-1">{{ page_obj.title|default:"Pricing" }}</h1>
-    {% if page_obj.subtitle %}
-      <p class="text-muted mb-0">{{ page_obj.subtitle }}</p>
-    {% endif %}
-  </header>
-
-  {% if not page_obj.is_published %}
-    <div class="alert alert-info">Pricing information is being prepared. <a href="{% url 'pages:web_contact' %}">Discuss the project</a> for a scoped quote.</div>
-  {% else %}
-
+<section class="container-lg pb-5">
   <div class="row g-4">
+    <div class="col-md-4"><article class="web-card"><span class="web-card-number">01 / CONTENT</span><h2 class="h3 mt-3">Pages and readiness</h2><p class="mb-0">Page count matters, but so do content organization, copy support, photography, and how much existing material can be reused.</p></article></div>
+    <div class="col-md-4"><article class="web-card"><span class="web-card-number">02 / FUNCTION</span><h2 class="h3 mt-3">Features and integrations</h2><p class="mb-0">Forms, payments, accounts, data migration, third-party systems, permissions, and custom workflows change the build and testing effort.</p></article></div>
+    <div class="col-md-4"><article class="web-card"><span class="web-card-number">03 / OPERATIONS</span><h2 class="h3 mt-3">Launch and support</h2><p class="mb-0">Hosting, domain changes, training, maintenance, response expectations, and ongoing improvements are identified rather than assumed.</p></article></div>
+  </div>
+</section>
 
-    {# ── Left column: What's Included + Pricing Items ───────────────────── #}
-    <div class="col-lg-7">
-
-      {# What's Included #}
-      {% if page_obj.included_heading or page_obj.bullets %}
-      <section class="mb-4">
-        <div class="bg-white border rounded-3 shadow-sm p-4">
-          {% if page_obj.included_heading %}
-            <h2 class="h5 fw-bold mb-3">{{ page_obj.included_heading }}</h2>
-          {% endif %}
-          {% with bullets=page_obj.bullets %}
-            {% if bullets %}
-              <ul class="mb-0">
-                {% for bullet in bullets %}
-                  <li class="mb-1">{{ bullet }}</li>
-                {% endfor %}
-              </ul>
-            {% endif %}
-          {% endwith %}
-        </div>
-      </section>
-      {% endif %}
-
-      {# Pricing Items list #}
-      {% if items %}
-      <section>
-        <h2 class="h5 fw-bold mb-3">Rates</h2>
-        <div class="list-group shadow-sm rounded-3 overflow-hidden">
-          {% for item in items %}
-          <div class="list-group-item list-group-item-action d-flex align-items-start justify-content-between gap-3 py-3">
-            <div class="flex-grow-1">
-              <div class="fw-semibold">{{ item.label }}</div>
-              {% if item.description %}
-                <div class="small text-muted mt-1">{{ item.description }}</div>
-              {% endif %}
-              <span class="badge mt-1 {% if item.price_type == 'hourly' %}text-bg-warning{% else %}text-bg-light border{% endif %}">
-                {% if item.price_type == 'hourly' %}Per Hour{% else %}Flat Rate{% endif %}
-              </span>
-            </div>
-            <div class="text-end text-nowrap">
-              <div class="fw-bold fs-5">${{ item.amount|floatformat:"-2" }}</div>
-              {% if item.unit_label %}
-                <div class="small text-muted">{{ item.unit_label }}</div>
-              {% elif item.price_type == 'hourly' %}
-                <div class="small text-muted">/ hour</div>
-              {% endif %}
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </section>
-      {% endif %}
-
-    </div>
-
-    {# ── Right column: Calculator ────────────────────────────────────────── #}
-    <div class="col-lg-5">
-      <div class="sticky-top sticky-nav-offset">
-        <div class="bg-white border rounded-3 shadow-sm p-4">
-          <h2 class="h5 fw-bold mb-1">Pricing Calculator</h2>
-          <p class="small text-muted mb-4">Adjust quantities to estimate your project cost.</p>
-
-          {% if calc_items %}
-          <div id="calc-rows">
-            {% for item in calc_items %}
-            <div class="mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
-              <div class="d-flex justify-content-between align-items-start mb-1">
-                <label class="form-label fw-medium mb-0 me-2" for="calc-{{ item.pk }}">
-                  {{ item.label }}
-                </label>
-                <span class="small text-muted text-nowrap">
-                  ${{ item.amount|floatformat:"-2" }}{% if item.price_type == 'hourly' %}/hr{% endif %}
-                </span>
-              </div>
-              {% if item.description %}
-                <p class="small text-muted mb-2">{{ item.description }}</p>
-              {% endif %}
-              <div class="input-group input-group-sm">
-                <button class="btn btn-outline-secondary qty-dec" type="button" aria-label="Decrease">−</button>
-                <input
-                  type="number"
-                  id="calc-{{ item.pk }}"
-                  class="form-control text-center calc-qty"
-                  value="{{ item.default_quantity|floatformat:'-1' }}"
-                  min="0"
-                  step="{% if item.price_type == 'hourly' %}0.5{% else %}1{% endif %}"
-                  data-price="{{ item.amount }}"
-                  data-type="{{ item.price_type }}"
-                  data-label="{{ item.label }}"
-                  aria-label="Quantity for {{ item.label }}">
-                <button class="btn btn-outline-secondary qty-inc" type="button" aria-label="Increase">+</button>
-              </div>
-              <div class="d-flex justify-content-end mt-1">
-                <span class="small text-muted line-total" data-for="{{ item.pk }}">
-                  -
-                </span>
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-
-          <div class="border-top pt-3 mt-1">
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="fw-semibold">Estimated Total</span>
-              <span class="fw-bold fs-4" id="calc-total">$0</span>
-            </div>
-            <p class="small text-muted mb-3 mt-1">This is an estimate. Final price confirmed after consultation.</p>
-            <a href="{% url 'pages:web_contact' %}" class="btn web-btn-primary w-100" data-analytics-event="web_project_cta" data-analytics-label="pricing estimate">
-              <i class="bi bi-chat-dots me-1" aria-hidden="true"></i> Get a Quote
-            </a>
-          </div>
-
-          {% else %}
-          <p class="text-muted">No calculable items configured yet.</p>
-          {% endif %}
+{% if page_obj.is_published and items %}
+<section class="web-section web-band">
+  <div class="container-lg">
+    <div class="row g-5">
+      <div class="col-lg-7">
+        <p class="web-kicker">Published rates</p>
+        <h2 class="web-section-title">{{ page_obj.title }}</h2>
+        {% if page_obj.subtitle %}<p class="fs-5 mt-4">{{ page_obj.subtitle }}</p>{% endif %}
+        {% if page_obj.bullets %}<div class="web-rate-inclusions mt-4"><h3 class="h4">{{ page_obj.included_heading|default:"Typical foundation" }}</h3><ul class="mb-0">{% for bullet in page_obj.bullets %}<li>{{ bullet }}</li>{% endfor %}</ul></div>{% endif %}
+      </div>
+      <div class="col-lg-5">
+        <div class="web-rate-list">
+          {% for item in items %}<article class="web-rate-row"><div><h3 class="h5 mb-1">{{ item.label }}</h3>{% if item.description %}<p class="small mb-0">{{ item.description }}</p>{% endif %}</div><div class="web-rate-price">${{ item.amount|floatformat:"-2" }}<small>{% if item.unit_label %}{{ item.unit_label }}{% elif item.price_type == 'hourly' %}per hour{% else %}flat rate{% endif %}</small></div></article>{% endfor %}
         </div>
       </div>
     </div>
-
   </div>
-  {% endif %}
-
-</div>
+</section>
 
 {% if calc_items %}
-<script>
-(function () {
-  function fmt(n) {
-    return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-  }
-
-  function recalc() {
-    var total = 0;
-    document.querySelectorAll('.calc-qty').forEach(function (input) {
-      var qty = parseFloat(input.value) || 0;
-      var price = parseFloat(input.dataset.price) || 0;
-      var lineTotal = qty * price;
-      total += lineTotal;
-
-      var id = input.id.replace('calc-', '');
-      var lineEl = document.querySelector('.line-total[data-for="' + id + '"]');
-      if (lineEl) {
-        lineEl.textContent = qty > 0 ? fmt(lineTotal) : '-';
-      }
-    });
-    document.getElementById('calc-total').textContent = fmt(total);
-  }
-
-  document.querySelectorAll('.calc-qty').forEach(function (input) {
-    input.addEventListener('input', recalc);
-    input.addEventListener('change', recalc);
-  });
-
-  document.querySelectorAll('.qty-dec').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var input = btn.parentElement.querySelector('.calc-qty');
-      var step = parseFloat(input.step) || 1;
-      var val = parseFloat(input.value) || 0;
-      input.value = Math.max(0, val - step);
-      recalc();
-    });
-  });
-
-  document.querySelectorAll('.qty-inc').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var input = btn.parentElement.querySelector('.calc-qty');
-      var step = parseFloat(input.step) || 1;
-      var val = parseFloat(input.value) || 0;
-      input.value = val + step;
-      recalc();
-    });
-  });
-
-  recalc();
-})();
-</script>
+<section class="web-section">
+  <div class="container-lg">
+    <div class="row g-5 align-items-start">
+      <div class="col-lg-5"><p class="web-kicker">Planning tool</p><h2 class="web-section-title">Build a rough estimate.</h2><p class="text-muted mt-4">This combines published line items for early planning. It is not a quote or proposal, and some projects will need work not represented here.</p></div>
+      <div class="col-lg-7"><div class="web-form-shell p-4 p-lg-5">
+        <div id="calc-rows">
+          {% for item in calc_items %}<div class="web-calc-row{% if not forloop.last %} border-bottom{% endif %}"><div><label class="form-label fw-bold mb-1" for="calc-{{ item.pk }}">{{ item.label }}</label><div class="small text-muted">${{ item.amount|floatformat:"-2" }}{% if item.price_type == 'hourly' %} per hour{% endif %}</div></div><div class="input-group"><button class="btn btn-outline-secondary qty-dec" type="button" aria-label="Decrease {{ item.label }} quantity">-</button><input type="number" id="calc-{{ item.pk }}" class="form-control text-center calc-qty" value="{{ item.default_quantity|floatformat:'-1' }}" min="0" step="{% if item.price_type == 'hourly' %}0.5{% else %}1{% endif %}" data-price="{{ item.amount }}" aria-label="Quantity for {{ item.label }}"><button class="btn btn-outline-secondary qty-inc" type="button" aria-label="Increase {{ item.label }} quantity">+</button></div><strong class="line-total" data-for="{{ item.pk }}">$0</strong></div>{% endfor %}
+        </div>
+        <div class="d-flex justify-content-between align-items-center border-top pt-4 mt-3"><span class="fw-bold">Planning estimate</span><span class="h2 mb-0" id="calc-total">$0</span></div>
+        <p class="small text-muted mt-3 mb-0">Final scope and price are confirmed in writing after discovery.</p>
+      </div></div>
+    </div>
+  </div>
+</section>
+{% endif %}
+{% else %}
+<section class="web-section web-band">
+  <div class="container-lg">
+    <div class="row g-5 align-items-center">
+      <div class="col-lg-7"><p class="web-kicker">Why there is no instant quote</p><h2 class="web-section-title">Useful pricing needs context.</h2><p class="fs-5 mt-4">Public packages are not published yet. Rather than advertise a low entry price and discover the real requirements later, I review the goal and provide a scoped proposal.</p></div>
+      <div class="col-lg-5"><div class="web-scope-note"><strong>A first inquiry does not commit you to a project.</strong><p class="mt-2 mb-0">It gives us enough context to decide whether there is a practical fit and what discovery should happen next.</p></div></div>
+    </div>
+  </div>
+</section>
 {% endif %}
 
+<section class="web-section">
+  <div class="container-lg">
+    <div class="row g-5">
+      <div class="col-lg-5"><p class="web-kicker">Every proposal</p><h2 class="web-section-title">Know what the price covers.</h2></div>
+      <div class="col-lg-7"><div class="row g-4">
+        <div class="col-sm-6"><div class="web-rule pt-3"><h3 class="h4">Deliverables</h3><p class="text-muted">The pages, features, integrations, and launch work included.</p></div></div>
+        <div class="col-sm-6"><div class="web-rule pt-3"><h3 class="h4">Responsibilities</h3><p class="text-muted">Who supplies content, access, approvals, and third-party accounts.</p></div></div>
+        <div class="col-sm-6"><div class="web-rule pt-3"><h3 class="h4">Milestones</h3><p class="text-muted">Review points, payment timing, and the conditions that affect schedule.</p></div></div>
+        <div class="col-sm-6"><div class="web-rule pt-3"><h3 class="h4">After launch</h3><p class="text-muted">Ownership, recurring fees, warranty terms, maintenance, and optional support.</p></div></div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<section class="container-lg pb-5">
+  <div class="web-card d-lg-flex justify-content-between align-items-center gap-4"><div><p class="web-kicker">Get a scoped answer</p><h2 class="h1">Start with the business goal.</h2><p class="mb-lg-0">A short description is enough to begin. You do not need a finished specification.</p></div><div class="d-flex flex-wrap gap-2 flex-shrink-0"><a class="btn btn-outline-dark btn-lg" href="{% url 'pages:web_services' %}">Review services</a><a class="btn web-btn-primary btn-lg" href="{% url 'pages:web_contact' %}" data-analytics-event="web_project_cta" data-analytics-label="pricing final">Discuss the project</a></div></div>
+</section>
 {% endblock %}
+
+{% block extra_scripts %}{% if calc_items %}<script>
+(function () {
+  function formatMoney(value) {
+    return '$' + value.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  }
+  function recalculate() {
+    var total = 0;
+    document.querySelectorAll('.calc-qty').forEach(function (input) {
+      var lineTotal = (parseFloat(input.value) || 0) * (parseFloat(input.dataset.price) || 0);
+      total += lineTotal;
+      var output = document.querySelector('.line-total[data-for="' + input.id.replace('calc-', '') + '"]');
+      if (output) output.textContent = formatMoney(lineTotal);
+    });
+    document.getElementById('calc-total').textContent = formatMoney(total);
+  }
+  document.querySelectorAll('.calc-qty').forEach(function (input) {
+    input.addEventListener('input', recalculate);
+  });
+  document.querySelectorAll('.qty-dec, .qty-inc').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var input = button.parentElement.querySelector('.calc-qty');
+      var step = parseFloat(input.step) || 1;
+      var direction = button.classList.contains('qty-inc') ? 1 : -1;
+      input.value = Math.max(0, (parseFloat(input.value) || 0) + (step * direction));
+      recalculate();
+    });
+  });
+  recalculate();
+})();
+</script>{% endif %}{% endblock %}
