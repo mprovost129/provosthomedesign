@@ -1348,7 +1348,32 @@ def web_case_study(request: HttpRequest, case_study_slug: str) -> HttpResponse:
 
 
 def web_about(request: HttpRequest) -> HttpResponse:
-    return render(request, "pages/web_about.html")
+    canonical_url = request.build_absolute_uri()
+    schema = json.dumps({
+        "@context": "https://schema.org",
+        "@type": "ProfilePage",
+        "name": "About Michael Provost",
+        "url": canonical_url,
+        "mainEntity": {
+            "@type": "Person",
+            "name": "Michael Provost",
+            "url": canonical_url,
+            "jobTitle": "Web Designer and Developer",
+            "worksFor": {
+                "@id": f"{request.build_absolute_uri('/')}#org",
+            },
+            "sameAs": [
+                "https://www.linkedin.com/in/michael-provost-6077a318/",
+            ],
+            "knowsAbout": [
+                "Business website design",
+                "Django web application development",
+                "Website accessibility",
+                "Website deployment",
+            ],
+        },
+    }).replace("</", "<\\/")
+    return render(request, "pages/web_about.html", {"about_schema": schema})
 
 
 def web_thanks(request: HttpRequest) -> HttpResponse:
@@ -1562,9 +1587,9 @@ def web_robots_txt(request):
 
 def web_llms_txt(request):
     base = request.build_absolute_uri("/").rstrip("/")
-    content = f"""# Provost Home Design - Web Design
+    content = f"""# Provost Home Design Web Services
 
-> Custom business websites and web applications. This service is temporarily hosted under the Provost Home Design name while a standalone brand is developed.
+> Practical business websites, website redesigns, and custom web applications built around clear goals and reliable operation.
 
 ## Site sections
 
@@ -1574,7 +1599,7 @@ def web_llms_txt(request):
 - [J. Fisk Construction Case Study]({base}/work/j-fisk-construction/): Focused local-contractor business website.
 - [Provost Home Design Platform Case Study]({base}/work/provost-home-design-platform/): Custom Django catalog and business platform.
 - [About]({base}/about/): Michael Provost's approach to practical business websites and software.
-- [Pricing]({base}/pricing/): Published web-service pricing and interactive estimates when available.
+- [Pricing]({base}/pricing/): Project cost drivers, proposal approach, and published planning rates when available.
 - [Contact]({base}/contact/): Web project inquiry form.
 - [Privacy]({base}/privacy/): Web-services privacy notice.
 - [Terms]({base}/terms/): General web-services and inquiry terms.

@@ -1,9 +1,62 @@
 {% extends "base.html" %}
 {% block body_class %}web-site{% endblock %}
-{% block title %}About the Web Practice | Provost Home Design{% endblock %}
-{% block meta_description %}Meet Michael Provost and learn how practical business experience informs the websites and Django applications he builds.{% endblock %}
+{% block title %}About Michael Provost | Web Designer and Developer{% endblock %}
+{% block meta_description %}Meet Michael Provost and learn how business ownership and production experience shape the websites and Django applications he builds.{% endblock %}
+{% block og_title %}About Michael Provost | Provost Home Design Web{% endblock %}
+{% block og_description %}Practical web design and development informed by the realities of running and growing a business.{% endblock %}
+{% block jsonld %}<script type="application/ld+json">{{ about_schema|safe }}</script>{% endblock %}
+
 {% block content %}
-<header class="web-section"><div class="container-lg"><p class="web-kicker">About</p><h1 class="web-section-title col-lg-10">A business owner building for other business owners.</h1></div></header>
-<section class="container-lg pb-5"><div class="row g-5"><div class="col-lg-7"><p class="fs-4">I am Michael Provost. I built the web platform behind Provost Home Design because the business needed more than a brochure site: it needed plan discovery, inquiry workflows, customer tools, administration, and room to grow.</p><p>That experience shapes how I approach web work. The website has to serve the customer, but it also has to make sense for the person maintaining the business after launch. Clear content, reliable forms, useful administration, and honest scope matter more than chasing every trend.</p><p>I also built the website for J. Fisk Construction, translating a local contractor's work into a straightforward online presence. Today, the web practice leads with focused websites for local businesses and takes on custom Django applications where the operational need justifies a deeper build.</p></div><aside class="col-lg-5"><div class="web-card"><p class="web-kicker">Working principles</p><ul class="fs-5 mb-0"><li class="mb-3">Explain the business clearly.</li><li class="mb-3">Make the next action obvious.</li><li class="mb-3">Build for mobile and accessibility.</li><li class="mb-3">Keep ownership and maintenance clear.</li><li>Use custom code when it creates real value.</li></ul></div></aside></div></section>
-<section class="web-band web-section"><div class="container-lg"><div class="row g-5"><div class="col-lg-7"><p class="web-kicker">Current name, separate direction</p><h2 class="web-section-title">Provost Home Design for now.</h2></div><div class="col-lg-5"><p class="fs-5">This web practice is intentionally separated at <strong>web.provosthomedesign.com</strong> while standalone branding is developed. It is not using the Create Build Launch name.</p><a class="btn btn-light mt-3" href="{% url 'pages:web_contact' %}">Start a conversation</a></div></div></div></section>
+<header class="web-section">
+  <div class="container-lg">
+    <p class="web-kicker">About Michael Provost</p>
+    <h1 class="web-section-title col-lg-10">A business owner building for other business owners.</h1>
+    <p class="lead text-muted col-lg-8 mt-4">I build websites from both sides of the desk: as the person responsible for the code and as the person who depends on the finished system to support real work.</p>
+  </div>
+</header>
+
+<section class="container-lg pb-5">
+  <div class="row g-5">
+    <div class="col-lg-7">
+      <p class="fs-4">I am Michael Provost. I built the platform behind Provost Home Design because the business needed more than a brochure site. It needed plan discovery, structured inquiries, customer tools, administration, and room to grow.</p>
+      <p>That experience shapes every web engagement. A site has to make sense to a first-time visitor, but it also has to remain useful to the people answering leads, updating content, reviewing data, and paying the ongoing bills.</p>
+      <p>I also built the website for J. Fisk Construction, translating a local contractor's work into a focused online presence. The web practice now leads with clear business websites and takes on custom Django applications when the operational need justifies a deeper build.</p>
+    </div>
+    <aside class="col-lg-5">
+      <div class="web-card">
+        <p class="web-kicker">One accountable point of contact</p>
+        <h2 class="h2">Direct from discovery through launch.</h2>
+        <p>You work with the person planning, building, testing, and deploying the project. Questions do not disappear between sales, design, and development teams.</p>
+        <a href="{% url 'pages:web_contact' %}" data-analytics-event="web_project_cta" data-analytics-label="about direct contact">Discuss a project</a>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<section class="web-section web-band">
+  <div class="container-lg">
+    <div class="row g-4 align-items-end mb-5"><div class="col-lg-8"><p class="web-kicker">The owner-operator perspective</p><h2 class="web-section-title">The website is part of the business, not a separate art project.</h2></div><div class="col-lg-4"><p class="mb-0">Design decisions are evaluated against customer understanding, day-to-day operation, and long-term responsibility.</p></div></div>
+    <div class="row g-4">
+      <div class="col-md-4"><div class="web-about-principle"><span class="web-card-number">01 / CUSTOMER</span><h3 class="h2 mt-3">Make the path clear.</h3><p>Visitors should quickly understand the offer, the evidence, and the next useful action.</p></div></div>
+      <div class="col-md-4"><div class="web-about-principle"><span class="web-card-number">02 / OPERATOR</span><h3 class="h2 mt-3">Respect the handoff.</h3><p>Access, administration, maintenance, recurring costs, and ownership need to remain understandable after launch.</p></div></div>
+      <div class="col-md-4"><div class="web-about-principle"><span class="web-card-number">03 / INVESTMENT</span><h3 class="h2 mt-3">Build only what earns its place.</h3><p>Custom code is valuable when it solves an operational problem, not when a simpler site would do the job better.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="web-section">
+  <div class="container-lg">
+    <div class="row g-5">
+      <div class="col-lg-5"><p class="web-kicker">Evidence in production</p><h2 class="web-section-title">Two scopes. Both built for real use.</h2><p class="text-muted mt-4">The work ranges from a focused contractor website to the application supporting a residential-design business.</p></div>
+      <div class="col-lg-7">
+        <article class="web-rule py-4"><p class="web-kicker">Local business website</p><h3 class="h2">J. Fisk Construction</h3><p>A straightforward service and contact experience for a working construction company.</p><a href="{% url 'pages:web_case_study' 'j-fisk-construction' %}">Read the contractor website case study</a></article>
+        <article class="web-rule py-4"><p class="web-kicker">Custom Django application</p><h3 class="h2">Provost Home Design Platform</h3><p>A public catalog and operational foundation spanning discovery, inquiry, customer, administration, and growth tools.</p><a href="{% url 'pages:web_case_study' 'provost-home-design-platform' %}">Read the application case study</a></article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container-lg pb-5">
+  <div class="web-card d-lg-flex align-items-center justify-content-between gap-4"><div><p class="web-kicker">A practical first step</p><h2 class="h1 mb-2">Start with what the business needs to improve.</h2><p class="text-muted mb-lg-0">The right format, scope, and technology can follow from there.</p></div><a class="btn web-btn-primary btn-lg flex-shrink-0" href="{% url 'pages:web_contact' %}" data-analytics-event="web_project_cta" data-analytics-label="about final">Start the conversation</a></div>
+</section>
 {% endblock %}

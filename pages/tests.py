@@ -163,6 +163,24 @@ class SubdomainRoutingTests(TestCase):
         self.assertContains(response, '"@type": "FAQPage"')
         self.assertContains(response, 'data-analytics-label="services final"')
 
+    def test_web_about_leads_with_durable_positioning_and_real_work(self):
+        response = self.client.get("/about/", HTTP_HOST=self.web_host)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "One accountable point of contact")
+        self.assertContains(response, "The owner-operator perspective")
+        self.assertContains(response, 'href="/work/j-fisk-construction/"')
+        self.assertContains(response, 'href="/work/provost-home-design-platform/"')
+        self.assertContains(response, '"@type": "ProfilePage"')
+        self.assertContains(response, '"@type": "Person"')
+        self.assertNotContains(response, "Provost Home Design for now")
+        self.assertNotContains(response, "standalone branding")
+
+        llms_response = self.client.get("/llms.txt", HTTP_HOST=self.web_host)
+        self.assertContains(llms_response, "Provost Home Design Web Services")
+        self.assertNotContains(llms_response, "temporarily hosted")
+        self.assertNotContains(llms_response, "standalone brand")
+
     def test_web_case_studies_have_detail_pages_and_schema(self):
         expected = {
             "/work/j-fisk-construction/": "What the project had to accomplish",

@@ -82,6 +82,8 @@ body.web-site {
 .web-rate-price small { display: block; color: #bdc6c2; font-size: .75rem; font-weight: 400; }
 .web-calc-row { display: grid; grid-template-columns: 1fr 10rem 6rem; gap: 1rem; align-items: center; padding: 1rem 0; }
 .web-calc-row .line-total { text-align: right; }
+.web-about-principle { height: 100%; padding: 1.5rem 0; border-top: 1px solid rgba(255, 250, 241, .25); }
+.web-about-principle h3 { color: var(--web-cream); }
 
 @media (prefers-reduced-motion: no-preference) {
   .web-reveal { animation: web-rise .65s ease both; }
