@@ -1454,6 +1454,71 @@ def web_service_detail(request: HttpRequest, service_slug: str) -> HttpResponse:
     })
 
 
+def web_region(request: HttpRequest) -> HttpResponse:
+    canonical_url = request.build_absolute_uri()
+    faqs = [
+        {
+            "question": "Do you only work with businesses in Massachusetts and Rhode Island?",
+            "answer": "No. Remote projects outside the immediate region can be evaluated when the work and communication fit. This page focuses on Massachusetts and Rhode Island because they are the core local-business service area.",
+        },
+        {
+            "question": "Is local SEO included in a business website?",
+            "answer": "The standard foundation can include clear service and location content, page metadata, structured data, analytics, sitemap support, and sound technical indexing controls. Ongoing search strategy, listing management, content production, and ranking work are separate when needed, and rankings cannot be guaranteed.",
+        },
+        {
+            "question": "Can you redesign a site without changing its domain?",
+            "answer": "Usually, yes. The existing domain can often remain while the site is rebuilt. Hosting, DNS, email dependencies, useful URLs, redirects, and launch timing are reviewed before any change is made.",
+        },
+        {
+            "question": "What kinds of local businesses are a good fit?",
+            "answer": "Contractors, trades, professional services, independent operators, and established small businesses are practical fits when the goal is clearer positioning, stronger credibility, easier contact, or a more useful workflow.",
+        },
+    ]
+    schema = json.dumps({
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "Service",
+                "name": "Business Website Design in Massachusetts and Rhode Island",
+                "description": "Practical business websites, redesigns, and custom web applications for Massachusetts and Rhode Island businesses.",
+                "url": canonical_url,
+                "provider": {"@id": f"{request.build_absolute_uri('/')}#org"},
+                "areaServed": [
+                    {"@type": "State", "name": "Massachusetts"},
+                    {"@type": "State", "name": "Rhode Island"},
+                ],
+                "serviceType": [
+                    "Business website design",
+                    "Website redesign",
+                    "Custom web application development",
+                ],
+            },
+            {
+                "@type": "FAQPage",
+                "mainEntity": [
+                    {
+                        "@type": "Question",
+                        "name": faq["question"],
+                        "acceptedAnswer": {"@type": "Answer", "text": faq["answer"]},
+                    }
+                    for faq in faqs
+                ],
+            },
+            {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    {"@type": "ListItem", "position": 1, "name": "Home", "item": request.build_absolute_uri(reverse("pages:web_design"))},
+                    {"@type": "ListItem", "position": 2, "name": "Massachusetts and Rhode Island Web Design", "item": canonical_url},
+                ],
+            },
+        ],
+    }).replace("</", "<\\/")
+    return render(request, "pages/web_region.html", {
+        "region_faqs": faqs,
+        "region_schema": schema,
+    })
+
+
 def web_work(request: HttpRequest) -> HttpResponse:
     studies = [dict(study, slug=slug) for slug, study in WEB_CASE_STUDIES.items()]
     return render(request, "pages/web_work.html", {"case_studies": studies})
@@ -1827,6 +1892,7 @@ def web_llms_txt(request):
 - [Business Websites]({base}/services/business-websites/): Focused websites for service and local businesses.
 - [Website Redesigns]({base}/services/website-redesigns/): Content, usability, performance, and migration-focused redesigns.
 - [Custom Django Applications]({base}/services/custom-django-applications/): Portals, accounts, workflows, payments, data, and administration.
+- [Massachusetts and Rhode Island Web Design]({base}/massachusetts-rhode-island-web-design/): Regional business website and application services.
 - [Work]({base}/work/): Selected live website and application projects.
 - [J. Fisk Construction Case Study]({base}/work/j-fisk-construction/): Focused local-contractor business website.
 - [Provost Home Design Platform Case Study]({base}/work/provost-home-design-platform/): Custom Django catalog and business platform.

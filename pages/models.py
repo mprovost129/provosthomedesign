@@ -513,6 +513,7 @@ WEB_INQUIRY_SOURCE_CHOICES = [
     ("work", "Selected work"),
     ("about", "About"),
     ("pricing", "Pricing"),
+    ("region", "Massachusetts and Rhode Island service area"),
 ]
 
 

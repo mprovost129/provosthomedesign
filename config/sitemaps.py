@@ -88,6 +88,7 @@ class WebPagesSitemap(Sitemap):
         return [
             "pages:web_design",
             "pages:web_services",
+            "pages:web_region",
             "pages:web_work",
             "pages:web_about",
             "pages:web_contact",

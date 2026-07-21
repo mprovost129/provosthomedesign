@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block body_class %}web-site{% endblock %}
+{% block title %}Business Web Design in Massachusetts & Rhode Island{% endblock %}
+{% block meta_description %}Practical business websites, website redesigns, and custom web applications for Massachusetts and Rhode Island businesses.{% endblock %}
+{% block og_title %}Massachusetts & Rhode Island Business Web Design{% endblock %}
+{% block og_description %}Clear, responsive websites and custom applications for working businesses across Massachusetts and Rhode Island.{% endblock %}
+{% block jsonld %}<script type="application/ld+json">{{ region_schema|safe }}</script>{% endblock %}
+
+{% block content %}
+<header class="web-section">
+  <div class="container-lg">
+    <p class="web-kicker">Massachusetts + Rhode Island</p>
+    <h1 class="web-section-title col-lg-10">Business websites built close to the work.</h1>
+    <p class="lead text-muted col-lg-8 mt-4">Direct web design and development for local businesses that need to explain their services clearly, earn trust, and turn visits into useful conversations.</p>
+    <div class="d-flex flex-wrap gap-3 mt-4"><a class="btn web-btn-primary btn-lg" href="{% url 'pages:web_contact' %}?source=region" data-analytics-event="web_project_cta" data-analytics-label="regional hero">Discuss your website</a><a class="btn btn-outline-dark btn-lg" href="{% url 'pages:web_work' %}">See production work</a></div>
+  </div>
+</header>
+
+<section class="container-lg pb-5">
+  <div class="row g-5">
+    <div class="col-lg-5"><p class="web-kicker">A local-business perspective</p><h2 class="web-section-title">The site has to support the way customers actually choose.</h2></div>
+    <div class="col-lg-7"><p class="fs-4">For contractors, trades, professional services, and independent operators, the first website visit often follows a referral, a search, a truck or job-site impression, or a direct recommendation.</p><p>The page needs to confirm the business quickly: what it does, where it works, why the visitor should trust it, and how to make contact from a phone. That practical path comes before visual novelty.</p><p>For businesses with deeper operational needs, the same engagement can extend into accounts, portals, payments, documents, catalogs, dashboards, and structured internal workflows.</p></div>
+  </div>
+</section>
+
+<section class="web-section web-band">
+  <div class="container-lg">
+    <div class="row g-4 align-items-end mb-5"><div class="col-lg-8"><p class="web-kicker">What regional relevance means</p><h2 class="web-section-title">Specific signals, not a list of town names.</h2></div><div class="col-lg-4"><p class="mb-0">Useful local positioning comes from accurate services, service areas, evidence, contact details, and content that matches the business.</p></div></div>
+    <div class="row g-4">
+      <div class="col-md-4"><div class="web-about-principle"><span class="web-card-number">01 / CLARITY</span><h3 class="h2 mt-3">Service and area</h3><p>Describe the actual work and geographic reach in language customers recognize.</p></div></div>
+      <div class="col-md-4"><div class="web-about-principle"><span class="web-card-number">02 / PROOF</span><h3 class="h2 mt-3">Real business evidence</h3><p>Use completed work, process, qualifications, and direct contact information to support trust.</p></div></div>
+      <div class="col-md-4"><div class="web-about-principle"><span class="web-card-number">03 / FOUNDATION</span><h3 class="h2 mt-3">Technical basics</h3><p>Coordinate metadata, structured data, sitemap, analytics, mobile usability, speed, and accessibility.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="web-section">
+  <div class="container-lg">
+    <div class="row g-5">
+      <div class="col-lg-5"><p class="web-kicker">Choose the right scope</p><h2 class="web-section-title">Start with the business constraint.</h2><p class="text-muted mt-4">A new website, careful redesign, and custom application solve different problems.</p></div>
+      <div class="col-lg-7">
+        <article class="web-rule py-4"><h3 class="h2">Business website</h3><p>Establish or improve the public service, proof, and contact experience.</p><a href="{% url 'pages:web_service_detail' 'business-websites' %}">Review business website design</a></article>
+        <article class="web-rule py-4"><h3 class="h2">Website redesign</h3><p>Preserve useful value while improving content, mobile usability, performance, accessibility, and conversion.</p><a href="{% url 'pages:web_service_detail' 'website-redesigns' %}">Review website redesigns</a></article>
+        <article class="web-rule py-4"><h3 class="h2">Custom Django application</h3><p>Build around accounts, data, payments, documents, administration, or a business-specific workflow.</p><a href="{% url 'pages:web_service_detail' 'custom-django-applications' %}">Review custom applications</a></article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="web-section pt-0"><div class="container-lg"><div class="row g-5"><div class="col-lg-5"><p class="web-kicker">Regional project questions</p><h2 class="web-section-title">Set the right expectation.</h2></div><div class="col-lg-7">{% for faq in region_faqs %}<details class="web-faq"{% if forloop.first %} open{% endif %}><summary>{{ faq.question }}</summary><p>{{ faq.answer }}</p></details>{% endfor %}</div></div></div></section>
+
+<section class="container-lg pb-5"><div class="web-card d-lg-flex align-items-center justify-content-between gap-4"><div><p class="web-kicker">Massachusetts or Rhode Island business?</p><h2 class="h1 mb-2">Explain what the website needs to improve.</h2><p class="text-muted mb-lg-0">A short description is enough to start a useful conversation.</p></div><a class="btn web-btn-primary btn-lg flex-shrink-0" href="{% url 'pages:web_contact' %}?source=region" data-analytics-event="web_project_cta" data-analytics-label="regional final">Start the conversation</a></div></section>
+{% endblock %}

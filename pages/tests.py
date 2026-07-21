@@ -225,6 +225,38 @@ class SubdomainRoutingTests(TestCase):
                 self.assertContains(response, '"@type": "FAQPage"')
                 self.assertContains(response, '"@type": "BreadcrumbList"')
 
+    def test_regional_web_design_page_is_focused_and_source_aware(self):
+        response = self.client.get(
+            "/massachusetts-rhode-island-web-design/",
+            HTTP_HOST=self.web_host,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Business websites built close to the work.")
+        self.assertContains(response, "Massachusetts")
+        self.assertContains(response, "Rhode Island")
+        self.assertContains(response, "rankings cannot be guaranteed")
+        self.assertContains(response, 'href="/services/business-websites/"')
+        self.assertContains(response, 'href="/services/website-redesigns/"')
+        self.assertContains(response, 'href="/services/custom-django-applications/"')
+        self.assertContains(response, "/contact/?source=region", count=2)
+        self.assertContains(response, '"@type": "Service"')
+        self.assertContains(response, '"@type": "FAQPage"')
+        self.assertContains(response, '"@type": "BreadcrumbList"')
+
+        contact_response = self.client.get(
+            "/contact/?source=region",
+            HTTP_HOST=self.web_host,
+        )
+        self.assertContains(contact_response, 'name="source" value="region"')
+        self.assertContains(contact_response, 'data-analytics-source="region"')
+
+        main_response = self.client.get(
+            "/massachusetts-rhode-island-web-design/",
+            HTTP_HOST=self.main_host,
+        )
+        self.assertEqual(main_response.status_code, 404)
+
     def test_unknown_web_service_returns_404(self):
         response = self.client.get(
             "/services/not-a-service/",
@@ -613,6 +645,7 @@ class SubdomainRoutingTests(TestCase):
         self.assertContains(web_response, "/services/business-websites/")
         self.assertContains(web_response, "/services/website-redesigns/")
         self.assertContains(web_response, "/services/custom-django-applications/")
+        self.assertContains(web_response, "/massachusetts-rhode-island-web-design/")
         self.assertContains(web_response, "/contact/")
         self.assertContains(web_response, "/work/j-fisk-construction/")
         self.assertContains(web_response, "/work/provost-home-design-platform/")
