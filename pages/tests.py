@@ -135,7 +135,14 @@ class SubdomainRoutingTests(TestCase):
             "web.provosthomedesign.com/static/images/web-og-preview.png",
             count=2,
         )
+        self.assertContains(response, 'href="/static/images/web-mark.svg"')
+        self.assertContains(
+            response,
+            '"logo": "http://web.provosthomedesign.com/static/images/web-mark.svg"',
+        )
+        self.assertContains(response, 'name="theme-color" content="#17211f"')
         self.assertNotContains(response, "/static/images/og-image.jpg")
+        self.assertNotContains(response, "/static/images/phdlogo.svg")
         self.assertNotContains(response, "Custom &amp; stock home plans")
         self.assertNotContains(response, "facebook.com/ProvostHomeDesign")
 
@@ -146,6 +153,9 @@ class SubdomainRoutingTests(TestCase):
             count=2,
         )
         self.assertNotContains(main_response, "web-og-preview.png")
+        self.assertContains(main_response, 'href="/static/images/phdlogo.svg"')
+        self.assertContains(main_response, 'name="theme-color" content="#005ea0"')
+        self.assertNotContains(main_response, "/static/images/web-mark.svg")
 
     def test_web_case_studies_keep_project_specific_social_images(self):
         response = self.client.get(

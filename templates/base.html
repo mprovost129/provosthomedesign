@@ -7,7 +7,8 @@
     <title>{% block title %}Provost Home Design{% endblock %}</title>
 
     {# ---- Favicon ---- #}
-    <link rel="icon" type="image/svg+xml" href="{% static 'images/phdlogo.svg' %}">
+    <link rel="icon" type="image/svg+xml" href="{% if IS_WEB_DESIGN_SITE %}{% static 'images/web-mark.svg' %}{% else %}{% static 'images/phdlogo.svg' %}{% endif %}">
+    <meta name="theme-color" content="{% if IS_WEB_DESIGN_SITE %}#17211f{% else %}#005ea0{% endif %}">
 
     {# ---- Canonical ---- #}
     <link rel="canonical" href="{% block canonical_url %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% endblock %}"/>
@@ -80,7 +81,7 @@
       "@id": "{{ request.scheme }}://{{ request.get_host }}/#org",
       "name": "{% if IS_WEB_DESIGN_SITE %}Provost Home Design Web Services{% else %}{{ COMPANY_NAME|default:'Provost Home Design'|escapejs }}{% endif %}",
       "url": "{{ request.scheme }}://{{ request.get_host }}/",
-      "logo": "{{ request.scheme }}://{{ request.get_host }}{% static BRAND_LOGO_STATIC|default:'images/phdlogo.svg' %}",
+      "logo": "{{ request.scheme }}://{{ request.get_host }}{% if IS_WEB_DESIGN_SITE %}{% static 'images/web-mark.svg' %}{% else %}{% static BRAND_LOGO_STATIC|default:'images/phdlogo.svg' %}{% endif %}",
       "contactPoint": [{
         "@type": "ContactPoint",
         {% if CONTACT_PHONE %}"telephone": "{{ CONTACT_PHONE|escapejs }}",{% endif %}

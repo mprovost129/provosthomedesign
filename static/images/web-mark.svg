@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Provost Home Design Web mark</title>
+  <desc id="desc">White P slash mark on an orange rounded shape.</desc>
+  <path fill="#e95d2a" d="M176 24h80c128 0 232 104 232 232v192H296C146 448 24 326 24 176 24 92 92 24 176 24Z"/>
+  <path fill="#fffaf1" d="M154 142h76c58 0 94 31 94 83 0 54-38 86-99 86h-23v67h-48V142Zm48 43v84h22c34 0 51-14 51-43 0-28-16-41-49-41h-24Zm148-43h43L315 378h-43l78-236Z"/>
+</svg>
