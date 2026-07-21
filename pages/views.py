@@ -1213,6 +1213,102 @@ WEB_SERVICE_FAQS = [
     },
 ]
 
+WEB_SERVICE_PAGES = {
+    "business-websites": {
+        "title": "Business Website Design",
+        "meta": "Focused, responsive business websites that clarify services, build credibility, and turn visits into useful conversations.",
+        "kicker": "Business websites",
+        "headline": "A clear online home for a working business.",
+        "intro": "A business website should help the right visitor understand what you do, trust the company, and take the next step without hunting for information.",
+        "project_type": "business_site",
+        "source": "services_business",
+        "fit": [
+            "A referral-driven business that needs a credible destination to share",
+            "A local company replacing a social profile or weak first website",
+            "A service business whose current pages do not explain the work clearly",
+            "An established operator who needs dependable lead capture and analytics",
+        ],
+        "deliverables": [
+            "Audience, goal, sitemap, and page-content planning",
+            "Responsive page design and development",
+            "Service, proof, and call-to-action structure",
+            "Accessible contact or inquiry forms with spam protection",
+            "Core metadata, analytics, performance, and launch checks",
+            "Domain deployment, access handoff, and documented next steps",
+        ],
+        "boundary_title": "A website is not automatically a brand or content project.",
+        "boundary": "Logo development, full copywriting, photography, e-commerce, and ongoing campaigns can affect scope. The proposal identifies what is supplied, adapted, created, or handled by another specialist.",
+        "faqs": [
+            {"question": "How many pages does a business website need?", "answer": "The page count follows the customer journey and amount of distinct information. A focused site may combine related material, while services with different audiences or search intent often deserve separate pages."},
+            {"question": "Can I update the website after launch?", "answer": "Yes, when editing is part of the requirement. The proposal identifies what will be editable, how access works, and whether updates are self-managed or supported."},
+            {"question": "Will the site work on phones?", "answer": "Responsive behavior, mobile navigation, readable content, usable forms, and practical tap targets are part of the standard build and testing approach."},
+        ],
+        "case_study": "j-fisk-construction",
+    },
+    "website-redesigns": {
+        "title": "Website Redesign Services",
+        "meta": "Website redesigns that improve content structure, mobile usability, accessibility, performance, and conversion without careless migration.",
+        "kicker": "Website redesigns",
+        "headline": "Keep the value. Remove the friction.",
+        "intro": "A redesign is not a color swap. It is a chance to preserve useful content and search equity while fixing the parts that confuse visitors, weaken trust, or make the site difficult to operate.",
+        "project_type": "redesign",
+        "source": "services_redesign",
+        "fit": [
+            "The site looks dated or breaks down on mobile devices",
+            "Visitors cannot quickly understand services or find the next step",
+            "Forms, navigation, speed, accessibility, or editing create friction",
+            "The business has changed but the website still reflects an older offer",
+        ],
+        "deliverables": [
+            "Current-site, content, URL, and analytics review",
+            "Revised information architecture and content priorities",
+            "Responsive visual redesign and implementation",
+            "Redirect map and metadata migration where URLs change",
+            "Form, accessibility, browser, and performance testing",
+            "Launch verification for analytics, indexing controls, and critical paths",
+        ],
+        "boundary_title": "Redesigns need a migration plan, not just a launch date.",
+        "boundary": "No redesign can guarantee unchanged rankings. The responsible approach is to preserve useful URLs where practical, redirect deliberate changes, carry forward valuable content, and verify technical signals after launch.",
+        "faqs": [
+            {"question": "Do we have to replace every part of the current site?", "answer": "No. Discovery identifies what is worth keeping, revising, consolidating, or retiring. Reuse is valuable when it supports the new goal rather than preserving old friction."},
+            {"question": "Can the redesign stay on my existing domain?", "answer": "Usually, yes. The build and launch plan can replace the site while retaining the domain, with DNS, hosting, email dependencies, and rollback considerations reviewed in advance."},
+            {"question": "What do you need from the existing website?", "answer": "Useful starting inputs include administrator and hosting access, analytics or Search Console data, domain details, current content, brand assets, and a clear list of business changes."},
+        ],
+        "case_study": "j-fisk-construction",
+    },
+    "custom-django-applications": {
+        "title": "Custom Django Application Development",
+        "meta": "Custom Django applications for portals, accounts, payments, catalogs, dashboards, documents, and business-specific workflows.",
+        "kicker": "Custom applications",
+        "headline": "Software shaped around the way the business works.",
+        "intro": "When a standard website or off-the-shelf tool cannot support the workflow reliably, a custom Django application can connect public experiences, protected accounts, data, and administration in one maintainable system.",
+        "project_type": "web_app",
+        "source": "services_app",
+        "fit": [
+            "Customers or staff need secure accounts and role-based access",
+            "The business relies on repeated manual handoffs or disconnected spreadsheets",
+            "Products, documents, payments, or approvals require structured workflows",
+            "Existing software creates a costly operational constraint that can be defined",
+        ],
+        "deliverables": [
+            "Workflow discovery, requirements, risks, and first-release definition",
+            "Data model, permissions, user paths, and administration planning",
+            "Django application design and iterative development",
+            "Forms, email, storage, payment, API, or service integrations as scoped",
+            "Automated tests, security review, deployment, and production checks",
+            "Access, documentation, maintenance, and future-phase handoff",
+        ],
+        "boundary_title": "Custom software carries an ongoing responsibility.",
+        "boundary": "Hosting, monitoring, security updates, backups, third-party services, support expectations, and future changes must be planned. Discovery should confirm that the operational benefit warrants that lifecycle.",
+        "faqs": [
+            {"question": "Why use Django for a business application?", "answer": "Django provides a mature foundation for data models, accounts, permissions, forms, administration, security controls, and testing. It is useful when the application centers on structured business workflows."},
+            {"question": "Can the first release start small?", "answer": "It should. A defined first release reduces risk and creates a working foundation. Later phases can follow real use instead of trying to predict every future requirement at the start."},
+            {"question": "Can a custom application connect to other services?", "answer": "Often, yes, when those services provide suitable APIs or integration methods. Access, rate limits, data ownership, failure handling, and recurring costs are reviewed during discovery."},
+        ],
+        "case_study": "provost-home-design-platform",
+    },
+}
+
 WEB_CASE_STUDIES = {
     "j-fisk-construction": {
         "title": "J. Fisk Construction",
@@ -1309,6 +1405,52 @@ def web_services(request: HttpRequest) -> HttpResponse:
         "service_process": WEB_SERVICE_PROCESS,
         "service_faqs": WEB_SERVICE_FAQS,
         "service_schema": schema,
+    })
+
+
+def web_service_detail(request: HttpRequest, service_slug: str) -> HttpResponse:
+    service = WEB_SERVICE_PAGES.get(service_slug)
+    if not service:
+        raise Http404("Web service not found")
+    canonical_url = request.build_absolute_uri()
+    schema = json.dumps({
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "Service",
+                "name": service["title"],
+                "description": service["meta"],
+                "url": canonical_url,
+                "provider": {"@id": f"{request.build_absolute_uri('/')}#org"},
+                "areaServed": ["Massachusetts", "Rhode Island", "New England"],
+            },
+            {
+                "@type": "FAQPage",
+                "mainEntity": [
+                    {
+                        "@type": "Question",
+                        "name": faq["question"],
+                        "acceptedAnswer": {"@type": "Answer", "text": faq["answer"]},
+                    }
+                    for faq in service["faqs"]
+                ],
+            },
+            {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    {"@type": "ListItem", "position": 1, "name": "Services", "item": request.build_absolute_uri(reverse("pages:web_services"))},
+                    {"@type": "ListItem", "position": 2, "name": service["title"], "item": canonical_url},
+                ],
+            },
+        ],
+    }).replace("</", "<\\/")
+    case_study = WEB_CASE_STUDIES[service["case_study"]]
+    return render(request, "pages/web_service_detail.html", {
+        "service": service,
+        "service_slug": service_slug,
+        "service_schema": schema,
+        "case_study": case_study,
+        "case_study_slug": service["case_study"],
     })
 
 
@@ -1625,6 +1767,9 @@ def web_llms_txt(request):
 
 - [Home]({base}/): Local-business website positioning, process, and primary project paths.
 - [Services]({base}/services/): Business websites, redesigns, and custom Django applications.
+- [Business Websites]({base}/services/business-websites/): Focused websites for service and local businesses.
+- [Website Redesigns]({base}/services/website-redesigns/): Content, usability, performance, and migration-focused redesigns.
+- [Custom Django Applications]({base}/services/custom-django-applications/): Portals, accounts, workflows, payments, data, and administration.
 - [Work]({base}/work/): Selected live website and application projects.
 - [J. Fisk Construction Case Study]({base}/work/j-fisk-construction/): Focused local-contractor business website.
 - [Provost Home Design Platform Case Study]({base}/work/provost-home-design-platform/): Custom Django catalog and business platform.

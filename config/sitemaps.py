@@ -5,7 +5,7 @@ from typing import Iterable
 from plans.models import Plans  # adjust if your model path differs
 from plans.views import CATEGORY_PAGES
 from pages.models import ProjectCaseStudy
-from pages.views import RESOURCE_ARTICLES, WEB_CASE_STUDIES
+from pages.views import RESOURCE_ARTICLES, WEB_CASE_STUDIES, WEB_SERVICE_PAGES
 
 class PlanSitemap(Sitemap):
     changefreq = "weekly"
@@ -110,6 +110,18 @@ class WebCaseStudySitemap(Sitemap):
 
     def location(self, item):
         return reverse("pages:web_case_study", args=[item])
+
+
+class WebServiceSitemap(Sitemap):
+    changefreq = "monthly"
+    priority = 0.7
+    protocol = "https"
+
+    def items(self):
+        return list(WEB_SERVICE_PAGES)
+
+    def location(self, item):
+        return reverse("pages:web_service_detail", args=[item])
 
 
 class PlanCategorySitemap(Sitemap):

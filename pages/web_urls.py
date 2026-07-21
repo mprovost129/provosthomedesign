@@ -7,6 +7,7 @@ app_name = "pages"
 urlpatterns = [
     path("", views.web_design, name="web_design"),
     path("services/", views.web_services, name="web_services"),
+    path("services/<slug:service_slug>/", views.web_service_detail, name="web_service_detail"),
     path("work/", views.web_work, name="web_work"),
     path("work/<slug:case_study_slug>/", views.web_case_study, name="web_case_study"),
     path("about/", views.web_about, name="web_about"),

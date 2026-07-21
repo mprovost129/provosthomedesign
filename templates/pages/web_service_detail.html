@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block body_class %}web-site{% endblock %}
+{% block title %}{{ service.title }} | Provost Home Design Web{% endblock %}
+{% block meta_description %}{{ service.meta }}{% endblock %}
+{% block og_title %}{{ service.title }} | Provost Home Design Web{% endblock %}
+{% block og_description %}{{ service.meta }}{% endblock %}
+{% block jsonld %}<script type="application/ld+json">{{ service_schema|safe }}</script>{% endblock %}
+
+{% block content %}
+<header class="web-section">
+  <div class="container-lg">
+    <nav class="small mb-4" aria-label="Breadcrumb"><a href="{% url 'pages:web_services' %}">Services</a> <span aria-hidden="true">/</span> {{ service.title }}</nav>
+    <p class="web-kicker">{{ service.kicker }}</p>
+    <h1 class="web-section-title col-lg-10">{{ service.headline }}</h1>
+    <p class="lead text-muted col-lg-8 mt-4">{{ service.intro }}</p>
+    <div class="d-flex flex-wrap gap-3 mt-4"><a class="btn web-btn-primary btn-lg" href="{% url 'pages:web_contact' %}?project_type={{ service.project_type }}&amp;source={{ service.source }}" data-analytics-event="web_project_cta" data-analytics-label="{{ service_slug }} hero">Discuss this kind of project</a><a class="btn btn-outline-dark btn-lg" href="{% url 'pages:web_work' %}">See selected work</a></div>
+  </div>
+</header>
+
+<section class="container-lg pb-5">
+  <div class="row g-5">
+    <div class="col-lg-5"><p class="web-kicker">A practical fit when</p><h2 class="web-section-title">The problem is clear enough to define.</h2></div>
+    <div class="col-lg-7"><ul class="web-check-list list-unstyled mb-0">{% for item in service.fit %}<li>{{ item }}</li>{% endfor %}</ul></div>
+  </div>
+</section>
+
+<section class="web-section web-band">
+  <div class="container-lg">
+    <div class="row g-5">
+      <div class="col-lg-5"><p class="web-kicker">Typical deliverables</p><h2 class="web-section-title">A complete path to a working release.</h2><p class="mt-4">The exact proposal follows discovery. These are the responsibilities normally considered for this type of engagement.</p></div>
+      <div class="col-lg-7"><ol class="web-deliverable-list list-unstyled mb-0">{% for item in service.deliverables %}<li><span>0{{ forloop.counter }}</span>{{ item }}</li>{% endfor %}</ol></div>
+    </div>
+  </div>
+</section>
+
+<section class="web-section">
+  <div class="container-lg">
+    <div class="row g-5">
+      <div class="col-lg-7"><p class="web-kicker">Scope boundary</p><h2 class="web-section-title">{{ service.boundary_title }}</h2><p class="fs-5 text-muted mt-4">{{ service.boundary }}</p><a href="{% url 'pages:pricing' %}">See how project pricing is defined</a></div>
+      <aside class="col-lg-5"><div class="web-card"><p class="web-kicker">Related production work</p><h3 class="h2">{{ case_study.title }}</h3><p>{{ case_study.summary }}</p><a href="{% url 'pages:web_case_study' case_study_slug %}">Read the case study</a></div></aside>
+    </div>
+  </div>
+</section>
+
+<section class="web-section pt-0">
+  <div class="container-lg"><div class="row g-5"><div class="col-lg-5"><p class="web-kicker">Common questions</p><h2 class="web-section-title">Clarify the commitment.</h2></div><div class="col-lg-7">{% for faq in service.faqs %}<details class="web-faq"{% if forloop.first %} open{% endif %}><summary>{{ faq.question }}</summary><p>{{ faq.answer }}</p></details>{% endfor %}</div></div></div>
+</section>
+
+<section class="container-lg pb-5"><div class="web-card d-lg-flex align-items-center justify-content-between gap-4"><div><p class="web-kicker">Start with context</p><h2 class="h1 mb-2">Tell me what needs to work better.</h2><p class="text-muted mb-lg-0">The form will carry this service selection with you.</p></div><a class="btn web-btn-primary btn-lg flex-shrink-0" href="{% url 'pages:web_contact' %}?project_type={{ service.project_type }}&amp;source={{ service.source }}" data-analytics-event="web_project_cta" data-analytics-label="{{ service_slug }} final">Discuss the project</a></div></section>
+{% endblock %}

@@ -85,6 +85,12 @@ body.web-site {
 .web-about-principle { height: 100%; padding: 1.5rem 0; border-top: 1px solid rgba(255, 250, 241, .25); }
 .web-about-principle h3 { color: var(--web-cream); }
 .web-context-note { display: inline-block; padding: .75rem 1rem; background: rgba(70, 102, 77, .1); border-left: 4px solid var(--web-moss); color: var(--web-ink); }
+.web-check-list { border-top: 1px solid var(--web-line); }
+.web-check-list li { position: relative; padding: 1.2rem 1rem 1.2rem 2.4rem; border-bottom: 1px solid var(--web-line); font-size: 1.05rem; }
+.web-check-list li::before { content: ""; position: absolute; left: .35rem; top: 1.45rem; width: .8rem; height: .45rem; border-left: 3px solid var(--web-orange-dark); border-bottom: 3px solid var(--web-orange-dark); transform: rotate(-45deg); }
+.web-deliverable-list { border-top: 1px solid rgba(255, 250, 241, .25); }
+.web-deliverable-list li { display: grid; grid-template-columns: 3rem 1fr; gap: 1rem; padding: 1.15rem 0; border-bottom: 1px solid rgba(255, 250, 241, .25); color: #e2e7e4; }
+.web-deliverable-list span { color: var(--web-orange); font-size: .8rem; font-weight: 800; letter-spacing: .12em; }
 
 @media (prefers-reduced-motion: no-preference) {
   .web-reveal { animation: web-rise .65s ease both; }

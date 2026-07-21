@@ -130,8 +130,31 @@ class SubdomainRoutingTests(TestCase):
 
         self.assertContains(response, "Practical websites for local businesses")
         self.assertContains(response, '"name": "Provost Home Design Web Services"')
+        self.assertContains(
+            response,
+            "web.provosthomedesign.com/static/images/web-og-preview.png",
+            count=2,
+        )
+        self.assertNotContains(response, "/static/images/og-image.jpg")
         self.assertNotContains(response, "Custom &amp; stock home plans")
         self.assertNotContains(response, "facebook.com/ProvostHomeDesign")
+
+        main_response = self.client.get("/", HTTP_HOST=self.main_host)
+        self.assertContains(
+            main_response,
+            "www.provosthomedesign.com/static/images/og-image.jpg",
+            count=2,
+        )
+        self.assertNotContains(main_response, "web-og-preview.png")
+
+    def test_web_case_studies_keep_project_specific_social_images(self):
+        response = self.client.get(
+            "/work/j-fisk-construction/",
+            HTTP_HOST=self.web_host,
+        )
+
+        self.assertContains(response, "/static/images/fisk_truck.jpeg", count=3)
+        self.assertNotContains(response, "web-og-preview.png")
 
     def test_standalone_web_pages_are_available(self):
         expected = {
@@ -162,6 +185,42 @@ class SubdomainRoutingTests(TestCase):
         self.assertContains(response, '"@type": "Service"')
         self.assertContains(response, '"@type": "FAQPage"')
         self.assertContains(response, 'data-analytics-label="services final"')
+
+    def test_web_service_detail_pages_have_focused_content_and_schema(self):
+        expected = {
+            "/services/business-websites/": (
+                "A clear online home for a working business.",
+                "project_type=business_site&amp;source=services_business",
+            ),
+            "/services/website-redesigns/": (
+                "Keep the value. Remove the friction.",
+                "project_type=redesign&amp;source=services_redesign",
+            ),
+            "/services/custom-django-applications/": (
+                "Software shaped around the way the business works.",
+                "project_type=web_app&amp;source=services_app",
+            ),
+        }
+
+        for path, (headline, contact_query) in expected.items():
+            with self.subTest(path=path):
+                response = self.client.get(path, HTTP_HOST=self.web_host)
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, headline)
+                self.assertContains(response, "Typical deliverables")
+                self.assertContains(response, "Scope boundary")
+                self.assertContains(response, contact_query, count=2)
+                self.assertContains(response, '"@type": "Service"')
+                self.assertContains(response, '"@type": "FAQPage"')
+                self.assertContains(response, '"@type": "BreadcrumbList"')
+
+    def test_unknown_web_service_returns_404(self):
+        response = self.client.get(
+            "/services/not-a-service/",
+            HTTP_HOST=self.web_host,
+        )
+
+        self.assertEqual(response.status_code, 404)
 
     def test_web_about_leads_with_durable_positioning_and_real_work(self):
         response = self.client.get("/about/", HTTP_HOST=self.web_host)
@@ -492,6 +551,9 @@ class SubdomainRoutingTests(TestCase):
         self.assertNotContains(main_response, "web.provosthomedesign.com")
         self.assertContains(web_response, "web.provosthomedesign.com")
         self.assertContains(web_response, "/services/")
+        self.assertContains(web_response, "/services/business-websites/")
+        self.assertContains(web_response, "/services/website-redesigns/")
+        self.assertContains(web_response, "/services/custom-django-applications/")
         self.assertContains(web_response, "/contact/")
         self.assertContains(web_response, "/work/j-fisk-construction/")
         self.assertContains(web_response, "/work/provost-home-design-platform/")

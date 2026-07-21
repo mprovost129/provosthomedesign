@@ -18,7 +18,7 @@
     {# ---- Open Graph (override individual blocks in child templates) ---- #}
     <meta property="og:title"       content="{% block og_title %}{% if IS_WEB_DESIGN_SITE %}Provost Home Design Web Services{% else %}Provost Home Design{% endif %}{% endblock %}" />
     <meta property="og:description" content="{% block og_description %}{% if IS_WEB_DESIGN_SITE %}Practical websites for local businesses and custom web applications for more complex workflows.{% else %}Custom & stock home plans designed for code compliance, with form, function, and style in mind.{% endif %}{% endblock %}" />
-    <meta property="og:image"       content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'images/og-image.jpg' %}{% endblock %}" />
+    <meta property="og:image"       content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% if IS_WEB_DESIGN_SITE %}{% static 'images/web-og-preview.png' %}{% else %}{% static 'images/og-image.jpg' %}{% endif %}{% endblock %}" />
     <meta property="og:url"         content="{% block og_url %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% endblock %}" />
     <meta property="og:type"        content="{% block og_type %}website{% endblock %}" />
     <meta property="og:site_name"   content="{% if IS_WEB_DESIGN_SITE %}Provost Home Design Web Services{% else %}Provost Home Design{% endif %}" />
@@ -27,7 +27,7 @@
     <meta name="twitter:card"        content="summary_large_image" />
     <meta name="twitter:title"       content="{% block twitter_title %}{% if IS_WEB_DESIGN_SITE %}Provost Home Design Web Services{% else %}Provost Home Design{% endif %}{% endblock %}" />
     <meta name="twitter:description" content="{% block twitter_description %}{% if IS_WEB_DESIGN_SITE %}Practical websites for local businesses and custom web applications for more complex workflows.{% else %}Custom & stock home plans designed for code compliance, with form, function, and style in mind.{% endif %}{% endblock %}" />
-    <meta name="twitter:image"       content="{% block twitter_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'images/og-image.jpg' %}{% endblock %}" />
+    <meta name="twitter:image"       content="{% block twitter_image %}{{ request.scheme }}://{{ request.get_host }}{% if IS_WEB_DESIGN_SITE %}{% static 'images/web-og-preview.png' %}{% else %}{% static 'images/og-image.jpg' %}{% endif %}{% endblock %}" />
 
     {# ---- Per-page JSON-LD (override in child templates) ---- #}
     {% block jsonld %}{% endblock %}
