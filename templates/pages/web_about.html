@@ -27,7 +27,7 @@
         <p class="web-kicker">One accountable point of contact</p>
         <h2 class="h2">Direct from discovery through launch.</h2>
         <p>You work with the person planning, building, testing, and deploying the project. Questions do not disappear between sales, design, and development teams.</p>
-        <a href="{% url 'pages:web_contact' %}" data-analytics-event="web_project_cta" data-analytics-label="about direct contact">Discuss a project</a>
+        <a href="{% url 'pages:web_contact' %}?source=about" data-analytics-event="web_project_cta" data-analytics-label="about direct contact">Discuss a project</a>
       </div>
     </aside>
   </div>
@@ -57,6 +57,6 @@
 </section>
 
 <section class="container-lg pb-5">
-  <div class="web-card d-lg-flex align-items-center justify-content-between gap-4"><div><p class="web-kicker">A practical first step</p><h2 class="h1 mb-2">Start with what the business needs to improve.</h2><p class="text-muted mb-lg-0">The right format, scope, and technology can follow from there.</p></div><a class="btn web-btn-primary btn-lg flex-shrink-0" href="{% url 'pages:web_contact' %}" data-analytics-event="web_project_cta" data-analytics-label="about final">Start the conversation</a></div>
+  <div class="web-card d-lg-flex align-items-center justify-content-between gap-4"><div><p class="web-kicker">A practical first step</p><h2 class="h1 mb-2">Start with what the business needs to improve.</h2><p class="text-muted mb-lg-0">The right format, scope, and technology can follow from there.</p></div><a class="btn web-btn-primary btn-lg flex-shrink-0" href="{% url 'pages:web_contact' %}?source=about" data-analytics-event="web_project_cta" data-analytics-label="about final">Start the conversation</a></div>
 </section>
 {% endblock %}

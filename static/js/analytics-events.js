@@ -8,9 +8,16 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll("[data-analytics-page-event]").forEach(function (element) {
-      sendEvent(element.dataset.analyticsPageEvent, {
+      var parameters = {
         page_location: window.location.href,
-      });
+      };
+      if (element.dataset.analyticsSource) {
+        parameters.inquiry_source = element.dataset.analyticsSource;
+      }
+      if (element.dataset.analyticsProjectType) {
+        parameters.project_type = element.dataset.analyticsProjectType;
+      }
+      sendEvent(element.dataset.analyticsPageEvent, parameters);
     });
 
     document.querySelectorAll("form[data-analytics-form]").forEach(function (form) {

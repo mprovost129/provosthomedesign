@@ -14,7 +14,7 @@
     <h1 class="mb-4 web-reveal">Clear online.<br>Useful every day.</h1>
     <p class="lead mb-4 web-reveal">I design and build focused websites for local businesses that need to look credible, explain their work, and turn visits into real conversations.</p>
     <div class="d-flex flex-wrap gap-3 mb-5 web-reveal">
-      <a class="btn web-btn-primary btn-lg px-4" href="{% url 'pages:web_contact' %}" data-analytics-event="web_project_cta" data-analytics-label="homepage hero">Discuss your website</a>
+      <a class="btn web-btn-primary btn-lg px-4" href="{% url 'pages:web_contact' %}?source=home" data-analytics-event="web_project_cta" data-analytics-label="homepage hero">Discuss your website</a>
       <a class="btn btn-outline-dark btn-lg px-4" href="{% url 'pages:web_work' %}">See the work</a>
     </div>
     <p class="web-hero-note mb-0">Need accounts, dashboards, payments, or workflow automation? Custom Django applications are available as a deeper engagement.</p>
@@ -52,6 +52,6 @@
 </section>
 
 <section class="container-lg pb-5">
-  <div class="web-card d-lg-flex align-items-center justify-content-between gap-4"><div><p class="web-kicker">Have a project in mind?</p><h2 class="h1 mb-2">Tell me what the website needs to accomplish.</h2><p class="text-muted mb-lg-0">A short, practical description is enough to start.</p></div><a class="btn web-btn-primary btn-lg flex-shrink-0" href="{% url 'pages:web_contact' %}" data-analytics-event="web_project_cta" data-analytics-label="homepage final">Start the conversation</a></div>
+  <div class="web-card d-lg-flex align-items-center justify-content-between gap-4"><div><p class="web-kicker">Have a project in mind?</p><h2 class="h1 mb-2">Tell me what the website needs to accomplish.</h2><p class="text-muted mb-lg-0">A short, practical description is enough to start.</p></div><a class="btn web-btn-primary btn-lg flex-shrink-0" href="{% url 'pages:web_contact' %}?source=home" data-analytics-event="web_project_cta" data-analytics-label="homepage final">Start the conversation</a></div>
 </section>
 {% endblock %}

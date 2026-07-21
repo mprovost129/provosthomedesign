@@ -311,6 +311,26 @@ class SubdomainRoutingTests(TestCase):
         self.assertContains(response, 'name="source" value="services_redesign"')
         self.assertContains(response, 'data-analytics-source="services_redesign"')
 
+    def test_primary_web_pages_pass_first_party_inquiry_sources(self):
+        expected = {
+            "/": "/contact/?source=home",
+            "/work/": "/contact/?source=work",
+            "/work/j-fisk-construction/": "/contact/?source=work",
+            "/about/": "/contact/?source=about",
+            "/pricing/": "/contact/?source=pricing",
+        }
+
+        for path, contact_url in expected.items():
+            with self.subTest(path=path):
+                response = self.client.get(path, HTTP_HOST=self.web_host)
+                self.assertContains(response, contact_url)
+
+    def test_thank_you_conversion_requires_a_saved_inquiry_context(self):
+        response = self.client.get("/contact/thanks/", HTTP_HOST=self.web_host)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'data-analytics-page-event="web_inquiry_complete"')
+
     def test_web_contact_rejects_unknown_attribution_source(self):
         cache.clear()
         session = self.client.session
@@ -416,6 +436,32 @@ class SubdomainRoutingTests(TestCase):
         self.assertEqual(acknowledgment.to, ["alex@example.com"])
         self.assertIn("Your web project inquiry has been received", acknowledgment.body)
         self.assertIn("do not email passwords", acknowledgment.body)
+
+        thanks_response = self.client.get(
+            "/contact/thanks/",
+            HTTP_HOST=self.web_host,
+        )
+        self.assertContains(
+            thanks_response,
+            'data-analytics-page-event="web_inquiry_complete"',
+        )
+        self.assertContains(
+            thanks_response,
+            'data-analytics-source="services_business"',
+        )
+        self.assertContains(
+            thanks_response,
+            'data-analytics-project-type="business_site"',
+        )
+
+        refreshed_response = self.client.get(
+            "/contact/thanks/",
+            HTTP_HOST=self.web_host,
+        )
+        self.assertNotContains(
+            refreshed_response,
+            'data-analytics-page-event="web_inquiry_complete"',
+        )
 
     @override_settings(DEBUG=False)
     def test_production_csp_allows_analytics_and_recaptcha_connections(self):

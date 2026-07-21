@@ -1378,7 +1378,10 @@ def web_about(request: HttpRequest) -> HttpResponse:
 
 
 def web_thanks(request: HttpRequest) -> HttpResponse:
-    return render(request, "pages/web_thanks.html")
+    completion = request.session.pop("web_inquiry_completion", None)
+    return render(request, "pages/web_thanks.html", {
+        "completion": completion,
+    })
 
 
 def web_terms(request: HttpRequest) -> HttpResponse:
@@ -1459,6 +1462,10 @@ def web_contact(request: HttpRequest) -> HttpResponse:
                 terms_accepted=bool(cd.get("terms_accepted")),
                 ip_address=get_client_ip(request),
             )
+            request.session["web_inquiry_completion"] = {
+                "source": inquiry.source or "direct",
+                "project_type": inquiry.project_type or "not_specified",
+            }
 
             ctx = {
                 "company": company,
