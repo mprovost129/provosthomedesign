@@ -1,5 +1,7 @@
 from io import StringIO
+from time import time
 
+from django.core import mail
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
@@ -8,7 +10,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils.datastructures import MultiValueDict
 
 from .forms import NewHouseForm
-from .models import ProjectCaseStudy, ProjectInquiry
+from .models import PricingPage, ProjectCaseStudy, ProjectInquiry, WebDesignInquiry
 
 
 @override_settings(
@@ -101,6 +103,10 @@ class ProjectInquiryFormTests(TestCase):
 @override_settings(
     WEB_DESIGN_HOST="web.provosthomedesign.com",
     WEB_DESIGN_URL="https://web.provosthomedesign.com",
+    RECAPTCHA_ENTERPRISE_API_KEY="",
+    RECAPTCHA_SECRET_KEY="",
+    RECAPTCHA_PRIVATE_KEY="",
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     STORAGES={
         "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
         "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
@@ -114,8 +120,35 @@ class SubdomainRoutingTests(TestCase):
         response = self.client.get("/", HTTP_HOST=self.web_host)
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Sites and apps that actually work")
+        self.assertContains(response, "Clear online")
+        self.assertContains(response, "websites for local businesses")
         self.assertNotContains(response, "Search Plans")
+        self.assertContains(response, 'content="Provost Home Design Web Services"')
+
+    def test_web_metadata_does_not_inherit_residential_signals(self):
+        response = self.client.get("/contact/", HTTP_HOST=self.web_host)
+
+        self.assertContains(response, "Practical websites for local businesses")
+        self.assertContains(response, '"name": "Provost Home Design Web Services"')
+        self.assertNotContains(response, "Custom &amp; stock home plans")
+        self.assertNotContains(response, "facebook.com/ProvostHomeDesign")
+
+    def test_standalone_web_pages_are_available(self):
+        expected = {
+            "/services/": "The right-sized build",
+            "/work/": "Built for real use",
+            "/about/": "A business owner building",
+            "/contact/": "What should the website help",
+            "/contact/thanks/": "Inquiry received",
+            "/privacy/": "Web services privacy notice",
+            "/terms/": "Web services terms",
+        }
+
+        for path, text in expected.items():
+            with self.subTest(path=path):
+                response = self.client.get(path, HTTP_HOST=self.web_host)
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, text)
 
     def test_web_subdomain_pricing_uses_web_url_surface(self):
         response = self.client.get("/pricing/", HTTP_HOST=self.web_host)
@@ -151,7 +184,77 @@ class SubdomainRoutingTests(TestCase):
         response = self.client.get("/", HTTP_HOST=self.web_host)
 
         self.assertContains(response, 'href="/pricing/"')
-        self.assertContains(response, 'href="/#inquiry"')
+        self.assertContains(response, 'href="/contact/"')
+
+    def test_unpublished_pricing_links_to_web_contact(self):
+        page = PricingPage.load()
+        page.is_published = False
+        page.save(update_fields=["is_published"])
+
+        response = self.client.get("/pricing/", HTTP_HOST=self.web_host)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="/contact/"')
+        self.assertNotContains(response, "/get-started/")
+
+    @override_settings(RECAPTCHA_SITE_KEY="configured-web-key")
+    def test_web_contact_uses_configured_recaptcha_key(self):
+        response = self.client.get("/contact/", HTTP_HOST=self.web_host)
+
+        self.assertContains(response, "render=configured-web-key")
+        self.assertContains(response, "configured\\u002Dweb\\u002Dkey")
+        self.assertNotContains(response, "6LdAVUEtAAAAANkmJS6XbgPzqDf_oX4Y45sUdmDV")
+
+    def test_invalid_web_inquiry_preserves_entered_data(self):
+        cache.clear()
+        session = self.client.session
+        session["web_design_started_ts"] = time() - 3
+        session.save()
+
+        response = self.client.post(
+            "/contact/",
+            {
+                "name": "Alex Builder",
+                "email": "not-an-email",
+                "phone": "508-555-0100",
+                "project_type": "business_site",
+                "message": "Please keep this project description.",
+                "terms_accepted": "on",
+            },
+            HTTP_HOST=self.web_host,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Please keep this project description.")
+        self.assertContains(response, "Your entered information has been preserved")
+        self.assertEqual(WebDesignInquiry.objects.count(), 0)
+
+    def test_valid_web_inquiry_redirects_to_dedicated_thank_you_page(self):
+        cache.clear()
+        session = self.client.session
+        session["web_design_started_ts"] = time() - 3
+        session.save()
+
+        response = self.client.post(
+            "/contact/",
+            {
+                "name": "Alex Builder",
+                "email": "alex@example.com",
+                "phone": "508-555-0100",
+                "project_type": "business_site",
+                "message": "We need a clearer site for our construction business.",
+                "terms_accepted": "on",
+            },
+            HTTP_HOST=self.web_host,
+        )
+
+        self.assertRedirects(
+            response,
+            "/contact/thanks/",
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(WebDesignInquiry.objects.count(), 1)
+        self.assertEqual(len(mail.outbox), 1)
 
     def test_regional_service_page_is_available_on_main_site(self):
         response = self.client.get(
@@ -170,6 +273,8 @@ class SubdomainRoutingTests(TestCase):
         self.assertContains(main_response, "/plans/finder/")
         self.assertNotContains(main_response, "web.provosthomedesign.com")
         self.assertContains(web_response, "web.provosthomedesign.com")
+        self.assertContains(web_response, "/services/")
+        self.assertContains(web_response, "/contact/")
         self.assertNotContains(web_response, "/plans/")
 
     def test_each_host_advertises_only_its_own_sitemaps(self):

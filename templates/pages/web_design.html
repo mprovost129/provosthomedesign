@@ -1,376 +1,57 @@
 {% extends "base.html" %}
 {% load static %}
-
-{% block title %}Web Design & Development • Provost Home Design{% endblock %}
-
-{% block meta_description %}Custom web apps and business websites built with Python, Django, and Bootstrap. Fast, mobile-ready, and built by a real developer — not a template.{% endblock %}
-{% block og_title %}Web Design & Development • Provost Home Design{% endblock %}
-{% block og_description %}Custom websites and web applications built with Python, Django, and modern front-end tools. No page builders - just clean, professional code.{% endblock %}
-{% block twitter_title %}Web Design & Development • Provost Home Design{% endblock %}
-{% block twitter_description %}Custom websites and web applications built with Python, Django, and modern front-end tools. No page builders - just clean, professional code.{% endblock %}
-
-{% block jsonld %}
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Service",
-  "name": "Web Design & Development",
-  "provider": {
-    "@type": "LocalBusiness",
-    "@id": "{{ request.scheme }}://{{ request.get_host }}/#org",
-    "name": "Provost Home Design"
-  },
-  "serviceType": "Web Design and Development",
-  "description": "Custom websites and web applications built with Python, Django, HTML, CSS, JavaScript, Bootstrap, Tailwind, and React.",
-  "areaServed": {
-    "@type": "Country",
-    "name": "United States"
-  },
-  "url": "{{ request.scheme }}://{{ request.get_host }}{% url 'pages:web_design' %}",
-  "hasOfferCatalog": {
-    "@type": "OfferCatalog",
-    "name": "Web Design Packages",
-    "itemListElement": [
-      {
-        "@type": "Offer",
-        "itemOffered": { "@type": "Service", "name": "Business Website" }
-      },
-      {
-        "@type": "Offer",
-        "itemOffered": { "@type": "Service", "name": "Web Application" }
-      },
-      {
-        "@type": "Offer",
-        "itemOffered": { "@type": "Service", "name": "E-commerce Site" }
-      }
-    ]
-  }
-}
-</script>
-{% endblock %}
+{% block body_class %}web-site{% endblock %}
+{% block title %}Local Business Websites | Provost Home Design Web{% endblock %}
+{% block meta_description %}Practical, responsive websites for local businesses, plus custom Django applications for businesses that need more than a standard site.{% endblock %}
+{% block og_title %}Websites Built Around Real Business Goals{% endblock %}
+{% block og_description %}Local-business websites first. Custom web applications when your workflow needs more.{% endblock %}
+{% block jsonld %}<script type="application/ld+json">{"@context":"https://schema.org","@type":"ProfessionalService","name":"Provost Home Design Web Services","url":"{{ request.scheme }}://{{ request.get_host }}/","areaServed":["Massachusetts","Rhode Island","New England"],"serviceType":["Business website design","Website redesign","Custom web application development"]}</script>{% endblock %}
 
 {% block content %}
-
-{# ── Hero ─────────────────────────────────────────────────────────────────── #}
-<section class="py-5 bg-gradient-dark-navy">
-  <div class="container-lg py-3">
-    <div class="row align-items-center gy-4">
-      <div class="col-lg-7">
-        <p class="text-uppercase fw-semibold mb-2 web-section-label">Web Design & Development</p>
-        <h1 class="display-5 fw-bold text-white mb-3">Sites and apps that actually work for your business</h1>
-        <p class="lead mb-4 web-section-lead">
-          I build custom websites and web applications using Python, Django, and modern front-end tools.
-          Fast-loading, mobile-ready, and built to grow with you - not a template, not a page builder.
-        </p>
-        <div class="d-flex flex-wrap gap-2">
-          <a href="#inquiry" class="btn btn-primary btn-lg px-4">
-            <i class="bi bi-chat-dots me-1" aria-hidden="true"></i> Start a Conversation
-          </a>
-          <a href="#portfolio" class="btn btn-outline-light btn-lg px-4">
-            <i class="bi bi-eye me-1" aria-hidden="true"></i> See My Work
-          </a>
-        </div>
-      </div>
-      <div class="col-lg-5 d-none d-lg-flex justify-content-center align-items-center">
-        <div class="d-flex flex-wrap gap-3 justify-content-center tech-grid">
-          {% for tech in tech_stack|slice:":6" %}
-          <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-3 tech-badge">
-            <img src="{{ tech.icon }}" alt="{{ tech.name }}" width="20" height="20" loading="lazy">
-            <span class="text-white small fw-medium">{{ tech.name }}</span>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
+<section class="web-hero">
+  <div class="container-lg position-relative py-5" style="z-index:1">
+    <p class="web-kicker web-reveal">Websites for working businesses</p>
+    <h1 class="mb-4 web-reveal">Clear online.<br>Useful every day.</h1>
+    <p class="lead mb-4 web-reveal">I design and build focused websites for local businesses that need to look credible, explain their work, and turn visits into real conversations.</p>
+    <div class="d-flex flex-wrap gap-3 mb-5 web-reveal">
+      <a class="btn web-btn-primary btn-lg px-4" href="{% url 'pages:web_contact' %}">Discuss your website</a>
+      <a class="btn btn-outline-dark btn-lg px-4" href="{% url 'pages:web_work' %}">See the work</a>
     </div>
+    <p class="web-hero-note mb-0">Need accounts, dashboards, payments, or workflow automation? Custom Django applications are available as a deeper engagement.</p>
   </div>
 </section>
 
-{# ── What I Build ─────────────────────────────────────────────────────────── #}
-<section class="py-5 bg-white">
+<section class="web-section">
   <div class="container-lg">
-    <div class="text-center mb-4">
-      <h2 class="h3 fw-bold">What I Build</h2>
-      <p class="text-muted">From simple business sites to full-stack web applications.</p>
+    <div class="row align-items-end g-4 mb-5">
+      <div class="col-lg-8"><p class="web-kicker">Start with the business need</p><h2 class="web-section-title mb-0">Three practical ways to work together.</h2></div>
+      <div class="col-lg-4"><p class="text-muted mb-0">No stack recital. No mystery package. We choose the level of build that fits the job.</p></div>
     </div>
-    <div class="row g-3">
-      <div class="col-md-6 col-lg-3">
-        <div class="card h-100 border rounded-3 shadow-sm p-3">
-          <div class="card-body">
-            <div class="mb-2">
-              <i class="bi bi-briefcase fs-2 text-primary" aria-hidden="true"></i>
-            </div>
-            <h3 class="h6 fw-semibold">Business Websites</h3>
-            <p class="small text-muted mb-0">Professional, mobile-responsive sites that build credibility and convert visitors into leads. Built clean and fast.</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-6 col-lg-3">
-        <div class="card h-100 border rounded-3 shadow-sm p-3">
-          <div class="card-body">
-            <div class="mb-2">
-              <i class="bi bi-code-square fs-2 text-primary" aria-hidden="true"></i>
-            </div>
-            <h3 class="h6 fw-semibold">Web Applications</h3>
-            <p class="small text-muted mb-0">Custom back-end logic, user accounts, dashboards, APIs, and dynamic data - built with Python and Django.</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-6 col-lg-3">
-        <div class="card h-100 border rounded-3 shadow-sm p-3">
-          <div class="card-body">
-            <div class="mb-2">
-              <i class="bi bi-cart3 fs-2 text-primary" aria-hidden="true"></i>
-            </div>
-            <h3 class="h6 fw-semibold">E-commerce</h3>
-            <p class="small text-muted mb-0">Online stores with product catalogs, Stripe payments, order management, and a seamless checkout flow.</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-6 col-lg-3">
-        <div class="card h-100 border rounded-3 shadow-sm p-3">
-          <div class="card-body">
-            <div class="mb-2">
-              <i class="bi bi-arrow-repeat fs-2 text-primary" aria-hidden="true"></i>
-            </div>
-            <h3 class="h6 fw-semibold">Redesigns & Refreshes</h3>
-            <p class="small text-muted mb-0">Already have a site but it looks dated or doesn't perform? I'll rebuild or modernize it so it works harder for you.</p>
-          </div>
-        </div>
-      </div>
+    <div class="row g-4">
+      <div class="col-md-4 web-reveal"><article class="web-card"><span class="web-card-number">01 / ESTABLISH</span><h3 class="h2 mt-4">Business website</h3><p>Focused pages, mobile-ready design, clear calls to action, contact capture, and a solid technical foundation.</p><a href="{% url 'pages:web_services' %}#business-sites">Explore business sites</a></article></div>
+      <div class="col-md-4 web-reveal"><article class="web-card"><span class="web-card-number">02 / IMPROVE</span><h3 class="h2 mt-4">Website redesign</h3><p>Rework an outdated or confusing site around stronger content, easier navigation, speed, accessibility, and conversion.</p><a href="{% url 'pages:web_services' %}#redesigns">Explore redesigns</a></article></div>
+      <div class="col-md-4 web-reveal"><article class="web-card"><span class="web-card-number">03 / EXTEND</span><h3 class="h2 mt-4">Custom application</h3><p>Purpose-built tools for customer portals, internal workflows, payments, catalogs, dashboards, and data-heavy operations.</p><a href="{% url 'pages:web_services' %}#applications">Explore applications</a></article></div>
     </div>
   </div>
 </section>
 
-{# ── Tech Stack ───────────────────────────────────────────────────────────── #}
-<section class="py-5 bg-off-white">
+<section class="web-section web-band">
   <div class="container-lg">
-    <div class="text-center mb-4">
-      <h2 class="h3 fw-bold">Built With Modern Tools</h2>
-      <p class="text-muted">The full stack, from database to deployment.</p>
-    </div>
-    <div class="row g-3 justify-content-center">
-      {% for tech in tech_stack %}
-      <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-        <div class="card border rounded-3 text-center py-3 px-2 h-100 shadow-sm tech-card-lift">
-          <img src="{{ tech.icon }}" alt="{{ tech.name }}" width="48" height="48" class="d-block mx-auto mb-2" loading="lazy">
-          <p class="small fw-medium mb-0 tech-name">{{ tech.name }}</p>
-        </div>
-      </div>
-      {% endfor %}
+    <div class="row g-5 align-items-center">
+      <div class="col-lg-7"><p class="web-kicker">Proof in production</p><h2 class="web-section-title">A contractor site and a full business platform.</h2><p class="fs-5 mt-4">The current work spans a clean lead-generation site for J. Fisk Construction and the Django platform behind Provost Home Design, including catalog, inquiry, account, and operational features.</p></div>
+      <div class="col-lg-5"><a class="btn btn-light btn-lg w-100" href="{% url 'pages:web_work' %}">View project details</a></div>
     </div>
   </div>
 </section>
 
-{# ── Portfolio ────────────────────────────────────────────────────────────── #}
-<section class="py-5 bg-white" id="portfolio">
+<section class="web-section">
   <div class="container-lg">
-    <div class="text-center mb-4">
-      <h2 class="h3 fw-bold">Sites I've Built</h2>
-      <p class="text-muted">Real projects, live on the web.</p>
-    </div>
-    <div class="row g-4 justify-content-center">
-
-      <div class="col-md-6 col-lg-5">
-        <div class="card border rounded-3 shadow-sm h-100 overflow-hidden">
-          <img src="{% static 'images/fisk_truck.jpeg' %}"
-               alt="J. Fisk Construction"
-               class="card-img-top img-portfolio"
-               loading="lazy" decoding="async">
-          <div class="card-body">
-            <h3 class="h6 fw-semibold mb-1">J. Fisk Construction</h3>
-            <p class="small text-muted mb-3">Business website for a local construction company - clean design, service pages, contact form, and mobile-responsive layout.</p>
-            <a href="https://www.jfiskconstruction.com/" target="_blank" rel="noopener noreferrer"
-               class="btn btn-outline-primary btn-sm">
-              <i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i> Visit Site
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-6 col-lg-5">
-        <div class="card border rounded-3 shadow-sm h-100 overflow-hidden">
-          <img src="{% static 'images/hero-blueprint.jpg' %}"
-               alt="Provost Home Design"
-               class="card-img-top img-portfolio-top"
-               loading="lazy" decoding="async">
-          <div class="card-body">
-            <h3 class="h6 fw-semibold mb-1">Provost Home Design</h3>
-            <p class="small text-muted mb-3">This site - a full Django web application with a house plan catalog, favorites, comparisons, admin portal, S3 media, and more.</p>
-            <a href="https://www.provosthomedesign.com/" target="_blank" rel="noopener noreferrer"
-               class="btn btn-outline-primary btn-sm">
-              <i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i> Visit Site
-            </a>
-          </div>
-        </div>
-      </div>
-
-    </div>
+    <p class="web-kicker">A visible process</p><h2 class="web-section-title mb-5">No disappearing act between deposit and launch.</h2>
+    <div class="row g-4">{% for step in process_steps %}<div class="col-sm-6 col-lg-3"><div class="web-rule pt-3"><span class="web-card-number">0{{ forloop.counter }}</span><h3 class="h3 mt-3">{{ step.title }}</h3><p class="text-muted">{{ step.desc }}</p></div></div>{% endfor %}</div>
   </div>
 </section>
 
-{# ── How It Works ─────────────────────────────────────────────────────────── #}
-<section class="py-5 bg-off-white">
-  <div class="container-lg">
-    <div class="text-center mb-4">
-      <h2 class="h3 fw-bold">How It Works</h2>
-      <p class="text-muted">A straightforward process from first conversation to launch.</p>
-    </div>
-    <div class="row g-3 justify-content-center">
-      {% for step in process_steps %}
-      <div class="col-sm-6 col-lg-3">
-        <div class="text-center px-2">
-          <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3 step-number">
-            {{ forloop.counter }}
-          </div>
-          <h3 class="h6 fw-semibold mb-1">{{ step.title }}</h3>
-          <p class="small text-muted mb-0">{{ step.desc }}</p>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
+<section class="container-lg pb-5">
+  <div class="web-card d-lg-flex align-items-center justify-content-between gap-4"><div><p class="web-kicker">Have a project in mind?</p><h2 class="h1 mb-2">Tell me what the website needs to accomplish.</h2><p class="text-muted mb-lg-0">A short, practical description is enough to start.</p></div><a class="btn web-btn-primary btn-lg flex-shrink-0" href="{% url 'pages:web_contact' %}">Start the conversation</a></div>
 </section>
-
-{# ── Recommended Books & Tools (Amazon affiliate) ─────────────────────────── #}
-{% if affiliate_products %}
-<section class="py-5" style="background:#f8fafc;" id="recommended">
-  {% include "pages/partials/affiliate_products.html" with products=affiliate_products heading="Books & Tools I Recommend" subheading="My go-to books and resources for learning HTML, Python, Django, and web development." %}
-</section>
-{% endif %}
-
-{# ── Inquiry Form ─────────────────────────────────────────────────────────── #}
-<section class="py-5 bg-white" id="inquiry">
-  <div class="container-lg">
-    <div class="row justify-content-center">
-      <div class="col-lg-8">
-
-        <div class="text-center mb-4">
-          <h2 class="h3 fw-bold">Let's Talk About Your Project</h2>
-          <p class="text-muted">Fill out the form and I'll get back to you - usually same day.</p>
-        </div>
-
-        {% if messages %}
-          {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}info{% endif %} alert-dismissible fade show" role="alert">
-              {{ message }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-          {% endfor %}
-        {% endif %}
-
-        <div class="card border rounded-3 shadow-sm p-4">
-          <form id="web-design-form" method="post" data-analytics-form="web_design_inquiry" novalidate>
-            {% csrf_token %}
-
-            {# Honeypot #}
-            <div class="d-none" aria-hidden="true">
-              {{ form.website }}
-            </div>
-
-            {% if recaptcha_site_key %}
-              <input type="hidden" name="recaptcha_token" id="wd_recaptcha_token" value="">
-            {% endif %}
-
-            <div class="row g-3">
-              <div class="col-sm-6">
-                <label for="{{ form.name.id_for_label }}" class="form-label fw-medium">
-                  Name <span class="text-danger">*</span>
-                </label>
-                {{ form.name }}
-                {% if form.name.errors %}
-                  <div class="invalid-feedback d-block">{{ form.name.errors|join:", " }}</div>
-                {% endif %}
-              </div>
-              <div class="col-sm-6">
-                <label for="{{ form.email.id_for_label }}" class="form-label fw-medium">
-                  Email <span class="text-danger">*</span>
-                </label>
-                {{ form.email }}
-                {% if form.email.errors %}
-                  <div class="invalid-feedback d-block">{{ form.email.errors|join:", " }}</div>
-                {% endif %}
-              </div>
-              <div class="col-sm-6">
-                <label for="{{ form.phone.id_for_label }}" class="form-label fw-medium">Phone</label>
-                {{ form.phone }}
-                {% if form.phone.errors %}
-                  <div class="invalid-feedback d-block">{{ form.phone.errors|join:", " }}</div>
-                {% endif %}
-              </div>
-              <div class="col-sm-6">
-                <label for="{{ form.project_type.id_for_label }}" class="form-label fw-medium">Project Type</label>
-                {{ form.project_type }}
-                {% if form.project_type.errors %}
-                  <div class="invalid-feedback d-block">{{ form.project_type.errors|join:", " }}</div>
-                {% endif %}
-              </div>
-              <div class="col-12">
-                <label for="{{ form.message.id_for_label }}" class="form-label fw-medium">
-                  Tell me about your project <span class="text-danger">*</span>
-                </label>
-                {{ form.message }}
-                {% if form.message.errors %}
-                  <div class="invalid-feedback d-block">{{ form.message.errors|join:", " }}</div>
-                {% endif %}
-              </div>
-              <div class="col-12">
-                <div class="form-check">
-                  {{ form.terms_accepted }}
-                  <label class="form-check-label small" for="{{ form.terms_accepted.id_for_label }}">
-                    I agree to the <a href="{% url 'pages:terms' %}" target="_blank">Terms &amp; Conditions</a>
-                    <span class="text-danger">*</span>
-                  </label>
-                  {% if form.terms_accepted.errors %}
-                    <div class="invalid-feedback d-block">{{ form.terms_accepted.errors|join:", " }}</div>
-                  {% endif %}
-                </div>
-              </div>
-              {% if form.non_field_errors %}
-                <div class="col-12">
-                  <div class="alert alert-danger py-2 mb-0">{{ form.non_field_errors|join:", " }}</div>
-                </div>
-              {% endif %}
-              <div class="col-12">
-                <button type="submit" class="btn btn-primary px-4">
-                  <i class="bi bi-send me-1" aria-hidden="true"></i> Send Inquiry
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-
-        <p class="text-center text-muted small mt-3 mb-0">
-          Prefer email? <a href="mailto:mike@provosthomedesign.com">mike@provosthomedesign.com</a>
-          &nbsp;|&nbsp;
-          <a href="tel:+15082437912">(508) 243-7912</a>
-        </p>
-
-      </div>
-    </div>
-  </div>
-</section>
-
-{% if recaptcha_site_key %}
-<script src="https://www.google.com/recaptcha/enterprise.js?render=6LdAVUEtAAAAANkmJS6XbgPzqDf_oX4Y45sUdmDV"></script>
-<script>
-  (function () {
-    document.addEventListener('DOMContentLoaded', function () {
-      var form = document.getElementById('web-design-form');
-      if (!form) return;
-
-      form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        grecaptcha.enterprise.ready(async function () {
-          var token = await grecaptcha.enterprise.execute('6LdAVUEtAAAAANkmJS6XbgPzqDf_oX4Y45sUdmDV', {action: 'web_design_form'});
-          var el = document.getElementById('wd_recaptcha_token');
-          if (el) el.value = token;
-          form.submit();
-        });
-      });
-    });
-  })();
-</script>
-{% endif %}
-
 {% endblock %}
-

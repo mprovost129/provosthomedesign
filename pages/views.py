@@ -1149,8 +1149,45 @@ def web_design_legacy_redirect(request: HttpRequest) -> HttpResponse:
 def web_pricing_legacy_redirect(request: HttpRequest) -> HttpResponse:
     return HttpResponsePermanentRedirect(f"{settings.WEB_DESIGN_URL}/pricing/")
 
-@ratelimit(key="ip", rate="5/m", block=True)
+
+WEB_PROCESS_STEPS = [
+    {"title": "Listen", "desc": "Clarify the audience, business goal, content, and practical constraints."},
+    {"title": "Plan", "desc": "Agree on pages, features, responsibilities, timing, and a clear project scope."},
+    {"title": "Build", "desc": "Design and develop in visible stages with useful review points along the way."},
+    {"title": "Launch", "desc": "Test, deploy, hand off access, and define support after the site goes live."},
+]
+
+
 def web_design(request: HttpRequest) -> HttpResponse:
+    return render(request, "pages/web_design.html", {"process_steps": WEB_PROCESS_STEPS})
+
+
+def web_services(request: HttpRequest) -> HttpResponse:
+    return render(request, "pages/web_services.html")
+
+
+def web_work(request: HttpRequest) -> HttpResponse:
+    return render(request, "pages/web_work.html")
+
+
+def web_about(request: HttpRequest) -> HttpResponse:
+    return render(request, "pages/web_about.html")
+
+
+def web_thanks(request: HttpRequest) -> HttpResponse:
+    return render(request, "pages/web_thanks.html")
+
+
+def web_terms(request: HttpRequest) -> HttpResponse:
+    return render(request, "pages/web_terms.html")
+
+
+def web_privacy(request: HttpRequest) -> HttpResponse:
+    return render(request, "pages/web_privacy.html")
+
+
+@ratelimit(key="ip", rate="5/m", block=True)
+def web_contact(request: HttpRequest) -> HttpResponse:
     s = SiteSettings.load()
     company = s.company_name or getattr(settings, "COMPANY_NAME", "Provost Home Design")
     email = s.contact_email or getattr(settings, "CONTACT_EMAIL", "mike@provosthomedesign.com")
@@ -1162,23 +1199,32 @@ def web_design(request: HttpRequest) -> HttpResponse:
     )
 
     if request.method == "POST":
+        form = WebDesignInquiryForm(request.POST)
         if _too_many_recent_submissions(request, "web_design"):
             messages.warning(request, "You're sending messages too quickly. Please wait a minute and try again.")
-            return redirect("pages:web_design")
+            return render(request, "pages/web_contact.html", {
+                "form": form,
+                "recaptcha_site_key": (getattr(settings, "RECAPTCHA_SITE_KEY", "") or getattr(settings, "RECAPTCHA_PUBLIC_KEY", "")).strip(),
+            }, status=429)
 
         started = float(request.session.get("web_design_started_ts", 0))
         if time() - started < 2.0:
             request.session["web_design_started_ts"] = time()
             messages.error(request, "Spam protection triggered. Please try again.")
-            return redirect("pages:web_design")
+            return render(request, "pages/web_contact.html", {
+                "form": form,
+                "recaptcha_site_key": (getattr(settings, "RECAPTCHA_SITE_KEY", "") or getattr(settings, "RECAPTCHA_PUBLIC_KEY", "")).strip(),
+            }, status=400)
         request.session["web_design_started_ts"] = time()
 
         recaptcha_ok, _ = verify_recaptcha_v3(request, expected_action="web_design_form")
         if not recaptcha_ok:
             messages.error(request, "Spam detection failed. Please try again.")
-            return redirect("pages:web_design")
+            return render(request, "pages/web_contact.html", {
+                "form": form,
+                "recaptcha_site_key": (getattr(settings, "RECAPTCHA_SITE_KEY", "") or getattr(settings, "RECAPTCHA_PUBLIC_KEY", "")).strip(),
+            }, status=400)
 
-        form = WebDesignInquiryForm(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
             pt_label = dict(WEB_PROJECT_TYPE_CHOICES).get(cd.get("project_type", ""), cd.get("project_type", "")) or "Not specified"
@@ -1210,8 +1256,8 @@ def web_design(request: HttpRequest) -> HttpResponse:
                 html_body = render_to_string("pages/emails/web_design_notification.html", ctx)
             except Exception:
                 logger.exception("Missing/broken web design notification templates")
-                messages.error(request, "We had a problem preparing the notification. Please try again.")
-                return redirect("pages:web_design")
+                messages.warning(request, "Your inquiry was saved, but the email notification could not be prepared. I will review it directly.")
+                return redirect("pages:web_thanks")
 
             subject = f"[Web Design] New inquiry from {cd['name']}"
             msg = EmailMultiAlternatives(
@@ -1225,53 +1271,21 @@ def web_design(request: HttpRequest) -> HttpResponse:
             try:
                 msg.send(fail_silently=False)
                 logger.info("Web design inquiry email sent: From %s (%s)", cd["email"], cd["name"])
-            except Exception as e:
+            except Exception:
                 logger.exception("Web design inquiry email send failed")
-                err = "We couldn't send your message just now. Please try again in a moment."
-                if settings.DEBUG:
-                    err += f" ({e.__class__.__name__}: {e})"
-                messages.error(request, err)
-                return redirect("pages:web_design")
+                messages.warning(request, "Your inquiry was saved, but the email notification was delayed. Please do not resubmit it.")
+                return redirect("pages:web_thanks")
 
             messages.success(request, "Thanks! Your inquiry has been sent. I'll be in touch soon.")
-            return redirect("pages:web_design")
+            return redirect("pages:web_thanks")
 
         messages.error(request, "Please correct the errors below.")
     else:
         request.session["web_design_started_ts"] = time()
         form = WebDesignInquiryForm()
 
-    devicon = "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons"
-    tech_stack = [
-        {"name": "Python",      "icon": f"{devicon}/python/python-original.svg"},
-        {"name": "Django",      "icon": f"{devicon}/django/django-plain.svg"},
-        {"name": "HTML5",       "icon": f"{devicon}/html5/html5-original.svg"},
-        {"name": "CSS3",        "icon": f"{devicon}/css3/css3-original.svg"},
-        {"name": "JavaScript",  "icon": f"{devicon}/javascript/javascript-original.svg"},
-        {"name": "Bootstrap",   "icon": f"{devicon}/bootstrap/bootstrap-original.svg"},
-        {"name": "Tailwind CSS","icon": f"{devicon}/tailwindcss/tailwindcss-original.svg"},
-        {"name": "React",       "icon": f"{devicon}/react/react-original.svg"},
-        {"name": "PostgreSQL",  "icon": f"{devicon}/postgresql/postgresql-original.svg"},
-        {"name": "Git",         "icon": f"{devicon}/git/git-original.svg"},
-    ]
-
-    process_steps = [
-        {"title": "Discover",  "desc": "We talk through your goals, audience, and requirements so the project starts with the right foundation."},
-        {"title": "Design",    "desc": "Wireframes and layout decisions made before a line of code is written - so we're aligned on the result."},
-        {"title": "Build",     "desc": "Clean, maintainable code with regular check-ins. You see progress throughout, not just at the end."},
-        {"title": "Launch",    "desc": "Deployment, testing, and handoff. I stay available for questions and ongoing support as needed."},
-    ]
-
-    affiliate_products = list(
-        AffiliateProduct.objects.filter(category=AffiliateCategory.WEB_DEV, is_active=True)[:8]
-    )
-
-    return render(request, "pages/web_design.html", {
-        "page": {"title": "Web Design & Development", "description": "Custom web apps and business websites built with Python, Django, and modern front-end tech."},
+    return render(request, "pages/web_contact.html", {
         "form": form,
-        "tech_stack": tech_stack,
-        "process_steps": process_steps,
-        "affiliate_products": affiliate_products,
         "recaptcha_site_key": (
             (getattr(settings, "RECAPTCHA_SITE_KEY", "") or "").strip()
             or (getattr(settings, "RECAPTCHA_PUBLIC_KEY", "") or "").strip()
@@ -1340,7 +1354,13 @@ def web_llms_txt(request):
 
 ## Site sections
 
-- [Web Design]({base}/): Services, portfolio, process, and project inquiry form.
-- [Pricing]({base}/pricing/): Web design pricing and interactive cost calculator.
+- [Home]({base}/): Local-business website positioning, process, and primary project paths.
+- [Services]({base}/services/): Business websites, redesigns, and custom Django applications.
+- [Work]({base}/work/): Selected live website and application projects.
+- [About]({base}/about/): Michael Provost's approach to practical business websites and software.
+- [Pricing]({base}/pricing/): Published web-service pricing and interactive estimates when available.
+- [Contact]({base}/contact/): Web project inquiry form.
+- [Privacy]({base}/privacy/): Web-services privacy notice.
+- [Terms]({base}/terms/): General web-services and inquiry terms.
 """
     return HttpResponse(content, content_type="text/plain; charset=utf-8")

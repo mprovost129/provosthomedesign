@@ -16,17 +16,17 @@
     <meta name="description" content="{% block meta_description %}Custom house plans and home design services for New England builders and homeowners. Code-compliant plans built with care.{% endblock %}">
 
     {# ---- Open Graph (override individual blocks in child templates) ---- #}
-    <meta property="og:title"       content="{% block og_title %}Provost Home Design{% endblock %}" />
-    <meta property="og:description" content="{% block og_description %}Custom & stock home plans designed for code compliance, with form, function, and style in mind.{% endblock %}" />
+    <meta property="og:title"       content="{% block og_title %}{% if IS_WEB_DESIGN_SITE %}Provost Home Design Web Services{% else %}Provost Home Design{% endif %}{% endblock %}" />
+    <meta property="og:description" content="{% block og_description %}{% if IS_WEB_DESIGN_SITE %}Practical websites for local businesses and custom web applications for more complex workflows.{% else %}Custom & stock home plans designed for code compliance, with form, function, and style in mind.{% endif %}{% endblock %}" />
     <meta property="og:image"       content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'images/og-image.jpg' %}{% endblock %}" />
     <meta property="og:url"         content="{% block og_url %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% endblock %}" />
     <meta property="og:type"        content="{% block og_type %}website{% endblock %}" />
-    <meta property="og:site_name"   content="Provost Home Design" />
+    <meta property="og:site_name"   content="{% if IS_WEB_DESIGN_SITE %}Provost Home Design Web Services{% else %}Provost Home Design{% endif %}" />
 
     {# ---- Twitter Card (inherits OG values automatically) ---- #}
     <meta name="twitter:card"        content="summary_large_image" />
-    <meta name="twitter:title"       content="{% block twitter_title %}Provost Home Design{% endblock %}" />
-    <meta name="twitter:description" content="{% block twitter_description %}Custom & stock home plans designed for code compliance, with form, function, and style in mind.{% endblock %}" />
+    <meta name="twitter:title"       content="{% block twitter_title %}{% if IS_WEB_DESIGN_SITE %}Provost Home Design Web Services{% else %}Provost Home Design{% endif %}{% endblock %}" />
+    <meta name="twitter:description" content="{% block twitter_description %}{% if IS_WEB_DESIGN_SITE %}Practical websites for local businesses and custom web applications for more complex workflows.{% else %}Custom & stock home plans designed for code compliance, with form, function, and style in mind.{% endif %}{% endblock %}" />
     <meta name="twitter:image"       content="{% block twitter_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'images/og-image.jpg' %}{% endblock %}" />
 
     {# ---- Per-page JSON-LD (override in child templates) ---- #}
@@ -78,7 +78,7 @@
       "@context": "https://schema.org",
       "@type": "Organization",
       "@id": "{{ request.scheme }}://{{ request.get_host }}/#org",
-      "name": "{{ COMPANY_NAME|default:'Provost Home Design'|escapejs }}",
+      "name": "{% if IS_WEB_DESIGN_SITE %}Provost Home Design Web Services{% else %}{{ COMPANY_NAME|default:'Provost Home Design'|escapejs }}{% endif %}",
       "url": "{{ request.scheme }}://{{ request.get_host }}/",
       "logo": "{{ request.scheme }}://{{ request.get_host }}{% static BRAND_LOGO_STATIC|default:'images/phdlogo.svg' %}",
       "contactPoint": [{
@@ -88,11 +88,11 @@
         "contactType": "customer service",
         "areaServed": "US"
       }],
-      "sameAs": [
+      {% if not IS_WEB_DESIGN_SITE %}"sameAs": [
         "https://www.facebook.com/ProvostHomeDesign",
         "https://www.instagram.com/provosthomedesign/",
         "https://www.linkedin.com/in/michael-provost-6077a318/"
-      ]
+      ]{% else %}"description": "Business websites, website redesigns, and custom web applications."{% endif %}
     }
     </script>
 
@@ -103,6 +103,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+    {% if IS_WEB_DESIGN_SITE %}<link rel="stylesheet" href="{% static 'css/web-site.css' %}" />{% endif %}
 
     {# Optional per-page head additions (styles, meta) #}
     {% block extra_head %}{% endblock %}

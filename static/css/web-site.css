@@ -1,0 +1,73 @@
+:root {
+  --web-paper: #f4efe6;
+  --web-cream: #fffaf1;
+  --web-ink: #17211f;
+  --web-muted: #59635f;
+  --web-orange: #e95d2a;
+  --web-orange-dark: #bd3f16;
+  --web-moss: #46664d;
+  --web-line: #cfc6b7;
+}
+
+body.web-site {
+  background: var(--web-paper);
+  color: var(--web-ink);
+  font-family: "Avenir Next", "Century Gothic", Calibri, sans-serif;
+}
+
+.web-site main { padding-top: 0 !important; }
+.web-site h1, .web-site h2, .web-site h3, .web-display {
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  letter-spacing: -.025em;
+}
+.web-nav { background: rgba(255, 250, 241, .94); border-bottom: 1px solid var(--web-line); backdrop-filter: blur(12px); }
+.web-brand-mark { display: grid; width: 2.3rem; height: 2.3rem; place-items: center; background: var(--web-orange); color: white; border-radius: 50% 50% 12% 50%; font-weight: 800; }
+.web-brand-name { color: var(--web-ink); font-weight: 750; letter-spacing: -.02em; }
+.web-brand-name small { color: var(--web-orange-dark); font-size: .7em; text-transform: uppercase; letter-spacing: .09em; }
+.web-nav .nav-link { color: var(--web-ink); font-weight: 650; }
+.web-nav .nav-link.active { color: var(--web-orange-dark); }
+.web-btn-primary, .web-btn-primary:hover, .web-btn-primary:focus { background: var(--web-orange); border-color: var(--web-orange); color: #fff; }
+.web-btn-primary:hover { background: var(--web-orange-dark); border-color: var(--web-orange-dark); }
+
+.web-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 680px;
+  display: grid;
+  align-items: center;
+  background: linear-gradient(90deg, rgba(23, 33, 31, .055) 1px, transparent 1px), linear-gradient(rgba(23, 33, 31, .055) 1px, transparent 1px), var(--web-cream);
+  background-size: 32px 32px;
+}
+.web-hero::after { content: ""; position: absolute; width: 34rem; height: 34rem; right: -10rem; top: 4rem; border: 7rem solid var(--web-moss); border-radius: 50% 35% 55% 42%; opacity: .16; transform: rotate(18deg); }
+.web-kicker { color: var(--web-orange-dark); font-size: .78rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.web-hero h1 { font-size: clamp(3.2rem, 8vw, 7.2rem); line-height: .91; max-width: 950px; }
+.web-hero .lead { color: var(--web-muted); max-width: 690px; font-size: clamp(1.15rem, 2vw, 1.4rem); }
+.web-hero-note { border-left: 4px solid var(--web-orange); padding-left: 1rem; color: var(--web-muted); }
+.web-section { padding: clamp(4rem, 8vw, 7rem) 0; }
+.web-section-title { font-size: clamp(2.25rem, 5vw, 4.5rem); line-height: 1; }
+.web-card { height: 100%; padding: 2rem; background: var(--web-cream); border: 1px solid var(--web-line); border-radius: .4rem 2.4rem .4rem .4rem; box-shadow: 8px 8px 0 rgba(70, 102, 77, .14); }
+.web-card-number { color: var(--web-orange-dark); font-size: .78rem; font-weight: 800; letter-spacing: .12em; }
+.web-band { background: var(--web-ink); color: var(--web-cream); }
+.web-band p { color: #bdc6c2; }
+.web-rule { border-top: 1px solid var(--web-line); }
+.web-project { background: #fff; border: 1px solid var(--web-line); overflow: hidden; }
+.web-project img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; }
+.web-project-copy { padding: 1.75rem; }
+.web-form-shell { background: var(--web-cream); border: 1px solid var(--web-line); box-shadow: 12px 12px 0 var(--web-moss); }
+.web-form-shell .form-control, .web-form-shell .form-select { background: #fff; border-color: #a99f90; min-height: 3rem; }
+.web-form-shell textarea.form-control { min-height: 10rem; }
+.web-footer { background: var(--web-ink); color: #cbd3cf; }
+.web-footer-name { color: white; font-family: "Iowan Old Style", Georgia, serif; font-size: 1.35rem; }
+.web-footer a { color: #d9dfdc !important; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .web-reveal { animation: web-rise .65s ease both; }
+  .web-reveal:nth-child(2) { animation-delay: .1s; }
+  .web-reveal:nth-child(3) { animation-delay: .2s; }
+  @keyframes web-rise { from { opacity: 0; transform: translateY(22px); } }
+}
+@media (max-width: 767.98px) {
+  .web-hero { min-height: 600px; }
+  .web-hero::after { width: 20rem; height: 20rem; right: -13rem; top: 1rem; }
+  .web-card { padding: 1.4rem; }
+}

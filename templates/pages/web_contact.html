@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block body_class %}web-site{% endblock %}
+{% block title %}Discuss a Website Project | Provost Home Design Web{% endblock %}
+{% block meta_description %}Tell Michael Provost about your business website, redesign, e-commerce, or custom web application project.{% endblock %}
+{% block content %}
+<header class="web-section pb-4"><div class="container-lg"><p class="web-kicker">Start a project</p><h1 class="web-section-title col-lg-9">What should the website help your business do?</h1><p class="lead text-muted col-lg-7 mt-4">Share the goal, the current situation, and any timing you already know. A polished brief is not required.</p></div></header>
+<section class="container-lg pb-5"><div class="row g-5"><div class="col-lg-4"><div class="web-rule pt-4"><h2 class="h3">What happens next</h2><ol class="ps-3"><li class="mb-3">I review the business goal and project type.</li><li class="mb-3">I follow up with useful questions or a short call.</li><li>We define scope, responsibilities, timing, and pricing before work begins.</li></ol><p class="small text-muted mt-4">Prefer email or phone?<br><a href="mailto:mike@provosthomedesign.com">mike@provosthomedesign.com</a><br><a href="tel:+15082437912">508-243-7912</a></p></div></div>
+<div class="col-lg-8"><div class="web-form-shell p-4 p-lg-5">
+  {% if form.errors %}<div class="alert alert-danger" role="alert"><strong>Please review the highlighted fields.</strong> Your entered information has been preserved.</div>{% endif %}
+  <form id="web-design-form" method="post" data-analytics-form="web_design_inquiry" novalidate>{% csrf_token %}<div class="d-none" aria-hidden="true">{{ form.website }}</div>{% if recaptcha_site_key %}<input type="hidden" name="recaptcha_token" id="wd_recaptcha_token" value="">{% endif %}
+    <div class="row g-4">
+      <div class="col-sm-6"><label class="form-label" for="{{ form.name.id_for_label }}">Name *</label>{{ form.name }}{% for error in form.name.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>
+      <div class="col-sm-6"><label class="form-label" for="{{ form.email.id_for_label }}">Email *</label>{{ form.email }}{% for error in form.email.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>
+      <div class="col-sm-6"><label class="form-label" for="{{ form.phone.id_for_label }}">Phone</label>{{ form.phone }}{% for error in form.phone.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>
+      <div class="col-sm-6"><label class="form-label" for="{{ form.project_type.id_for_label }}">Project type</label>{{ form.project_type }}{% for error in form.project_type.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>
+      <div class="col-12"><label class="form-label" for="{{ form.message.id_for_label }}">Project description *</label>{{ form.message }}{% for error in form.message.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>
+      <div class="col-12"><div class="form-check">{{ form.terms_accepted }}<label class="form-check-label" for="{{ form.terms_accepted.id_for_label }}">I agree to the <a href="{% url 'pages:terms' %}" target="_blank">web services terms</a>. *</label>{% for error in form.terms_accepted.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div></div>
+      {% for error in form.non_field_errors %}<div class="col-12"><div class="alert alert-danger mb-0">{{ error }}</div></div>{% endfor %}
+      <div class="col-12"><button class="btn web-btn-primary btn-lg px-4" type="submit">Send project inquiry</button></div>
+    </div>
+  </form>
+</div></div></div></section>
+{% endblock %}
+{% block extra_scripts %}{% if recaptcha_site_key %}<script src="https://www.google.com/recaptcha/enterprise.js?render={{ recaptcha_site_key }}"></script><script>(function(){document.addEventListener('DOMContentLoaded',function(){var form=document.getElementById('web-design-form');if(!form)return;form.addEventListener('submit',function(event){if(form.dataset.recaptchaSubmitting==='true')return;event.preventDefault();grecaptcha.enterprise.ready(async function(){var token=await grecaptcha.enterprise.execute('{{ recaptcha_site_key|escapejs }}',{action:'web_design_form'});document.getElementById('wd_recaptcha_token').value=token;form.dataset.recaptchaSubmitting='true';form.submit();});});});})();</script>{% endif %}{% endblock %}

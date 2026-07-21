@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block body_class %}web-site{% endblock %}
+{% block title %}Project Inquiry Received | Provost Home Design Web{% endblock %}
+{% block meta_description %}Your web project inquiry has been received.{% endblock %}
+{% block extra_meta %}<meta name="robots" content="noindex,follow">{% endblock %}
+{% block content %}<section class="web-section"><div class="container-lg"><div class="web-card col-lg-8 mx-auto text-center py-5"><p class="web-kicker">Inquiry received</p><h1 class="web-section-title">Thank you.</h1><p class="lead text-muted mt-4">I have the project details and will review them before following up. There is no need to submit the form again.</p><div class="d-flex flex-wrap justify-content-center gap-3 mt-4"><a class="btn web-btn-primary" href="{% url 'pages:web_work' %}">View selected work</a><a class="btn btn-outline-dark" href="{% url 'pages:web_design' %}">Return home</a></div></div></div></section>{% endblock %}

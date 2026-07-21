@@ -85,7 +85,16 @@ class WebPagesSitemap(Sitemap):
     protocol = "https"
 
     def items(self):
-        return ["pages:web_design", "pages:pricing"]
+        return [
+            "pages:web_design",
+            "pages:web_services",
+            "pages:web_work",
+            "pages:web_about",
+            "pages:web_contact",
+            "pages:pricing",
+            "pages:terms",
+            "pages:privacy",
+        ]
 
     def location(self, item):
         return reverse(item)
