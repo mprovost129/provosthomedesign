@@ -2,8 +2,12 @@ New Web Design Inquiry - {{ company|default:"Provost Home Design" }}
 ================================================================
 
 From:         {{ from_name }} <{{ from_email }}>
+Business:     {{ company_name|default:"-" }}
 Phone:        {{ from_phone|default:"-" }}
+Current site: {{ current_website|default:"-" }}
 Project type: {{ project_type|default:"Not specified" }}
+Budget:       {{ budget_range|default:"Not specified" }}
+Timing:       {{ timeline|default:"Not specified" }}
 
 --- Project Description ---
 

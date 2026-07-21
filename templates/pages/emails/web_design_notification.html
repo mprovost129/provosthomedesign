@@ -50,6 +50,14 @@
                     </td>
                   </tr>
                   <tr>
+                    <td style="padding:6px 0; color:#6b7280;">Business:</td>
+                    <td style="padding:6px 0;">{{ company_name|default:"-" }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0; color:#6b7280;">Current site:</td>
+                    <td style="padding:6px 0;">{% if current_website %}<a href="{{ current_website }}">{{ current_website }}</a>{% else %}-{% endif %}</td>
+                  </tr>
+                  <tr>
                     <td style="padding:6px 0; color:#6b7280;">Phone:</td>
                     <td style="padding:6px 0;">
                       {% if from_phone %}
@@ -59,6 +67,8 @@
                       {% endif %}
                     </td>
                   </tr>
+                  <tr><td style="padding:6px 0; color:#6b7280;">Budget:</td><td style="padding:6px 0;">{{ budget_range|default:"Not specified" }}</td></tr>
+                  <tr><td style="padding:6px 0; color:#6b7280;">Timing:</td><td style="padding:6px 0;">{{ timeline|default:"Not specified" }}</td></tr>
                   <tr>
                     <td style="padding:6px 0; color:#6b7280;">Project type:</td>
                     <td style="padding:6px 0;">{{ project_type|default:"Not specified" }}</td>

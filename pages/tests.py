@@ -215,9 +215,13 @@ class SubdomainRoutingTests(TestCase):
             "/contact/",
             {
                 "name": "Alex Builder",
+                "company_name": "Alex Building Co.",
                 "email": "not-an-email",
                 "phone": "508-555-0100",
+                "current_website": "https://alexbuilding.example.com",
                 "project_type": "business_site",
+                "budget_range": "3k_7k",
+                "timeline": "1_2_months",
                 "message": "Please keep this project description.",
                 "terms_accepted": "on",
             },
@@ -226,6 +230,7 @@ class SubdomainRoutingTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Please keep this project description.")
+        self.assertContains(response, "Alex Building Co.")
         self.assertContains(response, "Your entered information has been preserved")
         self.assertEqual(WebDesignInquiry.objects.count(), 0)
 
@@ -239,9 +244,13 @@ class SubdomainRoutingTests(TestCase):
             "/contact/",
             {
                 "name": "Alex Builder",
+                "company_name": "Alex Building Co.",
                 "email": "alex@example.com",
                 "phone": "508-555-0100",
+                "current_website": "https://alexbuilding.example.com",
                 "project_type": "business_site",
+                "budget_range": "3k_7k",
+                "timeline": "1_2_months",
                 "message": "We need a clearer site for our construction business.",
                 "terms_accepted": "on",
             },
@@ -254,7 +263,14 @@ class SubdomainRoutingTests(TestCase):
             fetch_redirect_response=False,
         )
         self.assertEqual(WebDesignInquiry.objects.count(), 1)
+        inquiry = WebDesignInquiry.objects.get()
+        self.assertEqual(inquiry.company_name, "Alex Building Co.")
+        self.assertEqual(inquiry.current_website, "https://alexbuilding.example.com")
+        self.assertEqual(inquiry.budget_range, "3k_7k")
+        self.assertEqual(inquiry.timeline, "1_2_months")
         self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Alex Building Co.", mail.outbox[0].body)
+        self.assertIn("$3,000-$7,000", mail.outbox[0].body)
 
     def test_regional_service_page_is_available_on_main_site(self):
         response = self.client.get(

@@ -486,12 +486,33 @@ WEB_PROJECT_TYPE_CHOICES = [
     ("other", "Other"),
 ]
 
+WEB_BUDGET_RANGE_CHOICES = [
+    ("", "Budget range (optional)"),
+    ("under_3k", "Under $3,000"),
+    ("3k_7k", "$3,000-$7,000"),
+    ("7k_15k", "$7,000-$15,000"),
+    ("15k_plus", "$15,000+"),
+    ("not_sure", "Not sure yet"),
+]
+
+WEB_TIMELINE_CHOICES = [
+    ("", "Desired timing (optional)"),
+    ("asap", "As soon as practical"),
+    ("1_2_months", "Within 1-2 months"),
+    ("3_6_months", "Within 3-6 months"),
+    ("flexible", "Flexible / exploring"),
+]
+
 
 class WebDesignInquiry(models.Model):
     name = models.CharField(max_length=120)
+    company_name = models.CharField(max_length=150, blank=True)
     email = models.EmailField(db_index=True)
     phone = models.CharField(max_length=30, blank=True)
+    current_website = models.URLField(blank=True)
     project_type = models.CharField(max_length=30, choices=WEB_PROJECT_TYPE_CHOICES, blank=True)
+    budget_range = models.CharField(max_length=20, choices=WEB_BUDGET_RANGE_CHOICES, blank=True)
+    timeline = models.CharField(max_length=20, choices=WEB_TIMELINE_CHOICES, blank=True)
     message = models.TextField()
     terms_accepted = models.BooleanField(default=False)
     ip_address = models.GenericIPAddressField(null=True, blank=True)

@@ -12,6 +12,8 @@ from .models import (
     PROJECT_SIZE_CHOICES,
     PROJECT_TIMELINE_CHOICES,
     PROJECT_TYPE_CHOICES,
+    WEB_BUDGET_RANGE_CHOICES,
+    WEB_TIMELINE_CHOICES,
 )
 
 # ---- Phone validation ----
@@ -390,8 +392,14 @@ class WebDesignInquiryForm(forms.Form):
     website = forms.CharField(required=False, widget=forms.HiddenInput())  # honeypot
 
     name = forms.CharField(max_length=120)
+    company_name = forms.CharField(max_length=150, required=False, label="Business name")
     email = forms.EmailField()
     phone = forms.CharField(max_length=30, required=False, validators=[phone_validator])
+    current_website = forms.URLField(
+        required=False,
+        label="Current website",
+        widget=forms.URLInput(attrs={"placeholder": "https://example.com"}),
+    )
     project_type = forms.ChoiceField(
         choices=[
             ("", "What are you looking to build?"),
@@ -404,6 +412,18 @@ class WebDesignInquiryForm(forms.Form):
         required=False,
         widget=forms.Select(attrs={"class": "form-select"}),
         label="Project type",
+    )
+    budget_range = forms.ChoiceField(
+        choices=WEB_BUDGET_RANGE_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={"class": "form-select"}),
+        label="Budget range",
+    )
+    timeline = forms.ChoiceField(
+        choices=WEB_TIMELINE_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={"class": "form-select"}),
+        label="Desired timing",
     )
     message = forms.CharField(
         widget=forms.Textarea(attrs={"rows": 5, "placeholder": "Tell me about your project - what it does, who it's for, and any timeline or tech requirements."}),
