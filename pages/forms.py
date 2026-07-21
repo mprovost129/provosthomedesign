@@ -449,6 +449,22 @@ class WebDesignInquiryForm(forms.Form):
             css = field.widget.attrs.get("class", "")
             field.widget.attrs["class"] = f"{css} form-control".strip()
 
+    def full_clean(self):
+        super().full_clean()
+        for name in self.errors:
+            field = self.fields.get(name)
+            if not field or isinstance(field.widget, forms.HiddenInput):
+                continue
+            attrs = field.widget.attrs
+            classes = set(attrs.get("class", "").split())
+            classes.add("is-invalid")
+            attrs["class"] = " ".join(sorted(classes))
+            attrs["aria-invalid"] = "true"
+            error_id = f"id_{name}_error"
+            described_by = set(attrs.get("aria-describedby", "").split())
+            described_by.add(error_id)
+            attrs["aria-describedby"] = " ".join(sorted(described_by))
+
     def clean(self):
         cleaned = super().clean()
         if cleaned.get("website"):

@@ -495,6 +495,12 @@ class SubdomainRoutingTests(TestCase):
         self.assertContains(response, "Please keep this project description.")
         self.assertContains(response, "Alex Building Co.")
         self.assertContains(response, "Your entered information has been preserved")
+        self.assertContains(response, 'id="web-form-error-summary"')
+        self.assertContains(response, 'href="#id_email"')
+        self.assertContains(response, 'id="id_email_error"')
+        self.assertContains(response, 'aria-invalid="true"')
+        self.assertContains(response, 'aria-describedby="id_email_error"')
+        self.assertContains(response, "summary.focus()")
         self.assertEqual(WebDesignInquiry.objects.count(), 0)
 
     def test_valid_web_inquiry_redirects_to_dedicated_thank_you_page(self):
