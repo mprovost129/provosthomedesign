@@ -150,6 +150,19 @@ class SubdomainRoutingTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, text)
 
+    def test_web_services_explains_process_and_common_commitments(self):
+        response = self.client.get("/services/", HTTP_HOST=self.web_host)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Decisions first. Build second.")
+        self.assertContains(response, "Fit and discovery")
+        self.assertContains(response, "Your part:", count=5)
+        self.assertContains(response, "Will I own my website?")
+        self.assertContains(response, "Are hosting, domains, and ongoing maintenance included?")
+        self.assertContains(response, '"@type": "Service"')
+        self.assertContains(response, '"@type": "FAQPage"')
+        self.assertContains(response, 'data-analytics-label="services final"')
+
     def test_web_case_studies_have_detail_pages_and_schema(self):
         expected = {
             "/work/j-fisk-construction/": "What the project had to accomplish",

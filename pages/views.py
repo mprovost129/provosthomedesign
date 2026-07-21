@@ -1157,6 +1157,61 @@ WEB_PROCESS_STEPS = [
     {"title": "Launch", "desc": "Test, deploy, hand off access, and define support after the site goes live."},
 ]
 
+WEB_SERVICE_PROCESS = [
+    {
+        "title": "Fit and discovery",
+        "desc": "We identify the audience, business goal, current pain points, required content, and any systems the site must connect to.",
+        "client": "Share goals, current access, examples, and the people involved in approvals.",
+    },
+    {
+        "title": "Scope and proposal",
+        "desc": "You receive a written scope with pages, features, responsibilities, milestones, cost, and assumptions before work begins.",
+        "client": "Confirm priorities and approve the scope, schedule, and payment terms.",
+    },
+    {
+        "title": "Content and design",
+        "desc": "The structure and visual direction are developed around real content, with review points before the full build is complete.",
+        "client": "Provide source material and consolidate feedback at the agreed review points.",
+    },
+    {
+        "title": "Build and test",
+        "desc": "The approved direction becomes a responsive site or application, followed by browser, form, accessibility, and launch testing.",
+        "client": "Review the working build and complete any business-specific acceptance checks.",
+    },
+    {
+        "title": "Launch and handoff",
+        "desc": "The site is deployed, domains and analytics are verified, access is handed over, and the support arrangement is documented.",
+        "client": "Approve launch and retain the credentials and documentation supplied at handoff.",
+    },
+]
+
+WEB_SERVICE_FAQS = [
+    {
+        "question": "Will I own my website?",
+        "answer": "Ownership and licensing are stated in the written proposal. For a standard custom business website, the client receives the completed site and business content after final payment, while third-party software, fonts, images, and services remain subject to their own licenses.",
+    },
+    {
+        "question": "How long does a website project take?",
+        "answer": "Timing depends on page count, content readiness, integrations, and feedback speed. A schedule with review milestones is included in the proposal rather than promised before the scope is understood.",
+    },
+    {
+        "question": "Can you redesign my existing website without losing its search visibility?",
+        "answer": "A redesign can preserve useful URLs and content where practical. When URLs change, redirects, metadata, sitemap updates, analytics checks, and post-launch validation are included in the migration plan.",
+    },
+    {
+        "question": "Are hosting, domains, and ongoing maintenance included?",
+        "answer": "Those items are scoped explicitly. I can coordinate hosting and deployment, but recurring third-party fees and the level of ongoing support are listed separately so there are no hidden assumptions.",
+    },
+    {
+        "question": "Do I need to provide all of the website copy?",
+        "answer": "You provide the business knowledge and source material. The project scope can include content organization and practical editing; substantial copywriting, photography, or brand development is identified separately when needed.",
+    },
+    {
+        "question": "When is a custom Django application the right choice?",
+        "answer": "Custom software makes sense when accounts, permissions, payments, documents, dashboards, data, or a business-specific workflow cannot be handled reliably by a standard website. Discovery should confirm that the operational value justifies the added complexity.",
+    },
+]
+
 WEB_CASE_STUDIES = {
     "j-fisk-construction": {
         "title": "J. Fisk Construction",
@@ -1212,7 +1267,48 @@ def web_design(request: HttpRequest) -> HttpResponse:
 
 
 def web_services(request: HttpRequest) -> HttpResponse:
-    return render(request, "pages/web_services.html")
+    canonical_url = request.build_absolute_uri()
+    schema = json.dumps({
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "Service",
+                "name": "Business Website Design and Development",
+                "description": "Business websites, website redesigns, and custom Django applications for local and growing businesses.",
+                "provider": {
+                    "@type": "ProfessionalService",
+                    "name": "Provost Home Design Web Services",
+                    "url": request.build_absolute_uri("/"),
+                },
+                "areaServed": ["Massachusetts", "Rhode Island", "New England"],
+                "serviceType": [
+                    "Business website design",
+                    "Website redesign",
+                    "Custom Django application development",
+                ],
+                "url": canonical_url,
+            },
+            {
+                "@type": "FAQPage",
+                "mainEntity": [
+                    {
+                        "@type": "Question",
+                        "name": faq["question"],
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": faq["answer"],
+                        },
+                    }
+                    for faq in WEB_SERVICE_FAQS
+                ],
+            },
+        ],
+    }).replace("</", "<\\/")
+    return render(request, "pages/web_services.html", {
+        "service_process": WEB_SERVICE_PROCESS,
+        "service_faqs": WEB_SERVICE_FAQS,
+        "service_schema": schema,
+    })
 
 
 def web_work(request: HttpRequest) -> HttpResponse:

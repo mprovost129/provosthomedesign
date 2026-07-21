@@ -59,6 +59,19 @@ body.web-site {
 .web-footer { background: var(--web-ink); color: #cbd3cf; }
 .web-footer-name { color: white; font-family: "Iowan Old Style", Georgia, serif; font-size: 1.35rem; }
 .web-footer a { color: #d9dfdc !important; }
+.web-process-list { border-top: 1px solid rgba(255, 250, 241, .25); }
+.web-process-step { display: grid; grid-template-columns: 5rem 1fr; gap: 1.5rem; padding: 2rem 0; border-bottom: 1px solid rgba(255, 250, 241, .25); }
+.web-process-index { color: var(--web-orange); font-weight: 800; letter-spacing: .12em; }
+.web-process-step h3 { color: var(--web-cream); }
+.web-process-step p { max-width: 760px; }
+.web-client-role { padding-left: 1rem; border-left: 3px solid var(--web-orange); color: #e2e7e4 !important; }
+.web-faq { border-top: 1px solid var(--web-line); }
+.web-faq:last-child { border-bottom: 1px solid var(--web-line); }
+.web-faq summary { position: relative; padding: 1.35rem 3rem 1.35rem 0; cursor: pointer; list-style: none; font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif; font-size: 1.25rem; font-weight: 700; }
+.web-faq summary::-webkit-details-marker { display: none; }
+.web-faq summary::after { content: "+"; position: absolute; right: .5rem; color: var(--web-orange-dark); font-family: "Avenir Next", "Century Gothic", Calibri, sans-serif; font-size: 1.4rem; }
+.web-faq[open] summary::after { content: "-"; }
+.web-faq p { padding: 0 3rem 1.5rem 0; color: var(--web-muted); }
 
 @media (prefers-reduced-motion: no-preference) {
   .web-reveal { animation: web-rise .65s ease both; }
@@ -70,4 +83,5 @@ body.web-site {
   .web-hero { min-height: 600px; }
   .web-hero::after { width: 20rem; height: 20rem; right: -13rem; top: 1rem; }
   .web-card { padding: 1.4rem; }
+  .web-process-step { grid-template-columns: 2.5rem 1fr; gap: .75rem; }
 }

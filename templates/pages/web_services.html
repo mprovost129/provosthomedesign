@@ -2,12 +2,36 @@
 {% block body_class %}web-site{% endblock %}
 {% block title %}Website Services | Provost Home Design Web{% endblock %}
 {% block meta_description %}Business websites, website redesigns, and custom Django web applications for local and growing businesses.{% endblock %}
+{% block jsonld %}<script type="application/ld+json">{{ service_schema|safe }}</script>{% endblock %}
 {% block content %}
 <header class="web-section"><div class="container-lg"><p class="web-kicker">Services</p><h1 class="web-section-title col-lg-9">The right-sized build for where your business is now.</h1><p class="lead text-muted col-lg-7 mt-4">Start with a clear site. Add custom software only when it solves a real operational problem.</p></div></header>
 <div class="container-lg pb-5">
   <section id="business-sites" class="web-rule py-5 row g-4"><div class="col-lg-4"><span class="web-card-number">01 / BUSINESS WEBSITES</span><h2 class="h1 mt-3">Be easy to understand and easy to contact.</h2></div><div class="col-lg-8"><p class="fs-5">A focused business site establishes credibility, explains services, answers common questions, and gives visitors a clear next step.</p><div class="row g-3"><div class="col-md-6"><div class="web-card"><h3 class="h4">Typical scope</h3><p>Strategy, sitemap, responsive page design, service content structure, contact forms, analytics, core SEO, accessibility, and launch.</p></div></div><div class="col-md-6"><div class="web-card"><h3 class="h4">Good fit</h3><p>Contractors, professional services, local shops, independent operators, and established businesses replacing a weak first site.</p></div></div></div></div></section>
   <section id="redesigns" class="web-rule py-5 row g-4"><div class="col-lg-4"><span class="web-card-number">02 / REDESIGNS</span><h2 class="h1 mt-3">Keep what works. Fix what gets in the way.</h2></div><div class="col-lg-8"><p class="fs-5">A redesign starts with the current site, traffic, content, and business goals. The work may involve information architecture, visual design, performance, mobile usability, forms, or a full rebuild.</p><p class="text-muted">Existing domain value and useful URLs are considered during migration. Redirects and launch checks are part of the plan when page locations change.</p></div></section>
   <section id="applications" class="web-rule py-5 row g-4"><div class="col-lg-4"><span class="web-card-number">03 / CUSTOM APPLICATIONS</span><h2 class="h1 mt-3">Software shaped around the workflow.</h2></div><div class="col-lg-8"><p class="fs-5">When a standard site is not enough, Django supports secure accounts, portals, catalogs, payments, internal dashboards, APIs, document workflows, and business-specific automation.</p><p class="text-muted">Application work begins with discovery and a defined first release. Complexity, security, ownership, hosting, and ongoing maintenance are scoped explicitly.</p></div></section>
-  <div class="web-card my-5 d-lg-flex justify-content-between align-items-center gap-4"><div><h2 class="h2">Not sure which category fits?</h2><p class="mb-lg-0">Describe the business problem. The recommendation can come after.</p></div><a class="btn web-btn-primary btn-lg" href="{% url 'pages:web_contact' %}">Discuss the project</a></div>
 </div>
+
+<section class="web-section web-band">
+  <div class="container-lg">
+    <div class="row g-4 align-items-end mb-5"><div class="col-lg-8"><p class="web-kicker">How a project moves</p><h2 class="web-section-title">Decisions first. Build second.</h2></div><div class="col-lg-4"><p class="mb-0">Each engagement has a written scope and visible checkpoints. Responsibilities are clear on both sides.</p></div></div>
+    <ol class="web-process-list list-unstyled mb-0">
+      {% for step in service_process %}<li class="web-process-step"><span class="web-process-index">0{{ forloop.counter }}</span><div><h3 class="h2">{{ step.title }}</h3><p>{{ step.desc }}</p><p class="web-client-role mb-0"><strong>Your part:</strong> {{ step.client }}</p></div></li>{% endfor %}
+    </ol>
+  </div>
+</section>
+
+<section class="web-section">
+  <div class="container-lg">
+    <div class="row g-5">
+      <div class="col-lg-5"><p class="web-kicker">Before we begin</p><h2 class="web-section-title">Clear answers prevent expensive surprises.</h2><p class="text-muted mt-4">The proposal is the final source of truth for a specific project. These answers explain the working approach.</p></div>
+      <div class="col-lg-7 web-faq-list">
+        {% for faq in service_faqs %}<details class="web-faq"{% if forloop.first %} open{% endif %}><summary>{{ faq.question }}</summary><p>{{ faq.answer }}</p></details>{% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container-lg pb-5">
+  <div class="web-card d-lg-flex justify-content-between align-items-center gap-4"><div><h2 class="h2">Not sure which category fits?</h2><p class="mb-lg-0">Describe the business problem. The recommendation can come after.</p></div><a class="btn web-btn-primary btn-lg" href="{% url 'pages:web_contact' %}" data-analytics-event="web_project_cta" data-analytics-label="services final">Discuss the project</a></div>
+</section>
 {% endblock %}
