@@ -1,4 +1,5 @@
 {% extends 'billing/base_authenticated.html' %}
+{% load static %}
 
 {% block title %}Manage Gallery - {{ plan.plan_number }}{% endblock %}
 
@@ -20,7 +21,7 @@
         <h5 class="mb-0">Gallery Images</h5>
     </div>
     <div class="card-body">
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data" data-preserve-file-uploads>
             {% csrf_token %}
             {{ formset.management_form }}
             
@@ -108,4 +109,9 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<script src="{% static 'js/preserve_plan_uploads.js' %}" defer></script>
 {% endblock %}

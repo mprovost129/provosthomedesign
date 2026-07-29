@@ -1,13 +1,52 @@
 from datetime import timedelta
 from decimal import Decimal
+import json
+from types import SimpleNamespace
 
-from django.test import TestCase
+from django.contrib import admin
+from django.contrib.auth import get_user_model
+from django.test import TestCase, override_settings
 from django.core import mail
 from django.core.management import call_command
+from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils import timezone
 
 from .models import HouseStyle, PlanFAQ, Plans, SavedPlanEmailReminder
+
+
+@override_settings(
+    STORAGES={
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    }
+)
+class PlanAdminUploadPreservationTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="plan-admin",
+            email="admin@example.com",
+            password="test-password",
+        )
+        self.client.force_login(self.user)
+
+    def test_plan_admin_loads_upload_preservation_script(self):
+        response = self.client.get(reverse("admin:plans_plans_add"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "/static/js/preserve_plan_uploads.js")
+
+    def test_background_save_returns_redirect_as_json(self):
+        model_admin = admin.site._registry[Plans]
+        request = SimpleNamespace(headers={"X-Preserve-File-Uploads": "1"})
+
+        response = model_admin._upload_preserving_response(
+            request,
+            HttpResponseRedirect("/admin/plans/plans/"),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(json.loads(response.content), {"redirect": "/admin/plans/plans/"})
 
 
 class PublicPlanCatalogTests(TestCase):

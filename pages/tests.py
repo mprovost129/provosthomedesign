@@ -405,6 +405,18 @@ class SubdomainRoutingTests(TestCase):
         )
         self.assertContains(response, "Web Services")
 
+    def test_main_terms_only_reference_web_services_in_footer(self):
+        response = self.client.get("/terms/", HTTP_HOST=self.main_host)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Web Design")
+        self.assertNotContains(response, "web design")
+        self.assertContains(
+            response,
+            'href="https://web.provosthomedesign.com/"',
+            count=1,
+        )
+
     def test_web_subdomain_does_not_expose_house_plan_catalog(self):
         response = self.client.get("/plans/", HTTP_HOST=self.web_host)
 

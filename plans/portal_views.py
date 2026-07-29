@@ -1,9 +1,18 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
+from django.http import JsonResponse
 from django.db.models import Q
 from .models import Plans, HouseStyle, PlanGallery
 from .portal_forms import PlanForm, PlanGalleryFormSet, HouseStyleForm
+
+
+def _upload_preserving_redirect(request, to, *args, **kwargs):
+    """Let the upload-preserving JavaScript navigate after a successful save."""
+    response = redirect(to, *args, **kwargs)
+    if request.headers.get('X-Preserve-File-Uploads') == '1':
+        return JsonResponse({'redirect': response.url})
+    return response
 
 
 @staff_member_required(login_url='/portal/login/')
@@ -55,7 +64,7 @@ def portal_plan_create(request):
         if form.is_valid():
             plan = form.save()
             messages.success(request, f'Plan {plan.plan_number} created successfully!')
-            return redirect('plans:portal_plan_detail', pk=plan.pk)
+            return _upload_preserving_redirect(request, 'plans:portal_plan_detail', pk=plan.pk)
     else:
         form = PlanForm()
     
@@ -91,7 +100,7 @@ def portal_plan_edit(request, pk):
         if form.is_valid():
             plan = form.save()
             messages.success(request, f'Plan {plan.plan_number} updated successfully!')
-            return redirect('plans:portal_plan_detail', pk=plan.pk)
+            return _upload_preserving_redirect(request, 'plans:portal_plan_detail', pk=plan.pk)
     else:
         form = PlanForm(instance=plan)
     
@@ -115,7 +124,7 @@ def portal_plan_gallery(request, pk):
         if formset.is_valid():
             formset.save()
             messages.success(request, 'Gallery images updated successfully!')
-            return redirect('plans:portal_plan_detail', pk=plan.pk)
+            return _upload_preserving_redirect(request, 'plans:portal_plan_detail', pk=plan.pk)
     else:
         formset = PlanGalleryFormSet(instance=plan)
     

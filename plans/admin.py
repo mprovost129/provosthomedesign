@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.contrib import admin
+from django.http import JsonResponse
 from django.utils.html import format_html
 
 from .models import HouseStyle, PlanComparison, PlanFAQ, PlanGallery, Plans, SavedPlan, SavedPlanEmailReminder
@@ -86,6 +87,24 @@ class PlansAdmin(admin.ModelAdmin):
             "created_date", "modified_date",
         )}),
     )
+
+    class Media:
+        js = ("js/preserve_plan_uploads.js",)
+
+    @staticmethod
+    def _upload_preserving_response(request, response):
+        """Return a redirect target without making fetch follow and consume it."""
+        if request.headers.get("X-Preserve-File-Uploads") == "1" and getattr(response, "url", None):
+            return JsonResponse({"redirect": response.url})
+        return response
+
+    def response_add(self, request, obj, post_url_continue=None):
+        response = super().response_add(request, obj, post_url_continue)
+        return self._upload_preserving_response(request, response)
+
+    def response_change(self, request, obj):
+        response = super().response_change(request, obj)
+        return self._upload_preserving_response(request, response)
 
     actions = (
         "make_featured", "remove_featured", "make_popular", "remove_popular",
