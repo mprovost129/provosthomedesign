@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}
+  PDP Subscription Tracker Privacy Policy • {{ company|default:"Provost Home Design" }}
+{% endblock %}
+
+{% block content %}
+<main class="container-lg py-5">
+  <div class="col-lg-9">
+    <h1 class="mb-2">PDP Subscription Tracker Privacy Policy</h1>
+    <p class="text-muted">Last updated: August 16, 2026</p>
+
+    <section class="mb-5">
+      <h2 class="h4">1. Overview</h2>
+      <p>
+        This Privacy Policy explains how PDP Subscription Tracker handles
+        information when you use the iOS application.
+      </p>
+      <p>
+        PDP Subscription Tracker is designed to work without an account,
+        bank connection, server database, advertising service, or cloud
+        synchronization.
+      </p>
+    </section>
+
+    <section class="mb-5">
+      <h2 class="h4">2. Information Stored on Your Device</h2>
+      <p>
+        Information you enter into PDP Subscription Tracker is stored locally
+        on your device. This may include:
+      </p>
+      <ul>
+        <li>Subscription names and prices</li>
+        <li>Monthly or yearly billing cycles</li>
+        <li>Renewal dates and subscription status</li>
+        <li>Categories and notes</li>
+        <li>Renewal-reminder preferences</li>
+        <li>Currency and application settings</li>
+      </ul>
+      <p>
+        Provost Home Design does not receive or have access to this
+        locally stored subscription information.
+      </p>
+    </section>
+
+    <section class="mb-5">
+      <h2 class="h4">3. Information We Collect</h2>
+      <p>
+        PDP Subscription Tracker does not collect or transmit personal
+        information, subscription information, analytics, advertising
+        identifiers, or usage data to Provost Home Design or third parties.
+      </p>
+      <p>
+        The app does not require access to your contacts, photos, location,
+        camera, microphone, bank accounts, or financial institutions.
+      </p>
+    </section>
+
+    <section class="mb-5">
+      <h2 class="h4">4. Renewal Notifications</h2>
+      <p>
+        If you enable renewal reminders, PDP Subscription Tracker requests
+        permission to send local iOS notifications. Reminder information is
+        scheduled and handled on your device.
+      </p>
+      <p>
+        You can disable reminders within the app or change notification
+        permission through iOS Settings.
+      </p>
+    </section>
+
+    <section class="mb-5">
+      <h2 class="h4">5. Data Sharing</h2>
+      <p>
+        PDP Subscription Tracker does not sell, rent, share, or transmit your
+        subscription information to Provost Home Design, advertisers, data
+        brokers, or other third parties.
+      </p>
+    </section>
+
+    <section class="mb-5">
+      <h2 class="h4">6. Device Backups</h2>
+      <p>
+        Depending on your device and iOS backup settings, locally stored app
+        data may be included in a device backup managed by Apple. Provost Home
+        Design does not receive or have access to that backup. Apple’s handling
+        of backups is governed by Apple’s own terms and privacy policies.
+      </p>
+    </section>
+
+    <section class="mb-5">
+      <h2 class="h4">7. Data Retention and Deletion</h2>
+      <p>
+        Subscription information remains on your device until you edit or
+        delete it. You can delete individual subscriptions or use the
+        Clear All Subscription Data control in Settings.
+      </p>
+      <p>
+        Removing PDP Subscription Tracker from your device also removes its
+        locally stored app data, subject to any device backups managed through
+        your Apple account.
+      </p>
+    </section>
+
+    <section class="mb-5">
+      <h2 class="h4">8. Children’s Privacy</h2>
+      <p>
+        PDP Subscription Tracker is not specifically directed to children
+        under 13. The app does not knowingly collect or transmit personal
+        information from children or other users.
+      </p>
+    </section>
+
+    <section class="mb-5">
+      <h2 class="h4">9. Changes to This Policy</h2>
+      <p>
+        This policy may be updated if the app’s features or data practices
+        change. Any revision will be posted on this page with an updated date.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="h4">10. Contact</h2>
+      <p>
+        For questions about PDP Subscription Tracker or this Privacy Policy,
+        contact {{ company|default:"Provost Home Design" }} at
+        <a href="mailto:{{ contact_email|default:'mike@provosthomedesign.com' }}">
+          {{ contact_email|default:"mike@provosthomedesign.com" }}
+        </a>
+        or use our
+        <a href="{% url 'pages:contact' %}">contact form</a>.
+      </p>
+    </section>
+  </div>
+</main>
+{% endblock %}

@@ -997,6 +997,33 @@ def privacy(request: HttpRequest) -> HttpResponse:
             "contact_email": contact_email,
         },
     )
+    
+def pdp_tracker_privacy(request: HttpRequest) -> HttpResponse:
+    s = SiteSettings.load()
+    company = s.company_name or getattr(
+        settings,
+        "COMPANY_NAME",
+        "Provost Home Design",
+    )
+    contact_email = s.contact_email or getattr(
+        settings,
+        "CONTACT_EMAIL",
+        "mike@provosthomedesign.com",
+    )
+    return render(
+        request,
+        "pages/pdp_tracker_privacy.html",
+        {
+            "page": {
+                "title": "PDP Subscription Tracker Privacy Policy",
+                "description": (
+                    "Privacy information for PDP Subscription Tracker."
+                ),
+            },
+            "company": company,
+            "contact_email": contact_email,
+        },
+    )
 
 def testimonials_list(request):
     qs = Testimonial.objects.filter(

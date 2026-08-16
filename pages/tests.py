@@ -837,3 +837,32 @@ class ProjectCaseStudyTests(TestCase):
             response,
             'rel="canonical" href="http://testserver/projects/"',
         )
+
+class PDPTrackerPrivacyPageTests(TestCase):
+    def test_privacy_page_describes_local_only_data_handling(self):
+        response = self.client.get(
+            "/pdp-tracker/privacy/",
+            HTTP_HOST="www.provosthomedesign.com",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "PDP Subscription Tracker Privacy Policy",
+        )
+        self.assertContains(
+            response,
+            "stored locally",
+        )
+        self.assertContains(
+            response,
+            "does not collect or transmit personal",
+        )
+        self.assertContains(
+            response,
+            "local iOS notifications",
+        )
+        self.assertContains(
+            response,
+            "mike@provosthomedesign.com",
+        )
