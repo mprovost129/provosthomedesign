@@ -50,6 +50,7 @@ A scheduled run finished successfully and logged **Queue features are disabled; 
 Google Calendar identity/availability was verified inside the deployed web runtime. A separate controlled test through the actual Calendar adapter saved a real private 30-minute meeting and 30-minute buffer in an unused future interval, retried the same stable event IDs without duplication, verified both busy intervals, canceled and verified removal of both events, and verified an already-absent cancellation retry. The test created no app database records, invitations or external emails. This proves provider writes/deletion; the live public booking/database/email workflow remains gated until the remaining launch requirements above are complete.
 
 Private intake storage is not yet configured; the existing public media bucket has not been reused for client documents. Real receipt delivery, Sheet import/reference/order/file reconciliation, existing-appointment capacity reconciliation and the isolated PostgreSQL concurrency checks remain required before public enablement. The working Google Forms/Sheet and old booking route remain unchanged.
+
 ## Private S3 upload storage completed
 
 The owner approved a separate private upload bucket, narrow application access, connection to both Render processes, disposable sample-file testing/deletion, and an initial additional AWS planning budget of $5/month before tax. This is a usage budget, not a hard AWS billing cap or an AWS Budgets resource. Current published us-east-1 Standard storage rate: $0.023/GB-month (100 GB storage alone: $2.30/month), plus requests and transfer. The pricing publication checked was September 28, 2026.
@@ -65,3 +66,13 @@ Real provider verification from the deployed runtime passed for both a valid PDF
 A subsequent read-only production check confirmed zero work items, appointments and pending uploads, and both main and web-design homepages returned HTTP 200. Receipt delivery, historical Sheet import/reference/order/file reconciliation, existing appointment capacity reconciliation, isolated PostgreSQL concurrency checks and coordinated cutover remain before public launch.
 
 Pricing sources: [S3 pricing](https://aws.amazon.com/s3/pricing/), [current us-east-1 price list](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonS3/current/us-east-1/index.json).
+
+## Existing Gmail and receipt delivery verified
+
+The queue uses the existing Django SMTP email backend and DEFAULT_FROM_EMAIL settings already used by the website forms. A connection-only check from the deployed Render runtime authenticated successfully to smtp.gmail.com on port 587 with TLS; it sent no messages and did not expose or change credentials.
+
+After owner authorization, two clearly labeled [TEST] messages were sent to the configured business owner address, mike@provosthomedesign.com: a sample client receipt and an owner notification. The deployed queue_receipts function composed both using synthetic answers and explicitly inactive sample links, with only token minting and submission persistence substituted for test purposes. Actual NotificationDelivery records and the actual deliver_pending worker performed SMTP delivery. No real project, submission, queue ID/position or email access token was created; those records and allocator values were checked unchanged.
+
+Both notices were accepted by Gmail, recorded sent with one attempt and a sent-at timestamp, and their stored bodies were cleared by the actual worker. A second worker invocation processed zero notices, confirming no duplicate delivery. The owner explicitly confirmed that both messages arrived on October 7, 2026. Test delivery metadata remains in the outbox audit under batch phd-emailcheck-20261007-6d946d3f76cd4fc3893622542fba71d5; these notices are not live work items and cannot resend automatically.
+
+This verifies receipt composition, durable outbox processing and real delivery to the owner's inbox through the existing Gmail configuration. Full public intake/verification/tracking and booking workflows remain disabled pending historical Sheet import, existing-appointment reconciliation, isolated PostgreSQL concurrency checks and coordinated cutover. The scheduled job remains suspended until launch; both processes already have the same existing email configuration.
