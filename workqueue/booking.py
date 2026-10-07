@@ -188,7 +188,9 @@ def sync_appointment(appointment_id, provider=None):
     provider = provider or calendar_provider()
     with transaction.atomic():
         lock_bookings()
-        item = Appointment.objects.select_for_update().select_related("previous", "project").get(pk=appointment_id)
+        # Optional joins cannot be locked by PostgreSQL. The booking singleton
+        # serializes related changes; lock only the appointment being processed.
+        item = Appointment.objects.select_for_update(of=("self",)).select_related("previous", "project").get(pk=appointment_id)
         if item.state in ("canceled", "completed"):
             return False
         if item.state == "syncing" and item.sync_started_at and item.sync_started_at > timezone.now()-timedelta(minutes=15):

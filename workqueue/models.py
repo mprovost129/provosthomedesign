@@ -73,6 +73,15 @@ class QueueState(models.Model):
         constraints = [models.CheckConstraint(condition=Q(id=1), name="wq_singleton_state")]
 
 
+class LegacyQueueImport(models.Model):
+    """Private, lossless source archive, including rows omitted from the work queue."""
+    digest = models.CharField(primary_key=True, max_length=64, editable=False)
+    source_id = models.CharField(max_length=200)
+    payload = models.JSONField()
+    summary = models.JSONField(default=dict)
+    imported_at = models.DateTimeField(default=timezone.now, editable=False)
+
+
 class WorkItemQuerySet(models.QuerySet):
     def active(self):
         return self.exclude(status__in=CLOSED_STATUSES)

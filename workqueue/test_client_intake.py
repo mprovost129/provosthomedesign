@@ -323,7 +323,9 @@ class ClientFlowTests(TestCase):
         self.assertIn("attachment", response["Content-Disposition"])
         self.assertIn("no-store", response["Cache-Control"])
         self.assertEqual(response["X-Content-Type-Options"], "nosniff")
-        response.close()
+        # Consume through Django's test-client wrapper so request-finished
+        # cleanup does not close the surrounding PostgreSQL test transaction.
+        self.assertEqual(b"".join(response.streaming_content), valid_pdf().read())
 
     def test_uploaded_ids_from_another_browser_cannot_attach(self):
         from django.test import Client

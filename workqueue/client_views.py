@@ -1,4 +1,5 @@
 import logging
+import re
 import uuid
 from datetime import timedelta
 
@@ -251,6 +252,10 @@ def download(request, attachment_id):
         if not getattr(settings, "WORK_INTAKE_ENABLED", False) or not authorized_work(verified_email(request)).filter(pk=attachment.submission.work_item_id).exists():
             raise Http404
     if not attachment.storage_key:
+        # Imported files stay in the owner's existing private Drive archive.
+        # Staff can open them there; this never grants clients Google Drive access.
+        if staff and re.fullmatch(r"[A-Za-z0-9_-]{10,200}", attachment.legacy_drive_id):
+            return redirect(f"https://drive.google.com/file/d/{attachment.legacy_drive_id}/view")
         raise Http404
     try:
         file = private_storage().open(attachment.storage_key, "rb")

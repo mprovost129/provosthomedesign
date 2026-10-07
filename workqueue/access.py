@@ -123,6 +123,10 @@ def consume_email_token(raw):
         claim.verified_at = timezone.now()
         claim.save(update_fields=["verified_at"])
         BookingAccess.objects.get_or_create(email=record.email)
+    # Existing imported/manual clients can book after proving their recorded
+    # email. Do not grant project-wide access or undo an explicit booking ban.
+    if authorized_work(record.email).exists():
+        BookingAccess.objects.get_or_create(email=record.email)
     return record
 
 
