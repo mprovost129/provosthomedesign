@@ -1,0 +1,18 @@
+{% extends 'workqueue/client_base.html' %}
+{% block title %}Track My Project{% endblock %}
+{% block content %}
+<div class="intro"><p class="eyebrow">Your work, at a glance</p><h1>Track my project</h1><p>Check where your work stands now. Each request and update has its own position.</p></div>
+{% if sent %}<p class="notice" role="status">If your email can receive mail, you’ll receive a sign-in link shortly. Use it to see requests connected to that email.</p>{% endif %}
+{% if client_email %}
+<div class="signed-in"><span>Signed in as {{ client_email }}</span><form method="post" action="{% url 'workqueue:client_logout' %}">{% csrf_token %}<button class="text-button">Sign out</button></form></div>
+<form class="card lookup" method="get"><label for="lookup-id">Project or request ID</label><input id="lookup-id" name="reference" value="{{ request.GET.reference }}" maxlength="32" placeholder="PHD-00023"><button>Check this request</button><a href="{% url 'workqueue:tracking' %}">Show all my requests</a></form>
+{% if unavailable %}<p class="notice">We couldn’t find that request connected to this email. Check the ID or contact Provost Home Design.</p>{% endif %}
+<p class="muted">Checked {{ checked_at|date:'M j, Y, g:i A' }} Eastern. Your position may change as work is completed or scheduled.</p>
+{% for item in items %}<section class="card tracking-item {% if selected.pk == item.pk %}selected{% endif %}"><div class="tracking-top"><div><h2>{{ item.reference }}</h2><p>{{ item.project.name|default:item.project_name|default:item.project_context|default:'Project request' }}</p></div><span class="badge">{{ item.get_status_display }}</span></div>
+<p>{{ item.get_kind_display }} · Received {{ item.received_at|date:'M j, Y' }}</p>
+{% if item.position %}<div class="position-grid"><div><span>Current position</span><strong>{{ item.position }}</strong></div><div><span>Active requests ahead</span><strong>{{ item.requests_ahead }}</strong></div></div>{% else %}<p>This request is closed and has no active queue position.</p>{% endif %}
+<details><summary>Your submitted work and files</summary><p class="preserve-lines">{{ item.description }}</p><ul>{% for submission in item.submissions.all %}{% for attachment in submission.attachments.all %}<li><a href="{% url 'workqueue:download' attachment.pk %}">{{ attachment.original_name }}</a></li>{% endfor %}{% endfor %}</ul></details></section>
+{% empty %}{% if not unavailable %}<section class="card"><p>No requests are connected to this email yet.</p><a href="{% url 'workqueue:submit' %}">Submit new work</a></section>{% endif %}{% endfor %}
+{% else %}<section class="card"><h2>Get a secure sign-in link</h2><p>No password needed. Use the email address you provided with your work.</p>
+<form method="post">{% csrf_token %}{{ form.non_field_errors }}{% for field in form %}{% include 'workqueue/client_field.html' %}{% endfor %}<button>Send my sign-in link</button></form></section>{% endif %}
+{% endblock %}

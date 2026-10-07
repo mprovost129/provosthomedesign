@@ -1,0 +1,6 @@
+{% extends 'workqueue/client_base.html' %}{% load static %}
+{% block title %}Continue to Your Projects{% endblock %}
+{% block content %}<div class="intro"><p class="eyebrow">Secure client access</p><h1>Continue to your projects</h1><p>Confirm below to check your work and its current place in line.</p></div>
+<section class="card"><form method="post" id="confirm-access">{% csrf_token %}{{ form.token }}{{ form.non_field_errors }}{{ form.token.errors }}<button id="confirm-button" {% if not form.is_bound %}disabled{% endif %}>Continue to my projects</button></form>
+<p id="access-help" class="muted">Open this page from the sign-in link in your email.</p><a href="{% url 'workqueue:tracking' %}">Request a new sign-in link</a></section>{% endblock %}
+{% block scripts %}<script src="{% static 'js/client-access.js' %}" defer></script>{% endblock %}

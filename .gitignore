@@ -23,6 +23,8 @@ env.bak/
 *.sqlite3
 db.sqlite3
 media/           # user uploads (don't track)
+queue-private-uploads/
+queue-preview-media/
 staticfiles/     # collected static files (don't track)
 *.mo
 

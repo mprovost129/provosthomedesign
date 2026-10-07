@@ -27,6 +27,7 @@ sitemaps = {
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("", include("workqueue.urls")),
 
     # Root site pages & plans
     path("", include("pages.urls")),          # requires app_name="pages" in pages/urls.py

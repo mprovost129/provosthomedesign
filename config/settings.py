@@ -66,7 +66,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework", "rest_framework.authtoken",
     "core", "pages", "plans", "help", "api", "storages",
-    "easy_thumbnails",
+    "easy_thumbnails", "workqueue",
 ]
 
 THUMBNAIL_ALIASES = {
@@ -113,6 +113,7 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "workqueue.middleware.IntakeUploadLimitMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -134,6 +135,7 @@ TEMPLATES = [{
             "core.context_processors.branding",
             "pages.context_processors.site_analytics",
             "plans.context_processors.plans_context",
+            "workqueue.context_processors.client_features",
         ],
     },
 }]
@@ -186,6 +188,20 @@ STORAGES = {
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Enable only after queue migrations and the existing-work import are verified.
+WORK_QUEUE_ENABLED = config("WORK_QUEUE_ENABLED", cast=bool, default=False)
+WORK_INTAKE_ENABLED = config("WORK_INTAKE_ENABLED", cast=bool, default=False)
+INTAKE_PUBLIC_BASE_URL = config("INTAKE_PUBLIC_BASE_URL", default=MAIN_SITE_URL)
+INTAKE_OWNER_EMAIL = config("INTAKE_OWNER_EMAIL", default="mike@provosthomedesign.com")
+INTAKE_DIRECT_UPLOADS = config("INTAKE_DIRECT_UPLOADS", cast=bool, default=True)
+BOOKING_ENABLED = config("BOOKING_ENABLED", cast=bool, default=False)
+BOOKING_CALENDAR_BACKEND = "google"
+BOOKING_HORIZON_DAYS = 60
+GOOGLE_CALENDAR_ID = config("GOOGLE_CALENDAR_ID", default="primary")
+GOOGLE_CALENDAR_CLIENT_ID = config("GOOGLE_CALENDAR_CLIENT_ID", default="")
+GOOGLE_CALENDAR_CLIENT_SECRET = config("GOOGLE_CALENDAR_CLIENT_SECRET", default="")
+GOOGLE_CALENDAR_REFRESH_TOKEN = config("GOOGLE_CALENDAR_REFRESH_TOKEN", default="")
 
 # --- REST Framework ---
 REST_FRAMEWORK = {
@@ -472,3 +488,18 @@ if USE_S3_MEDIA:
             "addressing_style": AWS_S3_ADDRESSING_STYLE,
         },
     }
+
+# Keep client documents out of the public website media bucket.
+INTAKE_PRIVATE_BUCKET = config("INTAKE_PRIVATE_BUCKET", default="").strip()
+if INTAKE_PRIVATE_BUCKET:
+    STORAGES["intake_private"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": INTAKE_PRIVATE_BUCKET, "region_name": AWS_S3_REGION_NAME,
+            "location": "intake", "custom_domain": None, "default_acl": None,
+            "querystring_auth": True, "file_overwrite": False,
+            "object_parameters": {"CacheControl": "private, no-store"},
+        },
+    }
+    CSP_EXTRA_CONNECT_SRC = [*globals().get("CSP_EXTRA_CONNECT_SRC", []),
+                            f"https://{INTAKE_PRIVATE_BUCKET}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"]

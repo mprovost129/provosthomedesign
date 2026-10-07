@@ -1,0 +1,117 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Work Queue · Provost Home Design</title>
+  <link rel="stylesheet" href="{% static 'css/work-queue.css' %}">
+</head>
+<body>
+<a class="skip-link" href="#queue">Skip to work queue</a>
+<header class="site-header"><div><span class="brand">Provost Home Design</span><h1>Work Queue</h1>
+  <p>{{ active_count }} active request{{ active_count|pluralize }} · {{ closed_count }} closed</p></div>
+  <nav aria-label="Staff tools">{% if intake_enabled %}<a href="{% url 'workqueue:submit' %}" target="_blank" rel="noopener">Client form</a> · {% endif %}<a href="{% url 'admin:index' %}">Administration</a></nav>
+</header>
+<main id="queue">
+  {% for message in messages %}<div class="notice {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}
+  <form method="get" class="filters" aria-label="Filter work">
+    <label>Search<input type="search" name="q" value="{{ filters.q }}" placeholder="Request, client, project or address"></label>
+    <label>Show<select name="scope">
+      <option value="active" {% if filters.scope == 'active' %}selected{% endif %}>Active work</option>
+      <option value="all" {% if filters.scope == 'all' %}selected{% endif %}>All work</option>
+      <option value="closed" {% if filters.scope == 'closed' %}selected{% endif %}>Closed work</option>
+    </select></label>
+    <label>Status<select name="status"><option value="">All statuses</option>{% for value,label in statuses %}<option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+    <label>Priority<select name="priority"><option value="">All priorities</option>{% for value,label in priorities %}<option value="{{ value }}" {% if filters.priority == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+    <label>Received from<input type="date" name="received_from" value="{{ filters.received_from }}"></label>
+    <label>Received through<input type="date" name="received_to" value="{{ filters.received_to }}"></label>
+    <button type="submit">Apply filters</button><a href="{% url 'workqueue:queue' %}">Reset</a>
+  </form>
+  {% if can_add %}<details class="manual" {% if create_open %}open{% endif %}>
+    <summary>Add work from a phone call or email</summary>
+    <form method="post" class="edit-form">
+      {% csrf_token %}<input type="hidden" name="action" value="create">
+      {% include 'workqueue/filter_context.html' %}
+      {{ create_form.submission_token }}{{ create_form.non_field_errors }}
+      <div class="fields">{% for field in create_form.visible_fields %}<div class="field">
+        {{ field.label_tag }}{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{{ field.errors }}
+      </div>{% endfor %}</div>
+      <button type="submit">Add to queue</button>
+      <p class="muted">Internal capture only. Client receipt delivery will be connected with the public intake form.</p>
+    </form>
+  </details>{% endif %}
+  {% if booking_enabled %}<p><a href="#appointments">Client appointments and booking access</a></p>{% endif %}
+  <p class="muted">Positions reflect the full active queue, even when filtered. Priority does not change order. Closed work remains in All work.</p>
+  <div class="table-scroll" tabindex="0" role="region" aria-label="Work requests">
+  <table>
+    <caption class="sr-only">{{ page.paginator.count }} matching work requests</caption>
+    <thead><tr><th scope="col">Position</th><th scope="col">Request</th><th scope="col">Client</th><th scope="col">Project / work</th><th scope="col">Status</th><th scope="col">Priority</th><th scope="col">Due / follow-up</th><th scope="col">Received</th></tr></thead>
+    {% for row in rows %}{% with item=row.item %}
+    <tbody id="request-{{ item.pk }}">
+      <tr>
+        <td>{% if item.position %}<strong>{{ item.position }}</strong>{% else %}<span class="muted">Closed</span>{% endif %}</td>
+        <td><strong>{{ item.reference }}</strong><small>{{ item.get_kind_display }}</small></td>
+        <td>{{ item.contact_full_name }}<small>{{ item.company }}</small></td>
+        <td>{{ item.project.name|default:item.project_name|default:item.project_context|default:item.project_street|default:'Untitled project' }}
+          <small>{{ item.description|truncatechars:110 }}</small>{% if item.needs_project_link %}<span class="flag">Project link needs confirmation</span>{% endif %}</td>
+        <td>{% if can_change %}<form method="post" class="quick-status">
+          {% csrf_token %}<input type="hidden" name="action" value="status"><input type="hidden" name="item_id" value="{{ item.pk }}"><input type="hidden" name="version" value="{{ item.version }}">
+          {% include 'workqueue/filter_context.html' %}
+          <label class="sr-only" for="status-{{ item.pk }}">Status for {{ item.reference }}</label>
+          <select name="status" id="status-{{ item.pk }}">{% for value,label in statuses %}<option value="{{ value }}" {% if item.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+          <button type="submit" class="secondary">Save status</button>
+        </form>{% else %}{{ item.get_status_display }}{% endif %}</td>
+        <td>{{ item.get_priority_display }}</td>
+        <td>{{ item.committed_due_date|date:'M j, Y'|default:'—' }}{% if item.followup_date %}<small>Follow up {{ item.followup_date|date:'M j' }}</small>{% endif %}</td>
+        <td>{{ item.received_at|date:'M j, Y' }}<small>{{ item.received_at|date:'g:i A' }}</small></td>
+      </tr>
+      <tr class="detail-row"><td colspan="8">
+      <details {% if row.open %}open{% endif %}>
+        <summary>Manage {{ item.reference }} · details, dates, notes and project history</summary>
+        <div class="details-body">
+          <div class="detail-grid">
+            <section><h2>Contact</h2><p>{{ item.contact_full_name }} · {{ item.company }}<br>{{ item.contact_email }}<br>{{ item.contact_phone }}</p>
+              <h3>Billing address</h3><p>{% if item.billing_street %}{{ item.billing_street }}<br>{{ item.billing_city }} {{ item.billing_state }} {{ item.billing_zip }}{% else %}Not provided{% endif %}</p></section>
+            <section><h2>Project</h2><p>{% if item.project %}{{ item.project }}{% else %}Not yet connected{% endif %}</p>
+              <h3>Submitted project address</h3><p>{% if item.project_street %}{{ item.project_street }}<br>{{ item.project_city }} {{ item.project_state }} {{ item.project_zip }}{% else %}Not provided{% endif %}</p>
+              {% if item.project_context %}<p>Submitted reference: {{ item.project_context }}</p>{% endif %}
+              <p>Service: {{ item.service_needed|default:'Not provided' }}</p></section>
+          </div>
+          <h2>Requested work</h2><div class="preserve-lines">{{ item.description }}</div>
+          {% if can_change %}<form method="post" class="edit-form">
+            {% csrf_token %}<input type="hidden" name="action" value="edit"><input type="hidden" name="item_id" value="{{ item.pk }}">
+            {% include 'workqueue/filter_context.html' %}{{ row.form.version }}{{ row.form.non_field_errors }}
+            <div class="fields">{% for field in row.form.visible_fields %}<div class="field">
+              {{ field.label_tag }}{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{{ field.errors }}
+            </div>{% endfor %}</div>
+            <button type="submit">Save request</button>
+          </form>{% else %}<p>Internal notes: {{ item.internal_notes|default:'None' }}</p>{% endif %}
+          {% if row.conflict_values %}<details open><summary>Your unsaved changes from the older page</summary><dl>{% for label,value in row.conflict_values %}<dt>{{ label }}</dt><dd class="preserve-lines">{{ value|default:'(blank)' }}</dd>{% endfor %}</dl></details>{% endif %}
+          {% if item.project %}<h2>Related project work</h2><ul>{% for related in item.project.work_items.all %}<li>{{ related.reference }} · {{ related.get_kind_display }} · {{ related.get_status_display }} · {% if related.position %}Position {{ related.position }}{% else %}Closed{% endif %}{% if related.pk == item.pk %} (this request){% endif %}</li>{% endfor %}</ul>{% endif %}
+          {% if item.project and can_manage_access %}<details><summary>Client access to this project</summary><p>Clients must verify their email before viewing project information. Allow access for other authorized project contacts here.</p>
+          <ul>{% for grant in item.project.access_grants.all %}<li>{{ grant.email }} · {% if grant.revoked_at %}Revoked{% else %}Allowed{% endif %}</li>{% empty %}<li>No project-wide access grants yet.</li>{% endfor %}</ul>
+          <form method="post" class="edit-form">{% csrf_token %}{% include 'workqueue/filter_context.html' %}<input type="hidden" name="item_id" value="{{ item.pk }}"><input type="hidden" name="version" value="{{ item.version }}">
+          <label for="access-email-{{ item.pk }}">Client email</label><input type="email" id="access-email-{{ item.pk }}" name="access_email" required>
+          <button name="action" value="access_grant">Allow project access</button><button name="action" value="access_revoke" class="secondary">Revoke project access</button></form></details>{% endif %}
+          <details><summary>Submitted answers and attachment records</summary>
+            {% for submission in item.submissions.all %}<h3>{{ submission.get_channel_display|default:submission.channel }} · {{ submission.received_at|date:'M j, Y g:i A' }}</h3>
+              <dl>{% for label,value in submission.answers.items %}<dt>{{ label }}</dt><dd class="preserve-lines">{{ value|default:'—' }}</dd>{% endfor %}</dl>
+              {% for attachment in submission.attachments.all %}<p>{% if attachment.storage_key %}<a href="{% url 'workqueue:download' attachment.pk %}">{{ attachment.original_name }}</a>{% else %}{{ attachment.original_name }} <span class="muted">Legacy file awaiting migration</span>{% endif %} · {{ attachment.size_bytes|filesizeformat }}</p>{% endfor %}
+              {% for notification in submission.notifications.all %}<p>{{ notification.get_recipient_kind_display }} notice: {{ notification.get_state_display }}{% if notification.last_error %} · {{ notification.last_error }}{% endif %}</p>
+              {% if can_change %}{% if notification.state == 'failed' or notification.state == 'unknown' %}<form method="post">{% csrf_token %}{% include 'workqueue/filter_context.html' %}<input type="hidden" name="action" value="retry_notice"><input type="hidden" name="item_id" value="{{ item.pk }}"><input type="hidden" name="notice_id" value="{{ notification.pk }}">
+              {% if notification.state == 'unknown' %}<label><input type="checkbox" name="not_sent_confirmed" value="yes" required> I checked the mail provider; this email was not delivered.</label>{% endif %}<button class="secondary">Retry email</button></form>{% endif %}{% endif %}{% endfor %}
+            {% empty %}<p>No submission history yet.</p>{% endfor %}
+          </details>
+          <details><summary>Change history</summary><ul>{% for event in item.audit_events.all %}<li>{{ event.created_at|date:'M j, Y g:i A' }} · {% if event.actor %}{{ event.actor.get_full_name|default:event.actor.username }}{% else %}Import / system{% endif %} · {{ event.action }}<dl>{% for name,change in event.changes.items %}<dt>{{ name }}</dt><dd>{{ change }}</dd>{% endfor %}</dl></li>{% empty %}<li>No changes recorded.</li>{% endfor %}</ul></details>
+        </div>
+      </details></td></tr>
+    </tbody>{% endwith %}{% empty %}<tbody><tr><td colspan="8" class="empty">No work matches these filters.</td></tr></tbody>{% endfor %}
+  </table></div>
+  <nav class="pagination" aria-label="Queue pages">{% if page.has_previous %}<a href="?{{ page_query }}&amp;page={{ page.previous_page_number }}">Previous</a>{% endif %}
+    <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a href="?{{ page_query }}&amp;page={{ page.next_page_number }}">Next</a>{% endif %}</nav>
+{% include 'workqueue/appointments.html' %}
+{% include 'workqueue/appointments_closed.html' %}
+</main>
+</body></html>

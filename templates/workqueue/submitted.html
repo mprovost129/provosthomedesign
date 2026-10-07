@@ -1,0 +1,12 @@
+{% extends 'workqueue/client_base.html' %}
+{% block title %}Request Received{% endblock %}
+{% block content %}
+<div class="intro"><p class="eyebrow">You’re on the list</p><h1>Your request is in our queue.</h1><p>We’ve saved your information. We’ll send your receipt to {{ item.contact_email }}.</p></div>
+<section class="card receipt"><h2>{{ item.reference }}</h2><p>Keep this ID so you can check your work later.</p>
+<div class="position-grid"><div><span>Position when submitted</span><strong>{{ item.submission_position }}</strong></div><div><span>Active requests ahead</span><strong>{{ ahead }}</strong></div></div>
+{% if item.project %}<p>Connected project: {{ item.project.name }}</p>{% endif %}
+<p>Each update has its own place in line. Positions can change and do not guarantee a waiting time or start date.</p>
+<a class="button" href="{% url 'workqueue:tracking' %}?reference={{ item.reference|urlencode }}">Track current position</a></section>
+{% if booking_enabled %}<section class="card"><h2>Would you like to meet?</h2><p>You can also book a 30-minute appointment. Verify your email using your receipt link, then choose a time.</p><a href="{% url 'workqueue:book' %}">Book an appointment</a></section>{% endif %}
+<p>We’ll contact you if we need more information. <a href="{% url 'workqueue:submit' %}">Send another request</a></p>
+{% endblock %}

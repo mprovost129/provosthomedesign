@@ -1,0 +1,39 @@
+{% extends 'workqueue/client_base.html' %}{% load static %}
+{% block title %}Submit Your Project{% endblock %}
+{% block content %}
+<div class="intro"><p class="eyebrow">Start here. We’ll take it from there.</p><h1>Send us your project</h1>
+<p>Tell us about new work or send an update. Your request goes straight into our work queue, and you’ll receive an ID to track it.</p></div>
+{% if client_email %}<p class="signed-in">Signed in as {{ client_email }}. You can choose from your connected projects below.</p>{% endif %}
+<noscript><p class="notice">JavaScript is needed to upload files. You can use a secure file link instead. Choose the <a href="?kind=new">new submission form</a> or <a href="?kind=update">update form</a> before entering your answers.</p></noscript>
+<form id="client-intake" method="post" data-upload-url="{% url 'workqueue:start_upload' %}" data-direct="{{ direct_uploads|yesno:'true,false' }}">
+{% csrf_token %}{{ form.intake_token }}{{ form.upload_ids }}{{ form.website }}
+{% if form.errors %}<div class="error-summary" role="alert"><h2>Please check the highlighted information.</h2>
+{{ form.non_field_errors }}<ul>{% for field in form %}{% for error in field.errors %}<li><a href="#{{ field.id_for_label }}">{{ field.label }}: {{ error }}</a></li>{% endfor %}{% endfor %}</ul></div>{% endif %}
+<section class="card path-choice"><h2>What are you sending?</h2>{{ form.kind }}{{ form.kind.errors }}</section>
+<section class="card"><h2>Your contact information</h2><div class="fields">{% for field in groups.common %}{% include 'workqueue/client_field.html' %}{% endfor %}</div></section>
+<fieldset id="new-fields" class="path-fields" {% if is_update %}hidden disabled{% endif %}>
+<section class="card"><h2>Billing address</h2><div class="fields">{% for field in groups.billing %}{% include 'workqueue/client_field.html' %}{% endfor %}</div></section>
+<section class="card"><h2>Project address</h2><label class="checkline">{{ form.same_address }} {{ form.same_address.label }}</label>
+<div class="fields">{% for field in groups.address %}{% include 'workqueue/client_field.html' %}{% endfor %}</div></section>
+<section class="card"><h2>About your project</h2><div class="fields">{% for field in groups.new %}{% include 'workqueue/client_field.html' %}{% endfor %}</div>
+<details><summary>Additional project details, if you have them</summary><div class="fields">{% for field in groups.detailed %}{% include 'workqueue/client_field.html' %}{% endfor %}</div></details></section>
+</fieldset>
+<fieldset id="update-fields" class="path-fields" {% if not is_update %}hidden disabled{% endif %}>
+<section class="card"><h2>Connect this update</h2><p>Use a project ID, name or full address. Your update gets its own place in line and stays connected to the project.</p>
+{% if not client_email %}<p class="muted">You can also <a href="{% url 'workqueue:tracking' %}" target="_blank" rel="noopener">verify your email</a> to choose a saved project. You may submit this update now without signing in.</p>{% endif %}
+<div class="fields">{% for field in groups.update %}{% if field.name != 'project' or client_email %}{% include 'workqueue/client_field.html' %}{% endif %}{% endfor %}</div></section>
+</fieldset>
+<section class="card"><h2>Documents and pictures</h2><p>Upload up to 10 files, 100 MB each. PDF, JPG, PNG, WebP, DOCX and XLSX are accepted.</p>
+<div class="categories">{{ form.categories.label_tag }}<small>Select all that apply.</small>{{ form.categories }}{{ form.categories.errors }}</div>
+<label class="upload-zone" for="project-files"><strong>Choose documents or pictures</strong><span>Files are private and connected to your request.</span>
+<input id="project-files" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.docx,.xlsx"></label>
+<p id="upload-message" role="status" aria-live="polite"></p>
+<ul id="upload-list">{% for upload in ready_uploads %}<li data-upload-id="{{ upload.pk }}"><span>{{ upload.original_name }} — Ready</span><button type="button" class="remove-upload" data-upload-id="{{ upload.pk }}">Remove</button></li>{% endfor %}</ul>
+<p class="muted">Uploads finish before your request is submitted. For another format, use a secure file or folder link.</p>
+</section>
+<section class="card"><h2>Anything else?</h2><div class="fields">{% for field in groups.shared %}{% include 'workqueue/client_field.html' %}{% endfor %}</div></section>
+<p class="muted">Submitting adds your work to our queue. It does not confirm a price or start date. We’ll contact you if more information is needed.</p>
+<div class="submit-actions"><button id="submit-request" type="submit">Submit to the work queue</button><span id="submission-message" role="status"></span></div>
+</form>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/client-intake.js' %}" defer></script>{% endblock %}
