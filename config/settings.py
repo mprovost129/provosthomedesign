@@ -191,6 +191,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Enable only after queue migrations and the existing-work import are verified.
 WORK_QUEUE_ENABLED = config("WORK_QUEUE_ENABLED", cast=bool, default=False)
+WORK_QUEUE_STAFF_PREVIEW = config("WORK_QUEUE_STAFF_PREVIEW", cast=bool, default=False)
 WORK_INTAKE_ENABLED = config("WORK_INTAKE_ENABLED", cast=bool, default=False)
 INTAKE_PUBLIC_BASE_URL = config("INTAKE_PUBLIC_BASE_URL", default=MAIN_SITE_URL)
 INTAKE_OWNER_EMAIL = config("INTAKE_OWNER_EMAIL", default="mike@provosthomedesign.com")

@@ -15,6 +15,7 @@
   <nav aria-label="Staff tools">{% if intake_enabled %}<a href="{% url 'workqueue:submit' %}" target="_blank" rel="noopener">Client form</a> · {% endif %}<a href="{% url 'admin:index' %}">Administration</a></nav>
 </header>
 <main id="queue">
+  {% if staff_preview %}<p class="notice" role="status">Preview only. Your Google Sheet is still the working queue. Changes here will be available after the switch.</p>{% endif %}
   {% for message in messages %}<div class="notice {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}
   <form method="get" class="filters" aria-label="Filter work">
     <label>Search<input type="search" name="q" value="{{ filters.q }}" placeholder="Request, client, project or address"></label>

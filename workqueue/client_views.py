@@ -22,7 +22,7 @@ from .intake import submit_intake
 from .models import Attachment, PendingUpload, WorkItem
 from .notifications import queue_signin
 from .uploads import direct_upload_policy, finish_upload, private_storage, reserve_upload
-from .views import queue_enabled
+from .views import queue_enabled, staff_preview
 
 logger = logging.getLogger(__name__)
 
@@ -244,7 +244,7 @@ def client_logout(request):
 @never_cache
 @require_http_methods(["GET"])
 def download(request, attachment_id):
-    if not getattr(settings, "WORK_QUEUE_ENABLED", False):
+    if not getattr(settings, "WORK_QUEUE_ENABLED", False) and not staff_preview(request):
         raise Http404
     attachment = get_object_or_404(Attachment.objects.select_related("submission__work_item"), pk=attachment_id)
     staff = request.user.is_active and request.user.is_staff and request.user.has_perm("workqueue.view_workitem")

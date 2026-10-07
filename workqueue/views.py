@@ -21,10 +21,17 @@ from .models import AuditEvent, CLOSED_STATUSES, NotificationDelivery, Priority,
 from .services import EDIT_FIELDS, EditConflict, change_project_access, create_work, edit_work
 
 
+def staff_preview(request):
+    return (not getattr(settings, "WORK_QUEUE_ENABLED", False)
+            and getattr(settings, "WORK_QUEUE_STAFF_PREVIEW", False)
+            and request.user.is_active and request.user.is_staff
+            and request.user.has_perm("workqueue.view_workitem"))
+
+
 def queue_enabled(view):
     @wraps(view)
     def wrapped(request, *args, **kwargs):
-        if not getattr(settings, "WORK_QUEUE_ENABLED", False):
+        if not getattr(settings, "WORK_QUEUE_ENABLED", False) and not staff_preview(request):
             raise Http404
         return view(request, *args, **kwargs)
     return wrapped
@@ -46,6 +53,9 @@ def queue_redirect(filters, item=None):
 @never_cache
 @require_http_methods(["GET", "POST"])
 def queue(request):
+    preview = staff_preview(request)
+    if preview and request.method != "GET":
+        raise PermissionDenied
     filters = filters_from(request)
     error_item = None
     edit_form = None
@@ -197,13 +207,14 @@ def queue(request):
     return render(request, "workqueue/queue.html", {"rows": rows, "page": page, "filters": filters,
         "appointments": appointments, "booking_access": BookingAccess.objects.order_by("email")[:100],
         "closed_appointments": Appointment.objects.filter(state__in=["canceled", "completed"]).prefetch_related("notifications").order_by("-starts_at")[:25],
-        "can_manage_bookings": request.user.has_perm("workqueue.change_appointment"),
-        "can_manage_booking_access": request.user.has_perm("workqueue.change_bookingaccess"),
+        "can_manage_bookings": not preview and request.user.has_perm("workqueue.change_appointment"),
+        "can_manage_booking_access": not preview and request.user.has_perm("workqueue.change_bookingaccess"),
         "page_query": params, "statuses": Status.choices, "priorities": Priority.choices,
         "create_form": create_form, "create_open": request.method == "POST" and request.POST.get("action") == "create",
-        "can_add": request.user.has_perm("workqueue.add_workitem"),
-        "can_change": request.user.has_perm("workqueue.change_workitem"),
-        "can_manage_access": request.user.has_perm("workqueue.change_projectaccess"),
-        "intake_enabled": getattr(settings, "WORK_INTAKE_ENABLED", False),
+        "can_add": not preview and request.user.has_perm("workqueue.add_workitem"),
+        "can_change": not preview and request.user.has_perm("workqueue.change_workitem"),
+        "can_manage_access": not preview and request.user.has_perm("workqueue.change_projectaccess"),
+        "intake_enabled": not preview and getattr(settings, "WORK_INTAKE_ENABLED", False),
+        "staff_preview": preview,
         "active_count": WorkItem.objects.active().count(), "closed_count": WorkItem.objects.filter(status__in=CLOSED_STATUSES).count()},
         status=response_status)
