@@ -1,0 +1,6 @@
+<div class="terms-consent">
+  <label class="checkline" for="{{ form.terms_accepted.id_for_label }}">{{ form.terms_accepted }}
+    <span>I agree to the <a href="{% url 'pages:terms' %}" target="_blank" rel="noopener">Terms &amp; Conditions</a> <span class="required">Required</span></span>
+  </label>
+  {{ form.terms_accepted.errors }}
+</div>

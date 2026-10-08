@@ -20,6 +20,7 @@ from .booking import (HOLD_STATES, available_times, eligible, lock_bookings, req
                       reserve_appointment, set_booking_access, sync_appointment)
 from .calendar_provider import EASTERN, CalendarUnavailable
 from .client_views import limited
+from .client_security import verify_form
 from .models import Appointment, BookingAudit, NotificationDelivery
 from .notifications import queue_signin
 
@@ -34,6 +35,8 @@ def booking_enabled(view):
 
 
 class AppointmentForm(forms.Form):
+    terms_accepted = forms.BooleanField(label="Terms accepted", required=True,
+        error_messages={"required": "Please agree to the Terms & Conditions before requesting an appointment."})
     token = forms.CharField(widget=forms.HiddenInput)
     day = forms.DateField(label="Appointment date", widget=forms.DateInput(attrs={"type": "date"}))
     slot = forms.ChoiceField(label="Available start time (Eastern)")
@@ -59,7 +62,7 @@ def book(request):
     if not email and request.method == "POST":
         access_form = forms.Form(request.POST)
         access_form.fields["email"] = forms.EmailField(label="Email address")
-        if access_form.is_valid():
+        if verify_form(request, access_form, "work_booking_signin"):
             target = access_form.cleaned_data["email"].strip().lower()
             if limited(request, "signin-ip", limit=20, window=900) and limited(request, "signin-email", target, limit=5, window=900):
                 queue_signin(target, destination="booking")
@@ -115,7 +118,7 @@ def book(request):
             raise PermissionDenied
         if day_error or unavailable:
             form.add_error(None, day_error or unavailable)
-        elif form.is_valid():
+        elif verify_form(request, form, "work_booking"):
             try:
                 nonce = read_intake_token(request, form.cleaned_data["token"])
                 if not limited(request, "booking", email, limit=20):
@@ -123,7 +126,8 @@ def book(request):
                 item, created = reserve_appointment(email=email, start=datetime.fromisoformat(form.cleaned_data["slot"]),
                     full_name=form.cleaned_data["full_name"], phone=form.cleaned_data["phone"], purpose=form.cleaned_data["purpose"],
                     project_id=form.cleaned_data["project"].pk if form.cleaned_data["project"] else None,
-                    previous_id=previous.pk if previous else None, key=f"booking:{session_digest(request)}:{nonce}")
+                    previous_id=previous.pk if previous else None, key=f"booking:{session_digest(request)}:{nonce}",
+                    terms_url=reverse("pages:terms"))
             except (ValidationError, CalendarUnavailable) as exc:
                 form.add_error(None, " ".join(exc.messages) if isinstance(exc, ValidationError) else "Calendar unavailable. Please try again later.")
             else:

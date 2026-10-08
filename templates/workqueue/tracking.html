@@ -14,5 +14,5 @@
 <details><summary>Your submitted work and files</summary><p class="preserve-lines">{{ item.description }}</p><ul>{% for submission in item.submissions.all %}{% for attachment in submission.attachments.all %}<li>{% if attachment.storage_key %}<a href="{% url 'workqueue:download' attachment.pk %}">{{ attachment.original_name }}</a>{% else %}{{ attachment.original_name }} · Retained in the original intake archive{% endif %}</li>{% endfor %}{% endfor %}</ul></details></section>
 {% empty %}{% if not unavailable %}<section class="card"><p>No requests are connected to this email yet.</p><a href="{% url 'workqueue:submit' %}">Submit new work</a></section>{% endif %}{% endfor %}
 {% else %}<section class="card"><h2>Get a secure sign-in link</h2><p>No password needed. Use the email address you provided with your work.</p>
-<form method="post">{% csrf_token %}{{ form.non_field_errors }}{% for field in form %}{% include 'workqueue/client_field.html' %}{% endfor %}<button>Send my sign-in link</button></form></section>{% endif %}
+<form method="post" data-recaptcha-action="work_tracking_signin">{% csrf_token %}{{ form.non_field_errors }}{% for field in form %}{% include 'workqueue/client_field.html' %}{% endfor %}{% include 'workqueue/recaptcha_fields.html' %}<button>Send my sign-in link</button></form></section>{% endif %}
 {% endblock %}

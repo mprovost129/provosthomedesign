@@ -1,0 +1,3 @@
+<input type="hidden" name="recaptcha_token" value="">
+<p class="verification-error errorlist" role="alert" hidden></p>
+{% if not client_recaptcha_local %}<p class="muted recaptcha-notice">Protected by reCAPTCHA. Google’s <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noopener">Terms of Service</a> apply.</p>{% endif %}

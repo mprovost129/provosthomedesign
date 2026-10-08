@@ -57,7 +57,7 @@ class CalendarDouble:
             self.events.pop(key, None)
 
 
-@override_settings(BOOKING_ENABLED=True, WORK_INTAKE_ENABLED=True, WORK_QUEUE_ENABLED=True,
+@override_settings(DEBUG=True, INTAKE_LOCAL_DEVELOPMENT=True, RECAPTCHA_ENTERPRISE_API_KEY="", RECAPTCHA_SECRET_KEY="", RECAPTCHA_PRIVATE_KEY="", BOOKING_ENABLED=True, WORK_INTAKE_ENABLED=True, WORK_QUEUE_ENABLED=True,
     BOOKING_HORIZON_DAYS=60, GOOGLE_CALENDAR_ID="primary", INTAKE_PUBLIC_BASE_URL="https://www.provosthomedesign.com",
     INTAKE_OWNER_EMAIL="owner@example.invalid")
 class BookingTests(TestCase):
@@ -309,7 +309,7 @@ class BookingTests(TestCase):
         response = self.client.get(reverse("workqueue:book"), {"day": START.date().isoformat()})
         token = response.context["form"].initial["token"]
         data = {"token": token, "day": START.date().isoformat(), "slot": START.isoformat(),
-                "full_name": "Alex Example", "phone": "555", "purpose": "Project review"}
+                "full_name": "Alex Example", "phone": "555", "purpose": "Project review", "terms_accepted": "on"}
         with patch("workqueue.booking.calendar_provider", return_value=self.calendar):
             self.assertEqual(self.client.post(reverse("workqueue:book"), data).status_code, 302)
             self.assertEqual(self.client.post(reverse("workqueue:book"), data).status_code, 302)
@@ -327,7 +327,7 @@ class BookingTests(TestCase):
         session["queue_email_verified_until"] = (NOW+timedelta(days=7)).timestamp()
         session.save()
         data = {"token": response.context["form"].initial["token"], "day": START.date().isoformat(),
-                "slot": START.isoformat(), "full_name": "Alex", "phone": "555", "purpose": "Review"}
+                "slot": START.isoformat(), "full_name": "Alex", "phone": "555", "purpose": "Review", "terms_accepted": "on"}
         self.assertEqual(other.post(reverse("workqueue:book"), data).status_code, 400)
         self.assertEqual(Appointment.objects.count(), 0)
 

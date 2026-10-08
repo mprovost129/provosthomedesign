@@ -18,6 +18,7 @@ from django.views.decorators.http import require_http_methods
 from .access import (authorized_work, consume_email_token, new_intake_token, normalize_email,
                      rate_allowed, read_intake_token, session_digest, verified_email)
 from .client_forms import ClientIntakeForm, ConfirmAccessForm, TrackingAccessForm
+from .client_security import require_recaptcha, verify_form
 from .intake import submit_intake
 from .models import Attachment, PendingUpload, WorkItem
 from .notifications import queue_signin
@@ -52,7 +53,7 @@ def submit_work(request):
     form = ClientIntakeForm(request.POST or None, initial=initial, email=email)
     status = 200
     ready = []
-    if request.method == "POST" and form.is_valid():
+    if request.method == "POST" and verify_form(request, form, "work_submission"):
         try:
             nonce = read_intake_token(request, form.cleaned_data["intake_token"])
             if not limited(request, "submissions", limit=30):
@@ -100,6 +101,7 @@ def start_upload(request):
         binding = session_digest(request)
         if not limited(request, "upload-reservations", limit=100):
             raise ValidationError("Too many upload attempts. Please try again later.")
+        require_recaptcha(request, "work_upload")
         file = request.FILES.get("file")
         size = file.size if file else int(request.POST.get("size", "0"))
         name = file.name if file else request.POST.get("name", "")
@@ -181,7 +183,7 @@ def tracking(request):
     form = TrackingAccessForm(request.POST or None, initial={"reference": request.GET.get("reference", "")})
     sent = False
     status = 200
-    if request.method == "POST" and form.is_valid():
+    if request.method == "POST" and verify_form(request, form, "work_tracking_signin"):
         target = normalize_email(form.cleaned_data["email"])
         if limited(request, "signin-ip", limit=20, window=900) and limited(request, "signin-email", target, limit=5, window=900):
             queue_signin(target, form.cleaned_data["reference"].strip().upper())

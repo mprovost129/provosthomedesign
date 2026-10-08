@@ -4,7 +4,7 @@
 <div class="intro"><p class="eyebrow">Start here. We’ll take it from there.</p><h1>Send us your project</h1>
 <p>Tell us about new work or send an update. Your request goes straight into our work queue, and you’ll receive an ID to track it.</p></div>
 {% if client_email %}<p class="signed-in">Signed in as {{ client_email }}. You can choose from your connected projects below.</p>{% endif %}
-<noscript><p class="notice">JavaScript is needed to upload files. You can use a secure file link instead. Choose the <a href="?kind=new">new submission form</a> or <a href="?kind=update">update form</a> before entering your answers.</p></noscript>
+<noscript><p class="notice">Please enable JavaScript to verify and submit your request and upload files. Contact Provost Home Design if you need help submitting your project.</p></noscript>
 <form id="client-intake" method="post" data-upload-url="{% url 'workqueue:start_upload' %}" data-direct="{{ direct_uploads|yesno:'true,false' }}">
 {% csrf_token %}{{ form.intake_token }}{{ form.upload_ids }}{{ form.website }}
 {% if form.errors %}<div class="error-summary" role="alert"><h2>Please check the highlighted information.</h2>
@@ -33,6 +33,8 @@
 </section>
 <section class="card"><h2>Anything else?</h2><div class="fields">{% for field in groups.shared %}{% include 'workqueue/client_field.html' %}{% endfor %}</div></section>
 <p class="muted">Submitting adds your work to our queue. It does not confirm a price or start date. We’ll contact you if more information is needed.</p>
+{% include 'workqueue/terms_consent.html' %}
+{% include 'workqueue/recaptcha_fields.html' %}
 <div class="submit-actions"><button id="submit-request" type="submit">Submit to the work queue</button><span id="submission-message" role="status"></span></div>
 </form>
 {% endblock %}

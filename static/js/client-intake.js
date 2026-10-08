@@ -10,12 +10,13 @@
   const token = form.elements.intake_token.value;
   const ready = new Set([...list.querySelectorAll('[data-upload-id]')].map(row => row.dataset.uploadId).filter(Boolean));
   let activeUploads = 0;
+  let submitting = false;
   let uploadChain = Promise.resolve();
   const newRequired = new Set(['billing_street','billing_city','billing_state','billing_zip','project_street','project_city','project_state','project_zip','service_needed','new_description']);
   const updateRequired = new Set(['update_description']);
   function syncUploads() {
     form.elements.upload_ids.value = [...ready].join(',');
-    submit.disabled = activeUploads > 0 || !!list.querySelector('.upload-failed');
+    submit.disabled = submitting || activeUploads > 0 || !!list.querySelector('.upload-failed');
     if (activeUploads) uploadMessage.textContent = 'Please wait for your files to finish uploading before submitting.';
     else if (list.querySelector('.upload-failed')) uploadMessage.textContent = 'A file needs attention. Retry it or remove it before submitting.';
     else uploadMessage.textContent = ready.size ? `${ready.size} file${ready.size === 1 ? '' : 's'} ready to submit.` : '';
@@ -114,8 +115,9 @@
       if (file.size === 0 || file.size > 100 * 1024 * 1024) throw new Error('Each file must be nonempty and no larger than 100 MB.');
       let result;
       const uploadId = crypto.randomUUID();
+      const recaptchaToken = await window.phdRecaptcha.token('work_upload');
       if (form.dataset.direct === 'true') {
-        result = await postOwn(form.dataset.uploadUrl, {intake_token:token, name:file.name, size:file.size, upload_id:uploadId});
+        result = await postOwn(form.dataset.uploadUrl, {intake_token:token, name:file.name, size:file.size, upload_id:uploadId, recaptcha_token:recaptchaToken});
         row.dataset.uploadId = result.id;
         if (!result.ready) {
           const direct = new FormData();
@@ -127,6 +129,7 @@
         }
       } else {
         const body = new FormData(); body.append('intake_token', token); body.append('file', file); body.append('upload_id', uploadId);
+        body.append('recaptcha_token', recaptchaToken);
         result = await xhrUpload(form.dataset.uploadUrl, body, value => { progress.value = value; }, true);
         row.dataset.uploadId = result.id;
       }
@@ -151,12 +154,32 @@
     submit.disabled = true;
     for (const file of files) uploadChain = uploadChain.then(() => uploadFile(file));
   });
-  form.addEventListener('submit', event => {
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (submitting) return;
     if (activeUploads || list.querySelector('.upload-failed')) { event.preventDefault(); syncUploads(); return; }
     updateCategories();
     if (!form.reportValidity()) { event.preventDefault(); return; }
+    submitting = true;
     submit.disabled = true;
-    document.getElementById('submission-message').textContent = 'Saving your request…';
+    chooser.disabled = true;
+    const error = form.querySelector('.verification-error');
+    error.hidden = true;
+    const status = document.getElementById('submission-message');
+    status.textContent = 'Verifying your request…';
+    try {
+      form.elements.recaptcha_token.value = await window.phdRecaptcha.token('work_submission');
+      status.textContent = 'Saving your request…';
+      HTMLFormElement.prototype.submit.call(form);
+    } catch (_) {
+      submitting = false;
+      chooser.disabled = false;
+      status.textContent = '';
+      error.textContent = 'We could not verify this request. Please try again. If it continues, contact Provost Home Design.';
+      error.hidden = false;
+      syncUploads();
+    }
   });
+  window.addEventListener('pageshow', () => { submitting = false; chooser.disabled = false; form.elements.recaptcha_token.value = ''; syncUploads(); });
   switchPath(); syncUploads();
 })();

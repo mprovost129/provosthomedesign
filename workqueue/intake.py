@@ -2,6 +2,7 @@ import uuid
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.urls import reverse
 from django.utils import timezone
 
 from .access import normalize_email, resolve_project
@@ -53,6 +54,8 @@ def submit_intake(*, data, nonce, binding, verified_email="", labels=None):
         if name not in excluded and value not in (None, "", [], False):
             answers[(labels or {}).get(name, name)] = value if isinstance(value, list) else str(value)
     submission.answers = answers
+    if data.get("terms_accepted"):
+        submission.answers.update({"Terms URL": reverse("pages:terms"), "Terms accepted at": timezone.now().isoformat()})
     submission.owner_email = fields["contact_email"]
     submission.save(update_fields=["channel", "answers", "owner_email"])
     for upload in uploads:

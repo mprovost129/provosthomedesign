@@ -25,7 +25,7 @@ from .uploads import checked_name, direct_upload_policy, validate_content
 
 
 def new_answers(**changes):
-    answers = {"kind": "new", "contact_full_name": "Alex Example", "company": "Homeowner",
+    answers = {"terms_accepted": "on", "kind": "new", "contact_full_name": "Alex Example", "company": "Homeowner",
         "contact_email": "alex@example.invalid", "contact_phone": "508-555-0100 ext 3",
         "billing_street": "1 Billing Road", "billing_city": "Rehoboth", "billing_state": "MA", "billing_zip": "02769",
         "project_street": "4 Project Road Unit 2", "project_city": "Swansea", "project_state": "MA", "project_zip": "02777",
@@ -39,7 +39,7 @@ def valid_pdf(name="sketch.pdf"):
     return SimpleUploadedFile(name, b"%PDF-1.4\n1 0 obj << >> endobj\n%%EOF\n", content_type="application/pdf")
 
 
-@override_settings(WORK_INTAKE_ENABLED=True, WORK_QUEUE_ENABLED=True,
+@override_settings(DEBUG=True, INTAKE_LOCAL_DEVELOPMENT=True, RECAPTCHA_ENTERPRISE_API_KEY="", RECAPTCHA_SECRET_KEY="", RECAPTCHA_PRIVATE_KEY="", WORK_INTAKE_ENABLED=True, WORK_QUEUE_ENABLED=True,
     INTAKE_DIRECT_UPLOADS=False, INTAKE_OWNER_EMAIL="owner@example.invalid",
     INTAKE_PUBLIC_BASE_URL="https://www.provosthomedesign.com", EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
 class ClientFlowTests(TestCase):
@@ -122,13 +122,13 @@ class ClientFlowTests(TestCase):
         self.assertFalse(NotificationDelivery.objects.exclude(body="").exists())
 
     def test_update_needs_no_repeated_billing_or_project_address_form(self):
-        form = ClientIntakeForm({"kind": "update", "contact_full_name": "Alex Example", "company": "Homeowner",
+        form = ClientIntakeForm({"terms_accepted": "on", "kind": "update", "contact_full_name": "Alex Example", "company": "Homeowner",
             "contact_email": "alex@example.invalid", "contact_phone": "508-555-0100", "intake_token": self.token,
             "project_context": "Kitchen addition", "update_description": "Change the window sizes", "categories": ["Revision request"]})
         self.assertTrue(form.is_valid(), form.errors)
 
     def test_anonymous_update_queues_even_with_unknown_reference(self):
-        response = self.client.post(reverse("workqueue:submit"), {"kind": "update", "contact_full_name": "Alex Example",
+        response = self.client.post(reverse("workqueue:submit"), {"terms_accepted": "on", "kind": "update", "contact_full_name": "Alex Example",
             "company": "Homeowner", "contact_email": "alex@example.invalid", "contact_phone": "508-555-0100",
             "intake_token": self.token, "project_reference": "PHD-12345", "update_description": "Window changes",
             "categories": ["Revision request", "Answers or corrections"]})
@@ -144,7 +144,7 @@ class ClientFlowTests(TestCase):
         self.verify()
         response = self.client.get(reverse("workqueue:submit"))
         token = response.context["form"].initial["intake_token"]
-        response = self.client.post(reverse("workqueue:submit"), {"kind": "update", "contact_full_name": "Alex Example",
+        response = self.client.post(reverse("workqueue:submit"), {"terms_accepted": "on", "kind": "update", "contact_full_name": "Alex Example",
             "company": "Homeowner", "contact_email": "alex@example.invalid", "contact_phone": "508-555-0100",
             "intake_token": token, "project_context": "  kitchen ADDITION  ", "update_description": "Window changes",
             "categories": ["Revision request"]})
@@ -159,7 +159,7 @@ class ClientFlowTests(TestCase):
         original = WorkItem.objects.get()
         self.verify()
         self.token = self.client.get(reverse("workqueue:submit")).context["form"].initial["intake_token"]
-        self.client.post(reverse("workqueue:submit"), {"kind": "update", "contact_full_name": "Other", "company": "Homeowner",
+        self.client.post(reverse("workqueue:submit"), {"terms_accepted": "on", "kind": "update", "contact_full_name": "Other", "company": "Homeowner",
             "contact_email": "other@example.invalid", "contact_phone": "508-555-0100", "intake_token": self.token,
             "project_reference": original.reference, "update_description": "Window changes", "categories": ["Revision request"]})
         self.assertIsNone(WorkItem.objects.exclude(pk=original.pk).get().project_id)
@@ -219,7 +219,7 @@ class ClientFlowTests(TestCase):
 
     def test_client_cannot_search_or_select_unauthorized_project(self):
         other = WorkProject.objects.create(name="Private Project")
-        form = ClientIntakeForm({"kind": "update", "contact_full_name": "Alex", "company": "Homeowner",
+        form = ClientIntakeForm({"terms_accepted": "on", "kind": "update", "contact_full_name": "Alex", "company": "Homeowner",
             "contact_email": "alex@example.invalid", "contact_phone": "5550100", "intake_token": self.token,
             "project": str(other.pk), "update_description": "Change", "categories": ["Other"]}, email="alex@example.invalid")
         self.assertFalse(form.is_valid())
@@ -250,7 +250,7 @@ class ClientFlowTests(TestCase):
         self.verify()
         self.client.post(reverse("workqueue:client_logout"))
         self.token = self.client.get(reverse("workqueue:submit")).context["form"].initial["intake_token"]
-        self.client.post(reverse("workqueue:submit"), {"kind": "update", "contact_full_name": "Alex", "company": "Homeowner",
+        self.client.post(reverse("workqueue:submit"), {"terms_accepted": "on", "kind": "update", "contact_full_name": "Alex", "company": "Homeowner",
             "contact_email": "alex@example.invalid", "contact_phone": "5550100", "intake_token": self.token,
             "project_context": "Kitchen addition", "update_description": "A new sketch", "categories": ["Photos or sketches"]})
         update = WorkItem.objects.exclude(pk=original.pk).get()

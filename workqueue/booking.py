@@ -84,7 +84,7 @@ def available_times(day, *, email, previous=None, provider=None):
     return result
 
 
-def reserve_appointment(*, email, start, full_name, phone, purpose, key, project_id=None, previous_id=None, provider=None):
+def reserve_appointment(*, email, start, full_name, phone, purpose, key, project_id=None, previous_id=None, provider=None, terms_url=""):
     email = normalize_email(email)
     if (not full_name.strip() or not phone.strip() or not purpose.strip()
             or len(purpose) > 3000 or len(full_name) > 200 or len(phone) > 50 or timezone.is_naive(start)):
@@ -128,7 +128,8 @@ def reserve_appointment(*, email, start, full_name, phone, purpose, key, project
             purpose=purpose.strip(), project=project, previous=previous, starts_at=start,
             ends_at=start+timedelta(minutes=30), reserved_until=start+timedelta(hours=1),
             local_date=start.astimezone(EASTERN).date(), calendar_id=calendar_id, idempotency_key=key)
-        BookingAudit.objects.create(appointment=item, action="reschedule_requested" if previous else "booking_requested")
+        consent = {"terms_url": terms_url, "terms_accepted_at": timezone.now().isoformat()} if terms_url else {}
+        BookingAudit.objects.create(appointment=item, action="reschedule_requested" if previous else "booking_requested", details=consent)
         return item, True
 
 

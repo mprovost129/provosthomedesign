@@ -22,6 +22,8 @@ class ClientIntakeForm(forms.Form):
     intake_token = forms.CharField(widget=forms.HiddenInput)
     upload_ids = forms.CharField(required=False, widget=forms.HiddenInput)
     website = forms.CharField(required=False, widget=forms.HiddenInput)  # Honeypot, not shown to clients.
+    terms_accepted = forms.BooleanField(label="Terms accepted", required=True,
+        error_messages={"required": "Please agree to the Terms & Conditions before submitting."})
     contact_full_name = forms.CharField(label="Full name", max_length=200)
     company = forms.CharField(label="Company", max_length=200,
         help_text="If you are not submitting for a company, enter Homeowner.")
