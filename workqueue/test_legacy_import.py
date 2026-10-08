@@ -7,7 +7,7 @@ from django.test import TestCase, override_settings
 
 from .legacy_import import ImportConflict, import_snapshot
 from .access import consume_email_token, mint_email_token
-from .models import (Attachment, AuditEvent, EmailAccessToken, LegacyQueueImport, NotificationDelivery,
+from .models import (Attachment, AuditEvent, EmailAccessToken, LegacyQueueImport, NotificationDelivery, Status, StatusMilestone,
                      BookingAccess, ProjectAccess, QueueState, Submission, WorkItem, WorkProject)
 
 
@@ -114,6 +114,88 @@ class LegacyImportTests(TestCase):
         with self.assertRaises(ImportConflict):
             self.run_import()
         self.assertEqual(WorkItem.objects.get(reference="PHD-00027").internal_notes, "Owner edit")
+
+    @override_settings(WORK_QUEUE_ENABLED=True, WORK_INTAKE_ENABLED=True)
+    def test_imported_request_can_be_completed_without_fabricating_missing_contact_details(self):
+        with override_settings(WORK_QUEUE_ENABLED=False, WORK_INTAKE_ENABLED=False):
+            self.run_import()
+        owner = get_user_model().objects.create_superuser('legacy-editor', 'owner@example.invalid', 'test-only')
+        self.client.force_login(owner)
+        item = WorkItem.objects.get(reference='PHD-00027')
+        response = self.client.post(reverse('workqueue:queue'), {
+            'action': 'status', 'item_id': item.pk, 'version': item.version,
+            'status': Status.COMPLETED, 'client_email': 'skip',
+        })
+        self.assertEqual(response.status_code, 302)
+        item.refresh_from_db()
+        self.assertEqual(item.status, Status.COMPLETED)
+        self.assertEqual((item.company, item.contact_phone), ('', ''))
+        self.assertEqual(item.version, 2)
+        self.assertEqual(WorkItem.objects.active().count(), 0)
+        self.assertIsNone(StatusMilestone.objects.get().delivery_id)
+        self.assertEqual(NotificationDelivery.objects.count(), 0)
+
+    @override_settings(WORK_QUEUE_ENABLED=True, WORK_INTAKE_ENABLED=True,
+                       INTAKE_PUBLIC_BASE_URL='https://www.provosthomedesign.com')
+    def test_imported_request_with_email_can_queue_completion_notice_despite_missing_phone_company(self):
+        with override_settings(WORK_QUEUE_ENABLED=False, WORK_INTAKE_ENABLED=False):
+            self.run_import()
+        owner = get_user_model().objects.create_superuser('legacy-notifier', 'owner@example.invalid', 'test-only')
+        self.client.force_login(owner)
+        item = WorkItem.objects.get(reference='PHD-00027')
+        response = self.client.post(reverse('workqueue:queue'), {
+            'action': 'status', 'item_id': item.pk, 'version': item.version,
+            'status': Status.COMPLETED, 'client_email': 'send',
+        })
+        self.assertEqual(response.status_code, 302)
+        item.refresh_from_db()
+        self.assertEqual(item.status, Status.COMPLETED)
+        self.assertEqual(NotificationDelivery.objects.get().recipient, 'client@example.invalid')
+        self.assertEqual((item.company, item.contact_phone), ('', ''))
+
+    @override_settings(WORK_QUEUE_ENABLED=True, WORK_INTAKE_ENABLED=True)
+    def test_full_queue_edit_of_imported_request_preserves_blank_intake_details(self):
+        with override_settings(WORK_QUEUE_ENABLED=False, WORK_INTAKE_ENABLED=False):
+            self.run_import()
+        owner = get_user_model().objects.create_superuser('legacy-full-editor', 'owner@example.invalid', 'test-only')
+        self.client.force_login(owner)
+        item = WorkItem.objects.get(reference='PHD-00027')
+        prefix = str(item.pk) + '-'
+        response = self.client.post(reverse('workqueue:queue'), {
+            'action': 'edit', 'item_id': item.pk, prefix + 'version': item.version,
+            prefix + 'status': Status.COMPLETED, prefix + 'priority': item.priority,
+            prefix + 'queue_order': item.queue_order, prefix + 'project': item.project_id,
+            prefix + 'internal_notes': 'Finished historical request.', prefix + 'client_email': 'skip',
+        })
+        self.assertEqual(response.status_code, 302)
+        item.refresh_from_db()
+        self.assertEqual(item.status, Status.COMPLETED)
+        self.assertEqual(item.internal_notes, 'Finished historical request.')
+        self.assertEqual((item.company, item.contact_phone), ('', ''))
+        self.assertEqual(item.version, 2)
+
+    @override_settings(WORK_QUEUE_ENABLED=True, WORK_INTAKE_ENABLED=True)
+    def test_historical_missing_email_requires_skip_and_failed_send_keeps_save_atomic(self):
+        with override_settings(WORK_QUEUE_ENABLED=False, WORK_INTAKE_ENABLED=False):
+            self.run_import()
+        owner = get_user_model().objects.create_superuser('legacy-no-email', 'owner@example.invalid', 'test-only')
+        self.client.force_login(owner)
+        item = WorkItem.objects.get(reference='PHD-00001')
+        url = reverse('workqueue:queue')
+        data = {'action': 'status', 'item_id': item.pk, 'version': item.version,
+                'status': Status.IN_PROGRESS, 'client_email': 'send'}
+        response = self.client.post(url, data)
+        self.assertContains(response, 'Enter a valid email address.', status_code=400)
+        item.refresh_from_db()
+        self.assertEqual(item.status, Status.COMPLETED)
+        self.assertEqual(item.version, 1)
+        self.assertEqual(NotificationDelivery.objects.count(), 0)
+        self.assertEqual(StatusMilestone.objects.count(), 0)
+        data['client_email'] = 'skip'
+        self.assertEqual(self.client.post(url, data).status_code, 302)
+        item.refresh_from_db()
+        self.assertEqual(item.status, Status.IN_PROGRESS)
+        self.assertEqual((item.company, item.contact_email, item.contact_phone), ('', '', ''))
 
     def test_imported_client_booking_requires_verification_and_preserves_denials(self):
         self.run_import()

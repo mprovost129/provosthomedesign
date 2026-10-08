@@ -98,7 +98,13 @@ def edit_work(*, item_id, version, data, actor, notify_client=False):
         update.save(update_fields=["previous_request", "version", "updated_at"])
         AuditEvent.objects.create(work_item=update, actor=actor, action="prior_link_cleared",
                                   changes={"previous_request": {"before": str(item.pk), "after": None}})
-    item.full_clean()
+    # The Sheet import intentionally retained missing intake details. Queue edits
+    # cannot change these fields, so preserve historical blanks while validating
+    # present values and every queue constraint. New work still uses full_clean().
+    missing_intake_fields = {name for name in (
+        "contact_full_name", "company", "contact_email", "contact_phone", "description"
+    ) if not getattr(item, name)}
+    item.full_clean(exclude=missing_intake_fields)
     if changes:
         item.version += 1
         item.save()

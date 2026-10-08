@@ -279,7 +279,9 @@ def queue(request):
                                            for name in EDIT_FIELDS]
                     edit_form = QueueEditForm(instance=WorkItem.objects.get(pk=item_id), prefix=str(item_id))
                 except ValidationError as exc:
-                    form.add_error(None, exc)
+                    # Model errors may refer to fields absent from the status/edit
+                    # form. Flatten them into non-field errors instead of raising.
+                    form.add_error(None, ValidationError(exc.messages))
                     response_status = 400
                 else:
                     milestone = item.milestone_notification
@@ -289,7 +291,8 @@ def queue(request):
             else:
                 response_status = 400
             if action == "status":
-                messages.error(request, "The status was not saved. Review the request and try again.")
+                detail = " ".join(form.non_field_errors()) or "Review the request and try again."
+                messages.error(request, "The status was not saved. " + detail)
             # Read a fresh instance: ModelForm validation can mutate its instance.
             error_item = WorkItem.objects.get(pk=item_id)
         else:

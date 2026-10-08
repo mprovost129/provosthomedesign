@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 
@@ -115,6 +116,17 @@ class QueueWorkflowTests(TestCase):
         self.assertEqual(self.item.version, 1)
         self.assertEqual(NotificationDelivery.objects.count(), 0)
         self.assertEqual(StatusMilestone.objects.count(), 0)
+
+    def test_validation_for_field_outside_status_form_is_visible_and_does_not_crash(self):
+        WorkItem.objects.filter(pk=self.item.pk).update(
+            scheduled_start=date(2026, 10, 9), estimated_completion=date(2026, 10, 8))
+        response = self.change(Status.COMPLETED, 'skip')
+        self.assertContains(response, 'Estimated completion cannot precede the scheduled start.', status_code=400)
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.status, Status.NEW)
+        self.assertEqual(self.item.version, 1)
+        self.assertEqual(StatusMilestone.objects.count(), 0)
+        self.assertEqual(NotificationDelivery.objects.count(), 0)
 
     @override_settings(WORK_INTAKE_ENABLED=False)
     def test_disabled_email_worker_requires_skip_to_save_milestone(self):
