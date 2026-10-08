@@ -497,6 +497,9 @@ if INTAKE_PRIVATE_BUCKET:
         "BACKEND": "storages.backends.s3.S3Storage",
         "OPTIONS": {
             "bucket_name": INTAKE_PRIVATE_BUCKET, "region_name": AWS_S3_REGION_NAME,
+            # Use the same regional host allowed by the browser's connect-src policy.
+            "endpoint_url": f"https://s3.{AWS_S3_REGION_NAME}.amazonaws.com",
+            "addressing_style": "virtual",
             "location": "intake", "custom_domain": None, "default_acl": None,
             "querystring_auth": True, "file_overwrite": False,
             "object_parameters": {"CacheControl": "private, no-store"},
