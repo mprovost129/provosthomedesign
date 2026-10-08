@@ -10,6 +10,7 @@ class WebsiteClientLinksTests(TestCase):
         self.assertContains(response, 'href="/track-work/"')
         self.assertContains(response, 'href="/book-appointment/"')
         self.assertContains(response, "Submit Your Project")
+        self.assertContains(response, "Your project, in one place")
         self.assertNotContains(response, 'href="/work-queue/"')
 
     @override_settings(WORK_INTAKE_ENABLED=False)

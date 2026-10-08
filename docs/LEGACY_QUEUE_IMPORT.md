@@ -1,6 +1,26 @@
 # Historical queue import and cutover
 
-The source remains the existing Google Sheet until the final cutover. Its private workbook export includes hidden/completed rows, submissions, answers, attachment links and routing/audit tables. Never commit a real snapshot, client information or connection credentials to GitHub.
+The website database is now the working queue. The original Google Sheet and its private, lossless export are retained as historical archives. Never commit a real snapshot, client information or connection credentials to GitHub.
+
+## Live handover completed — October 7, 2026
+
+The final frozen workbook matches the imported source exactly: 25 original requests, 9 active and 16 completed, source counter 27. All five linked Google forms are closed with existing responses retained; no registered responses remained unsettled. The old update form's public closed page was checked and directs clients to the website. The Apps Script handover flag now disables the old intake and background mutation handlers. The final snapshot's canonical import digest matches the retained production archive: `99fb6c20db89a0b8de6a54baebaeb788c06fe78a1b762f7eebf47c5a48184ff4`.
+
+All three feature flags are enabled on both Render services, the scheduled worker is running, and the staff preview flag is disabled. The old Google appointment schedule was deleted with the owner's explicit approval. Its public page reports “Appointment not found”; the existing booked calendar appointment remained. Primary Calendar history and existing private Drive uploads were preserved.
+
+Website navigation now includes Projects → Submit work or an update, Track my project, and Book an appointment, plus footer links and a homepage submission button. The Work queue link requires existing staff permission. Public routes are `/submit-work/`, `/track-work/`, and `/book-appointment/`; the staff route is `/work-queue/`.
+
+Actual HTTPS browser checks created owner-only test requests PHD-00028 and PHD-00029. The new request accepted PDF and PNG uploads and multiple attachment categories; its receipt reported position 10. An email-verified update linked by exact project name without a supplied ID and received position 11. Completing the first test through the queue moved the update to position 10. Both test requests were then completed, returning the active queue to the original nine jobs. Their closed records remain as an audit trail; the reference allocator was intentionally not rewound and holds 29.
+
+Both new-request emails arrived in the owner's Gmail inbox. The owner notice included contact details, billing address, selected categories and both filenames. Its client receipt's single-use sign-in link opened tracking, and the authorized private PDF download succeeded. Production delivery metadata confirmed all four new/update submission notifications were sent only to the owner test address.
+
+A browser appointment was confirmed by the scheduled worker, then canceled through the client page. Google readback verified removal of both the meeting and its buffer. Ten disposable sample object keys and three test attachment records were removed under the approved test scope; the S3 console confirmed Objects (0). No original files or client work were removed.
+
+Live checks identified and fixed two issues: corrupted PNG checksums now produce client validation errors, and queue mutations preserve filter values separately from edited request fields. Saving Completed now leaves remaining active work visible. Commit `ff1dad150804cfdd60fff398c5541cd437c670fc` is live as Render deployment `dep-db3f9vc9v7es73a8mk50`. The final queue suite passed 142 cases with four PostgreSQL-only concurrency cases skipped on SQLite; those cases passed in the earlier isolated PostgreSQL checkpoint. Desktop browser navigation and the full submission/tracking/booking flow were checked; mobile viewport emulation was unavailable in this browser session.
+
+Day-to-day: review `/work-queue/`, change status and click Save status, and expand a request for details, files, internal notes or project connections. Completed work leaves Active work automatically and remains available under Closed work or All work. Do not resume old forms or import again after live app writes without a deliberate reconciliation plan.
+
+The sections below record earlier rehearsal and pre-launch checkpoints; their disabled flags and suspended-worker descriptions are historical.
 
 ## Verified rehearsal — October 7, 2026
 
