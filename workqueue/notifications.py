@@ -16,6 +16,7 @@ from django.utils import timezone
 
 from .access import mint_email_token
 from .models import EmailAccessToken, NotificationDelivery
+from .receipts import submission_record
 
 logger = logging.getLogger(__name__)
 
@@ -39,11 +40,13 @@ def queue_receipts(submission):
     body = (f"Hello {item.contact_full_name},\n\nWe received your {item.get_kind_display().lower()}.\n"
             f"Request ID: {item.reference}\nPosition when submitted: {count}\nActive requests ahead: {count - 1}\n\n"
             f"Track your current position and status:\n{access_url(raw)}\n\n"
-            "This sign-in link expires in 24 hours. You can request another link from Track My Project.\n"
+            "This sign-in link expires in 24 hours. Request another link from Track My Project:\n"
+            f"{site_url(reverse('workqueue:tracking'))}\n\n"
             "Your position can change and does not guarantee a wait time or project start date.\n"
-            "We will contact you if more information is needed.\n\nProvost Home Design\n")
+            "We will contact you if more information is needed.\n")
     if item.project_id:
         body += f"Connected project: {item.project.name} ({item.project.canonical_reference or item.reference})\n"
+    body += "\n" + submission_record(submission, site_url) + "\n\nProvost Home Design\n"
     NotificationDelivery.objects.get_or_create(submission=submission, recipient_kind="client", defaults={
         "recipient": item.contact_email, "subject": f"We received request {item.reference}", "body": body,
         "provider_reference": f"queue-{uuid.uuid4().hex}"})

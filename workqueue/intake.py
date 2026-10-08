@@ -48,10 +48,12 @@ def submit_intake(*, data, nonce, binding, verified_email="", labels=None):
     item, created = create_work(data=fields, actor=None, idempotency_key=key)
     submission = Submission.objects.get(idempotency_key=key)
     submission.channel = "website"
-    excluded = {"intake_token", "upload_ids", "website", "project", "same_address"}
+    excluded = {"intake_token", "upload_ids", "website"}
     answers = {}
     for name, value in data.items():
         if name not in excluded and value not in (None, "", [], False):
+            # Store the selected project's readable label as it was submitted;
+            # receipts must not change when staff later rename or relink it.
             answers[(labels or {}).get(name, name)] = value if isinstance(value, list) else str(value)
     submission.answers = answers
     if data.get("terms_accepted"):

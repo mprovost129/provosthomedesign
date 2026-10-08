@@ -46,6 +46,14 @@ Migration 0013 adds milestone send/skip history without changing existing jobs o
 
 Migrations 0011 and 0012 add information-request and response records without modifying existing requests, files, receipts or their references. Existing queued updates can be matched the next time their client verifies their email; no production backfill is run automatically. The existing notification outbox and background worker need no new environment variables or recurring services. Deploy the migration before serving the new queue code. Validation uses isolated database, storage and in-memory email settings; it does not send test messages to clients.
 
+## Client submission receipts
+
+Every new website submission and update receives a receipt containing its request ID, submission date/time, position when submitted, all completed public form answers, and an uploaded-document list. Each uploaded file includes its original name, size, selected categories and a private download link. A submitted external file/folder link is included with the answers. Empty optional questions are omitted. Internal notes, staff dates/priorities and technical tokens are not included.
+
+Documents are linked rather than attached, allowing large plans to be retrieved through the existing verified-email access. Clients first use the secure sign-in link, then a document link. That sign-in link expires after 24 hours; the receipt also includes the permanent Track My Project page where they can request a fresh one. Document URLs grant no new access and are never public S3 URLs.
+
+The receipt captures the accepted submission. Later staff edits, queue moves, project renames and subsequent uploads do not rewrite that email. Each update has its own request ID and lists only its own answers/files. Retries keep the existing idempotency and delivery safeguards. This applies to new submissions after deployment; historical receipts are not resent. No database migration, new email service or setting is required.
+
 ## Client milestone emails
 
 Both Save status and Save request offer a client-email choice, defaulting to Skip email. Select Send milestone email when changing to In Progress or Completed to queue a start/completion notice. The full request form labels this Send when work starts or finishes. Selecting Send for another status, saving an unchanged status, or editing notes/dates/order does not send anything. Reopening work and later starting/completing it again is a new milestone and can be sent explicitly.
