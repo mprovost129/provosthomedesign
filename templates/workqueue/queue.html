@@ -10,6 +10,13 @@
 <main id="queue">
   {% if staff_preview %}<p class="notice" role="status">Preview only. Your Google Sheet is still the working queue. Changes here will be available after the switch.</p>{% endif %}
   {% for message in messages %}<div class="notice {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}
+  <section class="attention-panel" aria-label="Needs attention">
+    <div class="attention-heading"><h2>Needs attention</h2><p>Across all requests. Follow-ups include today.</p></div>
+    <nav class="attention-links" aria-label="Attention views">
+      {% for attention in attention_summary %}<a href="?scope=all&amp;attention={{ attention.key }}" {% if filters.attention == attention.key %}aria-current="page"{% endif %}>
+        <strong>{{ attention.count }}</strong><span>{{ attention.label }}</span></a>{% endfor %}
+    </nav>
+  </section>
   <form method="get" class="filters" aria-label="Filter work">
     <label>Search<input type="search" name="q" value="{{ filters.q }}" placeholder="Request, client, project or address"></label>
     <label>Show<select name="scope">
@@ -19,6 +26,7 @@
     </select></label>
     <label>Status<select name="status"><option value="">All statuses</option>{% for value,label in statuses %}<option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
     <label>Priority<select name="priority"><option value="">All priorities</option>{% for value,label in priorities %}<option value="{{ value }}" {% if filters.priority == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+    <label>Attention<select name="attention"><option value="">Any</option>{% for attention in attention_summary %}<option value="{{ attention.key }}" {% if filters.attention == attention.key %}selected{% endif %}>{{ attention.label }}</option>{% endfor %}</select></label>
     <label>Received from<input type="date" name="received_from" value="{{ filters.received_from }}"></label>
     <label>Received through<input type="date" name="received_to" value="{{ filters.received_to }}"></label>
     <button type="submit">Apply filters</button><a href="{% url 'workqueue:queue' %}">Reset</a>
@@ -49,7 +57,12 @@
         <td><strong>{{ item.reference }}</strong><small>{{ item.get_kind_display }}</small></td>
         <td>{{ item.contact_full_name }}<small>{{ item.company }}</small></td>
         <td>{{ item.project.name|default:item.project_name|default:item.project_context|default:item.project_street|default:'Untitled project' }}
-          <small>{{ item.description|truncatechars:110 }}</small>{% if item.needs_project_link %}<span class="flag">Project link needs confirmation</span>{% endif %}</td>
+          <small>{{ item.description|truncatechars:110 }}</small>{% if item.needs_project_link %}<span class="flag">Project link needs confirmation</span>{% endif %}
+          {% if row.files %}<details class="request-files"><summary>Files ({{ row.files|length }})</summary><ul>
+            {% for attachment in row.files %}<li>{% if attachment.storage_key or attachment.legacy_drive_id %}<a href="{% url 'workqueue:download' attachment.pk %}">{{ attachment.original_name }}</a>{% else %}{{ attachment.original_name }} · Archive record{% endif %}
+              {% if attachment.storage_key %}<small>{{ attachment.size_bytes|filesizeformat }}</small>{% elif attachment.legacy_drive_id %}<small>Original Google Drive file</small>{% endif %}
+            </li>{% endfor %}</ul></details>{% else %}<small>No uploaded files</small>{% endif %}
+        </td>
         <td>{% if can_change %}<form method="post" class="quick-status">
           {% csrf_token %}<input type="hidden" name="action" value="status"><input type="hidden" name="item_id" value="{{ item.pk }}"><input type="hidden" name="version" value="{{ item.version }}">
           {% include 'workqueue/filter_context.html' %}
@@ -58,7 +71,7 @@
           <button type="submit" class="secondary">Save status</button>
         </form>{% else %}{{ item.get_status_display }}{% endif %}</td>
         <td>{{ item.get_priority_display }}</td>
-        <td>{{ item.committed_due_date|date:'M j, Y'|default:'—' }}{% if item.followup_date %}<small>Follow up {{ item.followup_date|date:'M j' }}</small>{% endif %}</td>
+        <td>{{ item.committed_due_date|date:'M j, Y'|default:'—' }}{% if item.followup_date %}<small>Follow up {{ item.followup_date|date:'M j' }}</small>{% endif %}{% for flag in row.attention_flags %}<span class="flag">{{ flag }}</span>{% endfor %}{% if item.email_attention %}<span class="flag">Email needs attention</span>{% endif %}</td>
         <td>{{ item.received_at|date:'M j, Y' }}<small>{{ item.received_at|date:'g:i A' }}</small></td>
       </tr>
       <tr class="detail-row"><td colspan="8">
@@ -74,6 +87,7 @@
               <p>Service: {{ item.service_needed|default:'Not provided' }}</p></section>
           </div>
           <h2>Requested work</h2><div class="preserve-lines">{{ item.description }}</div>
+          {% include 'workqueue/information_request.html' %}
           {% if can_change %}<form method="post" class="edit-form">
             {% csrf_token %}<input type="hidden" name="action" value="edit"><input type="hidden" name="item_id" value="{{ item.pk }}">
             {% include 'workqueue/filter_context.html' %}{{ row.form.version }}{{ row.form.non_field_errors }}
@@ -109,4 +123,8 @@
 {% include 'workqueue/appointments_closed.html' %}
 </main>
 </div>
+{% endblock %}
+{% block tool_scripts %}
+{{ information_templates|json_script:'information-templates' }}
+<script src="{% static 'js/work-queue.js' %}" defer></script>
 {% endblock %}

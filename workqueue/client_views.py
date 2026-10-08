@@ -48,6 +48,11 @@ def limited(request, scope, identity=None, limit=20, window=3600):
 def submit_work(request):
     email = verified_email(request)
     initial = {"kind": "update" if request.GET.get("kind") == "update" else "new", "intake_token": new_intake_token(request)}
+    if initial["kind"] == "update":
+        # A convenience hint only: never look up or disclose a project from a public ID.
+        reference = request.GET.get("reference", "").strip().upper()[:32]
+        if re.fullmatch(r"PHD-\d{5,}", reference):
+            initial["project_reference"] = reference
     if email:
         initial["contact_email"] = email
     form = ClientIntakeForm(request.POST or None, initial=initial, email=email)

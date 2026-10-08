@@ -238,6 +238,20 @@ class NotificationDelivery(models.Model):
                                               name="wq_appointment_notice_unique")]
 
 
+class InformationRequest(models.Model):
+    """Owner-composed messages; kept separately from internal notes and receipts."""
+    work_item = models.ForeignKey(WorkItem, on_delete=models.PROTECT, related_name="information_requests")
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
+    message = models.TextField(max_length=5000)
+    followup_date = models.DateField(null=True, blank=True)
+    token = models.UUIDField(unique=True, editable=False)
+    delivery = models.OneToOneField(NotificationDelivery, on_delete=models.PROTECT, related_name="information_request")
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+
+
 class EmailAccessToken(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField()

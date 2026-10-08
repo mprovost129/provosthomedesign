@@ -59,3 +59,27 @@
 }
 .queue-work {min-width:0;width:100%;}
 .queue-work [id] {scroll-margin-top:6rem;}
+.queue-work .attention-panel { padding:18px; margin-bottom:16px; background:white; border:1px solid var(--line); border-radius:10px; }
+.queue-work .attention-heading { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 18px; }
+.queue-work .attention-heading h2 { margin:0 0 12px; }
+.queue-work .attention-heading p { font-size:13px; color:var(--muted); }
+.queue-work .attention-links { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:10px; }
+.queue-work .attention-links a { display:flex; align-items:center; gap:12px; padding:12px; border:1px solid var(--line); border-radius:7px; text-decoration:none; }
+.queue-work .attention-links a[aria-current] { background:#e5f1fa; border-color:var(--blue); }
+.queue-work .attention-links strong { font-size:25px; }
+.queue-work .attention-links span { font-size:13px; }
+.queue-work .request-files { margin-top:8px; max-width:340px; }
+.queue-work .request-files summary { color:var(--blue); font-size:13px; }
+.queue-work .request-files ul { padding-left:18px; overflow-wrap:anywhere; }
+.queue-work .request-files li { margin-bottom:6px; }
+.queue-work .information-tool { margin:18px 0; padding:12px 16px; border:1px solid var(--line); border-radius:8px; }
+.queue-work .template-picker { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:12px; }
+.queue-work .template-picker[hidden] { display:none; }
+.queue-work .information-compose .fields { grid-template-columns:minmax(0,2fr) minmax(180px,1fr); }
+.queue-work .email-preview { padding:18px; margin:14px 0; background:#f0f7fc; border:1px solid #b8d3e7; border-radius:8px; }
+.queue-work .email-preview form { margin-top:16px; }
+.queue-work .client-message { border-top:1px solid var(--line); margin-top:16px; padding-top:8px; }
+@media(max-width:700px) {
+  .queue-work .attention-links { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .queue-work .information-compose .fields { grid-template-columns:1fr; }
+}

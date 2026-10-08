@@ -1,0 +1,48 @@
+<details class="information-tool" {% if row.information_open %}open{% endif %}>
+  <summary>Request more information{% if item.information_requests.count %} · {{ item.information_requests.count }} message{{ item.information_requests.count|pluralize }}{% endif %}</summary>
+  {% if not item.is_active and row.information_open %}{{ row.information_form.non_field_errors }}{% endif %}
+  {% if can_change and intake_enabled and item.is_active %}
+    <p>To: <strong>{{ item.contact_email }}</strong>. Preview the email before sending. Sending marks this request Needs Information and keeps its queue order.</p>
+    {% if row.information_preview %}
+    <section class="email-preview" aria-label="Email preview for {{ item.reference }}" tabindex="-1" data-email-review>
+      <h3>Review your email</h3><p><strong>To:</strong> {{ row.information_preview.recipient }}<br><strong>Subject:</strong> {{ row.information_preview.subject }}</p>
+      <div class="preserve-lines">{{ row.information_preview.body }}</div>
+      <form method="post">
+        {% csrf_token %}{% include 'workqueue/filter_context.html' %}
+        <input type="hidden" name="action" value="send_information"><input type="hidden" name="item_id" value="{{ item.pk }}">
+        <input type="hidden" name="preview_signature" value="{{ row.information_signature }}">
+        {% for field in row.information_form %}<input type="hidden" name="{{ field.html_name }}" value="{{ field.value|default_if_none:'' }}">{% endfor %}
+        <button type="submit">Send email &amp; mark Needs Information</button>
+      </form>
+    </section>
+    {% endif %}
+    <form method="post" class="information-compose">
+      {% csrf_token %}{% include 'workqueue/filter_context.html' %}
+      <input type="hidden" name="action" value="preview_information"><input type="hidden" name="item_id" value="{{ item.pk }}">
+      {{ row.information_form.version }}{{ row.information_form.token }}{{ row.information_form.non_field_errors }}
+      <div class="template-picker" hidden>
+        <label for="information-template-{{ item.pk }}">Start with a template</label>
+        <select id="information-template-{{ item.pk }}" data-information-template>{% for value,label in information_template_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+        <button type="button" class="secondary" data-apply-template>Use template</button>
+      </div>
+      <div class="fields">{% for field in row.information_form.visible_fields %}<div class="field">
+        {{ field.label_tag }}{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{{ field.errors }}
+      </div>{% endfor %}</div>
+      <button type="submit">{% if row.information_preview %}Preview revised email{% else %}Preview email{% endif %}</button>
+    </form>
+  {% endif %}
+  {% for note in item.information_requests.all %}
+    <article class="client-message">
+      <h3>{{ note.created_at|date:'M j, Y g:i A' }} · {{ note.delivery.get_state_display }}</h3>
+      <p>To: {{ note.delivery.recipient }}{% if note.actor %} · Requested by {{ note.actor.get_full_name|default:note.actor.username }}{% endif %}</p>
+      <div class="preserve-lines">{{ note.message }}</div>
+      {% if note.delivery.last_error %}<p class="notice error">{{ note.delivery.last_error }}</p>{% endif %}
+      {% if can_change %}{% if note.delivery.state == 'failed' or note.delivery.state == 'unknown' %}
+        <form method="post">{% csrf_token %}{% include 'workqueue/filter_context.html' %}
+          <input type="hidden" name="action" value="retry_notice"><input type="hidden" name="item_id" value="{{ item.pk }}"><input type="hidden" name="notice_id" value="{{ note.delivery.pk }}">
+          {% if note.delivery.state == 'unknown' %}<label><input type="checkbox" name="not_sent_confirmed" value="yes" required> I checked the mail provider; this email was not delivered.</label>{% endif %}<button class="secondary">Retry email</button>
+        </form>
+      {% endif %}{% endif %}
+    </article>
+  {% empty %}<p class="muted">No information requests sent from this queue yet.</p>{% endfor %}
+</details>

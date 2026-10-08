@@ -35,6 +35,19 @@ class QuickStatusForm(forms.Form):
     status = forms.ChoiceField(choices=Status.choices)
 
 
+class InformationRequestForm(StyledForm, forms.Form):
+    version = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
+    token = forms.UUIDField(widget=forms.HiddenInput)
+    message = forms.CharField(label="Message to your client", max_length=5000,
+        widget=forms.Textarea(attrs={"rows": 4}), help_text="Only this message goes to the client. Internal notes are never included.")
+    followup_date = forms.DateField(label="Remind me to follow up (optional)", required=False,
+        widget=forms.DateInput(attrs={"type": "date"}), help_text="Appears under Follow-ups due. This date is internal and is not emailed.")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.style_fields()
+
+
 class ManualWorkForm(StyledForm, forms.ModelForm):
     submission_token = forms.UUIDField(widget=forms.HiddenInput)
 

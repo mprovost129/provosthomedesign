@@ -7,6 +7,7 @@ from django import forms
 from django.contrib import messages
 from django.contrib.auth.decorators import permission_required
 from django.contrib.admin.views.decorators import staff_member_required
+from django.core import signing
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Prefetch, Q
@@ -16,7 +17,9 @@ from django.urls import reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 
-from .forms import ManualWorkForm, QueueEditForm, QuickStatusForm
+from .forms import InformationRequestForm, ManualWorkForm, QueueEditForm, QuickStatusForm
+from .attention import attention_conditions, attention_summary, row_attention, with_email_attention
+from .information_requests import INFORMATION_TEMPLATES, TEMPLATE_CHOICES, information_email, request_information
 from .models import AuditEvent, CLOSED_STATUSES, NotificationDelivery, Priority, Status, WorkItem
 from .services import EDIT_FIELDS, EditConflict, change_project_access, create_work, edit_work
 
@@ -40,7 +43,14 @@ def queue_enabled(view):
 def filters_from(request):
     data = request.GET if request.method == "GET" else request.POST
     prefix = "" if request.method == "GET" else "filter_"
-    return {name: data.get(prefix + name, "")[:200] for name in ["q", "scope", "status", "priority", "page", "received_from", "received_to"]}
+    return {name: data.get(prefix + name, "")[:200] for name in ["q", "scope", "status", "priority", "page", "received_from", "received_to", "attention"]}
+
+
+def information_review_data(item, form):
+    return {"item": str(item.pk), "recipient": item.contact_email,
+            "version": form.cleaned_data["version"], "token": str(form.cleaned_data["token"]),
+            "message": form.cleaned_data["message"],
+            "followup_date": str(form.cleaned_data["followup_date"]) if form.cleaned_data["followup_date"] else None}
 
 
 def queue_redirect(filters, item=None):
@@ -61,6 +71,9 @@ def queue(request):
     error_item = None
     edit_form = None
     conflict_values = []
+    information_form = None
+    information_preview = None
+    information_signature = ""
     create_form = ManualWorkForm(initial={"submission_token": uuid.uuid4()}, prefix="new")
     response_status = 200
     if request.method == "POST":
@@ -85,6 +98,53 @@ def queue(request):
                     messages.success(request, f"{item.reference} {'added to the queue' if created else 'was already saved'}.")
                     return queue_redirect(filters, item)
             response_status = 400
+        elif action in ("preview_information", "send_information"):
+            if not request.user.has_perm("workqueue.change_workitem"):
+                raise PermissionDenied
+            if not getattr(settings, "WORK_INTAKE_ENABLED", False):
+                raise Http404
+            try:
+                item_id = uuid.UUID(request.POST.get("item_id", ""))
+            except (ValueError, TypeError, AttributeError):
+                raise Http404
+            error_item = get_object_or_404(WorkItem, pk=item_id)
+            information_form = InformationRequestForm(request.POST, prefix=f"information-{item_id}")
+            if information_form.is_valid():
+                try:
+                    review_data = information_review_data(error_item, information_form)
+                    if action == "send_information":
+                        try:
+                            reviewed = signing.loads(request.POST.get("preview_signature", ""),
+                                salt="workqueue.information-review.v1", max_age=1800)
+                        except signing.BadSignature:
+                            raise ValidationError("Preview this email again before sending. Email previews expire after 30 minutes.") from None
+                        if reviewed != review_data:
+                            raise ValidationError("The email changed since its preview. Preview it again before sending.")
+                        item, created = request_information(item_id=item_id,
+                            version=information_form.cleaned_data["version"],
+                            message=information_form.cleaned_data["message"],
+                            followup_date=information_form.cleaned_data["followup_date"],
+                            token=information_form.cleaned_data["token"], actor=request.user)
+                        messages.success(request, f"{item.reference}: " + ("email queued and marked Needs Information." if created else "this email was already queued; no second email was created."))
+                        return queue_redirect(filters, item)
+                    if error_item.version != information_form.cleaned_data["version"]:
+                        raise EditConflict("This request changed in another tab. Review the current request and preview the email again.")
+                    if not error_item.is_active:
+                        raise ValidationError("Reopen this request before requesting more information.")
+                    information_preview = information_email(error_item, information_form.cleaned_data["message"])
+                    information_signature = signing.dumps(review_data, salt="workqueue.information-review.v1")
+                except (ValidationError, EditConflict) as exc:
+                    information_form.add_error(None, " ".join(exc.messages) if isinstance(exc, ValidationError) else str(exc))
+                    response_status = 409 if isinstance(exc, EditConflict) else 400
+                    # Keep the message; require a fresh preview against current request values.
+                    if isinstance(exc, EditConflict):
+                        corrected = information_form.data.copy()
+                        corrected[f"information-{item_id}-version"] = str(WorkItem.objects.get(pk=item_id).version)
+                        information_form = InformationRequestForm(corrected, prefix=f"information-{item_id}")
+                        information_form.is_valid()
+                        information_form.add_error(None, str(exc))
+            else:
+                response_status = 400
         elif action in ("access_grant", "access_revoke", "retry_notice"):
             required_permission = "workqueue.change_projectaccess" if action != "retry_notice" else "workqueue.change_workitem"
             if not request.user.has_perm(required_permission):
@@ -99,8 +159,11 @@ def queue(request):
                 if action == "retry_notice":
                     from django.db import transaction
                     with transaction.atomic():
+                        eligible_notices = NotificationDelivery.objects.filter(
+                            Q(submission__work_item=error_item) | Q(information_request__work_item=error_item)).values("pk")
+                        # Keep nullable receipt/message joins out of the locked outer query on PostgreSQL.
                         notice = get_object_or_404(NotificationDelivery.objects.select_for_update(),
-                            pk=request.POST.get("notice_id"), submission__work_item=error_item)
+                            pk=request.POST.get("notice_id"), pk__in=eligible_notices)
                         if notice.state not in ("failed", "unknown"):
                             raise ValidationError("This email cannot be retried in its current state.")
                         if notice.state == "unknown" and request.POST.get("not_sent_confirmed") != "yes":
@@ -158,14 +221,20 @@ def queue(request):
 
     if request.method == "GET" or request.POST.get("action") != "create":
         create_form = ManualWorkForm(initial={"submission_token": uuid.uuid4()}, prefix="new")
-    items = WorkItem.objects.with_position().select_related("project").prefetch_related(
+    items = with_email_attention(WorkItem.objects.with_position()).select_related("project").prefetch_related(
         "submissions__attachments", "submissions__notifications",
+        "information_requests__delivery",
         Prefetch("audit_events", queryset=AuditEvent.objects.select_related("actor")),
         Prefetch("project__work_items", queryset=WorkItem.objects.with_position()),
         "project__access_grants",
     )
     scope = filters["scope"] if filters["scope"] in ("active", "all", "closed") else "active"
     filters["scope"] = scope
+    conditions = attention_conditions()
+    if filters["attention"] in conditions:
+        items = items.filter(conditions[filters["attention"]][1])
+    else:
+        filters["attention"] = ""
     if scope == "active":
         items = items.active()
     elif scope == "closed":
@@ -202,6 +271,17 @@ def queue(request):
     if error_item and not any(row["item"].pk == error_item.pk for row in rows):
         error_item = WorkItem.objects.with_position().select_related("project").get(pk=error_item.pk)
         rows.insert(0, {"item": error_item, "form": edit_form or QueueEditForm(instance=error_item, prefix=str(error_item.pk)), "open": True, "conflict_values": conflict_values})
+    for row in rows:
+        item = row["item"]
+        current = bool(error_item and item.pk == error_item.pk)
+        row["attention_flags"] = row_attention(item)
+        row["files"] = [file for submission in item.submissions.all() for file in submission.attachments.all()]
+        row["information_form"] = information_form if current and information_form else InformationRequestForm(
+            prefix=f"information-{item.pk}", initial={"version": item.version, "token": uuid.uuid4(),
+                "message": INFORMATION_TEMPLATES["documents"], "followup_date": item.followup_date})
+        row["information_open"] = current and information_form is not None
+        row["information_preview"] = information_preview if current else None
+        row["information_signature"] = information_signature if current else ""
     params = urlencode({key: value for key, value in filters.items() if key != "page" and value})
     from .models import Appointment, BookingAccess
     appointments = Appointment.objects.select_related("project").prefetch_related("notifications", "replacements").exclude(state__in=["canceled", "completed"]).order_by("starts_at")
@@ -217,5 +297,7 @@ def queue(request):
         "can_manage_access": not preview and request.user.has_perm("workqueue.change_projectaccess"),
         "intake_enabled": not preview and getattr(settings, "WORK_INTAKE_ENABLED", False),
         "staff_preview": preview,
+        "attention_summary": attention_summary(), "information_templates": INFORMATION_TEMPLATES,
+        "information_template_choices": TEMPLATE_CHOICES,
         "active_count": WorkItem.objects.active().count(), "closed_count": WorkItem.objects.filter(status__in=CLOSED_STATUSES).count()},
         status=response_status)
