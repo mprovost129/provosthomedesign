@@ -11,7 +11,7 @@ from django.core import signing
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Prefetch, Q
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.cache import never_cache
@@ -21,7 +21,7 @@ from .forms import InformationRequestForm, ManualWorkForm, QueueEditForm, QuickS
 from .attention import attention_conditions, attention_summary, row_attention, with_email_attention
 from .information_requests import INFORMATION_TEMPLATES, TEMPLATE_CHOICES, information_email, request_information
 from .information_responses import review_information_response
-from .models import AuditEvent, CLOSED_STATUSES, InformationResponse, NotificationDelivery, Priority, Status, WorkItem
+from .models import AuditEvent, CLOSED_STATUSES, InformationResponse, NotificationDelivery, Priority, QueueState, Status, WorkItem
 from .services import EDIT_FIELDS, EditConflict, change_project_access, create_work, edit_work
 
 
@@ -63,12 +63,30 @@ def queue_redirect(filters, item=None):
 @staff_member_required(login_url="admin:login")
 @permission_required("workqueue.view_workitem", raise_exception=True)
 @never_cache
+@require_http_methods(["GET"])
+def arrivals(request):
+    try:
+        baseline = signing.loads(request.GET.get("snapshot", ""), salt="workqueue.arrivals.v1", max_age=604800)
+        if not isinstance(baseline, int) or baseline < 0:
+            raise ValueError
+    except (signing.BadSignature, ValueError, TypeError):
+        return JsonResponse({"error": "Refresh the queue to resume checking for new requests."}, status=400)
+    # The allocator advances exactly once per committed request, including updates and staff entry.
+    current = QueueState.objects.get(pk=1).last_reference_number
+    return JsonResponse({"count": max(0, current - baseline)})
+
+
+@queue_enabled
+@staff_member_required(login_url="admin:login")
+@permission_required("workqueue.view_workitem", raise_exception=True)
+@never_cache
 @require_http_methods(["GET", "POST"])
 def queue(request):
     preview = staff_preview(request)
     if preview and request.method != "GET":
         raise PermissionDenied
     filters = filters_from(request)
+    arrival_snapshot = signing.dumps(QueueState.objects.get(pk=1).last_reference_number, salt="workqueue.arrivals.v1")
     error_item = None
     edit_form = None
     conflict_values = []
@@ -180,7 +198,8 @@ def queue(request):
                     from django.db import transaction
                     with transaction.atomic():
                         eligible_notices = NotificationDelivery.objects.filter(
-                            Q(submission__work_item=error_item) | Q(information_request__work_item=error_item)).values("pk")
+                            Q(submission__work_item=error_item) | Q(information_request__work_item=error_item)
+                            | Q(status_milestone__work_item=error_item)).values("pk")
                         # Keep nullable receipt/message joins out of the locked outer query on PostgreSQL.
                         notice = get_object_or_404(NotificationDelivery.objects.select_for_update(),
                             pk=request.POST.get("notice_id"), pk__in=eligible_notices)
@@ -215,7 +234,8 @@ def queue(request):
             if form.is_valid():
                 data = {name: form.cleaned_data[name] for name in EDIT_FIELDS} if action == "edit" else {"status": form.cleaned_data["status"]}
                 try:
-                    item = edit_work(item_id=item_id, version=form.cleaned_data["version"], data=data, actor=request.user)
+                    item = edit_work(item_id=item_id, version=form.cleaned_data["version"], data=data, actor=request.user,
+                        notify_client=form.cleaned_data["client_email"] == "send")
                 except EditConflict as exc:
                     messages.error(request, str(exc))
                     response_status = 409
@@ -228,7 +248,9 @@ def queue(request):
                     form.add_error(None, exc)
                     response_status = 400
                 else:
-                    messages.success(request, f"{item.reference} saved.")
+                    milestone = item.milestone_notification
+                    suffix = (" Client email queued." if milestone.delivery_id else " Client email skipped.") if milestone else ""
+                    messages.success(request, f"{item.reference} saved." + suffix)
                     return queue_redirect(filters, item)
             else:
                 response_status = 400
@@ -244,6 +266,7 @@ def queue(request):
     items = with_email_attention(WorkItem.objects.with_position()).select_related("project").prefetch_related(
         "submissions__attachments", "submissions__notifications",
         "information_requests__delivery",
+        "milestones__delivery", "milestones__actor",
         Prefetch("information_requests__responses", queryset=InformationResponse.objects.select_related("work_item", "reviewed_by").prefetch_related("work_item__submissions__attachments")),
         Prefetch("audit_events", queryset=AuditEvent.objects.select_related("actor")),
         Prefetch("project__work_items", queryset=WorkItem.objects.with_position()),
@@ -309,6 +332,7 @@ def queue(request):
     from .models import Appointment, BookingAccess
     appointments = Appointment.objects.select_related("project").prefetch_related("notifications", "replacements").exclude(state__in=["canceled", "completed"]).order_by("starts_at")
     return render(request, "workqueue/queue.html", {"rows": rows, "page": page, "filters": filters,
+        "arrival_snapshot": arrival_snapshot,
         "appointments": appointments, "booking_access": BookingAccess.objects.order_by("email")[:100],
         "closed_appointments": Appointment.objects.filter(state__in=["canceled", "completed"]).prefetch_related("notifications").order_by("-starts_at")[:25],
         "can_manage_bookings": not preview and request.user.has_perm("workqueue.change_appointment"),

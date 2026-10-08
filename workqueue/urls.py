@@ -6,6 +6,7 @@ from . import booking_views
 app_name = "workqueue"
 urlpatterns = [
     path("work-queue/", views.queue, name="queue"),
+    path("work-queue/arrivals/", views.arrivals, name="arrivals"),
     path("submit-work/", client_views.submit_work, name="submit"),
     path("submit-work/uploads/", client_views.start_upload, name="start_upload"),
     path("submit-work/uploads/<uuid:upload_id>/", client_views.upload_action, name="upload_action"),

@@ -70,7 +70,7 @@ EDIT_FIELDS = {"status", "priority", "queue_order", "estimated_days", "requested
 
 
 @transaction.atomic
-def edit_work(*, item_id, version, data, actor):
+def edit_work(*, item_id, version, data, actor, notify_client=False):
     lock_queue()
     item = WorkItem.objects.select_for_update().get(pk=item_id)
     if item.version != version:
@@ -78,6 +78,8 @@ def edit_work(*, item_id, version, data, actor):
     if set(data) - EDIT_FIELDS:
         raise ValidationError("Unsupported queue field.")
     old_project_id = item.project_id
+    before_status = item.status
+    item.milestone_notification = None
     changes = {}
     for name, value in data.items():
         old = getattr(item, name)
@@ -113,6 +115,13 @@ def edit_work(*, item_id, version, data, actor):
                     project.canonical_reference = item.reference
                     project.save(update_fields=["canonical_reference"])
         AuditEvent.objects.create(work_item=item, actor=actor, action="edited", changes=changes)
+        from .milestones import record_milestone
+        item.milestone_notification = record_milestone(item=item, before_status=before_status,
+            notify_client=notify_client, actor=actor)
+        if item.milestone_notification:
+            AuditEvent.objects.create(work_item=item, actor=actor, action="milestone_email_decided",
+                changes={"milestone": item.milestone_notification.pk, "status": item.status,
+                         "email": "queued" if item.milestone_notification.delivery_id else "skipped"})
     return item
 
 

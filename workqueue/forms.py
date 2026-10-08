@@ -10,7 +10,13 @@ class StyledForm:
                 field.widget.attrs["class"] = "form-select" if isinstance(field.widget, forms.Select) else "form-control"
 
 
-class QueueEditForm(StyledForm, forms.ModelForm):
+class MilestoneEmailChoice(forms.Form):
+    client_email = forms.ChoiceField(label="Client milestone email", required=False, initial="skip",
+        choices=[("skip", "Skip email"), ("send", "Send when work starts or finishes")],
+        help_text="Only a change to In Progress or Completed sends an email. Internal notes stay private.")
+
+
+class QueueEditForm(StyledForm, MilestoneEmailChoice, forms.ModelForm):
     version = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
 
     class Meta:
@@ -30,7 +36,7 @@ class QueueEditForm(StyledForm, forms.ModelForm):
         self.style_fields()
 
 
-class QuickStatusForm(forms.Form):
+class QuickStatusForm(MilestoneEmailChoice):
     version = forms.IntegerField(min_value=1)
     status = forms.ChoiceField(choices=Status.choices)
 

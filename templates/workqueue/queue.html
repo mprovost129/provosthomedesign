@@ -8,6 +8,11 @@
   <nav aria-label="Staff tools">{% if intake_enabled %}<a href="{% url 'workqueue:submit' %}" target="_blank" rel="noopener">Client form</a> · {% endif %}<a href="{% url 'admin:index' %}">Administration</a></nav>
 </header>
 <main id="queue">
+  <section class="arrival-notice" data-arrivals data-url="{% url 'workqueue:arrivals' %}" data-snapshot="{{ arrival_snapshot }}" hidden aria-label="New requests">
+    <p role="status" aria-live="polite" data-arrival-text></p><button type="button" data-refresh-queue>Refresh queue</button>
+    <small data-arrival-help>Refresh keeps your current filters. Your edits are never replaced automatically.</small>
+  </section>
+  <p class="notice error" data-unsaved-warning role="alert" hidden></p>
   {% if staff_preview %}<p class="notice" role="status">Preview only. Your Google Sheet is still the working queue. Changes here will be available after the switch.</p>{% endif %}
   {% for message in messages %}<div class="notice {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}
   <section class="attention-panel" aria-label="Needs attention">
@@ -71,16 +76,20 @@
               </form>{% endif %}
             </article>{% endfor %}<p class="muted">Marking reviewed clears this notice. Change the job status separately if needed.</p>
           </details>{% endif %}
-          {% if row.files %}<details class="request-files"><summary>Files ({{ row.files|length }})</summary><ul>
-            {% for attachment in row.files %}<li>{% if attachment.storage_key or attachment.legacy_drive_id %}<a href="{% url 'workqueue:download' attachment.pk %}">{{ attachment.original_name }}</a>{% else %}{{ attachment.original_name }} · Archive record{% endif %}
+          {% if row.files %}<details class="request-files"><summary aria-label="Files ({{ row.files|length }}) for {{ item.reference }}">Files ({{ row.files|length }})</summary><ul>
+            {% for attachment in row.files %}<li>{% if attachment.storage_key or attachment.legacy_drive_id %}<a href="{% url 'workqueue:download' attachment.pk %}" target="_blank" rel="noopener">{{ attachment.original_name }}</a>{% else %}{{ attachment.original_name }} · Archive record{% endif %}
               {% if attachment.storage_key %}<small>{{ attachment.size_bytes|filesizeformat }}</small>{% elif attachment.legacy_drive_id %}<small>Original Google Drive file</small>{% endif %}
-            </li>{% endfor %}</ul></details>{% else %}<small>{% if row.unreviewed_responses %}No files on the original request{% else %}No uploaded files{% endif %}</small>{% endif %}
+            </li>{% endfor %}</ul></details>{% else %}<small class="file-count">0 files{% if row.unreviewed_responses %} on the original request{% endif %}</small>{% endif %}
         </td>
-        <td>{% if can_change %}<form method="post" class="quick-status">
+        <td>{% if can_change %}<form method="post" class="quick-status" data-current-status="{{ item.status }}">
           {% csrf_token %}<input type="hidden" name="action" value="status"><input type="hidden" name="item_id" value="{{ item.pk }}"><input type="hidden" name="version" value="{{ item.version }}">
           {% include 'workqueue/filter_context.html' %}
           <label class="sr-only" for="status-{{ item.pk }}">Status for {{ item.reference }}</label>
           <select name="status" id="status-{{ item.pk }}">{% for value,label in statuses %}<option value="{{ value }}" {% if item.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+          <label class="sr-only" for="client-email-{{ item.pk }}">Client milestone email for {{ item.reference }}</label>
+          <select name="client_email" id="client-email-{{ item.pk }}"><option value="skip">Skip email</option><option value="send">Send milestone email</option></select>
+          <small class="milestone-help">Sends only when changing to In Progress or Completed. Internal notes stay private.</small>
+          <small data-milestone-preview hidden></small>
           <button type="submit" class="secondary">Save status</button>
         </form>{% else %}{{ item.get_status_display }}{% endif %}</td>
         <td>{{ item.get_priority_display }}</td>
@@ -101,14 +110,24 @@
           </div>
           <h2>Requested work</h2><div class="preserve-lines">{{ item.description }}</div>
           {% include 'workqueue/information_request.html' %}
-          {% if can_change %}<form method="post" class="edit-form">
+          {% if can_change %}<form method="post" class="edit-form" data-current-status="{{ item.status }}" {% if row.form.errors %}data-unsaved="true"{% endif %}>
             {% csrf_token %}<input type="hidden" name="action" value="edit"><input type="hidden" name="item_id" value="{{ item.pk }}">
             {% include 'workqueue/filter_context.html' %}{{ row.form.version }}{{ row.form.non_field_errors }}
             <div class="fields">{% for field in row.form.visible_fields %}<div class="field">
               {{ field.label_tag }}{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{{ field.errors }}
             </div>{% endfor %}</div>
             <button type="submit">Save request</button>
+            <p data-milestone-preview class="muted" hidden></p>
           </form>{% else %}<p>Internal notes: {{ item.internal_notes|default:'None' }}</p>{% endif %}
+          {% if item.milestones.all %}<details class="milestone-history"><summary>Client milestone emails</summary>
+            {% for milestone in item.milestones.all %}<article class="client-message">
+              <h3>{{ milestone.get_status_display }} · {{ milestone.created_at|date:'M j, Y g:i A' }}</h3>
+              <p>{% if milestone.actor %}{{ milestone.actor.get_full_name|default:milestone.actor.username }} · {% endif %}{% if milestone.delivery_id %}To {{ milestone.delivery.recipient }} · {{ milestone.delivery.get_state_display }}{% if milestone.delivery.last_error %} · {{ milestone.delivery.last_error }}{% endif %}{% else %}Email skipped{% endif %}</p>
+              {% if can_change %}{% if milestone.delivery.state == 'failed' or milestone.delivery.state == 'unknown' %}<form method="post">{% csrf_token %}{% include 'workqueue/filter_context.html' %}<input type="hidden" name="action" value="retry_notice"><input type="hidden" name="item_id" value="{{ item.pk }}"><input type="hidden" name="notice_id" value="{{ milestone.delivery_id }}">
+                {% if milestone.delivery.state == 'unknown' %}<label><input type="checkbox" name="not_sent_confirmed" value="yes" required> I checked the mail provider; this email was not delivered.</label>{% endif %}<button class="secondary">Retry email</button>
+              </form>{% endif %}{% endif %}
+            </article>{% endfor %}
+          </details>{% endif %}
           {% if row.conflict_values %}<details open><summary>Your unsaved changes from the older page</summary><dl>{% for label,value in row.conflict_values %}<dt>{{ label }}</dt><dd class="preserve-lines">{{ value|default:'(blank)' }}</dd>{% endfor %}</dl></details>{% endif %}
           {% if item.project %}<h2>Related project work</h2><ul>{% for related in item.project.work_items.all %}<li>{{ related.reference }} · {{ related.get_kind_display }} · {{ related.get_status_display }} · {% if related.position %}Position {{ related.position }}{% else %}Closed{% endif %}{% if related.pk == item.pk %} (this request){% endif %}</li>{% endfor %}</ul>{% endif %}
           {% if item.project and can_manage_access %}<details><summary>Client access to this project</summary><p>Clients must verify their email before viewing project information. Allow access for other authorized project contacts here.</p>

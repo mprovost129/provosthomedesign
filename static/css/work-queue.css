@@ -70,6 +70,14 @@
 .queue-work .attention-links span { font-size:13px; }
 .queue-work .request-files { margin-top:8px; max-width:340px; }
 .queue-work .request-files summary { color:var(--blue); font-size:13px; }
+.queue-work .request-files summary { display:list-item; width:fit-content; border:1px solid var(--blue); border-radius:5px; background:white; padding:5px 9px; }
+.queue-work .file-count { margin-top:8px; }
+.queue-work .quick-status .milestone-help, .queue-work .quick-status [data-milestone-preview] { max-width:210px; font-size:11px; }
+.queue-work .arrival-notice { display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; padding:14px 18px; margin-bottom:16px; background:#e6f3fb; border:1px solid #8eb8d0; border-radius:8px; }
+.queue-work .arrival-notice p { margin:0; font-weight:600; }
+.queue-work .arrival-notice small { flex-basis:100%; }
+.queue-work [hidden] { display:none !important; }
+.queue-work button:disabled { opacity:.55; cursor:not-allowed; }
 .queue-work .request-files ul { padding-left:18px; overflow-wrap:anywhere; }
 .queue-work .request-files li { margin-bottom:6px; }
 .queue-work .information-tool { margin:18px 0; padding:12px 16px; border:1px solid var(--line); border-radius:8px; }
