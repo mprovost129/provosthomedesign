@@ -2,7 +2,7 @@
 from django.db.models import Exists, OuterRef, Q
 from django.utils import timezone
 
-from .models import CLOSED_STATUSES, NotificationDelivery, Status, WorkItem
+from .models import CLOSED_STATUSES, InformationResponse, NotificationDelivery, Status, WorkItem
 
 
 def attention_conditions():
@@ -11,7 +11,8 @@ def attention_conditions():
     return {
         "overdue": ("Overdue", active & Q(committed_due_date__lt=today)),
         "followup": ("Follow-ups due", active & Q(followup_date__lte=today)),
-        "information": ("Waiting for information", active & Q(status=Status.NEEDS_INFORMATION)),
+        "responses": ("Responses to review", Q(response_attention=True)),
+        "information": ("Waiting for information", active & Q(status=Status.NEEDS_INFORMATION) & Q(response_attention=False)),
         "unlinked": ("Confirm project", active & Q(kind="update", project__isnull=True)),
         "email": ("Email issues", Q(email_attention=True)),
     }
@@ -22,7 +23,8 @@ def with_email_attention(items):
         Q(submission__work_item_id=OuterRef("pk"))
         | Q(information_request__work_item_id=OuterRef("pk"))
     )
-    return items.annotate(email_attention=Exists(issues))
+    replies = InformationResponse.objects.filter(information_request__work_item_id=OuterRef("pk"), reviewed_at__isnull=True)
+    return items.annotate(email_attention=Exists(issues), response_attention=Exists(replies))
 
 
 def attention_summary():

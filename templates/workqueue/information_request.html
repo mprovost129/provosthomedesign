@@ -36,6 +36,9 @@
       <h3>{{ note.created_at|date:'M j, Y g:i A' }} · {{ note.delivery.get_state_display }}</h3>
       <p>To: {{ note.delivery.recipient }}{% if note.actor %} · Requested by {{ note.actor.get_full_name|default:note.actor.username }}{% endif %}</p>
       <div class="preserve-lines">{{ note.message }}</div>
+      {% for response in note.responses.all %}<div class="response-history">
+        <p><a href="?scope=all&amp;q={{ response.work_item.reference|urlencode }}#request-{{ response.work_item.pk }}">Response {{ response.work_item.reference }}</a> · Received {{ response.work_item.received_at|date:'M j, Y g:i A' }} · {% if response.reviewed_at %}Reviewed {{ response.reviewed_at|date:'M j, Y g:i A' }}{% if response.reviewed_by %} by {{ response.reviewed_by.get_full_name|default:response.reviewed_by.username }}{% endif %}{% else %}<strong>Review needed</strong>{% endif %}</p>
+      </div>{% endfor %}
       {% if note.delivery.last_error %}<p class="notice error">{{ note.delivery.last_error }}</p>{% endif %}
       {% if can_change %}{% if note.delivery.state == 'failed' or note.delivery.state == 'unknown' %}
         <form method="post">{% csrf_token %}{% include 'workqueue/filter_context.html' %}

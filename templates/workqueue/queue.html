@@ -58,10 +58,23 @@
         <td>{{ item.contact_full_name }}<small>{{ item.company }}</small></td>
         <td>{{ item.project.name|default:item.project_name|default:item.project_context|default:item.project_street|default:'Untitled project' }}
           <small>{{ item.description|truncatechars:110 }}</small>{% if item.needs_project_link %}<span class="flag">Project link needs confirmation</span>{% endif %}
+          {% if row.unreviewed_responses %}<strong class="response-flag">Response received—review needed ({{ row.unreviewed_responses|length }})</strong>
+          <details class="response-review"><summary>Review client response{{ row.unreviewed_responses|length|pluralize }}</summary>
+            {% for response in row.unreviewed_responses %}<article class="client-message">
+              <h3>{{ response.work_item.reference }} · {{ response.work_item.received_at|date:'M j, Y g:i A' }}</h3>
+              <div class="preserve-lines">{{ response.work_item.description }}</div>
+              <ul>{% for submission in response.work_item.submissions.all %}{% for attachment in submission.attachments.all %}<li><a href="{% url 'workqueue:download' attachment.pk %}">{{ attachment.original_name }}</a></li>{% endfor %}{% endfor %}</ul>
+              <a href="?scope=all&amp;q={{ response.work_item.reference|urlencode }}#request-{{ response.work_item.pk }}">Open {{ response.work_item.reference }}</a>
+              {% if can_change %}<form method="post">{% csrf_token %}{% include 'workqueue/filter_context.html' %}
+                <input type="hidden" name="action" value="review_information_response"><input type="hidden" name="item_id" value="{{ item.pk }}"><input type="hidden" name="version" value="{{ item.version }}"><input type="hidden" name="response_id" value="{{ response.pk }}">
+                <button type="submit" class="secondary">Mark response reviewed</button>
+              </form>{% endif %}
+            </article>{% endfor %}<p class="muted">Marking reviewed clears this notice. Change the job status separately if needed.</p>
+          </details>{% endif %}
           {% if row.files %}<details class="request-files"><summary>Files ({{ row.files|length }})</summary><ul>
             {% for attachment in row.files %}<li>{% if attachment.storage_key or attachment.legacy_drive_id %}<a href="{% url 'workqueue:download' attachment.pk %}">{{ attachment.original_name }}</a>{% else %}{{ attachment.original_name }} · Archive record{% endif %}
               {% if attachment.storage_key %}<small>{{ attachment.size_bytes|filesizeformat }}</small>{% elif attachment.legacy_drive_id %}<small>Original Google Drive file</small>{% endif %}
-            </li>{% endfor %}</ul></details>{% else %}<small>No uploaded files</small>{% endif %}
+            </li>{% endfor %}</ul></details>{% else %}<small>{% if row.unreviewed_responses %}No files on the original request{% else %}No uploaded files{% endif %}</small>{% endif %}
         </td>
         <td>{% if can_change %}<form method="post" class="quick-status">
           {% csrf_token %}<input type="hidden" name="action" value="status"><input type="hidden" name="item_id" value="{{ item.pk }}"><input type="hidden" name="version" value="{{ item.version }}">

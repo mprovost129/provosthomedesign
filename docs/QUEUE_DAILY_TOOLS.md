@@ -4,11 +4,12 @@ The Work Queue remains the single place to manage requests.
 
 ## Needs attention
 
-The five counts cover the entire queue, independently of search and pagination:
+The attention counts cover the entire queue, independently of search and pagination:
 
 - Overdue: active requests with a promised due date before today.
 - Follow-ups due: active requests with a follow-up date today or earlier.
-- Waiting for information: active requests marked Needs Information.
+- Responses to review: requests with verified client responses that have not been marked reviewed, including closed work.
+- Waiting for information: active requests marked Needs Information with no unreviewed response.
 - Confirm project: active updates without a connected project.
 - Email issues: requests with failed or uncertain receipt/information-request delivery, including closed work. A request is counted once even if several emails need attention.
 
@@ -29,8 +30,16 @@ Only that explicit send queues an email. Status saves and previewing do not send
 
 Clients receive the same public update form with their request ID prefilled. This convenience does not authorize access or disclose project information. They use their original email address; existing email verification controls project linking. Updates retain their own queue positions. Sending an information request does not create another work item, and an incoming update does not automatically close the earlier request.
 
+## Response received
+
+Once a client verifies the submitting email, a matching update is connected to the information request. Already verified clients are connected during submission. The original request shows **Response received—review needed** and appears under **Responses to review**. Open **Review client responses** directly in its row to read the update, open its attachments, and mark it reviewed. The update remains a separate queue entry with its own ID and position.
+
+Matching uses the prior request/reference, the verified submitter and existing project access. A project name/address is sufficient only when one request on that project is clearly waiting for information. Ambiguous matches are left alone; the update still appears in the queue. Updates submitted before the question, revoked access and different email addresses do not create response flags. Ordinary revisions submitted after an exchange was reviewed do not reopen it; a new information request starts another exchange.
+
+Marking a response reviewed records who reviewed it and when. It clears that response's notice without changing job status, dates or queue order. Change the status separately when appropriate. If the status remains Needs Information after review, the original returns to Waiting for information. Multiple responses are reviewed individually. The message history retains links to responses and review records. Staff need the existing change-work permission to mark responses reviewed. No additional email or service is introduced.
+
 Email previews expire after 30 minutes. Concurrent changes require another preview. Repeating the same send does not create another email or reset later status changes. Pending/sent/failed/uncertain delivery is shown under the information-request history. Failed mail can be retried; uncertain delivery requires checking the mail provider and confirming it did not arrive before retrying.
 
 ## Deployment and validation
 
-Migration 0011 adds InformationRequest records without modifying existing requests, files, receipts or their references. The existing notification outbox and background worker need no new environment variables or recurring services. Deploy the migration before serving the new queue code. Validation uses isolated database, storage and in-memory email settings; it does not send test messages to clients.
+Migrations 0011 and 0012 add information-request and response records without modifying existing requests, files, receipts or their references. Existing queued updates can be matched the next time their client verifies their email; no production backfill is run automatically. The existing notification outbox and background worker need no new environment variables or recurring services. Deploy the migration before serving the new queue code. Validation uses isolated database, storage and in-memory email settings; it does not send test messages to clients.

@@ -155,3 +155,5 @@ def reconcile_verified_updates(email):
         project, _ = resolve_project(email, reference=reference, context=context)
         if project:
             edit_work(item_id=item.pk, version=item.version, data={"project": project}, actor=None)
+    from .information_responses import connect_information_responses
+    connect_information_responses(email)

@@ -20,7 +20,8 @@ from django.views.decorators.http import require_http_methods
 from .forms import InformationRequestForm, ManualWorkForm, QueueEditForm, QuickStatusForm
 from .attention import attention_conditions, attention_summary, row_attention, with_email_attention
 from .information_requests import INFORMATION_TEMPLATES, TEMPLATE_CHOICES, information_email, request_information
-from .models import AuditEvent, CLOSED_STATUSES, NotificationDelivery, Priority, Status, WorkItem
+from .information_responses import review_information_response
+from .models import AuditEvent, CLOSED_STATUSES, InformationResponse, NotificationDelivery, Priority, Status, WorkItem
 from .services import EDIT_FIELDS, EditConflict, change_project_access, create_work, edit_work
 
 
@@ -98,6 +99,25 @@ def queue(request):
                     messages.success(request, f"{item.reference} {'added to the queue' if created else 'was already saved'}.")
                     return queue_redirect(filters, item)
             response_status = 400
+        elif action == "review_information_response":
+            if not request.user.has_perm("workqueue.change_workitem"):
+                raise PermissionDenied
+            try:
+                item_id = uuid.UUID(request.POST.get("item_id", ""))
+                response_id = int(request.POST.get("response_id", "0"))
+                version = int(request.POST.get("version", "0"))
+            except (ValueError, TypeError, AttributeError):
+                raise Http404
+            error_item = get_object_or_404(WorkItem, pk=item_id)
+            try:
+                item, changed = review_information_response(item_id=item_id, response_id=response_id,
+                    version=version, actor=request.user)
+            except (ValidationError, EditConflict) as exc:
+                messages.error(request, " ".join(exc.messages) if isinstance(exc, ValidationError) else str(exc))
+                response_status = 409 if isinstance(exc, EditConflict) else 400
+            else:
+                messages.success(request, f"{item.reference}: response " + ("marked reviewed. Job status is unchanged." if changed else "was already reviewed."))
+                return queue_redirect(filters, item)
         elif action in ("preview_information", "send_information"):
             if not request.user.has_perm("workqueue.change_workitem"):
                 raise PermissionDenied
@@ -224,6 +244,7 @@ def queue(request):
     items = with_email_attention(WorkItem.objects.with_position()).select_related("project").prefetch_related(
         "submissions__attachments", "submissions__notifications",
         "information_requests__delivery",
+        Prefetch("information_requests__responses", queryset=InformationResponse.objects.select_related("work_item", "reviewed_by").prefetch_related("work_item__submissions__attachments")),
         Prefetch("audit_events", queryset=AuditEvent.objects.select_related("actor")),
         Prefetch("project__work_items", queryset=WorkItem.objects.with_position()),
         "project__access_grants",
@@ -276,6 +297,8 @@ def queue(request):
         current = bool(error_item and item.pk == error_item.pk)
         row["attention_flags"] = row_attention(item)
         row["files"] = [file for submission in item.submissions.all() for file in submission.attachments.all()]
+        row["responses"] = [response for note in item.information_requests.all() for response in note.responses.all()]
+        row["unreviewed_responses"] = [response for response in row["responses"] if not response.reviewed_at]
         row["information_form"] = information_form if current and information_form else InformationRequestForm(
             prefix=f"information-{item.pk}", initial={"version": item.version, "token": uuid.uuid4(),
                 "message": INFORMATION_TEMPLATES["documents"], "followup_date": item.followup_date})

@@ -73,4 +73,7 @@ def submit_intake(*, data, nonce, binding, verified_email="", labels=None):
             claim.verified_at = timezone.now()
             claim.save(update_fields=["verified_at"])
     queue_receipts(submission)
+    if data["kind"] == "update" and verified_email == fields["contact_email"]:
+        from .information_responses import connect_information_responses
+        connect_information_responses(verified_email)
     return item, created

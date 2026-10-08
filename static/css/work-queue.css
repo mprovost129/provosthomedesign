@@ -79,6 +79,12 @@
 .queue-work .email-preview { padding:18px; margin:14px 0; background:#f0f7fc; border:1px solid #b8d3e7; border-radius:8px; }
 .queue-work .email-preview form { margin-top:16px; }
 .queue-work .client-message { border-top:1px solid var(--line); margin-top:16px; padding-top:8px; }
+.queue-work .response-flag { display:block; width:fit-content; margin:8px 0; padding:4px 8px; font-size:12px; background:#dff4ed; color:#155740; border:1px solid #95cbb8; border-radius:5px; }
+.queue-work .response-review { margin:8px 0; max-width:460px; }
+.queue-work .response-review summary { color:var(--blue); font-size:13px; }
+.queue-work .response-review .preserve-lines { max-height:240px; overflow:auto; }
+.queue-work .response-review form { margin-top:10px; }
+.queue-work .response-history { padding:10px; margin-top:10px; background:#eff8f4; border-radius:5px; }
 @media(max-width:700px) {
   .queue-work .attention-links { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .queue-work .information-compose .fields { grid-template-columns:1fr; }

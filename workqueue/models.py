@@ -252,6 +252,18 @@ class InformationRequest(models.Model):
         ordering = ["-created_at", "-pk"]
 
 
+class InformationResponse(models.Model):
+    """A verified submitted update answering an owner information request."""
+    information_request = models.ForeignKey(InformationRequest, on_delete=models.PROTECT, related_name="responses")
+    work_item = models.OneToOneField(WorkItem, on_delete=models.PROTECT, related_name="information_response")
+    verified_at = models.DateTimeField(default=timezone.now, editable=False)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+
+    class Meta:
+        ordering = ["-verified_at", "-pk"]
+
+
 class EmailAccessToken(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField()
