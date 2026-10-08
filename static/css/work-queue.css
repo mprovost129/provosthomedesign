@@ -19,7 +19,7 @@
 .queue-work :focus-visible { outline:3px solid #bf751b; outline-offset:3px; }
 .queue-work .manual { background:white; padding:16px 18px; margin:16px 0; border:1px solid var(--line); border-radius:10px; }
 .queue-work summary { cursor:pointer; font-weight:600; padding:6px 0; }
-.queue-work .table-scroll { overflow:auto; border:1px solid var(--line); border-radius:10px; background:white; }
+.queue-work .table-scroll { position:relative; overflow:auto; border:1px solid var(--line); border-radius:10px; background:white; }
 .queue-work table { border-collapse:collapse; width:100%; min-width:1000px; }
 .queue-work th { text-align:left; color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.04em; padding:12px; background:#e9eff5; }
 .queue-work td { padding:12px; vertical-align:top; }
