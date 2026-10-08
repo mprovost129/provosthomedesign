@@ -3,7 +3,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
-from workqueue.models import PendingUpload
+from workqueue.models import IntakeDraft, PendingUpload
 from workqueue.uploads import private_storage
 
 
@@ -11,6 +11,7 @@ class Command(BaseCommand):
     help = "Clean expired unsubmitted files and stale direct-upload staging copies."
 
     def handle(self, *args, **options):
+        IntakeDraft.objects.filter(expires_at__lte=timezone.now()).delete()
         if "intake_private" not in settings.STORAGES:
             raise CommandError("Private intake storage is not configured.")
         storage = private_storage()

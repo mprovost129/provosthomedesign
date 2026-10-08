@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.http import FileResponse, Http404, JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -20,7 +20,7 @@ from .access import (authorized_work, consume_email_token, new_intake_token, nor
 from .client_forms import ClientIntakeForm, ConfirmAccessForm, TrackingAccessForm
 from .client_security import require_recaptcha, verify_form
 from .intake import submit_intake
-from .models import Attachment, PendingUpload, WorkItem
+from .models import Attachment, IntakeDraft, PendingUpload, Submission, WorkItem
 from .notifications import queue_signin
 from .uploads import direct_upload_policy, finish_upload, private_storage, reserve_upload
 from .views import queue_enabled, staff_preview
@@ -55,6 +55,17 @@ def submit_work(request):
             initial["project_reference"] = reference
     if email:
         initial["contact_email"] = email
+    from .drafts import restore_draft, saved_drafts
+    draft, expired_files = None, []
+    if request.method == "GET" and request.GET.get("resume"):
+        try:
+            draft, recovered, expired_files = restore_draft(request, uuid.UUID(request.GET["resume"]), email)
+        except ValueError:
+            raise Http404 from None
+        if draft is None:
+            messages.info(request, "That saved form is unavailable or expired. Start a new form below.")
+        else:
+            initial.update(recovered)
     form = ClientIntakeForm(request.POST or None, initial=initial, email=email)
     status = 200
     ready = []
@@ -82,6 +93,11 @@ def submit_work(request):
                                              state="ready", expires_at__gt=timezone.now())
     except ValidationError:
         pass
+    if request.method == "POST":
+        try:
+            draft = saved_drafts(request).filter(pk=read_intake_token(request, token)).first()
+        except ValidationError:
+            pass
     groups = {
         "common": [form[name] for name in ["contact_full_name", "company", "contact_email", "contact_phone"]],
         "billing": [form[name] for name in ["billing_street", "billing_city", "billing_state", "billing_zip"]],
@@ -93,7 +109,37 @@ def submit_work(request):
     }
     return render(request, "workqueue/submit.html", {"form": form, "groups": groups, "ready_uploads": ready,
         "is_update": form.data.get("kind") == "update" if form.is_bound else initial["kind"] == "update",
-        "direct_uploads": settings.INTAKE_DIRECT_UPLOADS, "client_email": email}, status=status)
+        "direct_uploads": settings.INTAKE_DIRECT_UPLOADS, "client_email": email,
+        "draft": draft, "saved_drafts": saved_drafts(request)[:5], "expired_files": expired_files}, status=status)
+
+
+@intake_enabled
+@never_cache
+@require_http_methods(["POST"])
+def draft_action(request):
+    import json
+    try:
+        if len(request.body) > 100000:
+            raise ValidationError("The saved form is too large.")
+        payload = json.loads(request.body)
+        if not isinstance(payload, dict):
+            raise ValidationError("The saved form could not be read.")
+        nonce = read_intake_token(request, payload.get("intake_token", ""))
+        if not limited(request, "draft-saves", session_digest(request), limit=600):
+            return JsonResponse({"error": "Draft saving is temporarily paused. Your answers are still on this page."}, status=429)
+        if payload.get("action") == "discard":
+            IntakeDraft.objects.filter(pk=nonce, session_digest=session_digest(request)).delete()
+            return JsonResponse({"discarded": True})
+        from .drafts import save_draft
+        revision = payload.get("revision", 0)
+        if not isinstance(revision, int) or revision < 0:
+            raise ValidationError("The saved form version is invalid.")
+        if revision == 0 and not limited(request, 'draft-create-ip', limit=30):
+            return JsonResponse({'error': 'Too many saved forms were started. Keep this page open and try again later.'}, status=429)
+        draft = save_draft(request=request, nonce=nonce, payload=payload, revision=revision)
+        return JsonResponse({"revision": draft.revision, "saved_at": draft.updated_at.isoformat()})
+    except (ValidationError, ValueError, TypeError) as error:
+        return JsonResponse({"error": " ".join(error.messages) if isinstance(error, ValidationError) else "The saved form could not be read."}, status=409)
 
 
 @intake_enabled
@@ -197,16 +243,49 @@ def tracking(request):
     elif request.method == "POST":
         status = 400
     reference = request.GET.get("reference", "").strip().upper()[:32]
-    items = authorized_work(email).with_position().select_related("project").prefetch_related("submissions__attachments")
+    items = authorized_work(email).with_position().select_related("project").prefetch_related("submissions__attachments", "completed_deliveries__files")
     selected = items.filter(reference=reference).first() if reference else None
     unavailable = bool(email and reference and selected is None)
     if selected and selected.project_id:
         items = items.filter(project_id=selected.project_id)
     elif reference:
         items = items.filter(reference=reference)
+    from .receipts import answer_rows
+    from .notifications import site_url
+    items = list(items[:100])
+    for item in items:
+        # Project collaborators retain file access, but personal answers/billing
+        # snapshots are shown only to the verified original submitter.
+        item.client_history = [submission for submission in item.submissions.all()
+                               if normalize_email(submission.owner_email) == email]
+        for submission in item.client_history:
+            submission.public_answers = answer_rows(submission, site_url)
     # Only client-facing information is passed to this template; internal notes are never rendered.
     return render(request, "workqueue/tracking.html", {"form": form, "sent": sent, "client_email": email,
-        "items": items[:100], "selected": selected, "unavailable": unavailable, "checked_at": timezone.now()}, status=status)
+        "items": items, "selected": selected, "unavailable": unavailable, "checked_at": timezone.now()}, status=status)
+
+
+@intake_enabled
+@never_cache
+@require_http_methods(["GET"])
+def receipt_download(request, submission_id):
+    submission = get_object_or_404(Submission.objects.select_related("work_item__project"), pk=submission_id)
+    staff = request.user.is_active and request.user.is_staff and request.user.has_perm("workqueue.view_workitem")
+    email = verified_email(request)
+    if not staff and (not email or normalize_email(submission.owner_email) != email or
+                     not authorized_work(email).filter(pk=submission.work_item_id).exists()):
+        raise Http404
+    from .notifications import site_url
+    from .receipts import submission_record
+    item = submission.work_item
+    body = (f"Provost Home Design — submission receipt\nRequest ID: {item.reference}\n"
+            f"Position when submitted: {item.submission_position or 'Not recorded'}\n\n"
+            f"Track your current position and sign in to open documents:\n{site_url(reverse('workqueue:tracking'))}\n\n"
+            + submission_record(submission, site_url).replace("Use the secure sign-in link above first", "Use Track My Project above to sign in first"))
+    response = HttpResponse(body, content_type="text/plain; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="{item.reference}-submission-{submission.pk.hex[:8]}.txt"'
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 @intake_enabled

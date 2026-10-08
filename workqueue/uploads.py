@@ -98,7 +98,8 @@ def reserve_upload(*, nonce, binding, name, size, upload_id=None):
             return existing
     # Serialize draft reservations in PostgreSQL so parallel uploads cannot exceed the cap.
     count = PendingUpload.objects.filter(intake_nonce=nonce, session_digest=binding,
-                                        state__in=[PendingUpload.State.RESERVED, PendingUpload.State.READY]).count()
+                                        state__in=[PendingUpload.State.RESERVED, PendingUpload.State.READY],
+                                        expires_at__gt=timezone.now()).count()
     if count >= MAX_FILES:
         raise ValidationError("You can upload no more than 10 files per submission.")
     upload_id = upload_id or uuid.uuid4()

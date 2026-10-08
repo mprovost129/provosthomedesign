@@ -48,6 +48,15 @@ class InformationRequestForm(StyledForm, forms.Form):
         widget=forms.Textarea(attrs={"rows": 4}), help_text="Only this message goes to the client. Internal notes are never included.")
     followup_date = forms.DateField(label="Remind me to follow up (optional)", required=False,
         widget=forms.DateInput(attrs={"type": "date"}), help_text="Appears under Follow-ups due. This date is internal and is not emailed.")
+    reminder_date = forms.DateField(label="Send the client one reminder on (optional)", required=False,
+        widget=forms.DateInput(attrs={"type": "date"}), help_text="Leave blank to skip. Stops after a verified response, a newer information request, or a status change.")
+
+    def clean_reminder_date(self):
+        from django.utils import timezone
+        value = self.cleaned_data.get('reminder_date')
+        if value and value <= timezone.localdate():
+            raise forms.ValidationError('Choose a future date for the client reminder.')
+        return value
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

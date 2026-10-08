@@ -1,7 +1,8 @@
 (() => {
   'use strict';
-  const form = document.getElementById('client-intake');
+  const form = document.getElementById('client-intake') || document.getElementById('completion-delivery');
   if (!form) return;
+  const delivery = form.id === 'completion-delivery';
   const submit = document.getElementById('submit-request');
   const chooser = document.getElementById('project-files');
   const list = document.getElementById('upload-list');
@@ -21,13 +22,15 @@
     else if (list.querySelector('.upload-failed')) uploadMessage.textContent = 'A file needs attention. Retry it or remove it before submitting.';
     else uploadMessage.textContent = ready.size ? `${ready.size} file${ready.size === 1 ? '' : 's'} ready to submit.` : '';
     updateCategories();
+    form.dispatchEvent(new Event('intake-files-changed'));
   }
   function updateCategories() {
     const boxes = [...form.querySelectorAll('input[name="categories"]')];
-    const required = form.elements.kind.value === 'update' || ready.size > 0;
+    const required = !delivery && (form.elements.kind.value === 'update' || ready.size > 0);
     if (boxes.length) boxes[0].required = required && !boxes.some(box => box.checked);
   }
   function switchPath() {
+    if (delivery) return;
     const kind = form.elements.kind.value;
     for (const [id, path, required] of [['new-fields','new',newRequired],['update-fields','update',updateRequired]]) {
       const group = document.getElementById(id);
@@ -54,7 +57,7 @@
   }
   form.querySelectorAll('input[name="kind"]').forEach(input => input.addEventListener('change', switchPath));
   form.querySelectorAll('input[name="categories"]').forEach(input => input.addEventListener('change', updateCategories));
-  form.elements.same_address.addEventListener('change', copyAddress);
+  if (!delivery) form.elements.same_address.addEventListener('change', copyAddress);
   // Copy once when checked; later client edits to either address remain intact.
   function xhrUpload(url, body, onProgress, ownServer) {
     return new Promise((resolve, reject) => {
@@ -168,8 +171,9 @@
     const status = document.getElementById('submission-message');
     status.textContent = 'Verifying your request…';
     try {
-      form.elements.recaptcha_token.value = await window.phdRecaptcha.token('work_submission');
+      if (!delivery) form.elements.recaptcha_token.value = await window.phdRecaptcha.token('work_submission');
       status.textContent = 'Saving your request…';
+      form.dispatchEvent(new Event('intake-submitting'));
       HTMLFormElement.prototype.submit.call(form);
     } catch (_) {
       submitting = false;

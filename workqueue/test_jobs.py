@@ -2,10 +2,10 @@ from io import StringIO
 from unittest.mock import patch
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import SimpleTestCase, override_settings
+from django.test import TransactionTestCase, override_settings
 
 
-class QueueJobRunnerTests(SimpleTestCase):
+class QueueJobRunnerTests(TransactionTestCase):
     @override_settings(WORK_INTAKE_ENABLED=False, BOOKING_ENABLED=True)
     def test_disabled_features_never_dispatch(self):
         with patch("workqueue.management.commands.run_queue_jobs.call_command") as dispatch:

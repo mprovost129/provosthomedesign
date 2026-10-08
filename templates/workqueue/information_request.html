@@ -7,6 +7,7 @@
     <section class="email-preview" aria-label="Email preview for {{ item.reference }}" tabindex="-1" data-email-review>
       <h3>Review your email</h3><p><strong>To:</strong> {{ row.information_preview.recipient }}<br><strong>Subject:</strong> {{ row.information_preview.subject }}</p>
       <div class="preserve-lines">{{ row.information_preview.body }}</div>
+      {% if row.information_form.reminder_date.value %}<p><strong>One client reminder scheduled:</strong> {{ row.information_form.reminder_date.value }}. It stops after a verified response or status change.</p>{% endif %}
       <form method="post">
         {% csrf_token %}{% include 'workqueue/filter_context.html' %}
         <input type="hidden" name="action" value="send_information"><input type="hidden" name="item_id" value="{{ item.pk }}">
@@ -36,6 +37,8 @@
       <h3>{{ note.created_at|date:'M j, Y g:i A' }} · {{ note.delivery.get_state_display }}</h3>
       <p>To: {{ note.delivery.recipient }}{% if note.actor %} · Requested by {{ note.actor.get_full_name|default:note.actor.username }}{% endif %}</p>
       <div class="preserve-lines">{{ note.message }}</div>
+      {% if note.reminder_date %}<p>Client reminder: {{ note.reminder_date|date:'M j, Y' }} · {% if note.reminder_canceled_at %}Canceled{% elif note.reminder_delivery %}{{ note.reminder_delivery.get_state_display }}{% else %}Scheduled if still waiting for information{% endif %}</p>{% endif %}
+      {% if note.reminder_delivery.state == 'failed' or note.reminder_delivery.state == 'unknown' %}{% if can_change %}<form method="post">{% csrf_token %}{% include 'workqueue/filter_context.html' %}<input type="hidden" name="action" value="retry_notice"><input type="hidden" name="item_id" value="{{ item.pk }}"><input type="hidden" name="notice_id" value="{{ note.reminder_delivery_id }}">{% if note.reminder_delivery.state == 'unknown' %}<label><input type="checkbox" name="not_sent_confirmed" value="yes" required>I checked the mail provider; this reminder was not delivered.</label>{% endif %}<button class="secondary">Retry reminder email</button></form>{% endif %}{% endif %}
       {% for response in note.responses.all %}<div class="response-history">
         <p><a href="?scope=all&amp;q={{ response.work_item.reference|urlencode }}#request-{{ response.work_item.pk }}">Response {{ response.work_item.reference }}</a> · Received {{ response.work_item.received_at|date:'M j, Y g:i A' }} · {% if response.reviewed_at %}Reviewed {{ response.reviewed_at|date:'M j, Y g:i A' }}{% if response.reviewed_by %} by {{ response.reviewed_by.get_full_name|default:response.reviewed_by.username }}{% endif %}{% else %}<strong>Review needed</strong>{% endif %}</p>
       </div>{% endfor %}

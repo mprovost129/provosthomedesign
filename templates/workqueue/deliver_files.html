@@ -1,0 +1,17 @@
+{% extends 'workqueue/client_base.html' %}{% load static %}
+{% block title %}Deliver Completed Files{% endblock %}
+{% block content %}
+<div class="intro"><p class="eyebrow">{{ item.reference }}</p><h1>Deliver completed files</h1><p>{{ item.project.name|default:item.project_name }} · To {{ item.contact_email }}</p><p><a href="{% url 'workqueue:queue' %}?scope=all&amp;q={{ item.reference }}">Return to work queue</a></p></div>
+<p class="notice">These files will appear under Completed files on the client's tracking page. Original submissions stay separate. Sending does not change the job's status.</p>
+{% if preview %}<section class="card"><h2>Review your email and file list</h2><p><strong>To:</strong> {{ preview.recipient }}<br><strong>Subject:</strong> {{ preview.subject }}</p><div class="preserve-lines">{{ preview.body }}</div>
+<form method="post">{% csrf_token %}<input type="hidden" name="action" value="send"><input type="hidden" name="preview_signature" value="{{ signature }}">{% for field in form %}<input type="hidden" name="{{ field.name }}" value="{{ field.value|default_if_none:'' }}">{% endfor %}<button>Send completed files</button></form></section>{% endif %}
+<form id="completion-delivery" method="post" data-upload-url="{% url 'workqueue:start_upload' %}" data-direct="{{ direct_uploads|yesno:'true,false' }}">
+{% csrf_token %}{{ form.intake_token }}{{ form.upload_ids }}{{ form.version }}<input type="hidden" name="action" value="preview"><input type="hidden" name="recaptcha_token">
+{{ form.non_field_errors }}{{ form.upload_ids.errors }}
+<section class="card"><h2>Completed drawings and documents</h2><p>Upload up to 10 files, 100 MB each. These links remain private.</p><label class="upload-zone" for="project-files"><strong>Choose completed files</strong><input id="project-files" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.docx,.xlsx"></label>
+<p id="upload-message" role="status"></p><ul id="upload-list">{% for upload in ready_uploads %}<li data-upload-id="{{ upload.pk }}"><span>{{ upload.original_name }} — Ready</span><button type="button" class="remove-upload" data-upload-id="{{ upload.pk }}">Remove</button></li>{% endfor %}</ul></section>
+<section class="card">{{ form.message.label_tag }}{{ form.message }}{{ form.message.errors }}<p class="muted">Internal notes are never included. Only this message and the completed file list go to the client.</p></section>
+<p class="verification-error errorlist" hidden role="alert"></p><button id="submit-request">{% if preview %}Preview revised delivery{% else %}Preview delivery email{% endif %}</button><span id="submission-message" role="status"></span>
+</form>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/client-intake.js' %}" defer></script>{% endblock %}

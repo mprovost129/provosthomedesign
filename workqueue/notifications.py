@@ -73,6 +73,8 @@ def queue_signin(email, reference="", destination="tracking"):
 
 
 def deliver_pending(limit=100):
+    from .reminders import queue_due_reminders, cancel_ineligible_reminder
+    queue_due_reminders(limit)
     # A worker that crashed after handing a message to the provider may have sent it.
     # Hold stale sending records instead of automatically sending a second copy.
     NotificationDelivery.objects.filter(state="sending", last_attempt_at__lt=timezone.now()-timedelta(minutes=15)).update(
@@ -83,6 +85,8 @@ def deliver_pending(limit=100):
             record = NotificationDelivery.objects.select_for_update().filter(state="pending").order_by("created_at", "pk").first()
             if record is None:
                 break
+            if cancel_ineligible_reminder(record):
+                continue
             # Long-delayed or explicitly retried mail must contain a usable sign-in link.
             if record.recipient_kind in {"client", "signin"}:
                 match = re.search(r"#token=([A-Za-z0-9_-]+)", record.body)

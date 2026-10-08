@@ -8,6 +8,7 @@
   <nav aria-label="Staff tools">{% if intake_enabled %}<a href="{% url 'workqueue:submit' %}" target="_blank" rel="noopener">Client form</a> · {% endif %}<a href="{% url 'admin:index' %}">Administration</a></nav>
 </header>
 <main id="queue">
+  {% if intake_enabled %}<details class="notice {% if not queue_health.ok %}error{% endif %}"><summary>System health · {% if queue_health.ok %}Background jobs are current{% else %}Needs attention{% endif %}</summary><p>Last successful background run: {{ queue_health.last_success|date:'M j, g:i A'|default:'Awaiting the first run' }}</p><ul>{% for issue in queue_health.issues %}<li>{{ issue }}</li>{% empty %}<li>No delayed emails, delivery issues, or calendar exceptions detected.</li>{% endfor %}</ul></details>{% endif %}
   <section class="arrival-notice" data-arrivals data-url="{% url 'workqueue:arrivals' %}" data-snapshot="{{ arrival_snapshot }}" hidden aria-label="New requests">
     <p role="status" aria-live="polite" data-arrival-text></p><button type="button" data-refresh-queue>Refresh queue</button>
     <small data-arrival-help>Refresh keeps your current filters. Your edits are never replaced automatically.</small>
@@ -111,6 +112,11 @@
           </div>
           <h2>Requested work</h2><div class="preserve-lines">{{ item.description }}</div>
           {% include 'workqueue/information_request.html' %}
+          {% if intake_enabled %}<details><summary>Completed files and deliveries</summary>
+          {% if can_change %}<p><a href="{% url 'workqueue:deliver_files' item.pk %}" target="_blank" rel="noopener">Deliver completed files — upload and preview email</a></p>{% endif %}
+          {% for delivery in item.completed_deliveries.all %}<article class="client-message"><h3>{{ delivery.created_at|date:'M j, Y g:i A' }} · {{ delivery.notification.get_state_display }}</h3><p>To {{ delivery.recipient }}</p><div class="preserve-lines">{{ delivery.message }}</div><ul>{% for file in delivery.files.all %}<li><a href="{% url 'workqueue:completed_file' file.pk %}" target="_blank" rel="noopener">{{ file.original_name }}</a> · {{ file.size_bytes|filesizeformat }}</li>{% endfor %}</ul>
+          {% if delivery.notification.last_error %}<p class="notice error">{{ delivery.notification.last_error }}</p>{% endif %}
+          {% if can_change %}{% if delivery.notification.state == 'failed' or delivery.notification.state == 'unknown' %}<form method="post">{% csrf_token %}{% include 'workqueue/filter_context.html' %}<input type="hidden" name="action" value="retry_notice"><input type="hidden" name="item_id" value="{{ item.pk }}"><input type="hidden" name="notice_id" value="{{ delivery.notification_id }}">{% if delivery.notification.state == 'unknown' %}<label><input type="checkbox" name="not_sent_confirmed" value="yes" required>I checked the mail provider; this email was not delivered.</label>{% endif %}<button class="secondary">Retry delivery email</button></form>{% endif %}{% endif %}</article>{% empty %}<p>No completed files delivered yet.</p>{% endfor %}</details>{% endif %}
           {% if can_change %}<form method="post" class="edit-form" data-current-status="{{ item.status }}" {% if row.form.errors %}data-unsaved="true"{% endif %}>
             {% csrf_token %}<input type="hidden" name="action" value="edit"><input type="hidden" name="item_id" value="{{ item.pk }}">
             {% include 'workqueue/filter_context.html' %}{{ row.form.version }}{{ row.form.non_field_errors }}

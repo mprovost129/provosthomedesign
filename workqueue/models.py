@@ -73,6 +73,19 @@ class QueueState(models.Model):
         constraints = [models.CheckConstraint(condition=Q(id=1), name="wq_singleton_state")]
 
 
+class QueueWorkerHealth(models.Model):
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    run_token = models.UUIDField(null=True)
+    last_started = models.DateTimeField(null=True)
+    last_finished = models.DateTimeField(null=True)
+    last_success = models.DateTimeField(null=True)
+    failed_tasks = models.JSONField(default=list)
+
+    class Meta:
+        constraints = [models.CheckConstraint(condition=Q(id=1), name="wq_health_singleton")]
+
+
 class LegacyQueueImport(models.Model):
     """Private, lossless source archive, including rows omitted from the work queue."""
     digest = models.CharField(primary_key=True, max_length=64, editable=False)
@@ -188,6 +201,17 @@ class Submission(models.Model):
     received_at = models.DateTimeField(default=timezone.now)
 
 
+class IntakeDraft(models.Model):
+    """Short-lived answers, accessible only to the browser that started them."""
+    id = models.UUIDField(primary_key=True, editable=False)
+    session_digest = models.CharField(max_length=64, db_index=True)
+    answers = models.JSONField(default=dict)
+    files = models.JSONField(default=list)
+    revision = models.PositiveIntegerField(default=1)
+    updated_at = models.DateTimeField(default=timezone.now)
+    expires_at = models.DateTimeField(db_index=True)
+
+
 class Attachment(models.Model):
     """Private object metadata. Downloading is exclusively through an authorized view."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -199,6 +223,28 @@ class Attachment(models.Model):
     size_bytes = models.PositiveBigIntegerField(default=0)
     categories = models.JSONField(default=list)
     uploaded_at = models.DateTimeField(default=timezone.now)
+
+
+class CompletedDelivery(models.Model):
+    id = models.UUIDField(primary_key=True, editable=False)
+    work_item = models.ForeignKey(WorkItem, on_delete=models.PROTECT, related_name="completed_deliveries")
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
+    recipient = models.EmailField()
+    message = models.TextField(blank=True)
+    notification = models.OneToOneField("NotificationDelivery", on_delete=models.PROTECT, related_name="completed_delivery")
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+
+
+class CompletedFile(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    delivery = models.ForeignKey(CompletedDelivery, on_delete=models.PROTECT, related_name="files")
+    upload = models.OneToOneField("PendingUpload", on_delete=models.PROTECT)
+    original_name = models.CharField(max_length=255)
+    storage_key = models.CharField(max_length=1024)
+    size_bytes = models.PositiveBigIntegerField()
 
 
 class AuditEvent(models.Model):
@@ -223,7 +269,7 @@ class NotificationDelivery(models.Model):
     body = models.TextField(blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     state = models.CharField(max_length=20, choices=[("pending", "Pending"), ("sending", "Sending"),
-                            ("sent", "Sent"), ("unknown", "Needs reconciliation"), ("failed", "Failed")],
+                            ("sent", "Sent"), ("unknown", "Needs reconciliation"), ("failed", "Failed"), ("canceled", "Canceled")],
                             default="pending")
     attempts = models.PositiveIntegerField(default=0)
     last_attempt_at = models.DateTimeField(null=True, blank=True)
@@ -262,6 +308,10 @@ class InformationRequest(models.Model):
     followup_date = models.DateField(null=True, blank=True)
     token = models.UUIDField(unique=True, editable=False)
     delivery = models.OneToOneField(NotificationDelivery, on_delete=models.PROTECT, related_name="information_request")
+    reminder_date = models.DateField(null=True, blank=True)
+    reminder_delivery = models.OneToOneField(NotificationDelivery, null=True, blank=True,
+        on_delete=models.PROTECT, related_name="information_reminder")
+    reminder_canceled_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
 
     class Meta:

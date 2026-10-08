@@ -73,3 +73,7 @@
 .client-work {min-width:0;width:100%;}
 .client-work [id] {scroll-margin-top:6rem;}
 .client-work .client-tools {display:flex;flex-wrap:wrap;justify-content:center;gap:12px 24px;padding:16px 22px;background:white;border-bottom:1px solid var(--line);font-size:14px;}
+.client-work .answer-record dt {font-weight:600;margin-top:16px;}
+.client-work .answer-record dd {margin:4px 0 14px;}
+.client-work .submission-history {border-top:1px solid var(--line);margin-top:18px;}
+.client-work .draft-tools p {margin:0 0 10px;}

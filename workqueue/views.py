@@ -52,6 +52,7 @@ def information_review_data(item, form):
     return {"item": str(item.pk), "recipient": item.contact_email,
             "version": form.cleaned_data["version"], "token": str(form.cleaned_data["token"]),
             "message": form.cleaned_data["message"],
+            "reminder_date": str(form.cleaned_data["reminder_date"]) if form.cleaned_data["reminder_date"] else None,
             "followup_date": str(form.cleaned_data["followup_date"]) if form.cleaned_data["followup_date"] else None}
 
 
@@ -193,6 +194,7 @@ def queue(request):
                             version=information_form.cleaned_data["version"],
                             message=information_form.cleaned_data["message"],
                             followup_date=information_form.cleaned_data["followup_date"],
+                            reminder_date=information_form.cleaned_data["reminder_date"],
                             token=information_form.cleaned_data["token"], actor=request.user)
                         messages.success(request, f"{item.reference}: " + ("email queued and marked Needs Information." if created else "this email was already queued; no second email was created."))
                         return queue_redirect(filters, item)
@@ -230,7 +232,8 @@ def queue(request):
                     with transaction.atomic():
                         eligible_notices = NotificationDelivery.objects.filter(
                             Q(submission__work_item=error_item) | Q(information_request__work_item=error_item)
-                            | Q(status_milestone__work_item=error_item)).values("pk")
+                            | Q(status_milestone__work_item=error_item) | Q(completed_delivery__work_item=error_item)
+                            | Q(information_reminder__work_item=error_item)).values("pk")
                         # Keep nullable receipt/message joins out of the locked outer query on PostgreSQL.
                         notice = get_object_or_404(NotificationDelivery.objects.select_for_update(),
                             pk=request.POST.get("notice_id"), pk__in=eligible_notices)
@@ -296,8 +299,9 @@ def queue(request):
         create_form = ManualWorkForm(initial={"submission_token": uuid.uuid4()}, prefix="new")
     items = with_email_attention(WorkItem.objects.with_position()).select_related("project").prefetch_related(
         "submissions__attachments", "submissions__notifications",
-        "information_requests__delivery",
+        "information_requests__delivery", "information_requests__reminder_delivery",
         "milestones__delivery", "milestones__actor",
+        "completed_deliveries__files", "completed_deliveries__notification",
         Prefetch("information_requests__responses", queryset=InformationResponse.objects.select_related("work_item", "reviewed_by").prefetch_related("work_item__submissions__attachments")),
         Prefetch("audit_events", queryset=AuditEvent.objects.select_related("actor")),
         Prefetch("project__work_items", queryset=WorkItem.objects.with_position()),
@@ -361,8 +365,10 @@ def queue(request):
         row["information_signature"] = information_signature if current else ""
     params = urlencode({key: value for key, value in filters.items() if key != "page" and value})
     from .models import Appointment, BookingAccess
+    from .health import health_snapshot
     appointments = Appointment.objects.select_related("project").prefetch_related("notifications", "replacements").exclude(state__in=["canceled", "completed"]).order_by("starts_at")
     return render(request, "workqueue/queue.html", {"rows": rows, "page": page, "filters": filters,
+        "queue_health": health_snapshot(),
         "arrival_snapshot": arrival_snapshot,
         "appointments": appointments, "booking_access": BookingAccess.objects.order_by("email")[:100],
         "closed_appointments": Appointment.objects.filter(state__in=["canceled", "completed"]).prefetch_related("notifications").order_by("-starts_at")[:25],

@@ -4,9 +4,12 @@
 <div class="intro"><p class="eyebrow">Start here. We’ll take it from there.</p><h1>Send us your project</h1>
 <p>Tell us about new work or send an update. Your request goes straight into our work queue, and you’ll receive an ID to track it.</p></div>
 {% if client_email %}<p class="signed-in">Signed in as {{ client_email }}. You can choose from your connected projects below.</p>{% endif %}
+{% if saved_drafts and not draft %}<section class="notice"><h2>Continue an unfinished form</h2><p>These forms were saved in this browser. They have not been submitted.</p><ul>{% for saved in saved_drafts %}<li><a href="?resume={{ saved.pk }}">Resume saved form — {{ saved.updated_at|date:'M j, g:i A' }}</a></li>{% endfor %}</ul></section>{% endif %}
+{% if expired_files %}<div class="error-summary" role="alert"><h2>Some uploads need to be added again</h2><p>These unsubmitted files expired. Your answers were recovered, but these files will not be included unless you upload them again:</p><ul>{% for name in expired_files %}<li>{{ name }}</li>{% endfor %}</ul></div>{% endif %}
 <noscript><p class="notice">Please enable JavaScript to verify and submit your request and upload files. Contact Provost Home Design if you need help submitting your project.</p></noscript>
-<form id="client-intake" method="post" data-upload-url="{% url 'workqueue:start_upload' %}" data-direct="{{ direct_uploads|yesno:'true,false' }}">
+<form id="client-intake" method="post" data-upload-url="{% url 'workqueue:start_upload' %}" data-direct="{{ direct_uploads|yesno:'true,false' }}" data-draft-url="{% url 'workqueue:draft' %}" data-draft-revision="{{ draft.revision|default:0 }}">
 {% csrf_token %}{{ form.intake_token }}{{ form.upload_ids }}{{ form.website }}
+<div class="notice draft-tools"><p id="draft-status" role="status">{% if draft %}Saved answers recovered. Please review them before submitting.{% else %}Your answers save automatically as you fill out this form.{% endif %}</p><p class="muted">Saved for seven days in this browser. Unsubmitted uploads expire after 24 hours. On a shared device, use Discard saved form when finished.</p><button id="discard-draft" type="button" class="text-button">Discard saved form and start fresh</button></div>
 {% if form.errors %}<div class="error-summary" role="alert"><h2>Please check the highlighted information.</h2>
 {{ form.non_field_errors }}<ul>{% for field in form %}{% for error in field.errors %}<li><a href="#{{ field.id_for_label }}">{{ field.label }}: {{ error }}</a></li>{% endfor %}{% endfor %}</ul></div>{% endif %}
 <section class="card path-choice"><h2>What are you sending?</h2>{{ form.kind }}{{ form.kind.errors }}</section>
@@ -36,6 +39,7 @@
 {% include 'workqueue/terms_consent.html' %}
 {% include 'workqueue/recaptcha_fields.html' %}
 <div class="submit-actions"><button id="submit-request" type="submit">Submit to the work queue</button><span id="submission-message" role="status"></span></div>
+{% if expired_files %}<label class="checkline"><input type="checkbox" name="expired_uploads_reviewed" required>I have re-uploaded the expired files, or I intend to submit without them.</label>{% endif %}
 </form>
 {% endblock %}
-{% block scripts %}<script src="{% static 'js/client-intake.js' %}" defer></script>{% endblock %}
+{% block scripts %}<script src="{% static 'js/client-intake.js' %}" defer></script><script src="{% static 'js/client-drafts.js' %}" defer></script>{% endblock %}

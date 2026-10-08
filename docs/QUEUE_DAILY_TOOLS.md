@@ -75,3 +75,33 @@ The staff-only `/work-queue/order/` endpoint requires both view and change permi
 The staff page checks for arrivals every 30 seconds while visible and when returning to the tab. A notice such as 2 new requests counts accepted new requests and updates across the whole queue, including requests outside current filters and work entered by staff. Edits and repeated submissions do not increase it. Refresh queue reloads the current URL, keeping filters and resetting the notice. It never refreshes automatically.
 
 While a form has unsaved edits, Refresh queue is disabled with an explanation. Saving another form is also blocked until the other drafts are saved or undone, and normal navigation/reload gets the browser's unsaved-changes prompt. Applying an information template is a draft change too. No drafts are stored in browser storage or sent by polling. Network/session failures show that arrival checking is unavailable; existing rows and drafts stay intact. The signed, staff-only poll returns only a count, uses no-store caching, and expires after seven days; refresh the queue when ready to resume.
+
+## Recover an unfinished client form
+
+Public submission forms save partial answers automatically after editing. The saved form is not a submitted request: it has no queue position and sends no email. On returning in the same browser, choose **Resume saved form**. Each successful save keeps the draft for seven days. Up to five drafts can be retained per browser session. Clearing cookies, using another browser/device, or ending the session can make recovery unavailable. On shared devices, choose **Discard saved form and start fresh**.
+
+Answers are stored in the database, bound to the browser session; they are not stored in localStorage or placed in the resume URL. Terms acceptance and CAPTCHA are never saved. Final submission still validates all required answers and uploads. Unsubmitted files expire after 24 hours. Recovery lists expired filenames so the client can upload them again or explicitly acknowledge proceeding without them. Saved answers are removed when a submission commits, and expired drafts are removed by the existing cleanup worker. Conflicting edits from multiple tabs require resuming the latest saved draft.
+
+## Submission history and receipts
+
+After email verification, **Track my project** shows the original submitter's full saved public answers, uploaded file list, and **Download submission receipt** for each request. The downloaded receipt is a text file. Later staff edits do not rewrite the submitted record. Updates retain separate request IDs and places in line. Shared project access does not expose another submitter's billing or full form answers; original archived files without private storage keys remain identified as archive records.
+
+## Deliver completed files
+
+Open **Manage → Deliver completed files** from the request row. It opens a separate tab to protect unfinished queue edits. Upload up to ten completed files, 100 MB each, and enter an optional client message. Choose **Preview delivery email**, review the recipient, message and filenames, then **Send completed files**. Internal notes are excluded. The client receives secure file links and sees the release under **Completed files delivered by Provost Home Design**. Original submissions stay separate. Sending files does not change the request status; save Completed separately when appropriate.
+
+Delivery requires staff view/change permission and existing client access to that request. Previews expire after 30 minutes; changed recipients, edits or files require another preview. Duplicate confirmation does not send another email. Email delivery states and guarded retries appear in the queue's email history/issues. Downloads use the existing private storage and verified access; no public S3 URLs or email file attachments are introduced.
+
+## One optional information reminder
+
+In **Request more information**, leave **Send the client one reminder on** blank for no reminder, or choose a future date. The date appears in the email preview. The existing worker queues one reminder only if the original question was emailed successfully and the request is still waiting on that same client. Verified responses, status/contact changes, revoked access or a newer question suppress it. Eligibility is checked again before sending. A message already being handed to the mail provider cannot be recalled. Reminder state appears with the information-request history and email issues. Reminders do not change queue order or status.
+
+## System health and independent alerts
+
+Expand **System health** above the queue for the last successful worker run and actionable issues. Checks cover background jobs without success for 15 minutes, delayed/failed/uncertain mail and appointment exceptions. The public `/queue-health/` endpoint returns only a minimal health signal, never customer details, filenames, counts, credentials or provider errors.
+
+The existing Google Apps Script project can independently check this endpoint every five minutes. Its source and activation instructions are in `ops/WebsiteQueueMonitor.gs` and `docs/QUEUE_RECOVERY_AND_MONITORING.md`. Two consecutive failed checks produce one owner alert, and recovery produces one recovery email. Activation requires the additional external-request permission and running `enableWebsiteQueueMonitor` once. No new paid Render service is required. Monitoring is not active merely because the script file exists.
+
+## Upgrade deployment
+
+Apply migrations 0014–0016 before serving the upgraded web and worker code. They add draft, completed-file delivery, reminder and heartbeat records; they do not change existing jobs, submission IDs, original answers or attachments. The existing `run_queue_jobs` schedule handles delivery, reminders, cleanup and heartbeat updates. No new Django environment variables are required. Validation includes 258 isolated PostgreSQL checks, draft JavaScript checks and monitor behavior checks. The recovery rehearsal and verified cloud settings are documented separately.

@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .access import normalize_email, resolve_project
-from .models import Attachment, PendingUpload, ProjectClaim, Submission, WorkItem
+from .models import Attachment, IntakeDraft, PendingUpload, ProjectClaim, Submission, WorkItem
 from .notifications import queue_receipts
 from .services import create_work
 
@@ -20,6 +20,7 @@ def submit_intake(*, data, nonce, binding, verified_email="", labels=None):
     existing = Submission.objects.select_related("work_item").filter(idempotency_key=key).first()
     if existing:
         return existing.work_item, False
+    IntakeDraft.objects.filter(pk=nonce, session_digest=binding).delete()
     try:
         upload_ids = [uuid.UUID(value) for value in data.get("upload_ids", "").split(",") if value]
     except ValueError:

@@ -11,7 +11,7 @@ from .models import WorkItem
 PRIVATE_FIELDS = {"intake_token", "upload_ids", "website"}
 
 
-def submitted_answers(submission, absolute_url):
+def answer_rows(submission, absolute_url):
     lines = []
     # Only public form questions may enter a client receipt. Retain the saved
     # answers rather than reconstructing them from a staff-edited WorkItem.
@@ -29,17 +29,21 @@ def submitted_answers(submission, absolute_url):
         elif isinstance(value, list):
             value = ", ".join(map(str, value))
         heading = label if label.endswith(("?", ".", "!", ":")) else label + ":"
-        lines.append(f"{heading}\n{value}")
+        lines.append((heading, str(value)))
     terms = submission.answers.get("Terms URL")
     if terms:
-        lines.append(f"Terms & Conditions:\n{absolute_url(terms) if terms.startswith('/') else terms}")
+        lines.append(("Terms & Conditions:", absolute_url(terms) if terms.startswith('/') else terms))
     accepted = submission.answers.get("Terms accepted at")
     if accepted:
         parsed = parse_datetime(accepted)
         if parsed and timezone.is_aware(parsed):
             accepted = date_format(timezone.localtime(parsed), "M j, Y, g:i A T")
-        lines.append(f"Terms accepted at:\n{accepted}")
-    return "\n\n".join(lines)
+        lines.append(("Terms accepted at:", str(accepted)))
+    return lines
+
+
+def submitted_answers(submission, absolute_url):
+    return "\n\n".join(f"{label}\n{value}" for label, value in answer_rows(submission, absolute_url))
 
 
 def submission_record(submission, absolute_url):

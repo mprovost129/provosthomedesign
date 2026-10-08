@@ -36,13 +36,13 @@ def information_email(item, message):
 
 
 @transaction.atomic
-def request_information(*, item_id, version, message, followup_date, token, actor):
+def request_information(*, item_id, version, message, followup_date, token, actor, reminder_date=None):
     lock_queue()
     item = WorkItem.objects.select_for_update().get(pk=item_id)
     existing = InformationRequest.objects.filter(token=token).select_related("delivery").first()
     if existing:
         if (existing.work_item_id != item.pk or existing.actor_id != actor.pk
-                or existing.message != message.strip() or existing.followup_date != followup_date):
+                or existing.message != message.strip() or existing.followup_date != followup_date or existing.reminder_date != reminder_date):
             raise ValidationError("This email confirmation was already used. Reload the request before composing another email.")
         return item, False
     if item.version != version:
@@ -52,11 +52,14 @@ def request_information(*, item_id, version, message, followup_date, token, acto
     message = message.strip()
     if not message or len(message) > 5000:
         raise ValidationError("Enter a client message of up to 5,000 characters.")
+    from django.utils import timezone
+    if reminder_date and reminder_date <= timezone.localdate():
+        raise ValidationError('Choose a future date for the client reminder.')
     email = information_email(item, message)
     delivery = NotificationDelivery.objects.create(recipient_kind="client", **email,
         provider_reference=f"queue-{uuid.uuid4().hex}")
     record = InformationRequest.objects.create(work_item=item, actor=actor, message=message,
-        followup_date=followup_date, token=token, delivery=delivery)
+        followup_date=followup_date, token=token, delivery=delivery, reminder_date=reminder_date)
     before = {"status": item.status, "followup_date": str(item.followup_date) if item.followup_date else None}
     item.status = Status.NEEDS_INFORMATION
     item.followup_date = followup_date

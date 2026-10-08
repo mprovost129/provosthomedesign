@@ -29,6 +29,8 @@ class Command(BaseCommand):
             self.stdout.write("Queue features are disabled; no background tasks ran.")
             return
         failed = []
+        from workqueue.health import worker_started, worker_finished
+        run_token = worker_started()
         for name, arguments in tasks:
             try:
                 call_command(name, stdout=self.stdout, stderr=self.stderr, **arguments)
@@ -39,5 +41,6 @@ class Command(BaseCommand):
                 self.stderr.write(f"Background task failed: {name}.")
             finally:
                 close_old_connections()
+        worker_finished(run_token, failed)
         if failed:
             raise CommandError("Queue tasks need attention: " + ", ".join(failed)) from None
