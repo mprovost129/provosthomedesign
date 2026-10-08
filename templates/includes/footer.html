@@ -55,6 +55,11 @@
                 <li><a href="{% url 'pages:resources' %}" class="text-decoration-none text-muted">Resources</a></li>
                 <li><a href="{% url 'pages:get_started' %}" class="text-decoration-none text-muted">Get Started</a></li>
                 <li><a href="{% url 'pages:contact' %}" class="text-decoration-none text-muted">Contact</a></li>
+                {% if intake_enabled %}
+                <li><a href="{% url 'workqueue:submit' %}" class="text-decoration-none text-muted">Submit work or an update</a></li>
+                <li><a href="{% url 'workqueue:tracking' %}" class="text-decoration-none text-muted">Track my project</a></li>
+                {% if booking_enabled %}<li><a href="{% url 'workqueue:book' %}" class="text-decoration-none text-muted">Book an appointment</a></li>{% endif %}
+                {% endif %}
               </ul>
             </div>
             <div class="col-6">
@@ -67,6 +72,7 @@
                 <li><a href="{% url 'pages:terms' %}" class="text-decoration-none text-muted">Terms &amp; Conditions</a></li>
                 {% if request.user.is_authenticated and request.user.is_staff %}
                   <li><a href="{% url 'admin:index' %}" class="text-decoration-none text-muted">Admin</a></li>
+                  {% if work_queue_enabled and perms.workqueue.view_workitem %}<li><a href="{% url 'workqueue:queue' %}" class="text-decoration-none text-muted" rel="nofollow">Work queue</a></li>{% endif %}
                 {% endif %}
               </ul>
             </div>

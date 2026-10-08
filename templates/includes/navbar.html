@@ -66,11 +66,27 @@
                 </li>
               </ul>
             </li>
+            {% if intake_enabled %}
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Projects</a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{% url 'workqueue:submit' %}">Submit work or an update</a></li>
+                <li><a class="dropdown-item" href="{% url 'workqueue:tracking' %}">Track my project</a></li>
+                {% if booking_enabled %}<li><a class="dropdown-item" href="{% url 'workqueue:book' %}">Book an appointment</a></li>{% endif %}
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'pages:get_started' %}">General project inquiry</a></li>
+                {% if work_queue_enabled and request.user.is_staff and perms.workqueue.view_workitem %}
+                <li><a class="dropdown-item" href="{% url 'workqueue:queue' %}" rel="nofollow">Work queue</a></li>
+                {% endif %}
+              </ul>
+            </li>
+            {% else %}
             <li class="nav-item">
               <a class="nav-link {% if m and m.url_name == 'get_started' %}active{% endif %}"
                  href="{% url 'pages:get_started' %}"
                  {% if m and m.url_name == 'get_started' %}aria-current="page"{% endif %}>Get Started</a>
             </li>
+            {% endif %}
             <li class="nav-item">
               <a class="nav-link {% if m and m.url_name == 'contact' %}active{% endif %}"
                  href="{% url 'pages:contact' %}"
