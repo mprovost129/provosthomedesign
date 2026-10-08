@@ -26,3 +26,11 @@ After the website migrations and worker are healthy, select `enableWebsiteQueueM
 Checks use `https://www.provosthomedesign.com/queue-health/` and require HTTP 200 with `ok: true`. Two failed checks produce one alert to `mike@provosthomedesign.com`; a later healthy check produces one recovery message. Repeated failure in the same incident does not email repeatedly. If sending the alert has an uncertain outcome, the monitor intentionally does not retry automatically; review Google's execution history. Apps Script execution/quota failures are a separate dependency and its account should remain monitored.
 
 Local monitor tests verify trigger deduplication, failure threshold, one alert/recovery per incident and uncertain-email handling. The existing Render worker remains responsible for actual queue operations. The monitor does not create clients/jobs, send client messages, modify calendars or expose private records.
+
+## Deployment and monitoring verified — October 8, 2026
+
+Render deployed application commit `485d287a46f5dfee2cc1a2f8f065bdc457f7df7d` successfully to the web service (`dep-db3re1g473hc73bu44ag`) and the existing cron worker (`bld-db3re1o473hc73bu4570`). Repeated subsequent worker runs succeeded. The live queue showed current background jobs and zero email issues. Public submission drafts and staff completed-file delivery links were present. No client jobs were changed or test messages sent to clients during these live checks.
+
+The public health endpoint returned HTTP 200 with `{"ok": true}` and no-store caching. The Google Apps Script project has exactly one `checkWebsiteQueueHealth` time-based trigger. Its setup uses a five-minute interval. A focused Google-hosted `verifyWebsiteQueueMonitor` run returned `httpStatus: 200` and `healthy: true`, and the scheduled handler was also run successfully. The first health check had reported a failure; the later diagnostic confirmed connectivity. Do not infer successful connectivity merely from a completed execution, because the normal handler deliberately catches connection failures. Its failure counter must also clear on a healthy check.
+
+S3 versioning approval remains pending. The original disabled-versioning finding above still applies; document recovery is not claimed as verified.

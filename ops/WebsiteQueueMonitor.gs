@@ -6,6 +6,20 @@ function enableWebsiteQueueMonitor() {
   console.log('Website queue monitoring enabled. Checks every five minutes; two failures trigger one owner alert.');
 }
 
+/** Setup diagnostics contain only public endpoint status, never client data. */
+function verifyWebsiteQueueMonitor() {
+  const endpoint = 'https://www.provosthomedesign.com/queue-health/';
+  try {
+    const response = UrlFetchApp.fetch(endpoint, {muteHttpExceptions: true, followRedirects: false});
+    let ok = false;
+    try { ok = JSON.parse(response.getContentText()).ok === true; } catch (_) {}
+    console.log(JSON.stringify({httpStatus: response.getResponseCode(), healthy: ok}));
+  } catch (error) {
+    console.log(String(error).replace(endpoint, 'public health endpoint').slice(0, 250));
+    throw new Error('Website monitor verification failed. Review its permission or connection error.');
+  }
+}
+
 function checkWebsiteQueueHealth() {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(1000)) return;
