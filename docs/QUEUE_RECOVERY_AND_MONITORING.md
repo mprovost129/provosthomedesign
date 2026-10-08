@@ -10,9 +10,15 @@ In a recovery incident, preserve the affected database, restore to a separate da
 
 ## Private file storage — October 8, 2026
 
-Bucket `phd-intake-private-prod` in `us-east-1` was inspected: Block Public Access is on, ownership is bucket-owner enforced with ACLs disabled, and encryption uses S3-managed keys. At inspection time, bucket versioning was disabled and there were no lifecycle or replication rules. Therefore accidental deletion/overwrite recovery has not yet been established for stored documents. Database exports contain file references, not S3 file contents.
+Bucket `phd-intake-private-prod` in `us-east-1` was inspected: Block Public Access is on, ownership is bucket-owner enforced with ACLs disabled, and encryption uses S3-managed keys. The owner subsequently enabled versioning; both the AWS console and a read-only S3 check confirmed `Enabled`. There are no lifecycle or replication rules. Database exports contain file references, not S3 file contents.
 
-Enabling versioning has been proposed for owner approval. Normal S3 storage charges apply to retained versions. No permanent version deletion, lifecycle expiry or broader app permissions should be introduced without explicit approval. Versioning alone is not an independent backup against loss of the AWS account. Once enabled, verify recovery using disposable samples without deleting client files, and record the result here.
+Normal S3 storage charges apply to retained versions. No permanent version deletion, lifecycle expiry or broader app permissions should be introduced without explicit approval. Versioning alone is not an independent backup against loss of the AWS account.
+
+**Recovery rehearsal passed on October 8, 2026.** AWS CloudTrail recorded versioning activation at `15:56:31 UTC`. The sample test began at `16:11:59 UTC`, after the recommended 15-minute initial propagation window, using only `intake/recovery-checks/1102f90b-2ede-4421-8c2a-b3d362229a8b/sample.txt`. The test uploaded two distinct versions, compared the current replacement and original version byte-for-byte, performed an ordinary versioned delete, verified the current object returned 404 while the original remained readable, copied the original into a new current version, and verified the restored bytes. A final ordinary delete hid the sample recoverably. No versions or delete markers were permanently deleted, no client files were read or changed, and app permissions were unchanged. The tiny sample version history remains available for audit/recovery.
+
+For a document recovery incident, identify the exact bucket/key from its attachment record. In the owner's AWS console, show object versions and download the appropriate earlier version to inspect its contents. Restore that version by copying it to the same key as a new current version, preserving the version history. Then verify the staff download through the application. Do not permanently delete earlier versions or delete markers as a shortcut. Existing app permissions are unchanged; recovery is an owner operation.
+
+The existing application cleanup removes current expired staging/unsubmitted objects with ordinary storage deletes and retains submitted attachments. In a versioned bucket, these deletes leave recoverable versions; they do not reclaim the earlier versions' storage. Review storage growth and consider a separately approved, prefix-specific retention policy for temporary staging files. Do not introduce a blanket expiry for submitted `intake/ready/` files.
 
 ## Independent monitor activation
 
@@ -33,4 +39,4 @@ Render deployed application commit `485d287a46f5dfee2cc1a2f8f065bdc457f7df7d` su
 
 The public health endpoint returned HTTP 200 with `{"ok": true}` and no-store caching. The Google Apps Script project has exactly one `checkWebsiteQueueHealth` time-based trigger. Its setup uses a five-minute interval. A focused Google-hosted `verifyWebsiteQueueMonitor` run returned `httpStatus: 200` and `healthy: true`, and the scheduled handler was also run successfully. The first health check had reported a failure; the later diagnostic confirmed connectivity. Do not infer successful connectivity merely from a completed execution, because the normal handler deliberately catches connection failures. Its failure counter must also clear on a healthy check.
 
-S3 versioning approval remains pending. The original disabled-versioning finding above still applies; document recovery is not claimed as verified.
+S3 versioning and the disposable overwrite/deletion recovery rehearsal are verified. Database export restoration and independent monitoring are also verified as described above. Account migration and an independent copy of the document bucket are outside these completed checks.
