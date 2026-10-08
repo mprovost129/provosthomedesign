@@ -77,7 +77,7 @@ def validate_content(file, name):
                     raise ValidationError("This document contains unsupported protected or active content.")
     except ValidationError:
         raise
-    except (OSError, ValueError, zipfile.BadZipFile, Image.DecompressionBombError, Image.DecompressionBombWarning):
+    except (OSError, ValueError, SyntaxError, zipfile.BadZipFile, Image.DecompressionBombError, Image.DecompressionBombWarning):
         raise ValidationError("This file could not be read. Check it and try uploading again.") from None
     finally:
         file.seek(0)

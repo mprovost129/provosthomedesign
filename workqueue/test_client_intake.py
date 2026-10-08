@@ -573,6 +573,19 @@ class UploadValidationTests(TestCase):
         with self.assertRaises(ValidationError):
             validate_content(file, "macro.docx")
 
+    def test_png_with_corrupt_checksum_is_rejected_as_client_validation(self):
+        from PIL import Image
+        valid = BytesIO()
+        Image.new("RGB", (8, 8), "white").save(valid, format="PNG")
+        damaged = bytearray(valid.getvalue())
+        chunk = damaged.index(b"IDAT")
+        size = int.from_bytes(damaged[chunk - 4:chunk], "big")
+        damaged[chunk + 4 + size] ^= 1
+        file = BytesIO(damaged)
+        with self.assertRaisesMessage(ValidationError, "This file could not be read"):
+            validate_content(file, "picture.png")
+        self.assertEqual(file.tell(), 0)
+
     def test_spoofed_image_and_unsafe_filename_are_rejected(self):
         with self.assertRaises(ValidationError):
             validate_content(BytesIO(b"<script>not an image</script>"), "picture.png")
