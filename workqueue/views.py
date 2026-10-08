@@ -1,3 +1,4 @@
+import json
 import uuid
 from functools import wraps
 from urllib.parse import urlencode
@@ -74,6 +75,36 @@ def arrivals(request):
     # The allocator advances exactly once per committed request, including updates and staff entry.
     current = QueueState.objects.get(pk=1).last_reference_number
     return JsonResponse({"count": max(0, current - baseline)})
+
+
+@queue_enabled
+@staff_member_required(login_url="admin:login")
+@permission_required(("workqueue.view_workitem", "workqueue.change_workitem"), raise_exception=True)
+@never_cache
+@require_http_methods(["GET", "POST"])
+def ordering(request):
+    from .ordering import order_snapshot, save_order
+    if staff_preview(request):
+        raise PermissionDenied
+    if request.method == "GET":
+        return JsonResponse(order_snapshot())
+    try:
+        if len(request.body) > 1024 * 1024:
+            raise ValueError
+        data = json.loads(request.body)
+        if not isinstance(data, dict) or set(data) != {"ordered_ids", "snapshot"}:
+            raise ValueError
+        if not isinstance(data["snapshot"], str):
+            raise ValueError
+    except (ValueError, UnicodeDecodeError):
+        return JsonResponse({"error": "Invalid queue order."}, status=400)
+    try:
+        changed = save_order(ordered_ids=data["ordered_ids"], snapshot=data["snapshot"], actor=request.user)
+    except EditConflict as exc:
+        return JsonResponse({"error": str(exc)}, status=409)
+    except ValidationError as exc:
+        return JsonResponse({"error": " ".join(exc.messages)}, status=400)
+    return JsonResponse({"saved": True, "changed": changed})
 
 
 @queue_enabled

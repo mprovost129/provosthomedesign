@@ -93,6 +93,29 @@
 .queue-work .response-review .preserve-lines { max-height:240px; overflow:auto; }
 .queue-work .response-review form { margin-top:10px; }
 .queue-work .response-history { padding:10px; margin-top:10px; background:#eff8f4; border-radius:5px; }
+.queue-work .queue-ordering { margin:16px 0; }
+.queue-work #queue-order-panel { padding:18px; border:1px solid #8eb8d0; border-radius:10px; background:white; }
+.queue-work #queue-order-panel h2 { margin-top:0; }
+.queue-work .queue-order-list { padding:0; margin:16px 0; list-style:none; max-height:60vh; overflow-y:auto; overscroll-behavior:contain; border:1px solid var(--line); border-radius:8px; }
+.queue-work .queue-order-list li { display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid var(--line); background:white; }
+.queue-work .queue-order-list li:nth-child(even) { background:#edf3f8; }
+.queue-work .queue-order-list li:last-child { border-bottom:0; }
+.queue-work .order-job { flex:1; min-width:0; overflow-wrap:anywhere; }
+.queue-work .order-job small { display:block; color:var(--muted); margin-top:3px; }
+.queue-work .order-rank { min-width:26px; font-size:20px; font-weight:700; text-align:center; }
+.queue-work button.order-handle { touch-action:none; user-select:none; cursor:grab; font-size:24px; min-width:44px; min-height:44px; padding:0; }
+.queue-work .order-row-actions { display:flex; gap:6px; }
+.queue-work .order-row-actions button { min-width:44px; min-height:44px; font-size:20px; padding:0; }
+.queue-work .queue-order-list .order-dragging { outline:3px solid var(--blue); outline-offset:-3px; background:#dceefb; }
+.queue-work .order-dragging .order-handle { cursor:grabbing; }
+.queue-work .order-actions { display:flex; gap:10px; flex-wrap:wrap; }
+.queue-work [data-order-status] { margin:12px 0 0; }
+@media(max-width:600px) {
+  .queue-work #queue-order-panel { padding:12px; }
+  .queue-work .queue-order-list li { gap:8px; padding:10px 8px; }
+  .queue-work .order-job { font-size:13px; }
+  .queue-work .order-row-actions { flex-direction:column; }
+}
 @media(max-width:700px) {
   .queue-work .attention-links { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .queue-work .information-compose .fields { grid-template-columns:1fr; }

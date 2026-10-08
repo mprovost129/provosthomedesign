@@ -42,6 +42,7 @@
     });
   });
   queue.addEventListener("submit", function (event) {
+    if (event.defaultPrevented) return;
     const others = Array.from(dirty).filter(function (draft) { return draft !== event.target; });
     if (others.length) {
       event.preventDefault();
@@ -60,6 +61,22 @@
     }
   });
   window.addEventListener("pageshow", function () { navigating = false; });
+
+  // The arranger uses the same draft protection as status, notes and emails.
+  queue.addEventListener("queue:before-order", function (event) {
+    if (Array.from(dirty).some(function (form) { return form !== event.detail.form; })) {
+      event.preventDefault();
+      warning.textContent = "Save or undo your other unsaved edits before arranging the queue.";
+      warning.hidden = false;
+      warning.tabIndex = -1;
+      warning.focus();
+    }
+  });
+  queue.addEventListener("queue:refresh-after-order", function (event) {
+    if (dirty.size) { event.preventDefault(); protectRefresh(); return; }
+    navigating = true;
+    window.location.reload();
+  });
 
   const source = document.getElementById("information-templates");
   if (source) {

@@ -50,6 +50,7 @@
     </form>
   </details>{% endif %}
   {% if booking_enabled %}<p><a href="#appointments">Client appointments and booking access</a></p>{% endif %}
+  {% include 'workqueue/ordering.html' %}
   <p class="muted">Positions reflect the full active queue, even when filtered. Priority does not change order. Closed work remains in All work.</p>
   <div class="table-scroll" tabindex="0" role="region" aria-label="Work requests">
   <table>
@@ -159,4 +160,5 @@
 {% block tool_scripts %}
 {{ information_templates|json_script:'information-templates' }}
 <script src="{% static 'js/work-queue.js' %}" defer></script>
+<script src="{% static 'js/queue-ordering.js' %}" defer></script>
 {% endblock %}

@@ -1,0 +1,20 @@
+{% if can_change %}
+<section class="queue-ordering" data-queue-ordering data-url="{% url 'workqueue:ordering' %}">
+  <button type="button" data-open-order hidden aria-expanded="false" aria-controls="queue-order-panel">Arrange queue</button>
+  <div id="queue-order-panel" hidden>
+    <h2>Arrange the active queue</h2>
+    <p id="order-help">All active requests are shown here, including jobs outside your current filters. Drag a handle to move a job, or use the up/down buttons. With a keyboard, focus a handle and press an arrow key.</p>
+    <p class="muted">Save order updates the positions clients see when they check their requests. Each update keeps its own place in line. No position-change emails are sent.</p>
+    <form method="post" data-order-form aria-label="Arrange active queue">
+      {% csrf_token %}<input type="hidden" name="order_draft" value="">
+      <ol class="queue-order-list" data-order-list aria-describedby="order-help"></ol>
+      <div class="order-actions">
+        <button type="submit" data-save-order disabled>Save order</button>
+        <button type="button" class="secondary" data-cancel-order>Cancel</button>
+        <button type="button" class="secondary" data-reload-order hidden>Reload order</button>
+      </div>
+    </form>
+    <p data-order-status role="status" aria-live="polite"></p>
+  </div>
+</section>
+{% endif %}

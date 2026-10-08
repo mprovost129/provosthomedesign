@@ -52,7 +52,17 @@ Both Save status and Save request offer a client-email choice, defaulting to Ski
 
 Messages include only the client name, request ID, project name, the selected milestone and a tracking link. Internal notes, phone/billing data, staff reminders and queue positions are excluded. Clients sign in using their submitting email. Completion messages do not claim that files are attached or delivered. Client milestone emails in Manage shows the saved send/skip decision, staff member, recipient and delivery state. Failed/uncertain deliveries also appear under Email issues and use the existing guarded retry flow. Repeated/concurrent saves cannot create duplicate messages for one transition. Status and outbox writes commit together; if email preparation fails, choose Skip email to save without a message. Existing background jobs deliver queued messages without new services or settings.
 
-## New requests while working
+## Arrange the queue
+
+Click **Arrange queue** above the work table. The panel includes every active request, regardless of filters or pagination. Drag the left-hand handle, use the up/down buttons, or focus a handle and use the arrow keys. Click **Save order** to apply the order and refresh the current view. **Cancel** discards the arrangement. Clients see the saved positions on their next tracking check; no position-change emails are sent.
+
+Updates remain separate work items connected to their projects. Closed work stays outside the arranger; original receipt positions, request IDs, files, statuses and internal notes are preserved. Newly submitted work still appends to the active queue. Existing Queue order fields remain available for manual edits.
+
+Save or undo other form drafts before arranging. A pending arrangement also protects against refreshing or saving another form and losing the order draft. If a new request arrives or another tab edits the queue before saving, the server rejects the stale arrangement without changing any jobs. Use **Reload order**, review the current jobs, and arrange again. A timeout or lost response also requires reloading the order before retrying, since the save may have completed.
+
+The staff-only `/work-queue/order/` endpoint requires both view and change permissions, CSRF on POST, and a signed snapshot (two-hour lifetime). Saves validate the complete active set under the existing queue-state lock, update item versions, and record each affected job's previous/new position and order in Change history. No migration, new service or environment setting is required.
+
+## Arrival notice and drafts
 
 The staff page checks for arrivals every 30 seconds while visible and when returning to the tab. A notice such as 2 new requests counts accepted new requests and updates across the whole queue, including requests outside current filters and work entered by staff. Edits and repeated submissions do not increase it. Refresh queue reloads the current URL, keeping filters and resetting the notice. It never refreshes automatically.
 
