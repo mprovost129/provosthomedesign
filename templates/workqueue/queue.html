@@ -1,15 +1,8 @@
-{% load static %}
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex, nofollow">
-  <title>Work Queue · Provost Home Design</title>
-  <link rel="stylesheet" href="{% static 'css/work-queue.css' %}">
-</head>
-<body>
-<a class="skip-link" href="#queue">Skip to work queue</a>
+{% extends 'workqueue/site_base.html' %}{% load static %}
+{% block title %}Work Queue{% endblock %}
+{% block tool_styles %}<link rel="stylesheet" href="{% static 'css/work-queue.css' %}">{% endblock %}
+{% block workspace %}
+<div class="queue-work" id="content" tabindex="-1">
 <header class="site-header"><div><span class="brand">Provost Home Design</span><h1>Work Queue</h1>
   <p>{{ active_count }} active request{{ active_count|pluralize }} · {{ closed_count }} closed</p></div>
   <nav aria-label="Staff tools">{% if intake_enabled %}<a href="{% url 'workqueue:submit' %}" target="_blank" rel="noopener">Client form</a> · {% endif %}<a href="{% url 'admin:index' %}">Administration</a></nav>
@@ -115,4 +108,5 @@
 {% include 'workqueue/appointments.html' %}
 {% include 'workqueue/appointments_closed.html' %}
 </main>
-</body></html>
+</div>
+{% endblock %}

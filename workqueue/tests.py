@@ -191,11 +191,13 @@ class QueuePageTests(TestCase):
         self.assertEqual(self.client.post(self.url, {"action": "status", "item_id": self.item.pk,
             "version": 1, "status": "completed"}).status_code, 403)
 
-    def test_queue_renders_without_public_navigation_or_analytics_and_is_not_cached(self):
+    def test_queue_has_website_navigation_without_analytics_and_is_not_cached(self):
         self.login()
         response = self.client.get(self.url)
         self.assertContains(response, self.item.reference)
         self.assertContains(response, "Add work from a phone call or email")
+        self.assertContains(response, 'aria-label="Primary"')
+        self.assertContains(response, 'aria-label="Footer"')
         self.assertNotContains(response, "googletagmanager")
         self.assertIn("no-store", response["Cache-Control"])
 

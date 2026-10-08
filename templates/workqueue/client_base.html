@@ -1,17 +1,13 @@
-{% load static %}
-<!doctype html><html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex, nofollow"><meta name="referrer" content="same-origin">
-<title>{% block title %}Your Project{% endblock %} · Provost Home Design</title>
-<link rel="icon" href="{% static 'images/phdlogo.svg' %}" type="image/svg+xml">
-<link rel="stylesheet" href="{% static 'css/client-intake.css' %}">
-{% block head %}{% endblock %}
-</head><body>
-<header class="client-header"><a class="brand" href="/"><img src="{% static 'images/phdlogo.svg' %}" alt="Provost Home Design" width="165" height="60"></a>
-<nav aria-label="Client tools"><a href="{% url 'workqueue:submit' %}">Submit work</a><a href="{% url 'workqueue:tracking' %}">Track my project</a>{% if booking_enabled %}<a href="{% url 'workqueue:book' %}">Book an appointment</a>{% endif %}</nav></header>
-<main>{% for message in messages %}<p class="notice" role="status">{{ message }}</p>{% endfor %}{% block content %}{% endblock %}</main>
-<footer>Provost Home Design · Custom House &amp; Framing Plans</footer>
+{% extends 'workqueue/site_base.html' %}{% load static %}
+{% block tool_styles %}<link rel="stylesheet" href="{% static 'css/client-intake.css' %}">{% endblock %}
+{% block workspace %}
+<div class="client-work">
+<nav class="client-tools" aria-label="Client tools"><a href="{% url 'workqueue:submit' %}">Submit work</a><a href="{% url 'workqueue:tracking' %}">Track my project</a>{% if booking_enabled %}<a href="{% url 'workqueue:book' %}">Book an appointment</a>{% endif %}</nav>
+<main id="content" tabindex="-1">{% for message in messages %}<p class="notice" role="status">{{ message }}</p>{% endfor %}{% block content %}{% endblock %}</main>
+</div>
+{% endblock %}
+{% block tool_scripts %}
 {% if client_recaptcha_site_key %}<script src="https://www.google.com/recaptcha/{% if client_recaptcha_enterprise %}enterprise{% else %}api{% endif %}.js?render={{ client_recaptcha_site_key|urlencode }}" defer></script>{% endif %}
 <script id="client-recaptcha-config" src="{% static 'js/client-recaptcha.js' %}" data-site-key="{{ client_recaptcha_site_key }}" data-enterprise="{{ client_recaptcha_enterprise|yesno:'true,false' }}" data-local="{{ client_recaptcha_local|yesno:'true,false' }}" defer></script>
 {% block scripts %}{% endblock %}
-</body></html>
+{% endblock %}
