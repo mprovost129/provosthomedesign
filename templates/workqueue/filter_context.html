@@ -1,1 +1,1 @@
-{% for name,value in filters.items %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endfor %}
+{% for name,value in filters.items %}<input type="hidden" name="filter_{{ name }}" value="{{ value }}">{% endfor %}

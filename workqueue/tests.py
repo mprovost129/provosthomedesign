@@ -209,6 +209,26 @@ class QueuePageTests(TestCase):
         self.assertEqual(len(all_work.context["rows"]), 1)
         self.assertContains(all_work, "Closed")
 
+    def test_completing_work_keeps_remaining_active_queue_visible(self):
+        self.login()
+        remaining = create_work(data=work_data(contact_full_name="Second Client"), actor=self.owner)[0]
+        response = self.client.post(self.url, {"action": "status", "item_id": self.item.pk,
+            "version": 1, "status": "completed", "filter_scope": "active", "filter_status": ""}, follow=True)
+        self.assertEqual(response.context["filters"]["status"], "")
+        self.assertEqual([row["item"].pk for row in response.context["rows"]], [remaining.pk])
+        self.assertContains(response, 'name="filter_status"')
+
+    def test_status_change_preserves_distinct_search_and_status_filters(self):
+        self.login()
+        response = self.client.post(self.url, {"action": "status", "item_id": self.item.pk,
+            "version": 1, "status": "completed", "filter_scope": "all", "filter_status": "new",
+            "filter_q": "Morgan", "filter_priority": "normal"}, follow=True)
+        self.assertEqual(response.context["filters"]["status"], "new")
+        self.assertEqual(response.context["filters"]["q"], "Morgan")
+        self.assertEqual(response.context["filters"]["priority"], "normal")
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.status, "completed")
+
     def test_stale_status_returns_conflict_without_overwrite(self):
         self.login()
         edit_work(item_id=self.item.pk, version=1, data={"status": "on_hold"}, actor=self.owner)

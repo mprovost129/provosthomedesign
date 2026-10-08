@@ -39,7 +39,8 @@ def queue_enabled(view):
 
 def filters_from(request):
     data = request.GET if request.method == "GET" else request.POST
-    return {name: data.get(name, "")[:200] for name in ["q", "scope", "status", "priority", "page", "received_from", "received_to"]}
+    prefix = "" if request.method == "GET" else "filter_"
+    return {name: data.get(prefix + name, "")[:200] for name in ["q", "scope", "status", "priority", "page", "received_from", "received_to"]}
 
 
 def queue_redirect(filters, item=None):
