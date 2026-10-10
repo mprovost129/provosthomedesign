@@ -1,0 +1,10 @@
+{% extends 'workqueue/site_base.html' %}{% load static %}
+{% block title %}Add client{% endblock %}
+{% block tool_styles %}<link rel="stylesheet" href="{% static 'css/work-queue.css' %}"><link rel="stylesheet" href="{% static 'css/crm.css' %}">{% endblock %}
+{% block workspace %}<div class="queue-work crm-work" id="content" tabindex="-1">
+<header class="site-header"><div><span class="brand">Private client directory</span><h1>Add client</h1><p>Record a client from a phone call, email or referral.</p></div><nav aria-label="Staff tools"><a href="{% url 'workqueue:clients' %}">All clients</a> · <a href="{% url 'workqueue:queue' %}">Work queue</a></nav></header>
+<main class="crm-entry"><form method="post">{% csrf_token %}{{ form.intake_token }}
+{% if form.errors %}<div class="notice error" role="alert">Please correct the fields below.{{ form.non_field_errors }}{{ form.intake_token.errors }}</div>{% endif %}
+<section class="crm-card"><h2>Client details</h2><p class="muted">Only the client name and type are required. You can add contact details later. An existing email opens its current client record.</p><div class="fields">{% for field in form.visible_fields %}<div class="field {% if field.name == 'internal_notes' %}crm-wide{% endif %}"><div class="crm-label">{{ field.label_tag }}{% if field.field.required %}<span class="required">Required</span>{% endif %}</div>{{ field }}{{ field.errors }}</div>{% endfor %}</div></section>
+<div class="crm-actions"><button>Add client</button><a href="{% url 'workqueue:clients' %}">Cancel</a></div>
+</form></main></div>{% endblock %}

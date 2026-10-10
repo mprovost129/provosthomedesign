@@ -1,8 +1,8 @@
 (() => {
   'use strict';
-  const form = document.getElementById('client-intake') || document.getElementById('completion-delivery');
+  const form = document.getElementById('client-intake') || document.getElementById('completion-delivery') || document.getElementById('crm-work-entry');
   if (!form) return;
-  const delivery = form.id === 'completion-delivery';
+  const delivery = form.id !== 'client-intake';
   const submit = document.getElementById('submit-request');
   const chooser = document.getElementById('project-files');
   const list = document.getElementById('upload-list');

@@ -16,5 +16,21 @@
 .crm-work .crm-undo {display:grid;justify-items:start;gap:6px;margin-top:18px;}
 .crm-work .field select {width:100%;}
 .crm-work button {margin-top:8px;}
+.crm-work .crm-entry {max-width:1000px;}
+.crm-work .crm-entry .fields {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:20px;}
+.crm-work .crm-wide {grid-column:1/-1;}
+.crm-work .crm-label {display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+.crm-work .crm-label label {margin:0 0 6px;}
+.crm-work .crm-entry input:not([type=hidden]), .crm-work .crm-entry select {min-height:44px;}
+.crm-work .crm-actions {display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+.crm-work .crm-projects {display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}
+.crm-work .crm-project {border:1px solid var(--line);border-radius:8px;padding:16px;}
+.crm-work .crm-project h3 {font-size:17px;margin:0 0 8px;}
+.crm-work .crm-entry [hidden] {display:none;}
+.crm-work .upload-zone {display:block;border:2px dashed var(--line);border-radius:8px;padding:18px;}
+.crm-work #upload-list li {display:flex;gap:12px;align-items:center;justify-content:space-between;padding:8px 0;}
+.crm-work #upload-list progress {display:block;}
+.crm-work .upload-failed {color:#a32626;}
+@media(max-width:600px) {.crm-work .crm-entry .fields {grid-template-columns:minmax(0,1fr);}}
 .crm-work :focus-visible {outline:3px solid #c58825;outline-offset:3px;}
 @media(max-width:850px) {.crm-work .crm-layout {grid-template-columns:minmax(0,1fr);}.crm-work .site-header {flex-wrap:wrap;}}

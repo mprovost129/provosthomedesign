@@ -4,8 +4,102 @@ from django.db import transaction
 from django.db.models import Q
 
 from .crm_identity import company_key, email_key, link_item, normalized_text, phone_key
-from .models import Client, ClientContact, ClientEvent, WorkItem
+from .models import Attachment, Client, ClientContact, ClientEvent, PendingUpload, Submission, WorkItem
 from .services import EditConflict, lock_queue
+
+
+def require_staff(actor, permission):
+    from django.core.exceptions import PermissionDenied
+    if not (actor and actor.is_active and actor.is_staff and actor.has_perms(
+            ("workqueue.view_workitem", permission))):
+        raise PermissionDenied
+
+
+@transaction.atomic
+def create_client(*, data, nonce, actor):
+    """The session-bound nonce prevents duplicate phone-only entries on retry."""
+    require_staff(actor, "workqueue.change_workitem")
+    lock_queue()
+    existing = Client.objects.filter(pk=nonce).first()
+    if existing:
+        return existing.merged_into or existing, False
+    email = email_key(data.get("email"))
+    if data.get("email") and not email:
+        raise ValidationError("Enter a valid email address or leave it blank.")
+    contact = ClientContact.objects.select_related("client").filter(email=email).first() if email else None
+    if contact:
+        return contact.client, False
+    client = Client(id=nonce, **{name: data[name] for name in (
+        "name", "kind", "billing_street", "billing_city", "billing_state", "billing_zip", "internal_notes")})
+    client.normalized_name = normalized_text(client.name)
+    client.full_clean()
+    client.save()
+    full_name = data.get("full_name") or (client.name if client.kind == Client.Kind.INDIVIDUAL else "")
+    contact = ClientContact(client=client, email=email, full_name=full_name, phone=data.get("phone", ""),
+        submitted_company=client.name if client.kind == Client.Kind.COMPANY else "Homeowner",
+        normalized_name=normalized_text(full_name), normalized_phone=phone_key(data.get("phone", "")),
+        normalized_company=normalized_text(client.name) if client.kind == Client.Kind.COMPANY else "")
+    contact.full_clean()
+    contact.save()
+    ClientEvent.objects.create(client=client, actor=actor, action="Client added manually", changes={"contact": str(contact.pk)})
+    return client, True
+
+
+@transaction.atomic
+def create_client_work(*, client_id, version, data, nonce, binding, actor):
+    """Explicit staff association, validated again under the shared queue lock."""
+    import uuid
+    from django.utils import timezone
+    from .services import create_work
+    require_staff(actor, "workqueue.add_workitem")
+    lock_queue()
+    key = f"crm:{actor.pk}:{client_id}:{nonce}"
+    existing = Submission.objects.select_related("work_item").filter(idempotency_key=key).first()
+    if existing:
+        return existing.work_item, False
+    client = checked_client(client_id, version)
+    contact = client.contacts.filter(pk=data["contact"].pk).first()
+    if contact is None:
+        raise ValidationError("Choose a contact belonging to this client.")
+    project = data.get("project")
+    if project and not WorkItem.objects.filter(project=project, client_contact__client=client).exists():
+        raise ValidationError("Choose one of this client's projects.")
+    if data["kind"] == "update" and not project:
+        raise ValidationError("Select the existing project for this update.")
+    try:
+        ids = [uuid.UUID(value) for value in data.get("upload_ids", "").split(",") if value]
+    except ValueError:
+        raise ValidationError("The file list is invalid.") from None
+    if len(ids) > 10 or len(ids) != len(set(ids)):
+        raise ValidationError("Select up to 10 different uploaded files.")
+    uploads = list(PendingUpload.objects.select_for_update().filter(pk__in=ids, intake_nonce=nonce,
+        session_digest=binding, state="ready", expires_at__gt=timezone.now()))
+    if len(uploads) != len(ids):
+        raise ValidationError("A file is incomplete or expired. Upload it again before saving.")
+    fields = {name: data.get(name, "") for name in (
+        "kind", "project_name", "service_needed", "description", "project_street", "project_city", "project_state", "project_zip")}
+    fields.update(project=project, contact_full_name=contact.full_name or client.name,
+        company=client.name if client.kind == Client.Kind.COMPANY else "Homeowner",
+        contact_email=contact.email or "", contact_phone=contact.phone,
+        requested_deadline=data.get("requested_deadline"), source="Manual CRM entry")
+    for name in ("billing_street", "billing_city", "billing_state", "billing_zip"):
+        fields[name] = getattr(client, name)
+    if project:
+        fields.update(project_name=project.name, project_street=project.street,
+            project_city=project.city, project_state=project.state, project_zip=project.zip_code)
+    item, created = create_work(data=fields, actor=actor, idempotency_key=key, staff_contact=contact)
+    submission = item.submissions.get(idempotency_key=key)
+    # Use readable, frozen labels instead of database field names in history.
+    submission.answers = {name.replace("_", " ").capitalize(): value
+                          for name, value in submission.answers.items()}
+    submission.answers["Kind"] = item.get_kind_display()
+    submission.save(update_fields=["answers"])
+    for upload in uploads:
+        attachment = Attachment.objects.create(submission=submission, original_name=upload.original_name,
+            storage_key=upload.storage_key, content_type=upload.content_type, size_bytes=upload.size_bytes)
+        upload.state, upload.attachment = "attached", attachment
+        upload.save(update_fields=["state", "attachment"])
+    return item, created
 
 
 def attach_client(item):

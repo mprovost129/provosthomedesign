@@ -8,14 +8,17 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Count, Max, Q
 from django import forms
+from django.conf import settings
+from django.utils import timezone
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 
-from .crm import edit_client, merge_clients, possible_matches, save_contact, undo_merge
-from .crm_forms import ClientForm, ContactForm, MergeForm, UndoForm
-from .models import Appointment, Client, ClientEvent, CLOSED_STATUSES, WorkItem
+from .crm import create_client, create_client_work, edit_client, merge_clients, possible_matches, save_contact, undo_merge
+from .crm_forms import ClientForm, ClientWorkForm, NewClientForm, ContactForm, MergeForm, UndoForm
+from .models import Appointment, Client, ClientEvent, CLOSED_STATUSES, PendingUpload, WorkItem, WorkProject
+from .access import new_intake_token, read_intake_token, session_digest
 from .services import EditConflict
 from .views import queue_enabled, staff_preview
 
@@ -52,7 +55,71 @@ def clients(request):
     page = Paginator(queryset.order_by("name", "id"), 30).get_page(request.GET.get("page"))
     return render(request, "workqueue/clients.html", {"page": page, "q": query, "scope": scope,
         "page_query": urlencode({"q": query, "scope": scope}),
-        "client_count": Client.objects.filter(merged_into__isnull=True).count()})
+        "client_count": Client.objects.filter(merged_into__isnull=True).count(),
+        "can_add_client": not staff_preview(request) and request.user.has_perm("workqueue.change_workitem")})
+
+
+@queue_enabled
+@staff_member_required(login_url="admin:login")
+@permission_required(("workqueue.view_workitem", "workqueue.change_workitem"), raise_exception=True)
+@never_cache
+@require_http_methods(["GET", "POST"])
+def add_client(request):
+    if staff_preview(request):
+        raise PermissionDenied
+    form = NewClientForm(request.POST or None, initial={"intake_token": new_intake_token(request)})
+    status = 200
+    if request.method == "POST":
+        status = 400
+        if form.is_valid():
+            try:
+                client, created = create_client(data=form.cleaned_data,
+                    nonce=read_intake_token(request, form.cleaned_data["intake_token"]), actor=request.user)
+            except ValidationError as exc:
+                form.add_error(None, exc)
+            else:
+                messages.success(request, "Client added. You can now add their work." if created else
+                    "This client is already recorded. Opened the existing record without creating a duplicate.")
+                return redirect("workqueue:client_detail", client.pk)
+    return render(request, "workqueue/add_client.html", {"form": form}, status=status)
+
+
+@queue_enabled
+@staff_member_required(login_url="admin:login")
+@permission_required(("workqueue.view_workitem", "workqueue.add_workitem"), raise_exception=True)
+@never_cache
+@require_http_methods(["GET", "POST"])
+def add_client_work(request, client_id):
+    if staff_preview(request):
+        raise PermissionDenied
+    client = get_object_or_404(Client, pk=client_id, merged_into__isnull=True)
+    first_contact = client.contacts.first()
+    form = ClientWorkForm(request.POST or None, client=client, initial={"intake_token": new_intake_token(request),
+        "version": client.version, "kind": "new", "contact": first_contact})
+    status, ready = 200, []
+    if request.method == "POST":
+        status = 400
+        if form.is_valid():
+            try:
+                nonce = read_intake_token(request, form.cleaned_data["intake_token"])
+                item, created = create_client_work(client_id=client.pk, version=form.cleaned_data["version"],
+                    data=form.cleaned_data, nonce=nonce, binding=session_digest(request), actor=request.user)
+            except (ValidationError, EditConflict) as exc:
+                form.add_error(None, " ".join(exc.messages) if isinstance(exc, ValidationError) else str(exc))
+                status = 409 if isinstance(exc, EditConflict) else 400
+            else:
+                messages.success(request, f"{item.reference} added to this client and the work queue." if created else
+                    f"{item.reference} was already saved. No duplicate job was created.")
+                return redirect("workqueue:client_detail", item.client_contact.client_id)
+    try:
+        nonce = read_intake_token(request, form.data.get("intake_token") if form.is_bound else form.initial["intake_token"])
+        ready = PendingUpload.objects.filter(intake_nonce=nonce, session_digest=session_digest(request),
+            state="ready", expires_at__gt=timezone.now())
+    except ValidationError:
+        pass
+    return render(request, "workqueue/add_client_work.html", {"form": form, "crm_client": client,
+        "ready_uploads": ready, "direct_uploads": settings.INTAKE_DIRECT_UPLOADS,
+        "intake_enabled": settings.WORK_INTAKE_ENABLED}, status=status)
 
 
 @queue_enabled
@@ -140,13 +207,35 @@ def client_detail(request, client_id):
     items = WorkItem.objects.filter(client_contact__client=client).with_position().select_related("project", "client_contact").prefetch_related(
         "submissions__attachments", "submissions__notifications", "completed_deliveries__files", "milestones__delivery",
         "information_requests__delivery").order_by("-received_at", "-id")
+    request_count, active_count = items.count(), items.active().count()
+    projects = WorkProject.objects.filter(work_items__client_contact__client=client).annotate(
+        job_count=Count("work_items", distinct=True),
+        active_jobs=Count("work_items", filter=~Q(work_items__status__in=CLOSED_STATUSES), distinct=True),
+        latest_job=Max("work_items__received_at")).order_by("-latest_job", "name")
+    project_filter = request.GET.get("project", "")
+    unlinked_count = items.filter(project__isnull=True).count()
+    if project_filter == "unlinked":
+        items = items.filter(project__isnull=True)
+    elif project_filter:
+        try:
+            project_id = forms.UUIDField().clean(project_filter)
+        except ValidationError:
+            project_filter = ""
+        else:
+            if projects.filter(pk=project_id).exists():
+                items = items.filter(project_id=project_id)
+            else:
+                project_filter = ""
     page = Paginator(items, 25).get_page(request.GET.get("page"))
     emails = [contact.email for contact in contacts if contact.email]
     events = list(client.events.select_related("actor")[:30])
     reversible = next((event for event in events if event.action == "Client records merged"
                       and event.changes.get("target_version") == client.version), None)
     return render(request, "workqueue/client_detail.html", {"crm_client": client, "contacts": contacts,
-        "page": page, "request_count": items.count(), "active_count": items.active().count(),
+        "page": page, "request_count": request_count, "active_count": active_count,
+        "projects": projects, "project_filter": project_filter, "page_query": urlencode({"project": project_filter}),
+        "unlinked_count": unlinked_count,
+        "can_add_work": not staff_preview(request) and request.user.has_perm("workqueue.add_workitem") and not client.merged_into_id,
         "appointments": Appointment.objects.filter(email__in=emails).select_related("project").order_by("-starts_at")[:30],
         "events": events, "reversible": reversible, "can_change": can_change, "edit_form": edit_form,
         "archives": client.merged_clients.all(),

@@ -9,6 +9,8 @@ from . import crm_views
 app_name = "workqueue"
 urlpatterns = [
     path("clients/", crm_views.clients, name="clients"),
+    path("clients/new/", crm_views.add_client, name="add_client"),
+    path("clients/<uuid:client_id>/add-work/", crm_views.add_client_work, name="add_client_work"),
     path("clients/<uuid:client_id>/", crm_views.client_detail, name="client_detail"),
     path("work-queue/", views.queue, name="queue"),
     path("queue-health/", health.public_health, name="health"),

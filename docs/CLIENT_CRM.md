@@ -29,3 +29,28 @@ New requests attach through `create_work` within the existing transaction. The e
 The existing database backup/recovery setup covers CRM data. Rolling back application code does not require reversing the data migration. Do not remove CRM tables to roll back a UI release: that would remove client edits and history.
 
 Validation: 281 workqueue tests passed on disposable local PostgreSQL, including concurrent matching, migration preservation, permissions, CSRF, escaping, stale writes, merge preview/undo, queue ordering, intake, email and booking regression coverage. Local browser verification used fictional records and memory-only email settings.
+# Manual entries and project history
+
+Staff can use **Clients → Add client** to create a CRM entry without a submission.
+Only client name and type are required; unknown email/phone can remain blank.
+An email already recorded opens its existing client without overwriting it. A
+session-bound token prevents duplicate phone-only clients on a retried save.
+
+Use **Add work** on a client's page to record a phone/email job. Select a contact,
+create a named project or choose one already belonging to that client, describe
+the work, and optionally upload up to 10 private files (100 MB each). Updates to
+existing projects retain separate request numbers and queue positions. Contact
+and billing snapshots come from the CRM; original submissions stay unchanged.
+Manual saves do not send automatic receipt emails or establish project-wide
+viewing grants. The recorded email can access its own submission after normal
+email verification, as with existing staff entries.
+
+Client pages list projects across all their contacts and include both website
+submissions and staff entries. **View jobs** filters that client's history to a
+project. Unlinked requests remain visible. Project counts span the full history,
+including completed jobs, even when the job list is paginated or filtered.
+
+Creation requires the existing staff permissions: `view_workitem` plus
+`change_workitem` for clients, or `add_workitem` for work. These actions are unavailable
+in staff preview mode. Contact/project ownership, optimistic client versions,
+file nonce/session/expiry and idempotency are checked under the queue lock.

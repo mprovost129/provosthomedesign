@@ -26,8 +26,17 @@ def audit_value(value):
 
 
 @transaction.atomic
-def create_work(*, data, actor, idempotency_key=None):
+def create_work(*, data, actor, idempotency_key=None, staff_contact=None):
     state = lock_queue()
+    if staff_contact is not None:
+        from .models import ClientContact
+        from django.core.exceptions import PermissionDenied
+        if not (actor and actor.is_active and actor.is_staff and actor.has_perms(
+                ("workqueue.view_workitem", "workqueue.add_workitem"))):
+            raise PermissionDenied
+        staff_contact = ClientContact.objects.select_related("client").get(pk=staff_contact.pk)
+        if staff_contact.client.merged_into_id:
+            raise ValidationError("This client was merged. Open the current client record.")
     key = idempotency_key or f"staff:{uuid.uuid4()}"
     existing = Submission.objects.select_related("work_item").filter(idempotency_key=key).first()
     if existing:
@@ -44,7 +53,11 @@ def create_work(*, data, actor, idempotency_key=None):
     item = WorkItem(reference=f"PHD-{state.last_reference_number:05d}",
                     queue_order=state.last_queue_order, project=project,
                     previous_request=previous, **data)
-    item.full_clean()
+    # Only authenticated staff recording work for an explicit CRM contact may
+    # retain unknown email/phone. Public intake retains its full validation.
+    missing_contact = {name for name in ("contact_email", "contact_phone")
+                       if staff_contact is not None and not getattr(item, name)}
+    item.full_clean(exclude=missing_contact)
     if item.kind == WorkItem.Kind.NEW and project is None:
         project = WorkProject.objects.create(
             name=item.project_name or item.project_street or item.project_context or item.reference,
@@ -52,9 +65,15 @@ def create_work(*, data, actor, idempotency_key=None):
             zip_code=item.project_zip, canonical_reference=item.reference,
         )
         item.project = project
+    if staff_contact is not None:
+        item.client_contact = staff_contact
     item.save()
-    from .crm import attach_client
-    attach_client(item)
+    if staff_contact is None:
+        from .crm import attach_client
+        attach_client(item)
+    else:
+        from .crm import changed
+        changed(staff_contact.client, actor, "Request added manually", {"request": item.reference})
     item.submission_position = WorkItem.objects.active().count() if item.is_active else None
     item.save(update_fields=["submission_position"])
     Submission.objects.create(work_item=item, idempotency_key=key, channel="staff",
