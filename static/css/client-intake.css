@@ -12,11 +12,19 @@
 .client-work .card {padding:26px;background:var(--paper);border:1px solid var(--line);border-radius:12px;margin-bottom:20px;box-shadow:0 2px 7px #23385105;display:block;color:inherit;}
 .client-work .fields {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
 .client-work .field {display:flex;flex-direction:column;position:relative;gap:5px;margin-bottom:16px}
+.client-work .field-heading {display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.client-work .field-heading label {margin:0;min-width:0}
+.client-work .field-heading .required {flex-shrink:0;white-space:nowrap}
+.client-work .field-feedback small {display:block}
+@supports (grid-template-rows:subgrid) {
+.client-work .fields>.field {display:grid;grid-template-rows:subgrid;grid-row:span 3}
+}
 .client-work .field:has(textarea) {grid-column:1/-1}
 .client-work .field label, .client-work .lookup label {font-weight:600;font-size:14px}
 .client-work .field small, .client-work .muted {color:var(--muted);font-size:13px}
 .client-work .required {color:var(--muted);font-size:11px}
 .client-work input:not([type=checkbox]):not([type=radio]):not([type=hidden]), .client-work select, .client-work textarea {width:100%;font:inherit;color:var(--ink);padding:11px 12px;border:1px solid #9aaebf;border-radius:6px;background:white}
+.client-work .field input.input, .client-work .field select.input {min-height:3.1rem}
 .client-work textarea {resize:vertical}
 .client-work input[type=checkbox], .client-work input[type=radio] {width:19px;height:19px;accent-color:var(--blue);vertical-align:middle;margin-right:7px}
 .client-work .path-choice #id_kind {display:flex;flex-wrap:wrap;gap:16px}
