@@ -54,3 +54,13 @@ Creation requires the existing staff permissions: `view_workitem` plus
 `change_workitem` for clients, or `add_workitem` for work. These actions are unavailable
 in staff preview mode. Contact/project ownership, optimistic client versions,
 file nonce/session/expiry and idempotency are checked under the queue lock.
+
+## Correcting a contact email
+
+Use Edit contact on the client page to add, replace or clear that contact's email.
+Emails are trimmed, lowercased and unique across contacts; conflicts are rejected
+with guidance to use an existing contact or the merge preview. Changes record
+the old and new email in private CRM history. Existing job contact snapshots,
+submission ownership, queued notices and public access grants are not rewritten.
+New manual jobs use the corrected CRM email; future public submissions with that
+email attach to this contact. Older open forms that omit email preserve its value.

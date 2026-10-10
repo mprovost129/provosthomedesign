@@ -160,8 +160,11 @@ def client_detail(request, client_id):
                 if contact_form.is_valid():
                     if contact_form.cleaned_data["contact_id"] != bound_contact_id:
                         raise ValidationError("Reload this contact before editing it.")
+                    contact_data = dict(contact_form.cleaned_data)
+                    if contact_form.add_prefix("email") not in request.POST:
+                        contact_data.pop("email", None)
                     save_contact(client_id=client_id, version=contact_form.cleaned_data["version"],
-                        contact_id=bound_contact_id, data=contact_form.cleaned_data, actor=request.user)
+                        contact_id=bound_contact_id, data=contact_data, actor=request.user)
                     messages.success(request, "Contact saved.")
                     return redirect("workqueue:client_detail", client_id)
             elif action in {"preview_merge", "merge"}:
@@ -240,6 +243,6 @@ def client_detail(request, client_id):
         "events": events, "reversible": reversible, "can_change": can_change, "edit_form": edit_form,
         "archives": client.merged_clients.all(),
         "add_form": add_form, "contact_forms": [(contact, bound_contact_form if contact.pk == bound_contact_id else ContactForm(prefix=f"contact-{contact.pk}", initial={
-            "version": client.version, "contact_id": contact.pk, "full_name": contact.full_name, "phone": contact.phone})) for contact in contacts],
+            "version": client.version, "contact_id": contact.pk, "full_name": contact.full_name, "phone": contact.phone, "email": contact.email})) for contact in contacts],
         "merge_form": merge_form, "merge_preview": preview, "merge_signature": signature,
         "matches": possible_matches(client) if not client.merged_into_id else []}, status=status)

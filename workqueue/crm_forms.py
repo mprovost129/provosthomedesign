@@ -68,7 +68,7 @@ class ClientForm(forms.ModelForm):
 class ContactForm(forms.Form):
     version = forms.IntegerField(widget=forms.HiddenInput)
     contact_id = forms.UUIDField(required=False, widget=forms.HiddenInput)
-    email = forms.EmailField(required=False, label="Email for a new contact")
+    email = forms.EmailField(required=False, label="Email address")
     full_name = forms.CharField(max_length=200, required=False, label="Full name")
     phone = forms.CharField(max_length=50, required=False, label="Phone number")
 

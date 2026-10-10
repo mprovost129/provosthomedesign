@@ -171,6 +171,7 @@ def edit_client(*, client_id, version, data, actor):
 
 @transaction.atomic
 def save_contact(*, client_id, version, contact_id, data, actor):
+    require_staff(actor, "workqueue.change_workitem")
     lock_queue()
     client = checked_client(client_id, version)
     if contact_id:
@@ -178,13 +179,17 @@ def save_contact(*, client_id, version, contact_id, data, actor):
         if contact is None:
             raise ValidationError("Choose a contact belonging to this client.")
     else:
-        email = email_key(data.get("email"))
-        if not email:
-            raise ValidationError("Enter a valid email address.")
-        if ClientContact.objects.filter(email=email).exists():
-            raise ValidationError("That email already has a client record. Use the merge preview to connect the records.")
-        contact = ClientContact(client=client, email=email)
-    before = {"name": contact.full_name, "phone": contact.phone}
+        contact = ClientContact(client=client)
+    # Omitted email preserves older open forms/callers; an explicitly blank
+    # email clears it to NULL so multiple unknown contacts remain distinct.
+    raw_email = data.get("email") if "email" in data else contact.email
+    email = email_key(raw_email)
+    if (raw_email and not email) or (not contact_id and not email):
+        raise ValidationError("Enter a valid email address.")
+    if email and ClientContact.objects.filter(email=email).exclude(pk=contact.pk).exists():
+        raise ValidationError("That email already belongs to another contact. Use the existing contact or the merge preview to connect client records.")
+    before = {"name": contact.full_name, "phone": contact.phone, "email": contact.email}
+    contact.email = email
     contact.full_name = data["full_name"]
     contact.phone = data["phone"]
     contact.normalized_name = normalized_text(contact.full_name)
@@ -193,7 +198,7 @@ def save_contact(*, client_id, version, contact_id, data, actor):
     contact.save()
     changed(client, actor, "Contact updated" if contact_id else "Contact added",
             {"contact": str(contact.pk), "email": contact.email, "before": before,
-             "after": {"name": contact.full_name, "phone": contact.phone}})
+             "after": {"name": contact.full_name, "phone": contact.phone, "email": contact.email}})
 
 
 @transaction.atomic
