@@ -22,6 +22,7 @@ class Command(BaseCommand):
             tasks.append(("sync_queue_appointments", {"limit": options["appointment_limit"]}))
         if intake:
             tasks.extend([
+                ("sync_crm_clients", {}),
                 ("process_queue_emails", {"limit": options["email_limit"]}),
                 ("cleanup_queue_uploads", {}),
             ])

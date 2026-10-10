@@ -4,9 +4,12 @@ from . import client_views
 from . import booking_views
 from . import delivery_views
 from . import health
+from . import crm_views
 
 app_name = "workqueue"
 urlpatterns = [
+    path("clients/", crm_views.clients, name="clients"),
+    path("clients/<uuid:client_id>/", crm_views.client_detail, name="client_detail"),
     path("work-queue/", views.queue, name="queue"),
     path("queue-health/", health.public_health, name="health"),
     path("work-queue/arrivals/", views.arrivals, name="arrivals"),

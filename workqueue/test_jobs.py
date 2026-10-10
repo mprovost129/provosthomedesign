@@ -13,22 +13,22 @@ class QueueJobRunnerTests(TransactionTestCase):
         dispatch.assert_not_called()
 
     @override_settings(WORK_INTAKE_ENABLED=True, BOOKING_ENABLED=False)
-    def test_intake_dispatches_email_and_cleanup_only(self):
+    def test_intake_dispatches_crm_email_and_cleanup(self):
         with patch("workqueue.management.commands.run_queue_jobs.call_command") as dispatch:
             call_command("run_queue_jobs", email_limit=17, stdout=StringIO())
         self.assertEqual([c.args[0] for c in dispatch.call_args_list],
-                         ["process_queue_emails", "cleanup_queue_uploads"])
-        self.assertEqual(dispatch.call_args_list[0].kwargs["limit"], 17)
+                         ["sync_crm_clients", "process_queue_emails", "cleanup_queue_uploads"])
+        self.assertEqual(dispatch.call_args_list[1].kwargs["limit"], 17)
 
     @override_settings(WORK_INTAKE_ENABLED=True, BOOKING_ENABLED=True)
     def test_calendar_failure_does_not_prevent_receipts_or_cleanup(self):
         errors = StringIO()
         with patch("workqueue.management.commands.run_queue_jobs.call_command",
-                   side_effect=[RuntimeError("private-provider-response"), None, None]) as dispatch:
+                   side_effect=[RuntimeError("private-provider-response"), None, None, None]) as dispatch:
             with self.assertRaisesMessage(CommandError, "sync_queue_appointments"):
                 call_command("run_queue_jobs", appointment_limit=12, stderr=errors, stdout=StringIO())
         self.assertEqual([c.args[0] for c in dispatch.call_args_list],
-                         ["sync_queue_appointments", "process_queue_emails", "cleanup_queue_uploads"])
+                         ["sync_queue_appointments", "sync_crm_clients", "process_queue_emails", "cleanup_queue_uploads"])
         self.assertEqual(dispatch.call_args_list[0].kwargs["limit"], 12)
         self.assertNotIn("private-provider-response", errors.getvalue())
 

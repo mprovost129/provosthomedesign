@@ -53,6 +53,8 @@ def create_work(*, data, actor, idempotency_key=None):
         )
         item.project = project
     item.save()
+    from .crm import attach_client
+    attach_client(item)
     item.submission_position = WorkItem.objects.active().count() if item.is_active else None
     item.save(update_fields=["submission_position"])
     Submission.objects.create(work_item=item, idempotency_key=key, channel="staff",

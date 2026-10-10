@@ -5,7 +5,7 @@
 <div class="queue-work" id="content" tabindex="-1">
 <header class="site-header"><div><span class="brand">Provost Home Design</span><h1>Work Queue</h1>
   <p>{{ active_count }} active request{{ active_count|pluralize }} · {{ closed_count }} closed</p></div>
-  <nav aria-label="Staff tools">{% if intake_enabled %}<a href="{% url 'workqueue:submit' %}" target="_blank" rel="noopener">Client form</a> · {% endif %}<a href="{% url 'admin:index' %}">Administration</a></nav>
+  <nav aria-label="Staff tools"><a href="{% url 'workqueue:clients' %}" target="_blank" rel="noopener">Clients</a> · {% if intake_enabled %}<a href="{% url 'workqueue:submit' %}" target="_blank" rel="noopener">Client form</a> · {% endif %}<a href="{% url 'admin:index' %}">Administration</a></nav>
 </header>
 <main id="queue">
   {% if intake_enabled %}<details class="notice {% if not queue_health.ok %}error{% endif %}"><summary>System health · {% if queue_health.ok %}Background jobs are current{% else %}Needs attention{% endif %}</summary><p>Last successful background run: {{ queue_health.last_success|date:'M j, g:i A'|default:'Awaiting the first run' }}</p><ul>{% for issue in queue_health.issues %}<li>{{ issue }}</li>{% empty %}<li>No delayed emails, delivery issues, or calendar exceptions detected.</li>{% endfor %}</ul></details>{% endif %}
@@ -62,7 +62,7 @@
       <tr>
         <td>{% if item.position %}<strong>{{ item.position }}</strong>{% else %}<span class="muted">Closed</span>{% endif %}</td>
         <td><strong>{{ item.reference }}</strong><small>{{ item.get_kind_display }}</small></td>
-        <td>{{ item.contact_full_name }}<small>{{ item.company }}</small></td>
+        <td>{% if item.client_contact_id %}<a href="{% url 'workqueue:client_detail' item.client_contact.client_id %}" target="_blank" rel="noopener">{{ item.contact_full_name }}</a>{% else %}{{ item.contact_full_name }}{% endif %}<small>{{ item.company }}</small></td>
         <td>{{ item.project.name|default:item.project_name|default:item.project_context|default:item.project_street|default:'Untitled project' }}
           <small>{{ item.description|truncatechars:110 }}</small>{% if item.needs_project_link %}<span class="flag">Project link needs confirmation</span>{% endif %}
           {% if row.unreviewed_responses %}<strong class="response-flag">Response received—review needed ({{ row.unreviewed_responses|length }})</strong>

@@ -300,7 +300,7 @@ def queue(request):
 
     if request.method == "GET" or request.POST.get("action") != "create":
         create_form = ManualWorkForm(initial={"submission_token": uuid.uuid4()}, prefix="new")
-    items = with_email_attention(WorkItem.objects.with_position()).select_related("project").prefetch_related(
+    items = with_email_attention(WorkItem.objects.with_position()).select_related("project", "client_contact__client").prefetch_related(
         "submissions__attachments", "submissions__notifications",
         "information_requests__delivery", "information_requests__reminder_delivery",
         "milestones__delivery", "milestones__actor",

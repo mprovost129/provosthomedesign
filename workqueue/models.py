@@ -33,6 +33,64 @@ class Priority(models.TextChoices):
     URGENT = "urgent", "Urgent"
 
 
+class Client(models.Model):
+    class Kind(models.TextChoices):
+        INDIVIDUAL = "individual", "Individual / homeowner"
+        COMPANY = "company", "Company"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=200)
+    normalized_name = models.CharField(max_length=200, db_index=True, editable=False)
+    kind = models.CharField(max_length=20, choices=Kind.choices, default=Kind.INDIVIDUAL)
+    billing_street = models.CharField(max_length=250, blank=True)
+    billing_city = models.CharField(max_length=100, blank=True)
+    billing_state = models.CharField(max_length=50, blank=True)
+    billing_zip = models.CharField(max_length=20, blank=True)
+    internal_notes = models.TextField(blank=True)
+    version = models.PositiveIntegerField(default=1, editable=False)
+    merged_into = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT,
+                                    related_name="merged_clients")
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name", "id"]
+        constraints = [models.CheckConstraint(condition=Q(kind__in=["individual", "company"]), name="wq_client_kind")]
+
+    def __str__(self):
+        return self.name
+
+
+class ClientContact(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    client = models.ForeignKey(Client, on_delete=models.PROTECT, related_name="contacts")
+    email = models.EmailField(unique=True, null=True, blank=True)
+    full_name = models.CharField(max_length=200, blank=True)
+    phone = models.CharField(max_length=50, blank=True)
+    submitted_company = models.CharField(max_length=200, blank=True)
+    normalized_name = models.CharField(max_length=200, blank=True, db_index=True, editable=False)
+    normalized_phone = models.CharField(max_length=50, blank=True, db_index=True, editable=False)
+    normalized_company = models.CharField(max_length=200, blank=True, db_index=True, editable=False)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        ordering = ["full_name", "email", "id"]
+
+    def __str__(self):
+        return self.full_name or self.email or "Contact details incomplete"
+
+
+class ClientEvent(models.Model):
+    client = models.ForeignKey(Client, on_delete=models.PROTECT, related_name="events")
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    action = models.CharField(max_length=40)
+    changes = models.JSONField(default=dict)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+
 class WorkProject(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200)
@@ -117,6 +175,8 @@ class WorkItem(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     reference = models.CharField(max_length=32, unique=True, editable=False)
+    client_contact = models.ForeignKey("ClientContact", null=True, blank=True, on_delete=models.PROTECT,
+                                      related_name="work_items")
     project = models.ForeignKey(WorkProject, null=True, blank=True, on_delete=models.PROTECT,
                                related_name="work_items")
     previous_request = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT,

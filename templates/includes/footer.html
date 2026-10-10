@@ -72,7 +72,7 @@
                 <li><a href="{% url 'pages:terms' %}" class="text-decoration-none text-muted">Terms &amp; Conditions</a></li>
                 {% if request.user.is_authenticated and request.user.is_staff %}
                   <li><a href="{% url 'admin:index' %}" class="text-decoration-none text-muted">Admin</a></li>
-                  {% if work_queue_enabled and perms.workqueue.view_workitem %}<li><a href="{% url 'workqueue:queue' %}" class="text-decoration-none text-muted" rel="nofollow">Work queue</a></li>{% endif %}
+                  {% if work_queue_enabled and perms.workqueue.view_workitem %}<li><a href="{% url 'workqueue:queue' %}" class="text-decoration-none text-muted" rel="nofollow">Work queue</a></li><li><a href="{% url 'workqueue:clients' %}" class="text-decoration-none text-muted" rel="nofollow">Clients</a></li>{% endif %}
                 {% endif %}
               </ul>
             </div>
