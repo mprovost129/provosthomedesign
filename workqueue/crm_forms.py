@@ -40,7 +40,7 @@ class ClientWorkForm(forms.ModelForm):
 
     def __init__(self, *args, client, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["contact"].queryset = client.contacts.select_related("client")
+        self.fields["contact"].queryset = client.contacts.filter(archived_at__isnull=True).select_related("client")
         self.fields["project"].queryset = WorkProject.objects.filter(work_items__client_contact__client=client).distinct()
         self.fields["project"].empty_label = "Create a new project"
         self.fields["project"].help_text = "Choose an existing project to add another job to it. Updates have their own place in the queue."
@@ -91,3 +91,9 @@ class MergeForm(forms.Form):
 class UndoForm(forms.Form):
     version = forms.IntegerField(widget=forms.HiddenInput)
     event_id = forms.IntegerField(widget=forms.HiddenInput)
+
+
+class ContactStateForm(forms.Form):
+    version = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
+    contact_id = forms.UUIDField(widget=forms.HiddenInput)
+    restore_email = forms.BooleanField(required=False)

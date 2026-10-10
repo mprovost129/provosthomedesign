@@ -65,6 +65,8 @@ class ClientContact(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     client = models.ForeignKey(Client, on_delete=models.PROTECT, related_name="contacts")
     email = models.EmailField(unique=True, null=True, blank=True)
+    archived_at = models.DateTimeField(null=True, blank=True, db_index=True, editable=False)
+    archived_email = models.EmailField(blank=True, editable=False)
     full_name = models.CharField(max_length=200, blank=True)
     phone = models.CharField(max_length=50, blank=True)
     submitted_company = models.CharField(max_length=200, blank=True)

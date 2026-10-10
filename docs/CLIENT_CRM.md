@@ -64,3 +64,18 @@ the old and new email in private CRM history. Existing job contact snapshots,
 submission ownership, queued notices and public access grants are not rewritten.
 New manual jobs use the corrected CRM email; future public submissions with that
 email attach to this contact. Older open forms that omit email preserve its value.
+
+## Copy, delete and restore contacts
+
+Copy opens a prefilled form under the same client, with an empty email to avoid
+reusing another contact's unique address. It copies contact details only and
+requires at least a name, email or phone; jobs, files and public access are not
+copied. Add contact now also accepts a name or phone without an email.
+
+Delete removes a contact from active selection and the directory, releasing the
+email for future intake. The contact remains linked to its historical jobs.
+Deleted contacts stay in the private client record with a Restore button. When
+restoring, the original email is restored only if it is available; staff can
+explicitly uncheck Restore original email when another contact has claimed it.
+Existing work email snapshots, submission ownership and access grants stay intact.
+Every change is audited and checks the client version under the queue lock.

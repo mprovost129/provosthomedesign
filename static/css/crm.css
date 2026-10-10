@@ -34,3 +34,7 @@
 @media(max-width:600px) {.crm-work .crm-entry .fields {grid-template-columns:minmax(0,1fr);}}
 .crm-work :focus-visible {outline:3px solid #c58825;outline-offset:3px;}
 @media(max-width:850px) {.crm-work .crm-layout {grid-template-columns:minmax(0,1fr);}.crm-work .site-header {flex-wrap:wrap;}}
+
+.crm-work .crm-delete summary {color:#9d2d26;}
+.crm-work .crm-checkbox {display:flex;align-items:center;gap:8px;margin-top:12px;}
+.crm-work .crm-checkbox input {width:auto;}

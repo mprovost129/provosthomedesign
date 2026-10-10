@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import permission_required
 from django.core import signing
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
-from django.db.models import Count, Max, Q
+from django.db.models import Count, Max, Prefetch, Q
 from django import forms
 from django.conf import settings
 from django.utils import timezone
@@ -15,9 +15,9 @@ from django.urls import reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 
-from .crm import create_client, create_client_work, edit_client, merge_clients, possible_matches, save_contact, undo_merge
-from .crm_forms import ClientForm, ClientWorkForm, NewClientForm, ContactForm, MergeForm, UndoForm
-from .models import Appointment, Client, ClientEvent, CLOSED_STATUSES, PendingUpload, WorkItem, WorkProject
+from .crm import archive_contact, restore_contact, create_client, create_client_work, edit_client, merge_clients, possible_matches, save_contact, undo_merge
+from .crm_forms import ClientForm, ClientWorkForm, NewClientForm, ContactForm, ContactStateForm, MergeForm, UndoForm
+from .models import Appointment, Client, ClientContact, ClientEvent, CLOSED_STATUSES, PendingUpload, WorkItem, WorkProject
 from .access import new_intake_token, read_intake_token, session_digest
 from .services import EditConflict
 from .views import queue_enabled, staff_preview
@@ -26,7 +26,8 @@ from .views import queue_enabled, staff_preview
 def client_counts(queryset):
     return queryset.annotate(request_count=Count("contacts__work_items", distinct=True),
         active_count=Count("contacts__work_items", filter=~Q(contacts__work_items__status__in=CLOSED_STATUSES), distinct=True),
-        last_request=Max("contacts__work_items__received_at")).prefetch_related("contacts")
+        last_request=Max("contacts__work_items__received_at")).prefetch_related(
+            Prefetch("contacts", queryset=ClientContact.objects.filter(archived_at__isnull=True)))
 
 
 @queue_enabled
@@ -93,7 +94,7 @@ def add_client_work(request, client_id):
     if staff_preview(request):
         raise PermissionDenied
     client = get_object_or_404(Client, pk=client_id, merged_into__isnull=True)
-    first_contact = client.contacts.first()
+    first_contact = client.contacts.filter(archived_at__isnull=True).first()
     form = ClientWorkForm(request.POST or None, client=client, initial={"intake_token": new_intake_token(request),
         "version": client.version, "kind": "new", "contact": first_contact})
     status, ready = 200, []
@@ -138,6 +139,8 @@ def client_detail(request, client_id):
     status = 200
     bound_contact_id = None
     bound_contact_form = None
+    bound_copy_id = None
+    bound_copy_form = None
     if request.method == "POST":
         if not can_change:
             raise PermissionDenied
@@ -167,6 +170,29 @@ def client_detail(request, client_id):
                         contact_id=bound_contact_id, data=contact_data, actor=request.user)
                     messages.success(request, "Contact saved.")
                     return redirect("workqueue:client_detail", client_id)
+            elif action == "copy_contact":
+                bound_copy_id = forms.UUIDField().clean(request.POST.get("contact_key"))
+                bound_copy_form = ContactForm(request.POST, prefix=f"copy-{bound_copy_id}")
+                if bound_copy_form.is_valid():
+                    if bound_copy_form.cleaned_data["contact_id"]:
+                        raise ValidationError("Copy creates a new contact; reload before trying again.")
+                    save_contact(client_id=client_id, version=bound_copy_form.cleaned_data["version"],
+                        contact_id=None, copy_from_id=bound_copy_id, data=bound_copy_form.cleaned_data, actor=request.user)
+                    messages.success(request, "Contact copied. Jobs and files remain with the original contact.")
+                    return redirect("workqueue:client_detail", client_id)
+            elif action in {"delete_contact", "restore_contact"}:
+                state_form = ContactStateForm(request.POST)
+                if not state_form.is_valid():
+                    raise ValidationError("Reload this client before changing the contact.")
+                args = {"client_id": client_id, "version": state_form.cleaned_data["version"],
+                        "contact_id": state_form.cleaned_data["contact_id"], "actor": request.user}
+                if action == "delete_contact":
+                    archive_contact(**args)
+                    messages.success(request, "Contact deleted from the active list. Jobs and history are preserved; you can restore it below.")
+                else:
+                    restore_contact(**args, restore_email=state_form.cleaned_data["restore_email"])
+                    messages.success(request, "Contact restored.")
+                return redirect("workqueue:client_detail", client_id)
             elif action in {"preview_merge", "merge"}:
                 merge_form = MergeForm(request.POST, client=client, prefix="merge")
                 if merge_form.is_valid():
@@ -200,13 +226,19 @@ def client_detail(request, client_id):
             else:
                 raise ValidationError("Choose a supported client action.")
         except (ValidationError, EditConflict) as exc:
-            messages.error(request, " ".join(exc.messages) if isinstance(exc, ValidationError) else str(exc))
+            error = " ".join(exc.messages) if isinstance(exc, ValidationError) else str(exc)
+            messages.error(request, error)
+            if action == "contact":
+                (bound_contact_form if bound_contact_form is not None else add_form).add_error(None, error)
+            elif action == "copy_contact" and bound_copy_form is not None:
+                bound_copy_form.add_error(None, error)
             status = 409 if isinstance(exc, EditConflict) else 400
         # ModelForm may mutate its instance; render current stored values separately.
         client.refresh_from_db()
         if status == 200 and not preview:
             status = 400
-    contacts = list(client.contacts.all())
+    all_contacts = list(client.contacts.all())
+    contacts = [contact for contact in all_contacts if not contact.archived_at]
     items = WorkItem.objects.filter(client_contact__client=client).with_position().select_related("project", "client_contact").prefetch_related(
         "submissions__attachments", "submissions__notifications", "completed_deliveries__files", "milestones__delivery",
         "information_requests__delivery").order_by("-received_at", "-id")
@@ -242,7 +274,10 @@ def client_detail(request, client_id):
         "appointments": Appointment.objects.filter(email__in=emails).select_related("project").order_by("-starts_at")[:30],
         "events": events, "reversible": reversible, "can_change": can_change, "edit_form": edit_form,
         "archives": client.merged_clients.all(),
+        "deleted_contacts": [contact for contact in all_contacts if contact.archived_at],
         "add_form": add_form, "contact_forms": [(contact, bound_contact_form if contact.pk == bound_contact_id else ContactForm(prefix=f"contact-{contact.pk}", initial={
-            "version": client.version, "contact_id": contact.pk, "full_name": contact.full_name, "phone": contact.phone, "email": contact.email})) for contact in contacts],
+            "version": client.version, "contact_id": contact.pk, "full_name": contact.full_name, "phone": contact.phone, "email": contact.email}),
+            bound_copy_form if contact.pk == bound_copy_id else ContactForm(prefix=f"copy-{contact.pk}", initial={
+                "version": client.version, "full_name": contact.full_name, "phone": contact.phone})) for contact in contacts],
         "merge_form": merge_form, "merge_preview": preview, "merge_signature": signature,
         "matches": possible_matches(client) if not client.merged_into_id else []}, status=status)

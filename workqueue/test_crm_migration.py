@@ -8,6 +8,7 @@ class CRMBackfillMigrationTests(TransactionTestCase):
         executor = MigrationExecutor(connection)
         before = [("workqueue", "0016_queueworkerhealth")]
         after = [("workqueue", "0018_populate_crm_clients")]
+        latest = executor.loader.graph.leaf_nodes()
         executor.migrate(before)
         try:
             apps = executor.loader.project_state(before).apps
@@ -33,4 +34,4 @@ class CRMBackfillMigrationTests(TransactionTestCase):
             self.assertEqual(apps.get_model("workqueue", "Submission").objects.get(idempotency_key="migration-0").answers, {"Original email": "Morgan@Example.com"})
             self.assertEqual(Item.objects.filter(client_contact__isnull=True).count(), 0)
         finally:
-            MigrationExecutor(connection).migrate(after)
+            MigrationExecutor(connection).migrate(latest)

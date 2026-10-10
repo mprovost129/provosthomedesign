@@ -58,7 +58,7 @@ def create_client_work(*, client_id, version, data, nonce, binding, actor):
     if existing:
         return existing.work_item, False
     client = checked_client(client_id, version)
-    contact = client.contacts.filter(pk=data["contact"].pk).first()
+    contact = client.contacts.filter(pk=data["contact"].pk, archived_at__isnull=True).first()
     if contact is None:
         raise ValidationError("Choose a contact belonging to this client.")
     project = data.get("project")
@@ -125,7 +125,7 @@ def sync_clients():
 
 
 def possible_matches(client):
-    contacts = list(client.contacts.all())
+    contacts = list(client.contacts.filter(archived_at__isnull=True))
     names = {c.normalized_name for c in contacts if c.normalized_name}
     phones = {c.normalized_phone for c in contacts if c.normalized_phone}
     companies = {c.normalized_company for c in contacts if c.normalized_company}
@@ -133,7 +133,8 @@ def possible_matches(client):
         companies.add(client.normalized_name)
     conditions = (Q(contacts__normalized_name__in=names) | Q(contacts__normalized_phone__in=phones)
                   | Q(contacts__normalized_company__in=companies) | Q(normalized_name__in=companies))
-    return Client.objects.filter(merged_into__isnull=True).exclude(pk=client.pk).filter(conditions).distinct().prefetch_related("contacts")[:20]
+    return Client.objects.filter(merged_into__isnull=True).exclude(pk=client.pk).filter(conditions,
+        contacts__archived_at__isnull=True).distinct().prefetch_related("contacts")[:20]
 
 
 def checked_client(client_id, version):
@@ -170,22 +171,30 @@ def edit_client(*, client_id, version, data, actor):
 
 
 @transaction.atomic
-def save_contact(*, client_id, version, contact_id, data, actor):
+def save_contact(*, client_id, version, contact_id, data, actor, copy_from_id=None):
     require_staff(actor, "workqueue.change_workitem")
     lock_queue()
     client = checked_client(client_id, version)
+    source = None
+    if copy_from_id:
+        source = client.contacts.filter(pk=copy_from_id, archived_at__isnull=True).first()
+        if contact_id or source is None:
+            raise ValidationError("Choose an active contact belonging to this client to copy.")
     if contact_id:
-        contact = ClientContact.objects.select_for_update().filter(pk=contact_id, client=client).first()
+        contact = ClientContact.objects.select_for_update().filter(pk=contact_id, client=client, archived_at__isnull=True).first()
         if contact is None:
             raise ValidationError("Choose a contact belonging to this client.")
     else:
-        contact = ClientContact(client=client)
+        contact = ClientContact(client=client, submitted_company=source.submitted_company if source else "",
+            normalized_company=source.normalized_company if source else "")
     # Omitted email preserves older open forms/callers; an explicitly blank
     # email clears it to NULL so multiple unknown contacts remain distinct.
     raw_email = data.get("email") if "email" in data else contact.email
     email = email_key(raw_email)
-    if (raw_email and not email) or (not contact_id and not email):
+    if raw_email and not email:
         raise ValidationError("Enter a valid email address.")
+    if not contact_id and not (email or data.get("full_name") or data.get("phone")):
+        raise ValidationError("Enter a name, email address or phone number for the contact.")
     if email and ClientContact.objects.filter(email=email).exclude(pk=contact.pk).exists():
         raise ValidationError("That email already belongs to another contact. Use the existing contact or the merge preview to connect client records.")
     before = {"name": contact.full_name, "phone": contact.phone, "email": contact.email}
@@ -196,9 +205,49 @@ def save_contact(*, client_id, version, contact_id, data, actor):
     contact.normalized_phone = phone_key(contact.phone)
     contact.full_clean()
     contact.save()
-    changed(client, actor, "Contact updated" if contact_id else "Contact added",
+    changed(client, actor, "Contact copied" if copy_from_id else "Contact updated" if contact_id else "Contact added",
             {"contact": str(contact.pk), "email": contact.email, "before": before,
-             "after": {"name": contact.full_name, "phone": contact.phone, "email": contact.email}})
+             "after": {"name": contact.full_name, "phone": contact.phone, "email": contact.email},
+             **({"copied_from": str(copy_from_id)} if copy_from_id else {})})
+    return contact
+
+
+@transaction.atomic
+def archive_contact(*, client_id, version, contact_id, actor):
+    from django.utils import timezone
+    require_staff(actor, "workqueue.change_workitem")
+    lock_queue()
+    client = checked_client(client_id, version)
+    contact = client.contacts.select_for_update().filter(pk=contact_id, archived_at__isnull=True).first()
+    if contact is None:
+        raise ValidationError("Choose an active contact belonging to this client.")
+    contact.archived_at, contact.archived_email = timezone.now(), contact.email or ""
+    # Release the unique email for future intake without changing historical
+    # work snapshots, submission ownership, email deliveries or access grants.
+    contact.email = None
+    contact.save(update_fields=["archived_at", "archived_email", "email"])
+    changed(client, actor, "Contact deleted", {"contact": str(contact.pk),
+        "name": contact.full_name, "email": contact.archived_email})
+    return contact
+
+
+@transaction.atomic
+def restore_contact(*, client_id, version, contact_id, actor, restore_email=True):
+    require_staff(actor, "workqueue.change_workitem")
+    lock_queue()
+    client = checked_client(client_id, version)
+    contact = client.contacts.select_for_update().filter(pk=contact_id, archived_at__isnull=False).first()
+    if contact is None:
+        raise ValidationError("Choose a deleted contact belonging to this client.")
+    email = email_key(contact.archived_email) if restore_email else None
+    if email and ClientContact.objects.filter(email=email).exclude(pk=contact.pk).exists():
+        raise ValidationError("The original email is now used by another contact. Uncheck 'Restore original email' to restore without it, or connect the client records first.")
+    contact.email, contact.archived_at = email, None
+    contact.full_clean()
+    contact.save(update_fields=["email", "archived_at"])
+    changed(client, actor, "Contact restored", {"contact": str(contact.pk), "email": contact.email,
+        "original_email": contact.archived_email})
+    return contact
 
 
 @transaction.atomic

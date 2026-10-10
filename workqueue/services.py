@@ -35,8 +35,8 @@ def create_work(*, data, actor, idempotency_key=None, staff_contact=None):
                 ("workqueue.view_workitem", "workqueue.add_workitem"))):
             raise PermissionDenied
         staff_contact = ClientContact.objects.select_related("client").get(pk=staff_contact.pk)
-        if staff_contact.client.merged_into_id:
-            raise ValidationError("This client was merged. Open the current client record.")
+        if staff_contact.client.merged_into_id or staff_contact.archived_at:
+            raise ValidationError("Choose an active contact on the current client record.")
     key = idempotency_key or f"staff:{uuid.uuid4()}"
     existing = Submission.objects.select_related("work_item").filter(idempotency_key=key).first()
     if existing:
