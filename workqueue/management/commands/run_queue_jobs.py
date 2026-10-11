@@ -21,6 +21,8 @@ class Command(BaseCommand):
         if intake and getattr(settings, "BOOKING_ENABLED", False):
             tasks.append(("sync_queue_appointments", {"limit": options["appointment_limit"]}))
         if intake:
+            if getattr(settings, 'FRESHBOOKS_ENABLED', False):
+                tasks.append(('sync_freshbooks_billing', {}))
             tasks.extend([
                 ("sync_crm_clients", {}),
                 ("process_queue_emails", {"limit": options["email_limit"]}),

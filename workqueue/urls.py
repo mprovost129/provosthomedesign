@@ -6,9 +6,26 @@ from . import delivery_views
 from . import health
 from . import crm_views
 from . import communication_views
+from . import pm_views
+from . import freshbooks_views
 
 app_name = "workqueue"
 urlpatterns = [
+    path('work-projects/billing/', freshbooks_views.connection, name='freshbooks_connection'),
+    path('work-projects/billing/callback/', freshbooks_views.callback, name='freshbooks_callback'),
+    path('work-projects/billing/clients/<uuid:client_id>/', freshbooks_views.client_link, name='freshbooks_client'),
+    path('work-projects/billing/proposals/<uuid:proposal_id>/', freshbooks_views.invoice_action, name='freshbooks_invoice'),
+    path('work-projects/', pm_views.projects, name='projects'),
+    path('work-projects/templates/', pm_views.proposal_templates, name='proposal_templates'),
+    path('work-projects/templates/<uuid:template_id>/', pm_views.proposal_templates, name='proposal_template_edit'),
+    path('work-projects/proposals/<uuid:proposal_id>/', pm_views.proposal_detail, name='proposal_detail'),
+    path('work-projects/proposals/<uuid:proposal_id>/pdf/', pm_views.proposal_download, name='proposal_pdf'),
+    path('work-projects/<uuid:project_id>/proposal/', pm_views.proposal_edit, name='proposal_new'),
+    path('work-projects/<uuid:project_id>/proposal/<uuid:proposal_id>/', pm_views.proposal_edit, name='proposal_edit'),
+    path('work-projects/<uuid:project_id>/', pm_views.project_detail, name='project_detail'),
+    path('proposals/access/', pm_views.proposal_access, name='proposal_access'),
+    path('proposals/<uuid:revision_id>/', pm_views.proposal_public, name='proposal_public'),
+    path('proposals/<uuid:revision_id>/pdf/', pm_views.proposal_public_pdf, name='proposal_public_pdf'),
     path('clients/email-settings/', communication_views.communication_settings, name='communication_settings'),
     path('clients/import/', communication_views.import_clients, name='import_clients'),
     path('clients/import/<uuid:batch_id>/', communication_views.import_preview, name='import_preview'),

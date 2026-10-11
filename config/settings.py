@@ -507,3 +507,11 @@ if INTAKE_PRIVATE_BUCKET:
     }
     CSP_EXTRA_CONNECT_SRC = [*globals().get("CSP_EXTRA_CONNECT_SRC", []),
                             f"https://{INTAKE_PRIVATE_BUCKET}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"]
+
+
+# FreshBooks is opt-in; secrets belong in Render environment settings for both processes.
+FRESHBOOKS_ENABLED = config('FRESHBOOKS_ENABLED', default=False, cast=bool)
+FRESHBOOKS_CLIENT_ID = config('FRESHBOOKS_CLIENT_ID', default='').strip()
+FRESHBOOKS_CLIENT_SECRET = config('FRESHBOOKS_CLIENT_SECRET', default='').strip()
+FRESHBOOKS_TOKEN_ENCRYPTION_KEY = config('FRESHBOOKS_TOKEN_ENCRYPTION_KEY', default='').strip()
+FRESHBOOKS_REDIRECT_URI = config('FRESHBOOKS_REDIRECT_URI', default='https://www.provosthomedesign.com/work-projects/billing/callback/').strip()

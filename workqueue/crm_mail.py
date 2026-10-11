@@ -184,6 +184,11 @@ def queue_morning_digest(now=None):
         canceled_at__isnull=True, due_date__lte=now.date()).select_related('client')
     jobs = WorkItem.objects.active().filter(Q(followup_date__lte=now.date()) | Q(committed_due_date__lt=now.date()))
     lines = []
+    from .pm_models import ProjectTask
+    for task in ProjectTask.objects.filter(completed_at__isnull=True, canceled_at__isnull=True,
+            due_date__lte=now.date()).select_related('project'):
+        lines.append(f'{task.project.name}: {task.title} — project task due {task.due_date:%b %d}\n'
+                     f'{site_url(reverse("workqueue:project_detail", args=[task.project_id]))}#tasks')
     for task in tasks:
         lines.append(f'{task.client.name}: {task.title} — follow up {task.due_date:%b %d}\n'
                      f'{site_url(reverse("workqueue:client_detail", args=[task.client_id]))}#follow-ups')

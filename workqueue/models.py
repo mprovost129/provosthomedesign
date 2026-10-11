@@ -615,3 +615,6 @@ class BookingAudit(models.Model):
     action = models.CharField(max_length=40)
     details = models.JSONField(default=dict)
     created_at = models.DateTimeField(default=timezone.now)
+
+from .pm_models import ProjectPlan, ProjectTask, ProposalTemplate, ProposalSequence, Proposal, ProposalRevision, ProposalInvitation, ProjectEvent
+from .freshbooks_models import FreshBooksConnection, FreshBooksClientLink, FreshBooksInvoice
