@@ -391,10 +391,10 @@ class NotificationDelivery(models.Model):
     recipient = models.EmailField()
     subject = models.CharField(max_length=255, blank=True)
     body = models.TextField(blank=True)
-    html_body = models.TextField(blank=True)
-    to_recipients = models.JSONField(default=list, blank=True)
-    cc_recipients = models.JSONField(default=list, blank=True)
-    bcc_recipients = models.JSONField(default=list, blank=True)
+    html_body = models.TextField(blank=True, db_default='')
+    to_recipients = models.JSONField(default=list, blank=True, db_default=[])
+    cc_recipients = models.JSONField(default=list, blank=True, db_default=[])
+    bcc_recipients = models.JSONField(default=list, blank=True, db_default=[])
     created_at = models.DateTimeField(default=timezone.now)
     state = models.CharField(max_length=20, choices=[("pending", "Pending"), ("sending", "Sending"),
                             ("sent", "Sent"), ("unknown", "Needs reconciliation"), ("failed", "Failed"), ("canceled", "Canceled")],
