@@ -1,0 +1,23 @@
+{% if can_change %}
+<section class="time-panel" data-time-panel data-state-url="{% url 'workqueue:timer' %}{% if project %}?project={{ project.pk }}{% endif %}" aria-label="Your work timer">
+  <div class="time-heading"><h2>Your work timer</h2><p>One timer per person. It keeps running across pages until you stop it.</p></div>
+  <p class="notice" data-time-message role="status" aria-live="polite" hidden></p>
+  <div data-running-timer {% if not active_timer %}hidden{% endif %}>
+    <p><a data-time-project href="{% if active_timer %}{% url 'workqueue:project_time' active_timer.project_id %}{% endif %}">{{ active_timer.project.name }}</a> <strong data-time-clock>Running</strong></p>
+    <p data-time-detail>{{ active_timer.get_category_display }}{% if active_timer.work_item %} · {{ active_timer.work_item.reference }}{% endif %}</p>
+    <p data-time-review class="notice error" hidden>Timer has run for over 12 hours. Stop it and review the recorded time if you forgot to stop earlier.</p>
+    <form method="post" action="{% url 'workqueue:timer' %}{% if project %}?project={{ project.pk }}{% endif %}" data-time-action>{% csrf_token %}<input type="hidden" name="action" value="stop"><input type="hidden" name="entry_id" value="{{ active_timer.pk|default:'' }}">{% if project %}<input type="hidden" name="return_project" value="{{ project.pk }}">{% endif %}<button>Stop and record time</button></form>
+    <details><summary>Discard this timer</summary><form method="post" action="{% url 'workqueue:timer' %}{% if project %}?project={{ project.pk }}{% endif %}" data-time-action>{% csrf_token %}<input type="hidden" name="action" value="discard"><input type="hidden" name="entry_id" value="{{ active_timer.pk|default:'' }}"><label><input type="checkbox" name="confirm_discard" value="yes" required> Discard without recording time</label><button class="secondary">Discard timer</button></form></details>
+  </div>
+  <details data-start-timer {% if active_timer %}hidden{% endif %}><summary>Start tracking time</summary>
+    <form method="post" action="{% url 'workqueue:timer' %}{% if project %}?project={{ project.pk }}{% endif %}" data-time-action data-start-form>{% csrf_token %}<input type="hidden" name="action" value="start">{{ timer_form.token }}
+      {% if project %}{{ timer_form.project }}<p><strong>{{ project.name }}</strong></p>{% else %}<div class="time-field">{{ timer_form.project.label_tag }}{{ timer_form.project }}</div>{% endif %}
+      <div class="time-fields"><div class="time-field">{{ timer_form.work_item.label_tag }}<select name="work_item" id="timer_work_item"><option value="">---------</option>{% for job in timer_form.fields.work_item.queryset %}<option value="{{ job.pk }}" data-project="{{ job.project_id }}">{{ job.reference }} · {{ job.project_name|default:job.project.name }}</option>{% endfor %}</select></div><div class="time-field">{{ timer_form.category.label_tag }}{{ timer_form.category }}</div></div>
+      <div class="time-field">{{ timer_form.description.label_tag }}{{ timer_form.description }}</div>
+      <label class="time-check">{{ timer_form.billable }}{{ timer_form.billable.label }}</label>
+      <button>Start timer</button><p class="muted">Time stays private. Billable time is a record for your review; it does not create or send an invoice.</p>
+    </form>
+  </details>
+  {% if project %}<p><a href="{% url 'workqueue:project_time' project.pk %}#time-form">Add or review time</a></p>{% endif %}
+</section>
+{% endif %}

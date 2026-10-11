@@ -8,9 +8,12 @@ from . import crm_views
 from . import communication_views
 from . import pm_views
 from . import freshbooks_views
+from . import time_views
 
 app_name = "workqueue"
 urlpatterns = [
+    path('work-queue/timer/', time_views.timer, name='timer'),
+    path('work-projects/<uuid:project_id>/time/', time_views.project_time, name='project_time'),
     path('work-projects/billing/', freshbooks_views.connection, name='freshbooks_connection'),
     path('work-projects/billing/callback/', freshbooks_views.callback, name='freshbooks_callback'),
     path('work-projects/billing/clients/<uuid:client_id>/', freshbooks_views.client_link, name='freshbooks_client'),

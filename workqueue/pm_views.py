@@ -115,7 +115,9 @@ def project_detail(request, project_id):
     proposals = project.proposals.select_related('current_revision', 'client')
     accepted = ProposalRevision.objects.filter(proposal__project=project, state='accepted').order_by('-accepted_at')
     correspondence = ClientEmail.objects.filter(Q(project=project) | Q(work_item__in=items)).select_related('client', 'delivery').order_by('-created_at')[:20]
-    return render(request, 'workqueue/project_detail.html', {'project':project, 'plan':plan, 'plan_form':plan_form,
+    from .time_views import timer_context
+    from .time_services import time_summary
+    return render(request, 'workqueue/project_detail.html', {**timer_context(request.user, project), 'time_totals':time_summary(project), 'project':project, 'plan':plan, 'plan_form':plan_form,
         'task_form':task_form, 'tasks':project.tasks.filter(canceled_at__isnull=True), 'items':items, 'files':files,
         'clients':clients, 'proposals':proposals, 'accepted':accepted, 'correspondence':correspondence,
         'events':project.planning_events.all()[:30], 'can_change':not staff_preview(request) and request.user.has_perm('workqueue.change_workitem')}, status=status)

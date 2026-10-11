@@ -3,7 +3,7 @@
   "use strict";
   const queue = document.querySelector(".queue-work");
   if (!queue) return;
-  const forms = Array.from(queue.querySelectorAll('form[method="post"]'));
+  const forms = Array.from(queue.querySelectorAll('form[method="post"]:not([data-time-action])'));
   const baseline = new Map();
   const dirty = new Set();
   const warning = queue.querySelector("[data-unsaved-warning]");

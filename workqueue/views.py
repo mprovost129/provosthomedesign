@@ -423,7 +423,9 @@ def queue(request):
     from .models import Appointment, BookingAccess
     from .health import health_snapshot
     appointments = Appointment.objects.select_related("project").prefetch_related("notifications", "replacements").exclude(state__in=["canceled", "completed"]).order_by("starts_at")
-    return render(request, "workqueue/queue.html", {"rows": rows, "page": page, "filters": filters,
+    from .time_views import timer_context
+    time_context = timer_context(request.user) if not preview and request.user.has_perm("workqueue.change_workitem") else {}
+    return render(request, "workqueue/queue.html", {**time_context, "rows": rows, "page": page, "filters": filters,
         "queue_health": health_snapshot(),
         "arrival_snapshot": arrival_snapshot,
         "appointments": appointments, "booking_access": BookingAccess.objects.order_by("email")[:100],

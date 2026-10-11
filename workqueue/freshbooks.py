@@ -365,7 +365,9 @@ def retry_rejected_invoice(local_id, actor, confirm=False):
         raise ValidationError('A matching invoice exists. Use Check for existing invoice instead of retrying.')
     with transaction.atomic():
         lock_queue()
-        local = FreshBooksInvoice.objects.select_for_update().select_related('proposal__current_revision').get(pk=local_id)
+        # Nullable current_revision creates an outer join. PostgreSQL cannot
+        # lock its nullable side; the queue lock already serializes proposals.
+        local = FreshBooksInvoice.objects.select_for_update(of=('self',)).select_related('proposal__current_revision').get(pk=local_id)
         if local.state != 'failed' or local.invoice_id:
             raise EditConflict('The invoice action changed. Reload before retrying.')
         proposal = local.proposal

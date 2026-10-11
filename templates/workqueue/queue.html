@@ -1,6 +1,6 @@
 {% extends 'workqueue/site_base.html' %}{% load static %}
 {% block title %}Work Queue{% endblock %}
-{% block tool_styles %}<link rel="stylesheet" href="{% static 'css/work-queue.css' %}"><link rel="stylesheet" href="{% static 'css/crm-communication.css' %}">{% endblock %}
+{% block tool_styles %}<link rel="stylesheet" href="{% static 'css/work-queue.css' %}"><link rel="stylesheet" href="{% static 'css/crm-communication.css' %}"><link rel="stylesheet" href="{% static 'css/time-tracking.css' %}">{% endblock %}
 {% block workspace %}
 <div class="queue-work" id="content" tabindex="-1">
 <header class="site-header"><div><span class="brand">Provost Home Design</span><h1>Work Queue</h1>
@@ -16,6 +16,7 @@
   <p class="notice error" data-unsaved-warning role="alert" hidden></p>
   {% if staff_preview %}<p class="notice" role="status">Preview only. Your Google Sheet is still the working queue. Changes here will be available after the switch.</p>{% endif %}
   {% for message in messages %}<div class="notice {{ message.tags }}" role="status">{{ message }}</div>{% endfor %}
+  {% include 'workqueue/time_timer.html' %}
   <section class="attention-panel" aria-label="Needs attention">
     <div class="attention-heading"><h2>Needs attention</h2><p>Across all requests. Follow-ups include today.</p></div>
     <nav class="attention-links" aria-label="Attention views">
@@ -65,6 +66,7 @@
         <td>{% if item.deleted_at %}<span class="muted">Deleted</span>{% elif item.position %}<strong>{{ item.position }}</strong>{% else %}<span class="muted">Closed</span>{% endif %}</td>
         <td><strong>{{ item.reference }}</strong><small>{{ item.get_kind_display }}</small>
           {% if not item.deleted_at %}<div class="request-actions">{% if item.project_id %}<a href="{% url 'workqueue:project_detail' item.project_id %}" target="_blank" rel="noopener">Workspace</a>{% endif %}{% if can_change and item.client_contact_id %}<button type="button" class="email-trigger" data-email-url="{% url 'workqueue:compose_email' item.client_contact.client_id %}?item={{ item.pk }}">Email</button>{% endif %}
+            {% if can_change and item.project_id %}<button type="button" class="secondary" data-track-project="{{ item.project_id }}" data-track-item="{{ item.pk }}">Track time</button><a href="{% url 'workqueue:project_time' item.project_id %}" target="_blank" rel="noopener">Time entries</a>{% endif %}
             {% if can_change %}<a href="#manage-{{ item.pk }}" data-edit-target="manage-{{ item.pk }}">Edit</a>{% endif %}
             {% if can_add %}<a href="?{{ page_query }}&amp;copy={{ item.pk }}">Copy</a>{% endif %}
             {% if can_delete %}<details class="delete-request"><summary>Delete</summary><form method="post">{% csrf_token %}{% include 'workqueue/filter_context.html' %}
@@ -177,7 +179,7 @@
 </main>
 </div>
 {% endblock %}
-{% block tool_scripts %}{% include "workqueue/email_popup.html" %}<script src="{% static 'js/crm-communication.js' %}" defer></script>
+{% block tool_scripts %}<script src="{% static 'js/time-tracking.js' %}" defer></script>{% include "workqueue/email_popup.html" %}<script src="{% static 'js/crm-communication.js' %}" defer></script>
 {{ information_templates|json_script:'information-templates' }}
 <script src="{% static 'js/work-queue.js' %}" defer></script>
 <script src="{% static 'js/queue-ordering.js' %}" defer></script>

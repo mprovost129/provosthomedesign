@@ -11,7 +11,15 @@ Staff open **Projects** from the queue, or **Workspace** on a queue job. A proje
 5. The recipient can view/download only that proposal and accept or request changes. Acceptance records the name, invited email, time, and exact version, and queues owner/client receipts. This does not expose private notes, all project files, or other client records.
 6. Create a draft revision to make changes. Old versions and acceptance records remain available to staff. A previous version cannot be accepted while a draft revision is being prepared or after it is superseded/withdrawn.
 
-Private links use fragments, hashed tokens, a session exchange, no analytics, no-referrer/no-store headers, and a maximum 30-day expiry capped by the proposal's valid-through date. Forwarding a private link gives its recipient access: the acceptance is evidence of action by the holder of the invitation, not independent identity verification or a formal e-signature service.
+Private links use fragments, hashed tokens, a session exchange, no analytics, no-store headers, and a maximum 30-day expiry capped by the proposal's valid-through date. Form pages use same-origin referrers so native HTTPS form submissions pass CSRF checks; PDFs and other private responses suppress referrers. Forwarding a private link gives its recipient access: the acceptance is evidence of action by the holder of the invitation, not independent identity verification or a formal e-signature service.
+
+## Time tracking
+
+Choose **Track time** on a queue job to select its project and job, then choose the work type, optional description, and billable flag. **Start timer** persists a server-owned timer for the signed-in staff member; navigation, closing the browser, and deployment do not stop it. Only one timer per person can run. **Stop and record time** records elapsed server time once, including when two tabs retry. **Discard timer** requires confirmation and records no hours.
+
+Open **Time entries** from the queue or **Time** in a project to add missed time by date and minutes, correct entries, remove entries, or restore a removal. Corrections retain original timer timestamps and record changes in project activity. Saved time totals distinguish billable/nonbillable hours and compare actual time against the project's estimated hours. Running timers are excluded from saved totals. A timer over 12 hours prompts review; it does not stop or bill automatically.
+
+These records are private to authorized staff. Preview and read-only staff cannot change time. Timer controls in the queue operate without navigation and preserve unsaved queue edits. Manual entries and corrections use version checks and request identifiers to prevent duplicates and stale overwrites. Removed records remain recoverable. Time tracking does not email clients, change queue order/status, send time to FreshBooks, create invoices, or charge payments. Review recorded time before using it for hourly billing in FreshBooks.
 
 ## FreshBooks deployment configuration
 
