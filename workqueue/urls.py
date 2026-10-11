@@ -12,9 +12,11 @@ from . import time_views
 from . import report_views
 from . import checklist_views
 from . import proposal_overview_views
+from . import invoice_overview_views
 
 app_name = "workqueue"
 urlpatterns = [
+    path('work-projects/invoices/', invoice_overview_views.invoice_overview, name='invoice_overview'),
     path('work-projects/proposals/', proposal_overview_views.proposal_overview, name='proposal_overview'),
     path('work-projects/tasks/', checklist_views.task_list, name='task_list'),
     path('work-projects/tasks/<uuid:task_id>/', checklist_views.task_edit, name='task_edit'),

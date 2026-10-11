@@ -83,3 +83,14 @@ Filters cover drafts, queued email, awaiting response, changes requested, expire
 The row shows proposed USD fees (hourly amounts are estimates), validity, recipient, preparation/first-view/acceptance dates, and actual saved email state. Sent means accepted by the email service, not proven inbox delivery. First-view records can include automated security checks. Private invitation URLs, tokens, email bodies, and internal project notes are never included in the overview.
 
 Open the existing proposal editor for any send, revise, withdraw, or FreshBooks action. Viewing/filtering the overview performs no writes, sends no reminders or client messages, creates no invoices, and changes no queue status/order. It uses existing staff permissions and no-store headers. No migration, external service, credentials, or worker setting change is required.
+
+
+## Invoices overview
+
+Open **Invoices** from staff navigation or the queue to review locally linked FreshBooks records. Search by invoice/proposal number, project/address, client name, job reference, or email. All projects is the default and preserves billing history for closed/removed jobs. Active projects requires visible open work. Each invoice appears once regardless of connected jobs or proposal versions.
+
+Status filters cover preparing drafts, drafts, outstanding excluding overdue, overdue, paid, billing review, stale snapshots and voided/deleted invoices. Overdue uses FreshBooks’ saved v3 status, never an inferred due date. Paid requires the saved paid/autopaid status and zero outstanding balance. Drafts and closed invoices are excluded from outstanding totals, as are incomplete/invalid balances and payment-problem statuses. Totals group by currency and include all search/scope matches before the status filter/pagination. Stale snapshots and failed refresh/payment setup are flagged; the last checked date is not necessarily the date of the last successful balance refresh. No raw API errors, request payloads, or credentials are exposed.
+
+Completed projects with no local invoice or a draft/incomplete billing record appear in a separate review section (first 10, with a link to the full Reports list). Its count follows search/project filters independently of invoice status. No local link does not establish that no invoice exists in FreshBooks. Invoices created separately there are not imported or included automatically.
+
+Open the exact staff invoice in FreshBooks using its account and invoice ID, or review/refresh from the existing proposal billing section. All invoices opens the FreshBooks invoice list. The overview is GET-only under existing staff permissions and no-store headers. Reads make no provider calls or writes and send no invoices, reminders or payments. No migration, credential, external service or worker change is needed. Official status reference: https://www.freshbooks.com/api/invoices .
