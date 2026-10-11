@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Client, ClientContact, WorkItem, WorkProject
+from .models import Client, ClientContact, ClientFollowUp, WorkItem, WorkProject
 from .client_forms import SERVICE_CHOICES
 
 
@@ -60,9 +60,14 @@ class ClientForm(forms.ModelForm):
 
     class Meta:
         model = Client
-        fields = ["name", "kind", "billing_street", "billing_city", "billing_state", "billing_zip", "internal_notes"]
+        fields = ["name", "kind", "stage", "billing_street", "billing_city", "billing_state", "billing_zip", "internal_notes"]
         labels = {"name": "Client / company name", "kind": "Client type", "internal_notes": "Private client notes"}
         widgets = {"internal_notes": forms.Textarea(attrs={"rows": 4})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["stage"].choices = [("", "Automatic from work history"), *Client.Stage.choices]
+        self.fields["stage"].label = "Client stage"
 
 
 class ContactForm(forms.Form):
@@ -71,6 +76,26 @@ class ContactForm(forms.Form):
     email = forms.EmailField(required=False, label="Email address")
     full_name = forms.CharField(max_length=200, required=False, label="Full name")
     phone = forms.CharField(max_length=50, required=False, label="Phone number")
+    role = forms.ChoiceField(choices=[("", "Not specified"), *ClientContact.Role.choices], required=False)
+    is_primary = forms.BooleanField(required=False, label="Primary contact")
+
+
+class ActivityForm(forms.Form):
+    version = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
+    kind = forms.ChoiceField(choices=[("call", "Phone call"), ("meeting", "Meeting"), ("note", "Note")], label="Activity type")
+    note = forms.CharField(max_length=5000, widget=forms.Textarea(attrs={"rows": 3}), label="Private activity note")
+
+
+class FollowUpForm(forms.ModelForm):
+    version = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
+    task_id = forms.UUIDField(widget=forms.HiddenInput)
+    task_version = forms.IntegerField(min_value=1, required=False, widget=forms.HiddenInput)
+
+    class Meta:
+        model = ClientFollowUp
+        fields = ["title", "due_date", "notes"]
+        labels = {"title": "Next action", "due_date": "Follow up on", "notes": "Private notes"}
+        widgets = {"due_date": forms.DateInput(attrs={"type": "date"}), "notes": forms.Textarea(attrs={"rows": 2})}
 
 
 class ClientChoiceField(forms.ModelChoiceField):

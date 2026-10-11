@@ -4,7 +4,7 @@ from django.db import transaction
 from django.db.models import Q
 
 from .crm_identity import company_key, email_key, link_item, normalized_text, phone_key
-from .models import Attachment, Client, ClientContact, ClientEvent, PendingUpload, Submission, WorkItem
+from .models import Attachment, Client, ClientContact, ClientEvent, ClientFollowUp, PendingUpload, Submission, WorkItem
 from .services import EditConflict, lock_queue
 
 
@@ -152,9 +152,10 @@ def changed(client, actor, action, changes):
 
 @transaction.atomic
 def edit_client(*, client_id, version, data, actor):
+    require_staff(actor, "workqueue.change_workitem")
     lock_queue()
     client = checked_client(client_id, version)
-    allowed = {"name", "kind", "billing_street", "billing_city", "billing_state", "billing_zip", "internal_notes"}
+    allowed = {"name", "kind", "stage", "billing_street", "billing_city", "billing_state", "billing_zip", "internal_notes"}
     if set(data) - allowed:
         raise ValidationError("Unsupported client field.")
     changes = {}
@@ -197,17 +198,25 @@ def save_contact(*, client_id, version, contact_id, data, actor, copy_from_id=No
         raise ValidationError("Enter a name, email address or phone number for the contact.")
     if email and ClientContact.objects.filter(email=email).exclude(pk=contact.pk).exists():
         raise ValidationError("That email already belongs to another contact. Use the existing contact or the merge preview to connect client records.")
-    before = {"name": contact.full_name, "phone": contact.phone, "email": contact.email}
+    before = {"name": contact.full_name, "phone": contact.phone, "email": contact.email,
+              "role": contact.role, "primary_contact": str(client.primary_contact_id or "")}
     contact.email = email
     contact.full_name = data["full_name"]
     contact.phone = data["phone"]
+    if "role" in data:
+        contact.role = data["role"]
     contact.normalized_name = normalized_text(contact.full_name)
     contact.normalized_phone = phone_key(contact.phone)
     contact.full_clean()
     contact.save()
+    if data.get("is_primary"):
+        client.primary_contact = contact
+    elif "is_primary" in data and client.primary_contact_id == contact.pk:
+        client.primary_contact = None
     changed(client, actor, "Contact copied" if copy_from_id else "Contact updated" if contact_id else "Contact added",
             {"contact": str(contact.pk), "email": contact.email, "before": before,
-             "after": {"name": contact.full_name, "phone": contact.phone, "email": contact.email},
+             "after": {"name": contact.full_name, "phone": contact.phone, "email": contact.email,
+                       "role": contact.role, "primary_contact": str(client.primary_contact_id or "")},
              **({"copied_from": str(copy_from_id)} if copy_from_id else {})})
     return contact
 
@@ -226,6 +235,8 @@ def archive_contact(*, client_id, version, contact_id, actor):
     # work snapshots, submission ownership, email deliveries or access grants.
     contact.email = None
     contact.save(update_fields=["archived_at", "archived_email", "email"])
+    if client.primary_contact_id == contact.pk:
+        client.primary_contact = None
     changed(client, actor, "Contact deleted", {"contact": str(contact.pk),
         "name": contact.full_name, "email": contact.archived_email})
     return contact
@@ -252,23 +263,33 @@ def restore_contact(*, client_id, version, contact_id, actor, restore_email=True
 
 @transaction.atomic
 def merge_clients(*, source_id, source_version, target_id, target_version, actor):
+    require_staff(actor, "workqueue.change_workitem")
     lock_queue()
     if source_id == target_id:
         raise ValidationError("Choose another client to keep.")
     source = checked_client(source_id, source_version)
     target = checked_client(target_id, target_version)
     contacts = list(source.contacts.values_list("pk", flat=True))
+    tasks = list(source.followups.values_list("pk", flat=True))
+    source_primary = str(source.primary_contact_id or "")
+    target_primary = str(target.primary_contact_id or "")
+    if not target.primary_contact_id:
+        target.primary_contact_id = source.primary_contact_id
+    source.primary_contact = None
+    ClientFollowUp.objects.filter(client=source).update(client=target)
     ClientContact.objects.filter(client=source).update(client=target)
     source.merged_into = target
     changed(source, actor, "Merged into another client", {"target": str(target.pk), "name": target.name})
     changed(target, actor, "Client records merged", {"source": str(source.pk), "name": source.name,
         "contacts": [str(pk) for pk in contacts], "source_version": source.version,
+        "tasks": [str(pk) for pk in tasks], "source_primary": source_primary, "target_primary": target_primary,
         "target_version": target.version + 1})
     return target
 
 
 @transaction.atomic
 def undo_merge(*, client_id, version, event_id, actor):
+    require_staff(actor, "workqueue.change_workitem")
     lock_queue()
     target = checked_client(client_id, version)
     event = ClientEvent.objects.filter(client=target, pk=event_id, action="Client records merged").first()
@@ -281,7 +302,76 @@ def undo_merge(*, client_id, version, event_id, actor):
             or ClientContact.objects.filter(pk__in=ids, client=target).count() != len(ids)):
         raise EditConflict("These records changed after the merge. Review their contact history before correcting them.")
     ClientContact.objects.filter(pk__in=ids, client=target).update(client=source)
+    ClientFollowUp.objects.filter(pk__in=event.changes.get("tasks", []), client=target).update(client=source)
+    if "source_primary" in event.changes:
+        import uuid
+        source.primary_contact_id = uuid.UUID(event.changes["source_primary"]) if event.changes["source_primary"] else None
+        target.primary_contact_id = uuid.UUID(event.changes["target_primary"]) if event.changes["target_primary"] else None
     source.merged_into = None
     changed(source, actor, "Merge reversed", {"target": str(target.pk), "merge": event.pk})
     changed(target, actor, "Merge reversed", {"source": str(source.pk), "merge": event.pk})
     return source
+
+
+@transaction.atomic
+def log_activity(*, client_id, version, kind, note, actor):
+    require_staff(actor, "workqueue.change_workitem")
+    lock_queue()
+    client = checked_client(client_id, version)
+    labels = {"call": "Phone call logged", "meeting": "Meeting logged", "note": "Note logged"}
+    if kind not in labels or not note.strip() or len(note) > 5000:
+        raise ValidationError("Choose an activity type and enter a note of up to 5,000 characters.")
+    changed(client, actor, labels[kind], {"note": note.strip()})
+    return client
+
+
+@transaction.atomic
+def save_followup(*, client_id, version, task_id, task_version, data, actor):
+    require_staff(actor, "workqueue.change_workitem")
+    lock_queue()
+    client = checked_client(client_id, version)
+    task = ClientFollowUp.objects.filter(pk=task_id).first()
+    if task:
+        if task.client_id != client.pk:
+            raise ValidationError("Choose a follow-up belonging to this client.")
+        if task.version != task_version:
+            raise EditConflict("This follow-up changed. Reload before saving.")
+        if not task.is_open:
+            raise ValidationError("Reopen this follow-up before editing it.")
+        task.version += 1
+    else:
+        if task_version is not None:
+            raise ValidationError("This follow-up is no longer available.")
+        task = ClientFollowUp(id=task_id, client=client, actor=actor)
+    for name in ("title", "due_date", "notes"):
+        setattr(task, name, data[name])
+    task.full_clean()
+    task.save()
+    changed(client, actor, "Follow-up saved", {"task": str(task.pk), "title": task.title, "due": task.due_date.isoformat()})
+    return task
+
+
+@transaction.atomic
+def change_followup(*, client_id, version, task_id, task_version, action, actor):
+    from django.utils import timezone
+    require_staff(actor, "workqueue.change_workitem")
+    lock_queue()
+    client = checked_client(client_id, version)
+    task = client.followups.filter(pk=task_id).first()
+    if not task:
+        raise ValidationError("Choose a follow-up belonging to this client.")
+    if task.version != task_version:
+        raise EditConflict("This follow-up changed. Reload before saving.")
+    if action == "complete":
+        task.completed_at, task.canceled_at = timezone.now(), None
+    elif action == "cancel":
+        task.canceled_at = timezone.now()
+    elif action == "reopen":
+        task.completed_at, task.canceled_at = None, None
+    else:
+        raise ValidationError("Choose a supported follow-up action.")
+    task.version += 1
+    task.save()
+    changed(client, actor, {"complete": "Follow-up completed", "cancel": "Follow-up canceled", "reopen": "Follow-up reopened"}[action],
+            {"task": str(task.pk), "title": task.title})
+    return task

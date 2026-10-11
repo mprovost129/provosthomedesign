@@ -38,3 +38,16 @@
 .crm-work .crm-delete summary {color:#9d2d26;}
 .crm-work .crm-checkbox {display:flex;align-items:center;gap:8px;margin-top:12px;}
 .crm-work .crm-checkbox input {width:auto;}
+.crm-work .crm-summary {display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:20px 0;}
+.crm-work .crm-summary a {border:1px solid var(--line);border-radius:8px;background:white;padding:16px;text-decoration:none;}
+.crm-work .crm-summary strong {display:block;font-size:24px;}
+.crm-work .crm-due {color:#9d2d26;font-weight:600;}
+.crm-work .crm-task {padding:16px 0;border-bottom:1px solid var(--line);}
+.crm-work .crm-task h3 {margin:0;font-size:16px;}
+.crm-work .crm-task-actions {display:flex;flex-wrap:wrap;gap:12px;}
+.crm-work .crm-timeline {list-style:none;padding:0;margin:20px 0;}
+.crm-work .crm-timeline>li {border-left:3px solid #bdd0df;padding:0 0 20px 18px;margin-left:5px;}
+.crm-work .crm-timeline time {font-size:13px;color:var(--muted);}
+.crm-work .field input[type=checkbox] {width:auto;min-height:auto;}
+.crm-work .crm-section-nav {display:flex;flex-wrap:wrap;gap:24px;margin:8px 0 20px;}
+.crm-work [id] {scroll-margin-top:100px;}

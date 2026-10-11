@@ -34,6 +34,12 @@ class Priority(models.TextChoices):
 
 
 class Client(models.Model):
+    class Stage(models.TextChoices):
+        INQUIRY = "inquiry", "Inquiry"
+        ESTIMATE = "estimate", "Estimate sent"
+        ACTIVE = "active", "Active client"
+        PAST = "past", "Past client"
+
     class Kind(models.TextChoices):
         INDIVIDUAL = "individual", "Individual / homeowner"
         COMPANY = "company", "Company"
@@ -47,6 +53,10 @@ class Client(models.Model):
     billing_state = models.CharField(max_length=50, blank=True)
     billing_zip = models.CharField(max_length=20, blank=True)
     internal_notes = models.TextField(blank=True)
+    stage = models.CharField(max_length=20, choices=Stage.choices, blank=True,
+                             help_text="Leave automatic to follow the client's work history.")
+    primary_contact = models.ForeignKey("ClientContact", null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="primary_for", editable=False)
     version = models.PositiveIntegerField(default=1, editable=False)
     merged_into = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT,
                                     related_name="merged_clients")
@@ -60,8 +70,27 @@ class Client(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def effective_stage(self):
+        if self.stage:
+            return self.stage
+        if getattr(self, "active_count", 0):
+            return self.Stage.ACTIVE
+        return self.Stage.PAST if getattr(self, "request_count", 0) else self.Stage.INQUIRY
+
+    @property
+    def stage_label(self):
+        return self.Stage(self.effective_stage).label
+
 
 class ClientContact(models.Model):
+    class Role(models.TextChoices):
+        HOMEOWNER = "homeowner", "Homeowner"
+        CONTRACTOR = "contractor", "Contractor / builder"
+        BILLING = "billing", "Billing contact"
+        DESIGNER = "designer", "Designer / architect"
+        OTHER = "other", "Other"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     client = models.ForeignKey(Client, on_delete=models.PROTECT, related_name="contacts")
     email = models.EmailField(unique=True, null=True, blank=True)
@@ -69,6 +98,7 @@ class ClientContact(models.Model):
     archived_email = models.EmailField(blank=True, editable=False)
     full_name = models.CharField(max_length=200, blank=True)
     phone = models.CharField(max_length=50, blank=True)
+    role = models.CharField(max_length=20, choices=Role.choices, blank=True)
     submitted_company = models.CharField(max_length=200, blank=True)
     normalized_name = models.CharField(max_length=200, blank=True, db_index=True, editable=False)
     normalized_phone = models.CharField(max_length=50, blank=True, db_index=True, editable=False)
@@ -91,6 +121,31 @@ class ClientEvent(models.Model):
 
     class Meta:
         ordering = ["-created_at", "-id"]
+
+
+class ClientFollowUp(models.Model):
+    """Private client tasks; job reminders remain on their existing work items."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    client = models.ForeignKey(Client, on_delete=models.PROTECT, related_name="followups")
+    title = models.CharField(max_length=200)
+    due_date = models.DateField(db_index=True)
+    notes = models.TextField(max_length=5000, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    canceled_at = models.DateTimeField(null=True, blank=True)
+    version = models.PositiveIntegerField(default=1, editable=False)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        ordering = ["due_date", "created_at", "id"]
+
+    @property
+    def is_open(self):
+        return not self.completed_at and not self.canceled_at
+
+    @property
+    def is_due(self):
+        return self.is_open and self.due_date <= timezone.localdate()
 
 
 class WorkProject(models.Model):

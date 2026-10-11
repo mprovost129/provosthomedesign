@@ -1,4 +1,5 @@
 from urllib.parse import urlencode
+import uuid
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
@@ -15,8 +16,9 @@ from django.urls import reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 
-from .crm import archive_contact, restore_contact, create_client, create_client_work, edit_client, merge_clients, possible_matches, save_contact, undo_merge
-from .crm_forms import ClientForm, ClientWorkForm, NewClientForm, ContactForm, ContactStateForm, MergeForm, UndoForm
+from .crm import archive_contact, restore_contact, create_client, create_client_work, edit_client, merge_clients, possible_matches, save_contact, undo_merge, log_activity, save_followup, change_followup
+from .crm_forms import ClientForm, ClientWorkForm, NewClientForm, ContactForm, ContactStateForm, MergeForm, UndoForm, ActivityForm, FollowUpForm
+from .crm_overview import overview, next_action, possible_match_ids, timeline, client_emails
 from .models import Appointment, Client, ClientContact, ClientEvent, CLOSED_STATUSES, PendingUpload, WorkItem, WorkProject
 from .access import new_intake_token, read_intake_token, session_digest
 from .services import EditConflict
@@ -47,16 +49,45 @@ def clients(request):
             | Q(contacts__work_items__project__name__icontains=query)
             | Q(contacts__work_items__project_street__icontains=query)).values("pk")
         queryset = queryset.filter(pk__in=matching)
-    queryset = client_counts(queryset)
+    queryset = overview(client_counts(queryset))
     if scope == "repeat":
         queryset = queryset.filter(request_count__gt=1)
     elif scope == "active":
         queryset = queryset.filter(active_count__gt=0)
     else:
         scope = "all"
+    stage = request.GET.get("stage", "")
+    if stage in Client.Stage.values:
+        automatic = {
+            "inquiry": Q(stage="", request_count=0),
+            "active": Q(stage="", active_count__gt=0),
+            "past": Q(stage="", request_count__gt=0, active_count=0),
+            "estimate": Q(pk__in=[]),
+        }
+        queryset = queryset.filter(Q(stage=stage) | automatic[stage])
+    else:
+        stage = ""
+    attention = request.GET.get("attention", "")
+    match_ids = possible_match_ids()
+    filters = {"due": Q(due_followup=True) | Q(due_job_followup=True),
+               "followups": Q(has_followup=True) | Q(has_job_followup=True),
+               "missing_email": Q(has_email=False), "missing_phone": Q(has_phone=False),
+               "matches": Q(pk__in=match_ids)}
+    if attention in filters:
+        queryset = queryset.filter(filters[attention])
+    else:
+        attention = ""
     page = Paginator(queryset.order_by("name", "id"), 30).get_page(request.GET.get("page"))
+    for row in page:
+        row.next_action = next_action(row)
+        row.possible_match = row.pk in match_ids
+    summary = overview(Client.objects.filter(merged_into__isnull=True))
     return render(request, "workqueue/clients.html", {"page": page, "q": query, "scope": scope,
-        "page_query": urlencode({"q": query, "scope": scope}),
+        "stage": stage, "stage_choices": Client.Stage.choices, "attention": attention,
+        "due_count": summary.filter(Q(due_followup=True) | Q(due_job_followup=True)).count(),
+        "missing_email_count": summary.filter(has_email=False).count(),
+        "missing_phone_count": summary.filter(has_phone=False).count(), "match_count": len(match_ids),
+        "page_query": urlencode({"q": query, "scope": scope, "stage": stage, "attention": attention}),
         "client_count": Client.objects.filter(merged_into__isnull=True).count(),
         "can_add_client": not staff_preview(request) and request.user.has_perm("workqueue.change_workitem")})
 
@@ -95,7 +126,7 @@ def add_client_work(request, client_id):
     if staff_preview(request):
         raise PermissionDenied
     client = get_object_or_404(Client, pk=client_id, merged_into__isnull=True)
-    first_contact = client.contacts.filter(archived_at__isnull=True).first()
+    first_contact = client.contacts.filter(pk=client.primary_contact_id, archived_at__isnull=True).first() or client.contacts.filter(archived_at__isnull=True).first()
     form = ClientWorkForm(request.POST or None, client=client, initial={"intake_token": new_intake_token(request),
         "version": client.version, "kind": "new", "contact": first_contact})
     status, ready = 200, []
@@ -142,6 +173,9 @@ def client_detail(request, client_id):
     bound_contact_form = None
     bound_copy_id = None
     bound_copy_form = None
+    activity_form = ActivityForm(initial={"version": client.version}, prefix="activity")
+    followup_form = FollowUpForm(initial={"version": client.version, "task_id": uuid.uuid4()}, prefix="followup")
+    bound_task_id, bound_task_form = None, None
     if request.method == "POST":
         if not can_change:
             raise PermissionDenied
@@ -151,7 +185,8 @@ def client_detail(request, client_id):
                 edit_form = ClientForm(request.POST, instance=client, prefix="client")
                 if edit_form.is_valid():
                     edit_client(client_id=client_id, version=edit_form.cleaned_data["version"], actor=request.user,
-                        data={key: edit_form.cleaned_data[key] for key in ClientForm.Meta.fields})
+                        data={key: edit_form.cleaned_data[key] for key in ClientForm.Meta.fields
+                              if key != "stage" or edit_form.add_prefix("stage") in request.POST})
                     messages.success(request, "Client details saved. Original submissions remain unchanged.")
                     return redirect("workqueue:client_detail", client_id)
             elif action == "contact":
@@ -167,6 +202,9 @@ def client_detail(request, client_id):
                     contact_data = dict(contact_form.cleaned_data)
                     if contact_form.add_prefix("email") not in request.POST:
                         contact_data.pop("email", None)
+                    if contact_form.add_prefix("role") not in request.POST:
+                        contact_data.pop("role", None)
+                        contact_data.pop("is_primary", None)
                     save_contact(client_id=client_id, version=contact_form.cleaned_data["version"],
                         contact_id=bound_contact_id, data=contact_data, actor=request.user)
                     messages.success(request, "Contact saved.")
@@ -194,6 +232,34 @@ def client_detail(request, client_id):
                     restore_contact(**args, restore_email=state_form.cleaned_data["restore_email"])
                     messages.success(request, "Contact restored.")
                 return redirect("workqueue:client_detail", client_id)
+            elif action == "activity":
+                activity_form = ActivityForm(request.POST, prefix="activity")
+                if activity_form.is_valid():
+                    log_activity(client_id=client_id, actor=request.user, **activity_form.cleaned_data)
+                    messages.success(request, "Private activity logged.")
+                    return redirect(reverse("workqueue:client_detail", args=[client_id]) + "#activity")
+            elif action == "save_followup":
+                bound_task_id = forms.UUIDField(required=False).clean(request.POST.get("task_key"))
+                task_form = FollowUpForm(request.POST, prefix=f"task-{bound_task_id}" if bound_task_id else "followup")
+                if bound_task_id:
+                    bound_task_form = task_form
+                else:
+                    followup_form = task_form
+                if task_form.is_valid():
+                    if bound_task_id and task_form.cleaned_data["task_id"] != bound_task_id:
+                        raise ValidationError("Reload this follow-up before editing it.")
+                    save_followup(client_id=client_id, version=task_form.cleaned_data["version"],
+                        task_id=task_form.cleaned_data["task_id"], task_version=task_form.cleaned_data["task_version"],
+                        data=task_form.cleaned_data, actor=request.user)
+                    messages.success(request, "Client follow-up saved.")
+                    return redirect(reverse("workqueue:client_detail", args=[client_id]) + "#follow-ups")
+            elif action == "followup_state":
+                change_followup(client_id=client_id, version=forms.IntegerField(min_value=1).clean(request.POST.get("version")),
+                    task_id=forms.UUIDField().clean(request.POST.get("task_id")),
+                    task_version=forms.IntegerField(min_value=1).clean(request.POST.get("task_version")),
+                    action=request.POST.get("task_action"), actor=request.user)
+                messages.success(request, "Follow-up updated.")
+                return redirect(reverse("workqueue:client_detail", args=[client_id]) + "#follow-ups")
             elif action in {"preview_merge", "merge"}:
                 merge_form = MergeForm(request.POST, client=client, prefix="merge")
                 if merge_form.is_valid():
@@ -233,6 +299,10 @@ def client_detail(request, client_id):
                 (bound_contact_form if bound_contact_form is not None else add_form).add_error(None, error)
             elif action == "copy_contact" and bound_copy_form is not None:
                 bound_copy_form.add_error(None, error)
+            elif action == "activity":
+                activity_form.add_error(None, error)
+            elif action == "save_followup":
+                (bound_task_form if bound_task_form is not None else followup_form).add_error(None, error)
             status = 409 if isinstance(exc, EditConflict) else 400
         # ModelForm may mutate its instance; render current stored values separately.
         client.refresh_from_db()
@@ -244,6 +314,11 @@ def client_detail(request, client_id):
         "submissions__attachments", "submissions__notifications", "completed_deliveries__files", "milestones__delivery",
         "information_requests__delivery").order_by("-received_at", "-id")
     request_count, active_count = items.count(), items.active().count()
+    client.request_count, client.active_count = request_count, active_count
+    job_followups = items.active().filter(followup_date__isnull=False).order_by("followup_date", "queue_order")
+    task_forms = [(task, bound_task_form if task.pk == bound_task_id else FollowUpForm(instance=task,
+        prefix=f"task-{task.pk}", initial={"version": client.version, "task_id": task.pk, "task_version": task.version}))
+        for task in client.followups.filter(completed_at__isnull=True, canceled_at__isnull=True)]
     visible_jobs = Q(work_items__deleted_at__isnull=True, work_items__client_contact__client=client)
     projects = WorkProject.objects.filter(visible_jobs).annotate(
         job_count=Count("work_items", filter=visible_jobs, distinct=True),
@@ -264,7 +339,7 @@ def client_detail(request, client_id):
             else:
                 project_filter = ""
     page = Paginator(items, 25).get_page(request.GET.get("page"))
-    emails = [contact.email for contact in contacts if contact.email]
+    emails = client_emails(client)
     events = list(client.events.select_related("actor")[:30])
     reversible = next((event for event in events if event.action == "Client records merged"
                       and event.changes.get("target_version") == client.version), None)
@@ -275,10 +350,15 @@ def client_detail(request, client_id):
         "can_add_work": not staff_preview(request) and request.user.has_perm("workqueue.add_workitem") and not client.merged_into_id,
         "appointments": Appointment.objects.filter(email__in=emails).select_related("project").order_by("-starts_at")[:30],
         "events": events, "reversible": reversible, "can_change": can_change, "edit_form": edit_form,
+        "activity_form": activity_form, "followup_form": followup_form, "task_forms": task_forms,
+        "job_followups": job_followups, "today": timezone.localdate(),
+        "closed_tasks": client.followups.filter(Q(completed_at__isnull=False) | Q(canceled_at__isnull=False)).order_by("-created_at")[:30],
+        "timeline": timeline(client, request.GET.get("activity_page")),
         "archives": client.merged_clients.all(),
         "deleted_contacts": [contact for contact in all_contacts if contact.archived_at],
         "add_form": add_form, "contact_forms": [(contact, bound_contact_form if contact.pk == bound_contact_id else ContactForm(prefix=f"contact-{contact.pk}", initial={
-            "version": client.version, "contact_id": contact.pk, "full_name": contact.full_name, "phone": contact.phone, "email": contact.email}),
+            "version": client.version, "contact_id": contact.pk, "full_name": contact.full_name, "phone": contact.phone, "email": contact.email,
+            "role": contact.role, "is_primary": contact.pk == client.primary_contact_id}),
             bound_copy_form if contact.pk == bound_copy_id else ContactForm(prefix=f"copy-{contact.pk}", initial={
                 "version": client.version, "full_name": contact.full_name, "phone": contact.phone})) for contact in contacts],
         "merge_form": merge_form, "merge_preview": preview, "merge_signature": signature,

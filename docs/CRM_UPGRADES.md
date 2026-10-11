@@ -1,0 +1,13 @@
+# Client activity and follow-ups
+
+The authenticated `/clients/` directory now includes client stages, the earliest next action, and filters/cards for follow-ups due, missing email, missing phone and possible matches. The counts are client counts, not task counts. Missing email/phone means no active contact has that field. Possible matches use the existing normalized identity keys and remain suggestions; opening a suggestion never merges records.
+
+Stages default to automatic: no visible work means Inquiry, any active work means Active client, and only closed work means Past client. A manual stage (including Estimate sent) overrides this rule until Automatic is chosen again. Stages do not change queue statuses, ordering, or client access.
+
+Each client record has a paginated activity timeline assembled from existing submissions/files, work change events, completed deliveries, website email delivery records, appointments and CRM changes. Call/meeting/note entries are private, dated at the time they are logged, audited and escaped. The timeline does not read or synchronize Gmail messages. Archived contact emails and visible submitted email snapshots help retain appointment history after contact corrections. Deleted work is omitted from the operational timeline.
+
+Private client follow-ups have a next action, required date, optional notes, and edit/complete/cancel/reopen controls. Existing active queue follow-up dates appear alongside them and remain editable only in the queue; no second reminder is created. Due means today or earlier in the configured local timezone. These are on-screen staff reminders; no new automatic email messages are sent.
+
+Active contacts support an optional role and primary-contact designation. The primary contact is preselected for new manually entered work; roles do not grant public access or redirect previously prepared messages. Archiving a primary contact clears the designation. Merges transfer client tasks, preserve the kept client's stage/profile and primary if present, and record enough information to undo task/primary moves until either profile changes. Original submissions and email snapshots remain intact.
+
+All writes require staff view/change permissions, CSRF, a current client version and (for existing tasks) a current task version. A retry from an old form cannot duplicate a task or activity. Existing open profile/contact forms preserve omitted new fields. The additive migration introduces stage, primary contact, contact role and the client follow-up table; it does not purge or rewrite historical data. Render database backups include these tables.
