@@ -14,6 +14,17 @@
   let navigating = false;
   let unavailable = false;
 
+  queue.querySelectorAll('[data-edit-target]').forEach(function (link) {
+    link.addEventListener('click', function () {
+      const details = document.getElementById(link.dataset.editTarget);
+      if (details) {
+        details.open = true;
+        const summary = details.querySelector('summary');
+        if (summary) summary.focus();
+      }
+    });
+  });
+
   function values(form) {
     return JSON.stringify(Array.from(new FormData(form).entries()));
   }

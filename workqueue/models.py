@@ -157,7 +157,7 @@ class LegacyQueueImport(models.Model):
 
 class WorkItemQuerySet(models.QuerySet):
     def active(self):
-        return self.exclude(status__in=CLOSED_STATUSES)
+        return self.filter(deleted_at__isnull=True).exclude(status__in=CLOSED_STATUSES)
 
     def with_position(self):
         # Count against the full active queue, before search/pagination/status filters.
@@ -168,6 +168,11 @@ class WorkItemQuerySet(models.QuerySet):
                 id__lt=OuterRef("id"))
         ).order_by().annotate(group=Value(1)).values("group").annotate(total=Count("id")).values("total")
         return self.annotate(requests_ahead=Coalesce(Subquery(preceding, output_field=models.IntegerField()), 0))
+
+
+class VisibleWorkItemManager(models.Manager.from_queryset(WorkItemQuerySet)):
+    def get_queryset(self):
+        return super().get_queryset().filter(deleted_at__isnull=True)
 
 
 class WorkItem(models.Model):
@@ -205,6 +210,7 @@ class WorkItem(models.Model):
     queue_order = models.PositiveBigIntegerField(validators=[MinValueValidator(1)])
     received_at = models.DateTimeField(default=timezone.now, editable=False)
     updated_at = models.DateTimeField(auto_now=True)
+    deleted_at = models.DateTimeField(null=True, blank=True, db_index=True, editable=False)
     version = models.PositiveIntegerField(default=1, editable=False)
     estimated_days = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True,
                                          validators=[MinValueValidator(0)])
@@ -217,7 +223,8 @@ class WorkItem(models.Model):
     source = models.CharField(max_length=100, blank=True)
     legacy_ref = models.CharField(max_length=200, blank=True)
     submission_position = models.PositiveIntegerField(null=True, blank=True, editable=False)
-    objects = WorkItemQuerySet.as_manager()
+    objects = VisibleWorkItemManager()
+    all_objects = WorkItemQuerySet.as_manager()
 
     class Meta:
         ordering = ["queue_order", "received_at", "id"]
@@ -232,7 +239,7 @@ class WorkItem(models.Model):
 
     @property
     def is_active(self):
-        return self.status not in CLOSED_STATUSES
+        return self.deleted_at is None and self.status not in CLOSED_STATUSES
 
     def clean(self):
         super().clean()

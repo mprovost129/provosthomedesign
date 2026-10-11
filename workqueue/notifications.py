@@ -11,6 +11,7 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.core.mail import BadHeaderError, EmailMessage
 from django.db import transaction
+from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
 
@@ -85,6 +86,16 @@ def deliver_pending(limit=100):
             record = NotificationDelivery.objects.select_for_update().filter(state="pending").order_by("created_at", "pk").first()
             if record is None:
                 break
+            deleted = NotificationDelivery.objects.filter(pk=record.pk).filter(
+                Q(submission__work_item__deleted_at__isnull=False)
+                | Q(information_request__work_item__deleted_at__isnull=False)
+                | Q(information_reminder__work_item__deleted_at__isnull=False)
+                | Q(status_milestone__work_item__deleted_at__isnull=False)
+                | Q(completed_delivery__work_item__deleted_at__isnull=False)).exists()
+            if deleted:
+                record.state, record.body = 'canceled', ''
+                record.save(update_fields=['state', 'body'])
+                continue
             if cancel_ineligible_reminder(record):
                 continue
             # Long-delayed or explicitly retried mail must contain a usable sign-in link.

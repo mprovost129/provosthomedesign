@@ -26,7 +26,8 @@ def with_email_attention(items):
         | Q(completed_delivery__work_item_id=OuterRef("pk"))
         | Q(information_reminder__work_item_id=OuterRef("pk"))
     )
-    replies = InformationResponse.objects.filter(information_request__work_item_id=OuterRef("pk"), reviewed_at__isnull=True)
+    replies = InformationResponse.objects.filter(information_request__work_item_id=OuterRef("pk"), reviewed_at__isnull=True,
+                                                  work_item__deleted_at__isnull=True)
     return items.annotate(email_attention=Exists(issues), response_attention=Exists(replies))
 
 

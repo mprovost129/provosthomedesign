@@ -116,7 +116,7 @@ def consume_email_token(raw):
     record.save(update_fields=["used_at"])
     # Only the original new-project claim can establish automatic project access.
     for claim in ProjectClaim.objects.select_related("submission__work_item").filter(email=record.email, verified_at__isnull=True):
-        if claim.submission.work_item.project_id != claim.project_id:
+        if claim.submission.work_item.deleted_at or claim.submission.work_item.project_id != claim.project_id:
             continue
         ProjectAccess.objects.get_or_create(project_id=claim.project_id, email=record.email)
         # Explicitly revoked grants remain revoked when an old claim is verified again.

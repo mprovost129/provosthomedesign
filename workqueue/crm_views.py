@@ -24,9 +24,10 @@ from .views import queue_enabled, staff_preview
 
 
 def client_counts(queryset):
-    return queryset.annotate(request_count=Count("contacts__work_items", distinct=True),
-        active_count=Count("contacts__work_items", filter=~Q(contacts__work_items__status__in=CLOSED_STATUSES), distinct=True),
-        last_request=Max("contacts__work_items__received_at")).prefetch_related(
+    visible = Q(contacts__work_items__deleted_at__isnull=True)
+    return queryset.annotate(request_count=Count("contacts__work_items", filter=visible, distinct=True),
+        active_count=Count("contacts__work_items", filter=visible & ~Q(contacts__work_items__status__in=CLOSED_STATUSES), distinct=True),
+        last_request=Max("contacts__work_items__received_at", filter=visible)).prefetch_related(
             Prefetch("contacts", queryset=ClientContact.objects.filter(archived_at__isnull=True)))
 
 
@@ -243,10 +244,11 @@ def client_detail(request, client_id):
         "submissions__attachments", "submissions__notifications", "completed_deliveries__files", "milestones__delivery",
         "information_requests__delivery").order_by("-received_at", "-id")
     request_count, active_count = items.count(), items.active().count()
-    projects = WorkProject.objects.filter(work_items__client_contact__client=client).annotate(
-        job_count=Count("work_items", distinct=True),
-        active_jobs=Count("work_items", filter=~Q(work_items__status__in=CLOSED_STATUSES), distinct=True),
-        latest_job=Max("work_items__received_at")).order_by("-latest_job", "name")
+    visible_jobs = Q(work_items__deleted_at__isnull=True, work_items__client_contact__client=client)
+    projects = WorkProject.objects.filter(visible_jobs).annotate(
+        job_count=Count("work_items", filter=visible_jobs, distinct=True),
+        active_jobs=Count("work_items", filter=visible_jobs & ~Q(work_items__status__in=CLOSED_STATUSES), distinct=True),
+        latest_job=Max("work_items__received_at", filter=visible_jobs)).order_by("-latest_job", "name")
     project_filter = request.GET.get("project", "")
     unlinked_count = items.filter(project__isnull=True).count()
     if project_filter == "unlinked":

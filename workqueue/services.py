@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Max
 
-from .models import AuditEvent, QueueState, Submission, WorkItem, WorkProject
+from .models import AuditEvent, CLOSED_STATUSES, QueueState, Submission, WorkItem, WorkProject
 
 
 class EditConflict(Exception):
@@ -87,7 +87,11 @@ def create_work(*, data, actor, idempotency_key=None, staff_contact=None):
 
 EDIT_FIELDS = {"status", "priority", "queue_order", "estimated_days", "requested_deadline",
                "committed_due_date", "scheduled_start", "estimated_completion", "followup_date",
-               "internal_notes", "project"}
+               "internal_notes", "project", "project_name", "project_street", "project_city",
+               "project_state", "project_zip", "service_needed", "description"}
+
+PROJECT_FIELDS = {'project_name': 'name', 'project_street': 'street', 'project_city': 'city',
+                  'project_state': 'state', 'project_zip': 'zip_code'}
 
 
 @transaction.atomic
@@ -99,9 +103,39 @@ def edit_work(*, item_id, version, data, actor, notify_client=False):
     if set(data) - EDIT_FIELDS:
         raise ValidationError("Unsupported queue field.")
     old_project_id = item.project_id
+    old_project = item.project
+    data = dict(data)
+    target_project = data.get('project', old_project)
+    project_changes = {}
+    if target_project:
+        target_project = WorkProject.objects.select_for_update().get(pk=target_project.pk)
+        for name, attribute in PROJECT_FIELDS.items():
+            if name not in data:
+                continue
+            value = data[name]
+            initial = getattr(old_project, attribute) if old_project else getattr(item, name)
+            if target_project.pk != old_project_id and value == initial:
+                data[name] = getattr(target_project, attribute)
+                continue
+            if value != getattr(target_project, attribute):
+                project_changes[attribute] = {'before': getattr(target_project, attribute), 'after': value}
+                setattr(target_project, attribute, value)
+        if project_changes:
+            target_project.full_clean()
+            target_project.save(update_fields=list(project_changes))
+            # Shared project edits invalidate every linked row's previously opened form.
+            for sibling in WorkItem.objects.select_for_update().filter(project=target_project).exclude(pk=item.pk):
+                sibling.version += 1
+                sibling.save(update_fields=['version', 'updated_at'])
+                AuditEvent.objects.create(work_item=sibling, actor=actor, action='project_details_edited',
+                                          changes=project_changes)
+        if 'project' in data:
+            data['project'] = target_project
     before_status = item.status
     item.milestone_notification = None
     changes = {}
+    if project_changes:
+        changes['project_details'] = project_changes
     for name, value in data.items():
         old = getattr(item, name)
         if old != value:
@@ -149,6 +183,97 @@ def edit_work(*, item_id, version, data, actor, notify_client=False):
             AuditEvent.objects.create(work_item=item, actor=actor, action="milestone_email_decided",
                 changes={"milestone": item.milestone_notification.pk, "status": item.status,
                          "email": "queued" if item.milestone_notification.delivery_id else "skipped"})
+    return item
+
+
+def require_queue_staff(actor, permission):
+    from django.core.exceptions import PermissionDenied
+    if not (actor and actor.is_active and actor.is_staff and actor.has_perms(
+            ('workqueue.view_workitem', permission))):
+        raise PermissionDenied
+
+
+@transaction.atomic
+def copy_work(*, item_id, version, data, token, actor):
+    require_queue_staff(actor, 'workqueue.add_workitem')
+    lock_queue()
+    source = WorkItem.objects.select_for_update(of=('self',)).select_related('client_contact', 'project').get(pk=item_id)
+    key = f'copy:{actor.pk}:{source.pk}:{uuid.UUID(str(token))}'
+    saved = Submission.objects.select_related('work_item').filter(idempotency_key=key).first()
+    if saved:
+        return saved.work_item, False
+    if source.version != version:
+        raise EditConflict('The original request changed. Reload Copy and review it before saving.')
+    fields = {'kind', 'project', 'project_context', 'project_name', 'project_street', 'project_city',
+              'project_state', 'project_zip', 'service_needed', 'description', 'requested_deadline'}
+    if set(data) - fields:
+        raise ValidationError('Unsupported copied field.')
+    inherited = {name: getattr(source, name) for name in (
+        'contact_full_name', 'company', 'contact_email', 'contact_phone',
+        'billing_street', 'billing_city', 'billing_state', 'billing_zip')}
+    inherited.update(data)
+    inherited['source'] = 'Staff copy'
+    # Historical blanks are allowed only for authenticated staff using a CRM contact.
+    item, created = create_work(data=inherited, actor=actor, idempotency_key=key,
+                               staff_contact=source.client_contact)
+    if created:
+        AuditEvent.objects.create(work_item=item, actor=actor, action='copied',
+                                  changes={'original_request': source.reference})
+    return item, created
+
+
+@transaction.atomic
+def delete_work(*, item_id, version, actor):
+    from django.utils import timezone
+    from django.db.models import Q
+    from .models import InformationRequest, NotificationDelivery, StatusMilestone, CompletedDelivery
+    require_queue_staff(actor, 'workqueue.delete_workitem')
+    lock_queue()
+    item = WorkItem.objects.select_for_update().get(pk=item_id)
+    if item.version != version:
+        raise EditConflict('This request changed. Review the current values before deleting it.')
+    item.deleted_at = timezone.now()
+    item.version += 1
+    item.save(update_fields=['deleted_at', 'version', 'updated_at'])
+    # Cancel unsent messages; sending/unknown outcomes are retained for reconciliation.
+    notes = InformationRequest.objects.filter(work_item=item)
+    notice_ids = list(notes.values_list('delivery_id', flat=True)) + list(notes.values_list('reminder_delivery_id', flat=True))
+    notice_ids += list(StatusMilestone.objects.filter(work_item=item).values_list('delivery_id', flat=True))
+    notice_ids += list(CompletedDelivery.objects.filter(work_item=item).values_list('notification_id', flat=True))
+    NotificationDelivery.objects.filter(Q(submission__work_item=item) | Q(pk__in=notice_ids),
+                                        state='pending').update(state='canceled', body='')
+    notes.filter(reminder_canceled_at__isnull=True).update(reminder_canceled_at=item.deleted_at)
+    if item.project_id and item.project.canonical_reference == item.reference:
+        remaining = WorkItem.objects.filter(project_id=item.project_id).first()
+        item.project.canonical_reference = remaining.reference if remaining else None
+        item.project.save(update_fields=['canonical_reference'])
+    AuditEvent.objects.create(work_item=item, actor=actor, action='deleted',
+                              changes={'deleted_at': item.deleted_at.isoformat()})
+    return item
+
+
+@transaction.atomic
+def restore_work(*, item_id, version, actor):
+    require_queue_staff(actor, 'workqueue.delete_workitem')
+    require_queue_staff(actor, 'workqueue.change_workitem')
+    state = lock_queue()
+    item = WorkItem.all_objects.select_for_update().get(pk=item_id, deleted_at__isnull=False)
+    if item.version != version:
+        raise EditConflict('This deleted request changed. Reload before restoring it.')
+    # Restored active work appends so it cannot silently jump ahead of current clients.
+    if item.status not in CLOSED_STATUSES:
+        maximum = WorkItem.all_objects.aggregate(value=Max('queue_order'))['value'] or 0
+        state.last_queue_order = max(state.last_queue_order, maximum) + 1
+        item.queue_order = state.last_queue_order
+        state.save(update_fields=['last_queue_order'])
+    item.deleted_at = None
+    item.version += 1
+    item.save(update_fields=['deleted_at', 'version', 'queue_order', 'updated_at'])
+    if item.project_id and not item.project.canonical_reference:
+        item.project.canonical_reference = item.reference
+        item.project.save(update_fields=['canonical_reference'])
+    AuditEvent.objects.create(work_item=item, actor=actor, action='restored',
+                              changes={'queue_order': item.queue_order, 'emails': 'Canceled messages remain canceled'})
     return item
 
 

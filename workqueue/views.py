@@ -18,12 +18,12 @@ from django.urls import reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 
-from .forms import InformationRequestForm, ManualWorkForm, QueueEditForm, QuickStatusForm
+from .forms import CopyWorkForm, QueueDeleteForm, InformationRequestForm, ManualWorkForm, QueueEditForm, QuickStatusForm
 from .attention import attention_conditions, attention_summary, row_attention, with_email_attention
 from .information_requests import INFORMATION_TEMPLATES, TEMPLATE_CHOICES, information_email, request_information
 from .information_responses import review_information_response
 from .models import AuditEvent, CLOSED_STATUSES, InformationResponse, NotificationDelivery, Priority, QueueState, Status, WorkItem
-from .services import EDIT_FIELDS, EditConflict, change_project_access, create_work, edit_work
+from .services import EDIT_FIELDS, EditConflict, change_project_access, copy_work, delete_work, restore_work, create_work, edit_work
 
 
 def staff_preview(request):
@@ -126,6 +126,20 @@ def queue(request):
     information_preview = None
     information_signature = ""
     create_form = ManualWorkForm(initial={"submission_token": uuid.uuid4()}, prefix="new")
+    copy_source = None
+    if request.method == 'GET' and request.GET.get('copy'):
+        if preview or not request.user.has_perm('workqueue.add_workitem'):
+            raise PermissionDenied
+        try:
+            source_id = uuid.UUID(request.GET['copy'])
+        except (ValueError, TypeError):
+            raise Http404
+        copy_source = get_object_or_404(WorkItem.objects.select_related('project'), pk=source_id)
+        initial = {name: getattr(copy_source, name) for name in CopyWorkForm.Meta.fields}
+        initial.update(source_id=source_id, source_version=copy_source.version, submission_token=uuid.uuid4(),
+                       kind=WorkItem.Kind.NEW, project=None, requested_deadline=None,
+                       project_name=(copy_source.project.name if copy_source.project else copy_source.project_name) + ' (copy)')
+        create_form = CopyWorkForm(initial=initial, prefix='new')
     response_status = 200
     if request.method == "POST":
         action = request.POST.get("action")
@@ -134,21 +148,58 @@ def queue(request):
                 raise Http404
             from .booking_views import staff_action
             return staff_action(request)
-        if action == "create":
+        if action in ("create", "copy"):
             if not request.user.has_perm("workqueue.add_workitem"):
                 raise PermissionDenied
-            create_form = ManualWorkForm(request.POST, prefix="new")
-            if create_form.is_valid():
-                data = {name: create_form.cleaned_data[name] for name in ManualWorkForm.Meta.fields}
+            if action == 'copy':
                 try:
-                    item, created = create_work(data=data, actor=request.user,
-                        idempotency_key=f"staff:{request.user.pk}:{create_form.cleaned_data['submission_token']}")
-                except ValidationError as exc:
-                    create_form.add_error(None, exc)
+                    source_id = uuid.UUID(request.POST.get('new-source_id', ''))
+                except (ValueError, TypeError):
+                    raise Http404
+                copy_source = get_object_or_404(WorkItem, pk=source_id)
+            form_class = CopyWorkForm if copy_source else ManualWorkForm
+            create_form = form_class(request.POST, prefix="new")
+            if create_form.is_valid():
+                data = {name: create_form.cleaned_data[name] for name in form_class.Meta.fields}
+                try:
+                    if copy_source:
+                        item, created = copy_work(item_id=copy_source.pk, version=create_form.cleaned_data['source_version'],
+                            data=data, token=create_form.cleaned_data['submission_token'], actor=request.user)
+                    else:
+                        item, created = create_work(data=data, actor=request.user,
+                            idempotency_key=f"staff:{request.user.pk}:{create_form.cleaned_data['submission_token']}")
+                except (ValidationError, EditConflict) as exc:
+                    create_form.add_error(None, ValidationError(exc.messages) if isinstance(exc, ValidationError) else str(exc))
+                    response_status = 409 if isinstance(exc, EditConflict) else 400
                 else:
                     messages.success(request, f"{item.reference} {'added to the queue' if created else 'was already saved'}.")
                     return queue_redirect(filters, item)
-            response_status = 400
+            if response_status == 200:
+                response_status = 400
+        elif action in ('delete', 'restore'):
+            if not request.user.has_perm('workqueue.delete_workitem'):
+                raise PermissionDenied
+            try:
+                item_id = uuid.UUID(request.POST.get('item_id', ''))
+            except (ValueError, TypeError):
+                raise Http404
+            manager = WorkItem.all_objects if action == 'restore' else WorkItem.objects
+            error_item = get_object_or_404(manager, pk=item_id)
+            form = QueueDeleteForm(request.POST)
+            if form.is_valid():
+                try:
+                    item = (delete_work if action == 'delete' else restore_work)(item_id=item_id,
+                        version=form.cleaned_data['version'], actor=request.user)
+                except (ValidationError, EditConflict) as exc:
+                    messages.error(request, ' '.join(exc.messages) if isinstance(exc, ValidationError) else str(exc))
+                    response_status = 409 if isinstance(exc, EditConflict) else 400
+                else:
+                    messages.success(request, f'{item.reference} deleted from the queue.' if action == 'delete' else
+                        f'{item.reference} restored. Active work was added to the end of the queue; canceled emails stay canceled.')
+                    return queue_redirect({'scope': 'active' if item.is_active else 'all'} if action == 'restore' else filters)
+            else:
+                messages.error(request, 'Confirm the selected request before continuing.')
+                response_status = 400
         elif action == "review_information_response":
             if not request.user.has_perm("workqueue.change_workitem"):
                 raise PermissionDenied
@@ -266,7 +317,7 @@ def queue(request):
             edit_form = QueueEditForm(request.POST, instance=error_item, prefix=str(error_item.pk)) if action == "edit" else None
             form = edit_form if action == "edit" else QuickStatusForm(request.POST)
             if form.is_valid():
-                data = {name: form.cleaned_data[name] for name in EDIT_FIELDS} if action == "edit" else {"status": form.cleaned_data["status"]}
+                data = {name: form.cleaned_data[name] for name in EDIT_FIELDS if form.add_prefix(name) in request.POST} if action == "edit" else {"status": form.cleaned_data["status"]}
                 try:
                     item = edit_work(item_id=item_id, version=form.cleaned_data["version"], data=data, actor=request.user,
                         notify_client=form.cleaned_data["client_email"] == "send")
@@ -298,9 +349,11 @@ def queue(request):
         else:
             raise Http404
 
-    if request.method == "GET" or request.POST.get("action") != "create":
+    if not copy_source and (request.method == "GET" or request.POST.get("action") not in ("create", "copy")):
         create_form = ManualWorkForm(initial={"submission_token": uuid.uuid4()}, prefix="new")
-    items = with_email_attention(WorkItem.objects.with_position()).select_related("project", "client_contact__client").prefetch_related(
+    deleted_scope = filters['scope'] == 'deleted' and not preview and request.user.has_perm('workqueue.delete_workitem')
+    queryset = WorkItem.all_objects.filter(deleted_at__isnull=False) if deleted_scope else WorkItem.objects.all()
+    items = with_email_attention(queryset.with_position()).select_related("project", "client_contact__client").prefetch_related(
         "submissions__attachments", "submissions__notifications",
         "information_requests__delivery", "information_requests__reminder_delivery",
         "milestones__delivery", "milestones__actor",
@@ -310,7 +363,7 @@ def queue(request):
         Prefetch("project__work_items", queryset=WorkItem.objects.with_position()),
         "project__access_grants",
     )
-    scope = filters["scope"] if filters["scope"] in ("active", "all", "closed") else "active"
+    scope = 'deleted' if deleted_scope else filters["scope"] if filters["scope"] in ("active", "all", "closed") else "active"
     filters["scope"] = scope
     conditions = attention_conditions()
     if filters["attention"] in conditions:
@@ -351,7 +404,7 @@ def queue(request):
                      "conflict_values": conflict_values if error_item and item.pk == error_item.pk else []})
     # A conflict or invalid form must stay visible even if the request moved outside this filter/page.
     if error_item and not any(row["item"].pk == error_item.pk for row in rows):
-        error_item = WorkItem.objects.with_position().select_related("project").get(pk=error_item.pk)
+        error_item = WorkItem.all_objects.with_position().select_related("project").get(pk=error_item.pk)
         rows.insert(0, {"item": error_item, "form": edit_form or QueueEditForm(instance=error_item, prefix=str(error_item.pk)), "open": True, "conflict_values": conflict_values})
     for row in rows:
         item = row["item"]
@@ -359,7 +412,7 @@ def queue(request):
         row["attention_flags"] = row_attention(item)
         row["files"] = [file for submission in item.submissions.all() for file in submission.attachments.all()]
         row["responses"] = [response for note in item.information_requests.all() for response in note.responses.all()]
-        row["unreviewed_responses"] = [response for response in row["responses"] if not response.reviewed_at]
+        row["unreviewed_responses"] = [response for response in row["responses"] if not response.reviewed_at and not response.work_item.deleted_at]
         row["information_form"] = information_form if current and information_form else InformationRequestForm(
             prefix=f"information-{item.pk}", initial={"version": item.version, "token": uuid.uuid4(),
                 "message": INFORMATION_TEMPLATES["documents"], "followup_date": item.followup_date})
@@ -378,7 +431,10 @@ def queue(request):
         "can_manage_bookings": not preview and request.user.has_perm("workqueue.change_appointment"),
         "can_manage_booking_access": not preview and request.user.has_perm("workqueue.change_bookingaccess"),
         "page_query": params, "statuses": Status.choices, "priorities": Priority.choices,
-        "create_form": create_form, "create_open": request.method == "POST" and request.POST.get("action") == "create",
+        "create_form": create_form, "copy_source": copy_source,
+        "create_open": bool(copy_source) or request.method == "POST" and request.POST.get("action") in ("create", "copy"),
+        "can_delete": not preview and request.user.has_perm('workqueue.delete_workitem'),
+        "can_restore": not preview and request.user.has_perms(('workqueue.delete_workitem', 'workqueue.change_workitem')),
         "can_add": not preview and request.user.has_perm("workqueue.add_workitem"),
         "can_change": not preview and request.user.has_perm("workqueue.change_workitem"),
         "can_manage_access": not preview and request.user.has_perm("workqueue.change_projectaccess"),
