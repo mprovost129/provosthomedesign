@@ -5,9 +5,16 @@ from . import booking_views
 from . import delivery_views
 from . import health
 from . import crm_views
+from . import communication_views
 
 app_name = "workqueue"
 urlpatterns = [
+    path('clients/email-settings/', communication_views.communication_settings, name='communication_settings'),
+    path('clients/import/', communication_views.import_clients, name='import_clients'),
+    path('clients/import/<uuid:batch_id>/', communication_views.import_preview, name='import_preview'),
+    path('clients/export/', communication_views.export_clients, name='export_clients'),
+    path('clients/email/<uuid:message_id>/', communication_views.email_detail, name='email_detail'),
+    path('clients/<uuid:client_id>/email/', communication_views.compose, name='compose_email'),
     path("clients/", crm_views.clients, name="clients"),
     path("clients/new/", crm_views.add_client, name="add_client"),
     path("clients/<uuid:client_id>/add-work/", crm_views.add_client_work, name="add_client_work"),

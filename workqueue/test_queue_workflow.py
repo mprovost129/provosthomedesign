@@ -137,7 +137,7 @@ class QueueWorkflowTests(TestCase):
     def test_email_failure_visible_on_closed_work_and_retry_checks_ownership_and_uncertainty(self):
         self.change(Status.COMPLETED, "send")
         notice = NotificationDelivery.objects.get()
-        with patch("workqueue.notifications.EmailMessage.send", side_effect=OSError("provider interrupted")):
+        with patch("workqueue.notifications.EmailMultiAlternatives.send", side_effect=OSError("provider interrupted")):
             deliver_pending()
         response = self.client.get(self.url, {"scope": "all", "attention": "email"})
         self.assertEqual(len(response.context["rows"]), 1)

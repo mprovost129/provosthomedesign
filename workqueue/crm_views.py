@@ -47,8 +47,23 @@ def clients(request):
             | Q(contacts__full_name__icontains=query) | Q(contacts__phone__icontains=query)
             | Q(contacts__work_items__reference__icontains=query)
             | Q(contacts__work_items__project__name__icontains=query)
-            | Q(contacts__work_items__project_street__icontains=query)).values("pk")
-        queryset = queryset.filter(pk__in=matching)
+            | Q(contacts__work_items__project_street__icontains=query)
+            | Q(internal_notes__icontains=query)
+            | Q(events__changes__note__icontains=query)
+            | Q(followups__title__icontains=query) | Q(followups__notes__icontains=query)
+            | Q(contacts__work_items__internal_notes__icontains=query)
+            | Q(composed_emails__subject__icontains=query) | Q(composed_emails__body_text__icontains=query)).values("pk")
+        # A merged profile's original notes remain searchable from its current client record.
+        found = set(matching.values_list('pk', flat=True))
+        parents = dict(Client.objects.exclude(merged_into__isnull=True).values_list('pk', 'merged_into_id'))
+        roots = set()
+        for client_id in found:
+            seen = set()
+            while client_id in parents and client_id not in seen:
+                seen.add(client_id)
+                client_id = parents[client_id]
+            roots.add(client_id)
+        queryset = queryset.filter(pk__in=roots)
     queryset = overview(client_counts(queryset))
     if scope == "repeat":
         queryset = queryset.filter(request_count__gt=1)

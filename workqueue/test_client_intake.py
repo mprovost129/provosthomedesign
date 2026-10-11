@@ -507,12 +507,12 @@ class OutboxTests(TestCase):
     def test_email_failure_does_not_remove_saved_work_or_auto_retry_unknown(self):
         item = create_work(data={"contact_full_name": "Alex", "company": "Homeowner", "contact_email": "alex@example.invalid",
             "contact_phone": "5550100", "description": "Saved work"}, actor=None)[0]
-        with patch("workqueue.notifications.EmailMessage.send", side_effect=TimeoutError("Provider might have accepted mail")):
+        with patch("workqueue.notifications.EmailMultiAlternatives.send", side_effect=TimeoutError("Provider might have accepted mail")):
             deliver_pending()
         self.notice.refresh_from_db()
         self.assertEqual(self.notice.state, "unknown")
         self.assertTrue(WorkItem.objects.filter(pk=item.pk).exists())
-        with patch("workqueue.notifications.EmailMessage.send") as sender:
+        with patch("workqueue.notifications.EmailMultiAlternatives.send") as sender:
             self.assertEqual(deliver_pending(), 0)
             sender.assert_not_called()
 

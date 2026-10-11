@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .models import (Appointment, AuditEvent, Client, ClientContact, ClientEvent,
-                     ClientFollowUp, CompletedDelivery, NotificationDelivery, Status, Submission, WorkItem)
+                     ClientFollowUp, ClientEmail, CompletedDelivery, NotificationDelivery, Status, Submission, WorkItem)
 
 
 WORK_ACTIVITY_LABELS = {
@@ -87,7 +87,8 @@ def timeline(client, page_number):
         | Q(completed_delivery__work_item__client_contact__client=client, completed_delivery__work_item__deleted_at__isnull=True)
         | Q(appointment__email__in=emails))
     sources = {
-        "client": (ClientEvent.objects.filter(client_id__in=profile_ids).exclude(action="Request added").select_related("actor"), "created_at"),
+        "client": (ClientEvent.objects.filter(client_id__in=profile_ids).exclude(action__in=["Request added", "Client email prepared"]).select_related("actor"), "created_at"),
+        "correspondence": (ClientEmail.objects.filter(client_id__in=profile_ids).select_related('delivery', 'project', 'actor'), 'created_at'),
         "submission": (Submission.objects.filter(**visible).select_related("work_item").prefetch_related("attachments"), "received_at"),
         "delivery": (CompletedDelivery.objects.filter(**visible).select_related("work_item").prefetch_related("files"), "created_at"),
         "appointment": (Appointment.objects.filter(email__in=emails).select_related("project"), "created_at"),
@@ -135,6 +136,10 @@ def timeline(client, page_number):
                 before, after = status.get("before"), status.get("after")
                 if before in labels and after in labels:
                     body = f"Status: {labels[before]} → {labels[after]}"
+        elif kind == 'correspondence':
+            title = f'Client email · {obj.delivery.get_state_display()}'
+            body = obj.subject
+            link = reverse('workqueue:email_detail', args=[obj.pk])
         else:
             title = f"{obj.get_recipient_kind_display()} email · {obj.get_state_display()}"
             body = obj.subject

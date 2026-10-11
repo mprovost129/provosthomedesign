@@ -9,7 +9,7 @@ from urllib.parse import urlencode
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from django.core.mail import BadHeaderError, EmailMessage
+from django.core.mail import BadHeaderError, EmailMultiAlternatives
 from django.db import transaction
 from django.db.models import Q
 from django.urls import reverse
@@ -76,6 +76,8 @@ def queue_signin(email, reference="", destination="tracking"):
 def deliver_pending(limit=100):
     from .reminders import queue_due_reminders, cancel_ineligible_reminder
     queue_due_reminders(limit)
+    from .crm_mail import queue_morning_digest
+    queue_morning_digest()
     # A worker that crashed after handing a message to the provider may have sent it.
     # Hold stale sending records instead of automatically sending a second copy.
     NotificationDelivery.objects.filter(state="sending", last_attempt_at__lt=timezone.now()-timedelta(minutes=15)).update(
@@ -98,6 +100,12 @@ def deliver_pending(limit=100):
                 continue
             if cancel_ineligible_reminder(record):
                 continue
+            if hasattr(record, 'morning_digest'):
+                from .models import CRMSettings
+                if not CRMSettings.objects.filter(pk=1, morning_reminders=True).exists():
+                    record.state, record.body = 'canceled', ''
+                    record.save(update_fields=['state', 'body'])
+                    continue
             # Long-delayed or explicitly retried mail must contain a usable sign-in link.
             if record.recipient_kind in {"client", "signin"}:
                 match = re.search(r"#token=([A-Za-z0-9_-]+)", record.body)
@@ -111,8 +119,11 @@ def deliver_pending(limit=100):
             record.last_attempt_at = timezone.now()
             record.save(update_fields=["state", "attempts", "last_attempt_at", "body"])
         try:
-            message = EmailMessage(record.subject, record.body, settings.DEFAULT_FROM_EMAIL, [record.recipient],
+            message = EmailMultiAlternatives(record.subject, record.body, settings.DEFAULT_FROM_EMAIL,
+                record.to_recipients or [record.recipient], cc=record.cc_recipients, bcc=record.bcc_recipients,
                 headers={"Message-ID": f"<{record.provider_reference}@provosthomedesign.com>"})
+            if record.html_body:
+                message.attach_alternative(record.html_body, 'text/html')
             result = message.send(fail_silently=False)
         except (BadHeaderError, smtplib.SMTPRecipientsRefused):
             state, error = "failed", "The message was rejected before delivery. Check the recipient and mail setup."
@@ -131,6 +142,7 @@ def deliver_pending(limit=100):
                     current.sent_at = timezone.now()
                     # Do not retain bearer sign-in links in the outbox after successful delivery.
                     current.body = ""
-                current.save(update_fields=["state", "last_error", "sent_at", "body"])
+                    current.html_body = ""
+                current.save(update_fields=["state", "last_error", "sent_at", "body", "html_body"])
         processed += 1
     return processed

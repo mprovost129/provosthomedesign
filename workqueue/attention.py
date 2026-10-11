@@ -25,6 +25,7 @@ def with_email_attention(items):
         | Q(status_milestone__work_item_id=OuterRef("pk"))
         | Q(completed_delivery__work_item_id=OuterRef("pk"))
         | Q(information_reminder__work_item_id=OuterRef("pk"))
+        | Q(client_email__work_item_id=OuterRef("pk"))
     )
     replies = InformationResponse.objects.filter(information_request__work_item_id=OuterRef("pk"), reviewed_at__isnull=True,
                                                   work_item__deleted_at__isnull=True)

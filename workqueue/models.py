@@ -391,6 +391,10 @@ class NotificationDelivery(models.Model):
     recipient = models.EmailField()
     subject = models.CharField(max_length=255, blank=True)
     body = models.TextField(blank=True)
+    html_body = models.TextField(blank=True)
+    to_recipients = models.JSONField(default=list, blank=True)
+    cc_recipients = models.JSONField(default=list, blank=True)
+    bcc_recipients = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     state = models.CharField(max_length=20, choices=[("pending", "Pending"), ("sending", "Sending"),
                             ("sent", "Sent"), ("unknown", "Needs reconciliation"), ("failed", "Failed"), ("canceled", "Canceled")],
@@ -406,6 +410,46 @@ class NotificationDelivery(models.Model):
                                               name="wq_submission_notice_unique"),
                        models.UniqueConstraint(fields=["appointment", "appointment_event", "recipient_kind"],
                                               name="wq_appointment_notice_unique")]
+
+
+class CRMSettings(models.Model):
+    """Owner communication preferences; reminders stay off until enabled."""
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    signature_html = models.TextField(blank=True)
+    morning_reminders = models.BooleanField(default=False)
+    version = models.PositiveIntegerField(default=1)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class ClientEmail(models.Model):
+    id = models.UUIDField(primary_key=True, editable=False)
+    client = models.ForeignKey(Client, on_delete=models.PROTECT, related_name='composed_emails')
+    project = models.ForeignKey(WorkProject, null=True, blank=True, on_delete=models.PROTECT)
+    work_item = models.ForeignKey(WorkItem, null=True, blank=True, on_delete=models.PROTECT)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
+    delivery = models.OneToOneField(NotificationDelivery, on_delete=models.PROTECT, related_name='client_email')
+    subject = models.CharField(max_length=255)
+    body_html = models.TextField()
+    body_text = models.TextField()
+    to = models.JSONField(default=list)
+    cc = models.JSONField(default=list)
+    bcc = models.JSONField(default=list)
+    created_at = models.DateTimeField(default=timezone.now)
+
+
+class MorningDigest(models.Model):
+    date = models.DateField(unique=True)
+    delivery = models.OneToOneField(NotificationDelivery, on_delete=models.PROTECT, related_name='morning_digest')
+
+
+class ClientImport(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    rows = models.JSONField(default=list)
+    plan = models.JSONField(default=list)
+    created_at = models.DateTimeField(default=timezone.now)
+    applied_at = models.DateTimeField(null=True)
+    result = models.JSONField(default=dict)
 
 
 class StatusMilestone(models.Model):
