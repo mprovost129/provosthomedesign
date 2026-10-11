@@ -9,9 +9,11 @@ from django.core.exceptions import ValidationError, PermissionDenied
 from django.db import close_old_connections, IntegrityError, transaction
 from django.test import TestCase, TransactionTestCase, Client, override_settings, skipUnlessDBFeature
 from django.urls import reverse
+from django.template.loader import render_to_string
 from django.utils import timezone
 from .models import WorkItem, NotificationDelivery, QueueState
 from .time_models import TimeEntry
+from .time_forms import TimerForm
 from .time_services import start_timer, stop_timer, save_time, archive_time, time_summary, active_timer
 from .services import create_work, EditConflict
 from .tests import work_data
@@ -202,6 +204,22 @@ class TimeTrackingTests(TestCase):
             self.assertContains(response, 'Your work timer')
             self.assertContains(response, 'id="timer_category"', count=1)
             self.assertContains(response, 'id="timer_work_item"', count=1)
+
+    def test_queue_renders_legacy_job_without_project_or_project_name(self):
+        legacy = create_work(data=work_data(project_name='Imported unlinked job'), actor=self.owner)[0]
+        WorkItem.all_objects.filter(pk=legacy.pk).update(project=None, project_name='')
+        response = self.client.get(reverse('workqueue:queue'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, legacy.reference)
+        self.assertNotIn(legacy.pk, response.context['timer_form'].fields['work_item'].queryset.values_list('pk', flat=True))
+
+    def test_timer_label_handles_an_unlinked_job_defensively(self):
+        WorkItem.all_objects.filter(pk=self.item.pk).update(project=None, project_name='')
+        form = TimerForm()
+        form.fields['work_item'].queryset = WorkItem.all_objects.filter(pk=self.item.pk)
+        html = render_to_string('workqueue/time_timer.html', {'timer_form':form, 'can_change':True})
+        self.assertIn('Untitled job', html)
+        self.assertIn(self.item.reference, html)
 
     def test_database_constraints_reject_invalid_manual_and_second_running_timer(self):
         with self.assertRaises(IntegrityError), transaction.atomic():

@@ -24,7 +24,7 @@ class TimerForm(forms.Form):
         super().__init__(*args, initial=initial, **kwargs)
         self.fields['project'].queryset = WorkProject.objects.filter(work_items__deleted_at__isnull=True,
             work_items__id__isnull=False).distinct().order_by('name')
-        self.fields['work_item'].queryset = WorkItem.objects.select_related('project').order_by('-received_at')
+        self.fields['work_item'].queryset = WorkItem.objects.filter(project__isnull=False).select_related('project').order_by('-received_at')
         if project:
             self.fields['project'].queryset = WorkProject.objects.filter(pk=project.pk)
             self.fields['project'].widget = forms.HiddenInput()
