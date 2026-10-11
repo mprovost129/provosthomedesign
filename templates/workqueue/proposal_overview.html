@@ -1,0 +1,35 @@
+{% extends 'workqueue/pm_base.html' %}{% load static %}
+{% block title %}Proposals{% endblock %}
+{% block tool_styles %}{{ block.super }}<link rel="stylesheet" href="{% static 'css/proposal-overview.css' %}">{% endblock %}
+{% block pm_content %}
+<header class="pm-heading"><div><span class="brand">Project management</span><h1>Proposals</h1><p>Find drafts, client responses, and proposals that need attention across your projects.</p></div><a href="{% url 'workqueue:projects' %}">Open a project to create a proposal</a></header>
+<form method="get" class="pm-filter">
+  <label>Search<input type="search" name="q" value="{{ q }}" placeholder="Proposal, project, client, job number, or email"></label>
+  <label>Projects<select name="scope"><option value="all" {% if scope == 'all' %}selected{% endif %}>All projects</option><option value="active" {% if scope == 'active' %}selected{% endif %}>Active projects</option></select></label>
+  <label>Proposal status<select name="state">
+    <option value="all" {% if state == 'all' %}selected{% endif %}>All proposals</option>
+    <option value="attention" {% if state == 'attention' %}selected{% endif %}>Needs attention</option>
+    <option value="draft" {% if state == 'draft' %}selected{% endif %}>Drafts</option>
+    <option value="pending" {% if state == 'pending' %}selected{% endif %}>Email queued</option>
+    <option value="awaiting" {% if state == 'awaiting' %}selected{% endif %}>Awaiting response</option>
+    <option value="changes" {% if state == 'changes' %}selected{% endif %}>Changes requested</option>
+    <option value="expired" {% if state == 'expired' %}selected{% endif %}>Link expired</option>
+    <option value="expiring" {% if state == 'expiring' %}selected{% endif %}>Link expires within 7 days</option>
+    <option value="email" {% if state == 'email' %}selected{% endif %}>Email problems</option>
+    <option value="review" {% if state == 'review' %}selected{% endif %}>Needs review</option>
+    <option value="accepted" {% if state == 'accepted' %}selected{% endif %}>Accepted</option>
+    <option value="withdrawn" {% if state == 'withdrawn' %}selected{% endif %}>Withdrawn</option>
+  </select></label><button>Apply filters</button><a href="{% url 'workqueue:proposal_overview' %}">Reset</a>
+</form>
+<div class="proposal-totals" aria-label="Proposal totals"><span><strong>{{ summary.total }}</strong> Total</span><span><strong>{{ summary.draft }}</strong> Drafts</span><span><strong>{{ summary.awaiting }}</strong> Awaiting response</span><span><strong>{{ summary.attention }}</strong> Need attention</span><span><strong>{{ summary.accepted }}</strong> Accepted</span></div>
+<p class="muted">Counts follow search and project filters; the status filter narrows the list below. Needs attention includes requested changes, expired links, and email problems. All projects includes preserved proposal history for removed jobs.</p>
+<div class="proposal-list">{% for row in rows %}<article class="pm-card proposal-card">
+  <header><div><span class="pm-badge">{{ row.proposal.number }}</span><h2><a href="{% url 'workqueue:proposal_detail' row.proposal.pk %}">{{ row.proposal.title }}</a></h2><p><a href="{% url 'workqueue:project_detail' row.proposal.project_id %}">{{ row.proposal.project.name }}</a> · <a href="{% url 'workqueue:client_detail' row.proposal.client_id %}">{{ row.proposal.client.name }}</a></p></div><div class="proposal-flags"><span class="pm-badge">{{ row.label }}</span>{% if row.proposal.expiring_soon %}<span class="proposal-warning">Link expires soon</span>{% endif %}{% if row.proposal.email_problem %}<span class="proposal-warning">Check email delivery</span>{% endif %}</div></header>
+  <dl class="proposal-facts"><div><dt>{% if row.hourly %}Estimated fee{% else %}Proposed fee{% endif %}</dt><dd>{% if row.amount != None %}USD {{ row.amount }}{% else %}Not available{% endif %}</dd></div><div><dt>Valid through</dt><dd>{{ row.valid_through|default:'Not available' }}</dd></div><div><dt>Project</dt><dd>{% if row.proposal.active_project %}Active work{% else %}No active jobs{% endif %}</dd></div><div><dt>Last edited</dt><dd>{{ row.proposal.updated_at|date:'M j, Y, g:i A' }}</dd></div></dl>
+  {% if row.revision %}<section class="proposal-delivery" aria-label="Latest sent version"><h3>Latest sent version · {{ row.revision.sequence }}</h3><p>{{ row.revision.get_state_display }} · {{ row.revision.recipient }}<br>Prepared for email {{ row.revision.sent_at|date:'M j, Y, g:i A' }}{% if row.revision.viewed_at %}<br>First opened {{ row.revision.viewed_at|date:'M j, Y, g:i A' }}{% endif %}{% if row.revision.accepted_at %}<br>Accepted {{ row.revision.accepted_at|date:'M j, Y, g:i A' }} · {{ row.revision.accepted_name }}{% endif %}</p>
+  <p>{% if row.delivery %}Email: {{ row.delivery.get_state_display }}{% if row.delivery.sent_at %} · {{ row.delivery.sent_at|date:'M j, Y, g:i A' }}{% endif %}{% else %}Email record unavailable — review this proposal.{% endif %}{% if row.invitation %}<br>Private link expires {{ row.invitation.expires_at|date:'M j, Y, g:i A' }}{% endif %}</p>{% if row.proposal.has_draft %}<p>A draft revision is being prepared. The previous sent version is unavailable for acceptance.</p>{% endif %}</section>{% else %}<p>No version sent yet.</p>{% endif %}
+  <nav class="pm-nav" aria-label="Actions for {{ row.proposal.number }}"><a href="{% url 'workqueue:proposal_detail' row.proposal.pk %}">Open proposal</a><a href="{% url 'workqueue:project_detail' row.proposal.project_id %}">Open project</a></nav>
+</article>{% empty %}<div class="pm-card"><p>No proposals match these filters.</p><a href="{% url 'workqueue:proposal_overview' %}">Show all proposals</a></div>{% endfor %}</div>
+<p class="muted">Each proposal appears once using its current version. Queued email is not counted as awaiting a response. “Sent” means the email service accepted the message; it does not confirm inbox delivery. “First opened” may reflect automated email security checks. Proposed fees are not invoices or payments; hourly estimates are not earned billable time.</p>
+<nav class="pm-pages" aria-label="Proposal pages">{% if page.has_previous %}<a href="?q={{ q|urlencode }}&amp;scope={{ scope }}&amp;state={{ state }}&amp;page={{ page.previous_page_number }}">Previous</a>{% endif %}<span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a href="?q={{ q|urlencode }}&amp;scope={{ scope }}&amp;state={{ state }}&amp;page={{ page.next_page_number }}">Next</a>{% endif %}</nav>
+{% endblock %}

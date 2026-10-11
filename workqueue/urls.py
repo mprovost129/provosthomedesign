@@ -11,9 +11,11 @@ from . import freshbooks_views
 from . import time_views
 from . import report_views
 from . import checklist_views
+from . import proposal_overview_views
 
 app_name = "workqueue"
 urlpatterns = [
+    path('work-projects/proposals/', proposal_overview_views.proposal_overview, name='proposal_overview'),
     path('work-projects/tasks/', checklist_views.task_list, name='task_list'),
     path('work-projects/tasks/<uuid:task_id>/', checklist_views.task_edit, name='task_edit'),
     path('work-projects/checklists/', checklist_views.checklists, name='checklists'),

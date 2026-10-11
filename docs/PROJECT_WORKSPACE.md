@@ -73,3 +73,13 @@ From a project's **Tasks** section, choose **Add a checklist**, select a list, a
 Edit a task to change its title, date, or notes. Mark complete or reopen it from the task list or project. Removal requires confirmation on the edit page; restore from **Tasks → Removed** or the task edit link. Saved task changes use version checks, share the queue's existing serialization lock, and record project activity. They do not email clients, create invoices, change project estimates, move queue positions, or change queue job statuses.
 
 Apply additive migration **0028_projectchecklist_checklistapplication** before serving this feature. Existing projects, jobs, files, proposals, and time records are preserved. No new external services, credentials, OAuth scopes, or worker settings are needed.
+
+## Proposals overview
+
+Open **Proposals** from the queue or project navigation to see one row per proposal, based on the current draft or sent version. Search by proposal number/title, project/address, client name, job reference, or current recipient/job email. All projects is the default and preserves proposal history even when its jobs were removed. Active projects requires at least one visible job with an open queue status. Multiple connected jobs and older sent versions do not multiply counts.
+
+Filters cover drafts, queued email, awaiting response, changes requested, expired links, links expiring within seven days, email problems, accepted, withdrawn, and needs review. Counts follow search/project filters; status only narrows the list. Needs attention includes current requested changes, expiration, missing invitation data, failed/canceled email, and uncertain delivery. A draft revision takes precedence over the previous version's state. Accepted/withdrawn versions are never reclassified as expired or awaiting response. A pending/sending message is **Email queued**, rather than awaiting a response. Expiration uses the actual private invitation cutoff, including the valid-through cap.
+
+The row shows proposed USD fees (hourly amounts are estimates), validity, recipient, preparation/first-view/acceptance dates, and actual saved email state. Sent means accepted by the email service, not proven inbox delivery. First-view records can include automated security checks. Private invitation URLs, tokens, email bodies, and internal project notes are never included in the overview.
+
+Open the existing proposal editor for any send, revise, withdraw, or FreshBooks action. Viewing/filtering the overview performs no writes, sends no reminders or client messages, creates no invoices, and changes no queue status/order. It uses existing staff permissions and no-store headers. No migration, external service, credentials, or worker setting change is required.
