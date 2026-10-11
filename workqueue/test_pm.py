@@ -136,7 +136,7 @@ class ProjectWorkspaceTests(TestCase):
         self.assertContains(response, 'Addition plans')
         self.assertNotContains(response, 'OWNER SECRET')
         self.assertNotContains(response, 'googletagmanager')
-        self.assertEqual(response['Referrer-Policy'], 'no-referrer')
+        self.assertEqual(response['Referrer-Policy'], 'same-origin')
         self.assertIn('no-store', response['Cache-Control'])
         self.assertEqual(guest.get(reverse('workqueue:proposal_public_pdf', args=[revision.pk])).status_code, 200)
         other, other_revision = self.sent(title='Other private proposal')
@@ -210,6 +210,54 @@ class ProjectWorkspaceTests(TestCase):
     def test_proposal_mutations_require_csrf(self):
         strict = Browser(enforce_csrf_checks=True); strict.force_login(self.owner)
         self.assertEqual(strict.post(reverse('workqueue:project_detail', args=[self.project.pk]), {'action':'plan'}).status_code, 403)
+
+    def test_https_private_link_and_response_keep_csrf_and_same_origin_referrer(self):
+        proposal, revision = self.sent()
+        raw = parse_qs(revision.invitation.notification.body.split('#', 1)[1].split('\n', 1)[0])['token'][0]
+        access = reverse('workqueue:proposal_access')
+        public = reverse('workqueue:proposal_public', args=[revision.pk])
+        guest = Browser(enforce_csrf_checks=True)
+        page = guest.get(access, secure=True)
+        # Native form POSTs in iOS browsers can have Origin: null under
+        # no-referrer. Permit only same-origin referrers; never trust null.
+        self.assertEqual(page['Referrer-Policy'], 'same-origin')
+        self.assertIn('no-store', page['Cache-Control'])
+        csrf = guest.cookies['csrftoken'].value
+        response = guest.post(access, {'token':raw, 'csrfmiddlewaretoken':csrf},
+                              secure=True, HTTP_REFERER='https://testserver'+access)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, public)
+        page = guest.get(public, secure=True)
+        self.assertEqual(page['Referrer-Policy'], 'same-origin')
+        self.assertContains(page, 'Addition plans')
+        response = guest.post(public, {'action':'accept', 'full_name':'Test Client', 'agreement':True,
+                                      'csrfmiddlewaretoken':csrf},
+                              secure=True, HTTP_REFERER='https://testserver'+public)
+        self.assertEqual(response.status_code, 302)
+        revision.refresh_from_db()
+        self.assertEqual(revision.state, 'accepted')
+
+    def test_private_access_rejects_untrusted_origins_and_missing_csrf(self):
+        proposal, revision = self.sent()
+        raw = parse_qs(revision.invitation.notification.body.split('#', 1)[1].split('\n', 1)[0])['token'][0]
+        access = reverse('workqueue:proposal_access')
+        guest = Browser(enforce_csrf_checks=True)
+        guest.get(access, secure=True)
+        csrf = guest.cookies['csrftoken'].value
+        for headers, token in [
+            ({'HTTP_ORIGIN':'null'}, csrf),
+            ({'HTTP_ORIGIN':'https://untrusted.example'}, csrf),
+            ({'HTTP_REFERER':'https://untrusted.example/'}, csrf),
+            ({}, csrf),
+            ({'HTTP_ORIGIN':'https://testserver'}, ''),
+        ]:
+            with self.subTest(headers=headers, token_present=bool(token)):
+                response = guest.post(access, {'token':raw, 'csrfmiddlewaretoken':token}, secure=True, **headers)
+                self.assertEqual(response.status_code, 403)
+                self.assertNotIn('proposal_invitation', guest.session)
+        response = guest.post(access, {'token':raw, 'csrfmiddlewaretoken':csrf},
+                              secure=True, HTTP_ORIGIN='https://testserver')
+        self.assertEqual(response.status_code, 302)
 
     def test_project_task_in_optional_morning_digest_without_private_notes(self):
         from datetime import datetime

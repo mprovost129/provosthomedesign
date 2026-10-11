@@ -239,9 +239,12 @@ def proposal_templates(request, template_id=None):
     return render(request, 'workqueue/proposal_templates.html', {'form':form, 'template':template, 'templates':ProposalTemplate.objects.all()}, status=status)
 
 
-def private_response(response):
+def private_response(response, *, has_form=False):
     response['Cache-Control'] = 'no-store, private'
-    response['Referrer-Policy'] = 'no-referrer'
+    # Keep private paths off other sites, while allowing same-origin native
+    # form POSTs to satisfy Django's HTTPS Origin/Referer checks (including iOS).
+    # Invitation tokens stay in fragments and are never included in referrers.
+    response['Referrer-Policy'] = 'same-origin' if has_form else 'no-referrer'
     response['X-Robots-Tag'] = 'noindex, nofollow, noarchive'
     return response
 
@@ -266,7 +269,7 @@ def proposal_access(request):
             error = 'This private link is invalid or expired. Contact us for a new link.'
         else:
             error = 'Open the complete private link from your proposal email.'
-    return private_response(render(request, 'workqueue/proposal_access.html', {'error':error}, status=status))
+    return private_response(render(request, 'workqueue/proposal_access.html', {'error':error}, status=status), has_form=True)
 
 
 def public_invite(request, revision_id):
@@ -282,7 +285,7 @@ def public_invite(request, revision_id):
 def proposal_public(request, revision_id):
     invite = public_invite(request, revision_id)
     if not invite:
-        return private_response(render(request, 'workqueue/proposal_access.html', {'error':'Open the private link in your proposal email to view this document.'}, status=403))
+        return private_response(render(request, 'workqueue/proposal_access.html', {'error':'Open the private link in your proposal email to view this document.'}, status=403), has_form=True)
     revision = invite.revision
     proposal = revision.proposal
     available = proposal.current_revision_id == revision.pk and not proposal.has_draft and revision.state in {'sent', 'viewed'}
@@ -304,7 +307,7 @@ def proposal_public(request, revision_id):
             ProposalRevision.objects.filter(pk=revision.pk, state='sent', viewed_at__isnull=True).update(state='viewed', viewed_at=timezone.now())
         revision.refresh_from_db()
     return private_response(render(request, 'workqueue/proposal_public.html', {'snapshot':revision.snapshot, 'revision':revision,
-        'form':form, 'error':error, 'available':available}, status=status))
+        'form':form, 'error':error, 'available':available}, status=status), has_form=True)
 
 
 @queue_enabled
