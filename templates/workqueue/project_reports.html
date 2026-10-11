@@ -1,0 +1,41 @@
+{% extends 'workqueue/pm_base.html' %}{% load static %}
+{% block title %}Project reports{% endblock %}
+{% block tool_styles %}{{ block.super }}<link rel="stylesheet" href="{% static 'css/project-reports.css' %}">{% endblock %}
+{% block pm_content %}
+<header class="pm-heading"><div><span class="brand">Project management</span><h1>Project reports</h1><p>Compare estimated hours with recorded work and review billing before closing out a project.</p></div></header>
+<form method="get" class="pm-filter report-filter">
+  <label>Search<input type="search" name="q" value="{{ q }}" placeholder="Project, job number, client, or email"></label>
+  <label>Projects<select name="scope"><option value="active" {% if scope == 'active' %}selected{% endif %}>Active projects</option><option value="all" {% if scope == 'all' %}selected{% endif %}>All projects</option><option value="completed" {% if scope == 'completed' %}selected{% endif %}>Completed projects</option></select></label>
+  <label>Attention<select name="attention"><option value="all" {% if attention == 'all' %}selected{% endif %}>All</option><option value="over" {% if attention == 'over' %}selected{% endif %}>Over estimated hours</option><option value="billing" {% if attention == 'billing' %}selected{% endif %}>Completed · review billing</option><option value="missing" {% if attention == 'missing' %}selected{% endif %}>Estimate not set</option></select></label>
+  <button>Apply filters</button><a href="{% url 'workqueue:project_reports' %}?scope=all">Reset to all projects</a>
+</form>
+<div class="report-summary" aria-label="Matching project totals">
+  <div class="pm-card"><strong>{{ summary.projects }}</strong><span>Matching projects</span></div>
+  <div class="pm-card"><strong>{{ summary.hours }}</strong><span>Recorded hours</span></div>
+  <div class="pm-card"><strong>{{ summary.revision_hours }}</strong><span>Revision hours</span></div>
+  <div class="pm-card"><strong>{{ summary.over }}</strong><span>Over estimate</span></div>
+  <div class="pm-card"><strong>{{ summary.billing }}</strong><span>Review billing</span></div>
+</div>
+<p class="report-note">Totals follow your filters and include saved time only. Running timers and removed entries are excluded. Revision hours are part of recorded hours. Set estimated hours in the project workspace.</p>
+<div class="report-list">
+{% for row in rows %}
+<article class="pm-card report-project">
+  <header><div><span class="pm-badge">{{ row.project.canonical_reference|default:'Project' }}</span><h2><a href="{% url 'workqueue:project_detail' row.project.pk %}">{{ row.project.name|default:'Untitled project' }}</a></h2><p>{{ row.project.street }}{% if row.project.city %} · {{ row.project.city }}{% endif %}</p></div><div class="report-flags">{% if row.over_estimate %}<span class="report-flag">Over estimate</span>{% endif %}{% if row.billing_review %}<span class="report-flag">Review billing</span>{% endif %}<span class="pm-badge">{% if row.completed %}Completed{% elif row.project.active_count %}{{ row.project.active_count }} active job{{ row.project.active_count|pluralize }}{% else %}Closed{% endif %}</span></div></header>
+  <dl class="report-metrics">
+    <div><dt>Estimated hours</dt><dd>{% if row.estimated != None %}{{ row.estimated }}{% else %}<span class="report-muted">Not set</span>{% endif %}</dd></div>
+    <div><dt>Recorded hours</dt><dd>{{ row.total }}</dd></div>
+    <div><dt>Billable hours</dt><dd>{{ row.billable }}</dd></div>
+    <div><dt>Nonbillable hours</dt><dd>{{ row.nonbillable }}</dd></div>
+    <div><dt>Revision hours</dt><dd>{{ row.revisions }}</dd></div>
+    <div><dt>Hours remaining</dt><dd>{% if row.remaining != None %}{{ row.remaining }}{% else %}<span class="report-muted">Not set</span>{% endif %}</dd></div>
+  </dl>
+  <section class="report-billing" aria-label="Linked invoices for {{ row.project.name }}"><h3>Linked FreshBooks invoices</h3>
+  {% for invoice in row.invoices %}<div class="report-invoice"><a href="{% url 'workqueue:proposal_detail' invoice.proposal_id %}">{{ invoice.proposal.number }}</a> · {% if invoice.state == 'linked' %}Invoice {{ invoice.invoice_number|default:invoice.invoice_id }} · {{ invoice.billing_status|default:'Status not available' }}{% if invoice.outstanding != None %} · Outstanding {{ invoice.currency }} {{ invoice.outstanding }}{% endif %}{% else %}{{ invoice.get_state_display }}{% endif %}<br><small>{% if invoice.last_sync_at %}Last synced {{ invoice.last_sync_at|date:'M j, Y, g:i A' }}{% if invoice.snapshot_old %} · Snapshot over 24 hours old{% endif %}{% else %}Not yet synced{% endif %}</small></div>{% empty %}<p>No invoice linked in this app.{% if row.completed %} Check FreshBooks before creating an invoice.{% endif %}</p>{% endfor %}
+  </section>
+  <nav class="pm-nav" aria-label="Actions for {{ row.project.name }}"><a href="{% url 'workqueue:project_detail' row.project.pk %}">Open project</a><a href="{% url 'workqueue:project_time' row.project.pk %}">Review time</a></nav>
+</article>
+{% empty %}<div class="pm-card"><p>No projects match these filters.</p><a href="{% url 'workqueue:project_reports' %}?scope=all">Show all projects</a></div>{% endfor %}
+</div>
+<p class="report-note">Billing shows invoices linked through this app and their last saved FreshBooks status. It does not include invoices created separately in FreshBooks. “Review billing” flags completed projects with no linked invoice, a draft, or an incomplete billing connection; it does not mean a client owes money. FreshBooks remains the source for current balances and payments.</p>
+<nav class="pm-pages" aria-label="Report pages">{% if page.has_previous %}<a href="?q={{ q|urlencode }}&amp;scope={{ scope }}&amp;attention={{ attention }}&amp;page={{ page.previous_page_number }}">Previous</a>{% endif %}<span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a href="?q={{ q|urlencode }}&amp;scope={{ scope }}&amp;attention={{ attention }}&amp;page={{ page.next_page_number }}">Next</a>{% endif %}</nav>
+{% endblock %}

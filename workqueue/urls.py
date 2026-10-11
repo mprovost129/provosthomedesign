@@ -9,9 +9,11 @@ from . import communication_views
 from . import pm_views
 from . import freshbooks_views
 from . import time_views
+from . import report_views
 
 app_name = "workqueue"
 urlpatterns = [
+    path('work-projects/reports/', report_views.project_reports, name='project_reports'),
     path('work-queue/timer/', time_views.timer, name='timer'),
     path('work-projects/<uuid:project_id>/time/', time_views.project_time, name='project_time'),
     path('work-projects/billing/', freshbooks_views.connection, name='freshbooks_connection'),

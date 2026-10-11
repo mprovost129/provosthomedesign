@@ -53,3 +53,11 @@ Creation requests are durably recorded before making the API call. An interrupte
 API-disabled installations retain the project/proposal workflow. Production billing activation requires real credentials and user OAuth consent; local checks use fake providers and never create customer invoices.
 
 Official API references: [OAuth](https://www.freshbooks.com/api/authentication), [clients](https://www.freshbooks.com/api/clients), [invoices](https://www.freshbooks.com/api/invoices), [payment options](https://www.freshbooks.com/api/online-payments).
+
+## Project reports
+
+Open **Reports** in the queue or project navigation. The private, read-only report compares estimated hours in the project plan with saved time. It splits billable, nonbillable, and revision hours; revision hours are included in actual hours. Running timers and removed time do not count. Time already recorded against a removed job remains part of its project history, provided the project still has a visible job. Projects without any visible jobs and legacy jobs without a linked project are excluded.
+
+Filters select active, completed, or all projects, over-estimate projects, missing estimates, or completed projects needing billing review. Search accepts project/address, job reference, client/email, and proposal number. Totals cover all matching projects across pagination. Over-estimate flags compare exact seconds before rounding display hours. A missing estimate is different from an explicit zero. A completed project has completed work and no active jobs; canceled/declined/duplicate jobs alone do not count as completed.
+
+Invoice cards show only linked FreshBooks records, including their last synchronization time and currency-specific outstanding balance. Snapshots older than 24 hours are marked. Review billing flags completed projects without linked invoices or with drafts, failed/incomplete links, missing syncs, or voided/deleted invoice status. An invoice may exist separately in FreshBooks; review there before creating another. The report does not create, send, or synchronize invoices, infer profits or hourly charges, or change queue position/status.
