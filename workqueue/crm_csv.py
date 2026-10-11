@@ -2,6 +2,8 @@
 import csv
 import io
 import json
+import re
+from difflib import SequenceMatcher
 import uuid
 from datetime import timedelta
 
@@ -17,6 +19,12 @@ from .services import EditConflict, lock_queue
 
 HEADERS = ['Client ID', 'Contact ID', 'Organization', 'First Name', 'Last Name', 'Full Name', 'Email',
            'Phone', 'Address Line 1', 'Address Line 2', 'City', 'Province/State', 'Country', 'Postal Code', 'Notes', 'Role']
+
+
+def organization_hint(value):
+    words = re.findall(r'[\w]+', normalized_text(value))
+    suffixes = {'inc', 'incorporated', 'llc', 'ltd', 'limited', 'corp', 'corporation', 'co', 'company'}
+    return ' '.join('development' if word == 'dev' else word for word in words if word not in suffixes)
 
 
 def parse_csv(upload):
@@ -109,7 +117,18 @@ def row_matches(row):
         conditions |= Q(contacts__normalized_phone=phone, contacts__archived_at__isnull=True)
     if email:
         conditions |= Q(contacts__archived_email=email)
-    return None, list(active.filter(conditions).distinct()), ''
+    candidates = list(active.filter(conditions).distinct())
+    organization = organization_hint(row.get('organization', ''))
+    if len(organization) >= 6:
+        existing = {client.pk for client in candidates}
+        for client in active:
+            name = organization_hint(client.name)
+            if len(name) >= 6 and (organization.startswith(name) or name.startswith(organization)
+                    or SequenceMatcher(None, name, organization).ratio() >= .82):
+                if client.pk not in existing:
+                    candidates.append(client)
+                    existing.add(client.pk)
+    return None, candidates, ''
 
 
 def build_plan(rows):
@@ -153,7 +172,7 @@ def apply_import(batch_id, choices, actor):
         return batch.result
     if batch.created_at < timezone.now() - timedelta(hours=2):
         raise ValidationError('This preview expired. Upload the CSV again.')
-    resolved, summary = {}, {'new_clients': 0, 'new_contacts': 0, 'updated': 0, 'skipped': 0}
+    resolved, created_ids, summary = {}, set(), {'new_clients': 0, 'new_contacts': 0, 'updated': 0, 'skipped': 0}
     for index, (row, entry) in enumerate(zip(batch.rows, batch.plan)):
         choice = choices.get(str(index), '')
         if choice == 'skip' or row['error'] or entry['error']:
@@ -166,6 +185,7 @@ def apply_import(batch_id, choices, actor):
                 continue
         else:
             exact, candidates, error = row_matches(row)
+            candidates = [candidate for candidate in candidates if candidate.pk not in created_ids]
             if error:
                 raise EditConflict(f'Row {row["number"]} changed. Upload a new preview.')
             if entry['target']:
@@ -191,6 +211,7 @@ def apply_import(batch_id, choices, actor):
         # Versions bumped by earlier rows in the same batch are still ours, not concurrent edits.
         if target is None:
             target = Client.objects.create(name=row['name'], normalized_name=normalized_text(row['name']), kind=row['kind'])
+            created_ids.add(target.pk)
             summary['new_clients'] += 1
         contact = target.contacts.filter(email=row['email'], archived_at__isnull=True).first() if row['email'] else None
         if not contact and row.get('contact id'):

@@ -312,3 +312,12 @@ class CRMCommunicationTests(TestCase):
         message, _ = self.queue_email()
         self.assertEqual(self.client.get(reverse('workqueue:email_detail', args=[message.pk]))['X-Frame-Options'], 'SAMEORIGIN')
         self.assertEqual(self.client.get(reverse('workqueue:communication_settings'))['X-Frame-Options'], 'DENY')
+
+    def test_company_variations_are_reviewed_not_silently_duplicated_or_merged(self):
+        Client.objects.create(name='Heritage Realty & Custom Homes', normalized_name='heritage realty & custom homes', kind='company')
+        Client.objects.create(name='Gallant Dev. Inc', normalized_name='gallant dev. inc', kind='individual')
+        batch = self.csv_batch('Organization,Email\nHeritage Realty,office@example.invalid\nGallant Development Inc.,gallant@example.invalid\n')
+        self.assertEqual([candidate['name'] for candidate in batch.plan[0]['candidates']], ['Heritage Realty & Custom Homes'])
+        self.assertEqual([candidate['name'] for candidate in batch.plan[1]['candidates']], ['Gallant Dev. Inc'])
+        with self.assertRaises(ValidationError):
+            apply_import(batch.pk, {}, self.owner)
