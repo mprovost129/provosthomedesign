@@ -119,6 +119,7 @@ class CRMUpgradeTests(TestCase):
         self.assertContains(self.client.get(self.directory, {"attention": "due"}), "Job follow-up: " + self.item.reference)
         self.assertContains(self.client.get(self.url), "Existing queue reminder")
         self.assertFalse(ClientFollowUp.objects.exists())
+
         self.item.status = Status.COMPLETED
         self.item.save()
         self.assertNotContains(self.client.get(self.directory, {"attention": "due"}), self.url)
@@ -126,6 +127,11 @@ class CRMUpgradeTests(TestCase):
         self.item.save()
         delete_work(item_id=self.item.pk, version=self.item.version, actor=self.owner)
         self.assertNotContains(self.client.get(self.directory, {"attention": "due"}), self.url)
+
+    def test_invalid_record_identifiers_show_validation_instead_of_server_error(self):
+        for data in ({"action": "save_followup", "task_key": "bad-id"},
+                     {"action": "contact", "contact_key": "bad-id"}):
+            self.assertEqual(self.client.post(self.url, data).status_code, 400)
 
     def test_primary_role_edit_archive_and_snapshot_privacy(self):
         before = self.item.submissions.get().answers.copy()

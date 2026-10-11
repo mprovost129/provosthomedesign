@@ -296,13 +296,17 @@ def client_detail(request, client_id):
             error = " ".join(exc.messages) if isinstance(exc, ValidationError) else str(exc)
             messages.error(request, error)
             if action == "contact":
-                (bound_contact_form if bound_contact_form is not None else add_form).add_error(None, error)
+                error_form = bound_contact_form if bound_contact_form is not None else add_form
+                if error_form.is_bound:
+                    error_form.add_error(None, error)
             elif action == "copy_contact" and bound_copy_form is not None:
                 bound_copy_form.add_error(None, error)
             elif action == "activity":
                 activity_form.add_error(None, error)
             elif action == "save_followup":
-                (bound_task_form if bound_task_form is not None else followup_form).add_error(None, error)
+                error_form = bound_task_form if bound_task_form is not None else followup_form
+                if error_form.is_bound:
+                    error_form.add_error(None, error)
             status = 409 if isinstance(exc, EditConflict) else 400
         # ModelForm may mutate its instance; render current stored values separately.
         client.refresh_from_db()
