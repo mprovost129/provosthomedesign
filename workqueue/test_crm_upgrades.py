@@ -14,7 +14,7 @@ from .crm import (archive_contact, change_followup, edit_client, log_activity, m
 from .crm_overview import overview, possible_match_ids, timeline
 from .crm_views import client_counts
 from .models import (Attachment, Client, ClientEvent, ClientFollowUp, NotificationDelivery,
-                     ProjectAccess, Status, WorkItem)
+                     ProjectAccess, Status, WorkItem, AuditEvent)
 from .services import EditConflict, create_work, delete_work
 from .tests import work_data
 
@@ -214,6 +214,16 @@ class CRMUpgradeTests(TestCase):
         entries = timeline(self.account, 1)
         self.assertFalse(any(entry["body"] == "Should disappear" for entry in entries))
         self.assertFalse(any(self.item.reference in entry["title"] for entry in entries))
+
+    def test_job_activity_uses_plain_labels_and_readable_statuses(self):
+        AuditEvent.objects.create(work_item=self.item, action="queue_reordered", changes={})
+        AuditEvent.objects.create(work_item=self.item, action="edited", changes={
+            "status": {"before": "new", "after": "completed"}, "internal_notes": {"after": "Unrelated private detail"}})
+        page = self.client.get(self.url)
+        self.assertContains(page, "Queue order changed")
+        self.assertContains(page, "Status: New → Completed")
+        self.assertNotContains(page, "queue_reordered")
+        self.assertNotContains(page, "Unrelated private detail")
 
     def test_merged_client_notes_join_timeline_and_undo_separates_them(self):
         log_activity(client_id=self.account.pk, version=self.account.version, kind="meeting",

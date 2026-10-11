@@ -8,7 +8,19 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .models import (Appointment, AuditEvent, Client, ClientContact, ClientEvent,
-                     ClientFollowUp, CompletedDelivery, NotificationDelivery, Submission, WorkItem)
+                     ClientFollowUp, CompletedDelivery, NotificationDelivery, Status, Submission, WorkItem)
+
+
+WORK_ACTIVITY_LABELS = {
+    "edited": "Work details updated", "project_details_edited": "Project details updated",
+    "milestone_email_decided": "Client status email decision", "queue_reordered": "Queue order changed",
+    "legacy_imported": "Work imported from the previous queue", "prior_link_cleared": "Previous request connection removed",
+    "copied": "Work copied", "restored": "Work restored", "access_granted": "Project access granted",
+    "access_revoked": "Project access removed", "email_retry_requested": "Email retry requested",
+    "completed_files_released": "Completed files shared", "information_requested": "More information requested",
+    "information_response_received": "Client information response received",
+    "information_response_reviewed": "Client information response reviewed",
+}
 
 
 def overview(queryset):
@@ -116,7 +128,13 @@ def timeline(client, page_number):
             title = f"Appointment · {obj.get_state_display()}"
             body = f"{timezone.localtime(obj.starts_at):%b %d, %Y at %I:%M %p} · {obj.purpose}"
         elif kind == "job":
-            title = f"Work {obj.action} · {obj.work_item.reference}"
+            title = f"{WORK_ACTIVITY_LABELS.get(obj.action, 'Work updated')} · {obj.work_item.reference}"
+            status = obj.changes.get("status")
+            if isinstance(status, dict):
+                labels = dict(Status.choices)
+                before, after = status.get("before"), status.get("after")
+                if before in labels and after in labels:
+                    body = f"Status: {labels[before]} → {labels[after]}"
         else:
             title = f"{obj.get_recipient_kind_display()} email · {obj.get_state_display()}"
             body = obj.subject
