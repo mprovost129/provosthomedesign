@@ -33,7 +33,11 @@ def connection(request):
                 state = secrets.token_urlsafe(32)
                 url = billing.authorization_url(state)
                 request.session['freshbooks_oauth'] = {'state':state, 'time':time.time(), 'actor':request.user.pk}
-                return private_response(redirect(url))
+                # Keep form submissions on this site. A normal link starts OAuth without
+                # weakening the site's form-action CSP for cross-origin POST redirects.
+                return private_response(render(request, 'workqueue/freshbooks_connection.html',
+                    {'connection':record, 'configured':True, 'authorization_url':url,
+                     'callback':billing.redirect_uri()}))
             elif action == 'business':
                 billing.choose_business(request.POST.get('account', ''), request.user)
                 messages.success(request, 'FreshBooks billing business selected.')

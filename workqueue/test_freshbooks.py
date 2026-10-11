@@ -110,6 +110,15 @@ class FreshBooksTests(TestCase):
         self.client.force_login(staff)
         self.assertEqual(self.client.get(reverse('workqueue:freshbooks_connection')).status_code, 403)
 
+    @override_settings(DEBUG=False)
+    def test_oauth_start_preserves_same_origin_form_policy(self):
+        response = self.client.post(reverse('workqueue:freshbooks_connection'), {'action':'connect'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Continue to FreshBooks')
+        self.assertContains(response, 'https://auth.freshbooks.com/oauth/authorize/')
+        self.assertIn("form-action 'self'", response['Content-Security-Policy'])
+        self.assertEqual(response['Referrer-Policy'], 'no-referrer')
+
     def test_choose_business_only_from_authorized_list(self):
         with self.assertRaises(ValidationError):
             fb.choose_business('OTHER123', self.owner)
