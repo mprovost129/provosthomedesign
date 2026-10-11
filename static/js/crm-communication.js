@@ -17,9 +17,9 @@
   }
   if (form) {
     form.addEventListener('input', () => {dirty = true;});
-    const projects = form.querySelector('[name=project]'), subject = form.querySelector('[name=subject]');
+    const projects = form.querySelector('[name=project_subject]'), subject = form.querySelector('[name=subject]');
     projects?.addEventListener('change', () => {
-      if (projects.value) subject.value = projects.options[projects.selectedIndex].textContent.replace(/^.*? — /, '').trim();
+      if (projects.value) subject.value = projects.options[projects.selectedIndex].textContent.trim().slice(0,255);
       subject?.focus(); dirty = true;
     });
     form.addEventListener('submit', event => {

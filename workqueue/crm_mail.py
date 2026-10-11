@@ -40,6 +40,7 @@ class ComposeForm(forms.Form):
     cc = forms.CharField(required=False, max_length=2000, label='CC')
     bcc = forms.CharField(required=False, max_length=2000, label='BCC')
     project = forms.ModelChoiceField(queryset=WorkProject.objects.none(), required=False, label='Project subject')
+    project_subject = forms.ChoiceField(required=False, label='Project subject')
     subject = forms.CharField(max_length=255, label='Subject')
     body_html = forms.CharField(max_length=50000, widget=forms.Textarea, label='Message')
     include_signature = forms.BooleanField(required=False, initial=True, label='Include saved signature')
@@ -52,6 +53,14 @@ class ComposeForm(forms.Form):
                                                                     work_items__deleted_at__isnull=True).distinct()
         self.fields['project'].empty_label = 'Custom subject'
         self.fields['project'].label_from_instance = lambda obj: obj.name
+        self.fields['project'].widget = forms.HiddenInput()
+        self.project_presets = {f'project:{project.pk}': project for project in self.fields['project'].queryset}
+        self.work_presets = {f'work:{item.pk}': item for item in WorkItem.objects.filter(
+            client_contact__client=client, project__isnull=True).order_by('project_name', 'reference')}
+        self.fields['project_subject'].choices = [('', 'Custom subject')]
+        self.fields['project_subject'].choices += [(key, project.name) for key, project in self.project_presets.items()]
+        self.fields['project_subject'].choices += [(key, item.project_name or item.project_context or item.project_street or item.reference)
+            for key, item in self.work_presets.items()]
         self.fields['cc'].help_text = self.fields['bcc'].help_text = 'Separate addresses with commas. CC is visible to recipients; BCC is hidden.'
 
     def clean_subject(self):
@@ -74,6 +83,11 @@ class ComposeForm(forms.Form):
 
     def clean(self):
         data = super().clean()
+        preset = data.get('project_subject', '')
+        if 'project_subject' in self.data:
+            data['project'] = self.project_presets.get(preset)
+            if preset in self.work_presets:
+                data['selected_item'] = self.work_presets[preset]
         to = [c.email for c in data.get('contacts', [])]
         cc, bcc = data.get('cc', []), data.get('bcc', [])
         if len(set(to + cc + bcc)) > 25:
@@ -100,6 +114,8 @@ def compose_email(*, client_id, item_id, data, actor):
     project = data.get('project')
     if project and not WorkItem.objects.filter(project=project, client_contact__client=client).exists():
         raise ValidationError('Choose a project belonging to this client.')
+    if data.get('selected_item'):
+        item_id = data['selected_item'].pk
     item = WorkItem.objects.filter(pk=item_id, client_contact__client=client).first() if item_id else None
     if item_id and not item:
         raise ValidationError('This work item is no longer available.')
@@ -135,7 +151,8 @@ class PreferencesForm(forms.ModelForm):
         value = self.cleaned_data['signature_html']
         if len(value) > 10000:
             raise ValidationError('Keep the signature under 10,000 characters.')
-        return clean_email_html(value)[0]
+        html, text = clean_email_html(value)
+        return html if text else ''
 
 
 @transaction.atomic

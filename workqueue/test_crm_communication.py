@@ -321,3 +321,38 @@ class CRMCommunicationTests(TestCase):
         self.assertEqual([candidate['name'] for candidate in batch.plan[1]['candidates']], ['Gallant Dev. Inc'])
         with self.assertRaises(ValidationError):
             apply_import(batch.pk, {}, self.owner)
+
+    @override_settings(DEBUG=False)
+    def test_production_policy_scopes_email_popup_to_staff_queue_and_client_pages(self):
+        browser = Browser()
+        browser.force_login(self.owner)
+        response = browser.get(self.url)
+        self.assertContains(response, 'To — select client contacts')
+        self.assertEqual(response['X-Frame-Options'], 'SAMEORIGIN')
+        self.assertIn('frame-src www.google.com', response['Content-Security-Policy'])
+        queue = browser.get(reverse('workqueue:queue'))
+        self.assertIn('frame-src http://testserver/clients/ www.google.com', queue['Content-Security-Policy'])
+        client_page = browser.get(reverse('workqueue:client_detail', args=[self.account.pk]))
+        self.assertIn('frame-src http://testserver/clients/ www.google.com', client_page['Content-Security-Policy'])
+        settings_page = browser.get(reverse('workqueue:communication_settings'))
+        self.assertNotIn('http://testserver/clients/', settings_page['Content-Security-Policy'])
+
+    def test_legacy_unlinked_projects_are_available_as_subject_presets(self):
+        self.item.project = None
+        self.item.project_name = ''
+        self.item.project_context = 'Existing daycare addition'
+        self.item.save()
+        response = self.client.get(self.url + f'?item={self.item.pk}')
+        self.assertContains(response, 'Existing daycare addition')
+        form = self.form(project='', project_subject=f'work:{self.item.pk}', subject='Daycare review')
+        self.assertTrue(form.is_valid(), form.errors)
+        message, _ = compose_email(client_id=self.account.pk, item_id=None, data=form.cleaned_data, actor=self.owner)
+        self.assertEqual(message.work_item_id, self.item.pk)
+        self.assertIsNone(message.project_id)
+        self.assertFalse(self.form(project_subject='work:' + str(uuid.uuid4())).is_valid())
+
+    def test_blank_rich_signature_is_saved_as_empty(self):
+        from .crm_mail import PreferencesForm
+        form = PreferencesForm({'version':1, 'signature_html':'<p><br></p>'}, instance=CRMSettings(pk=1))
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data['signature_html'], '')

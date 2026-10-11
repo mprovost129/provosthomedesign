@@ -39,7 +39,16 @@ class ContentSecurityPolicyMiddleware:
     def __call__(self, request):
         response = self.get_response(request)
         if self._policy:
-            response.setdefault("Content-Security-Policy", self._policy)
+            policy = self._policy
+            # Only successful authenticated queue/client pages host the email editor.
+            route = getattr(request, 'resolver_match', None)
+            user = getattr(request, 'user', None)
+            if (response.status_code == 200 and route and route.view_name in
+                    {'workqueue:queue', 'workqueue:client_detail'} and user and user.is_authenticated
+                    and user.is_staff):
+                editor_source = request.build_absolute_uri('/clients/')
+                policy = policy.replace('frame-src ', 'frame-src ' + editor_source + ' ', 1)
+            response.setdefault("Content-Security-Policy", policy)
         return response
 
     def _build(self) -> str:

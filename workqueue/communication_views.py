@@ -47,7 +47,10 @@ def compose(request, client_id):
     if contact and contact.email and not contact.archived_at:
         initial['contacts'] = [contact.pk]
     if item:
-        initial['project'], initial['subject'] = item.project, item.project.name if item.project else item.project_name
+        initial['project'] = item.project
+        initial['subject'] = (item.project.name if item.project else
+            item.project_name or item.project_context or item.project_street or item.reference)[:255]
+        initial['project_subject'] = f'project:{item.project_id}' if item.project_id else f'work:{item.pk}'
     form = ComposeForm(request.POST or None, client=client, initial=initial)
     status = 200
     if request.method == 'POST':
@@ -61,8 +64,10 @@ def compose(request, client_id):
             else:
                 return redirect('workqueue:email_detail', message.pk)
     preferences = CRMSettings.objects.filter(pk=1).first()
+    from .rich_email import clean_email_html
+    signature_html, signature_text = clean_email_html(preferences.signature_html if preferences else '')
     return render(request, 'workqueue/compose_email.html', {'form': form, 'crm_client': client,
-        'signature_html': preferences.signature_html if preferences else '',
+        'signature_html': signature_html if signature_text else '',
         'has_recipients': form.fields['contacts'].queryset.exists()}, status=status)
 
 

@@ -2,10 +2,10 @@
 <header class="mail-heading"><div><span>Provost Home Design</span><h1>Email {{ crm_client.name }}</h1></div><button type="button" class="secondary" data-close-email>Close</button></header>
 <p class="muted">Sends through your configured Gmail connection. Replies return to your email inbox.</p>
 {% if not has_recipients %}<p class="notice error">This client has no active email contacts. Add an email address to their client record first.</p>{% endif %}
-<form method="post" data-compose>{% csrf_token %}{{ form.token }}{{ form.non_field_errors }}
+<form method="post" data-compose>{% csrf_token %}{{ form.token }}{{ form.project }}{{ form.non_field_errors }}
 <fieldset class="recipients"><legend>{{ form.contacts.label }}</legend>{{ form.contacts.errors }}{{ form.contacts }}</fieldset>
 <div class="mail-columns"><label>CC{{ form.cc }}{{ form.cc.errors }}</label><label>BCC{{ form.bcc }}{{ form.bcc.errors }}</label></div><small>Separate addresses with commas. CC is visible to recipients; BCC is hidden.</small>
-<label for="id_project">Project subject</label>{{ form.project }}{{ form.project.errors }}<label for="id_subject">Subject</label>{{ form.subject }}{{ form.subject.errors }}
+<label for="id_project_subject">Project subject</label>{{ form.project_subject }}{{ form.project_subject.errors }}{{ form.project.errors }}<label for="id_subject">Subject</label>{{ form.subject }}{{ form.subject.errors }}
 <label for="id_body_html">Message</label>{{ form.body_html.errors }}<div data-rich-editor data-placeholder="Write your message…"></div><div data-rich-fallback>{{ form.body_html }}</div>
 <label class="checkbox">{{ form.include_signature }}Include saved signature</label>
 {% if signature_html %}<details><summary>Preview saved signature</summary><div class="email-content">{{ signature_html|safe }}</div></details>{% else %}<p class="muted">No signature saved yet. Set it in <a href="{% url 'workqueue:communication_settings' %}" target="_blank" rel="noopener">Email settings</a>.</p>{% endif %}
