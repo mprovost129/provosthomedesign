@@ -1,0 +1,8 @@
+{% extends 'workqueue/pm_base.html' %}{% block title %}Add checklist · {{ project.name }}{% endblock %}{% block pm_content %}
+<header class="pm-heading"><div><span class="brand">{{ project.canonical_reference|default:'Project' }}</span><h1>Add a checklist</h1><p>{{ project.name }}</p></div><a href="{% url 'workqueue:project_detail' project.pk %}#tasks">Back to project tasks</a></header>
+<section class="pm-card"><form method="get"><div class="pm-field">{{ choice.template.label_tag }}{{ choice.template }}{{ choice.template.errors }}</div><button>Preview checklist</button></form><p><a href="{% url 'workqueue:checklists' %}" target="_blank" rel="noopener">Create or edit reusable checklists</a></p></section>
+{% if apply_form %}<section class="pm-card"><h2>Review {% if checklist %}{{ checklist.name }}{% else %}steps{% endif %}</h2><p>Choose which steps to add. Adjust titles, due dates, and private notes. Dates are optional. Existing steps with the same title, including completed steps, are skipped.</p>
+<form method="post">{% csrf_token %}{{ apply_form }}{{ steps.management_form }}{{ steps.non_form_errors }}
+{% for step in steps %}<fieldset class="checklist-step"><legend>Step {{ forloop.counter }}{% if step.already_exists %} · Already in this project{% endif %}</legend>{% for field in step %}<div class="pm-field">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>{% endfor %}</fieldset>{% endfor %}
+<button>Add selected steps</button></form></section>{% endif %}
+{% endblock %}

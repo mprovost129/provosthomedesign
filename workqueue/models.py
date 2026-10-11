@@ -619,3 +619,4 @@ class BookingAudit(models.Model):
 from .pm_models import ProjectPlan, ProjectTask, ProposalTemplate, ProposalSequence, Proposal, ProposalRevision, ProposalInvitation, ProjectEvent
 from .time_models import TimeEntry
 from .freshbooks_models import FreshBooksConnection, FreshBooksClientLink, FreshBooksInvoice
+from .checklist_models import ProjectChecklist, ChecklistApplication
