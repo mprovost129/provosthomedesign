@@ -4,8 +4,8 @@
 <nav class="navbar navbar-expand-lg web-nav sticky-top" aria-label="Web services">
   <div class="container-lg">
     <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'pages:web_design' %}" rel="home">
-      <span class="web-brand-mark" aria-hidden="true">P/</span>
-      <span class="web-brand-name">Provost Home Design <small>Web</small></span>
+      <img src="{% static 'images/web-mark.svg' %}" width="42" height="42" alt="" class="web-brand-mark">
+      <span class="web-brand-name">Slater Woods <small>Design Company</small></span>
     </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#webNav" aria-controls="webNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
@@ -13,12 +13,11 @@
     <div class="collapse navbar-collapse" id="webNav">
       <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
         <li class="nav-item"><a class="nav-link{% if m.url_name == 'web_design' %} active{% endif %}" href="{% url 'pages:web_design' %}"{% if m.url_name == 'web_design' %} aria-current="page"{% endif %}>Home</a></li>
-        <li class="nav-item"><a class="nav-link{% if m.url_name == 'web_services' %} active{% endif %}" href="{% url 'pages:web_services' %}"{% if m.url_name == 'web_services' %} aria-current="page"{% endif %}>Services</a></li>
-        <li class="nav-item"><a class="nav-link{% if m.url_name == 'web_work' %} active{% endif %}" href="{% url 'pages:web_work' %}"{% if m.url_name == 'web_work' %} aria-current="page"{% endif %}>Work</a></li>
+        <li class="nav-item"><a class="nav-link{% if m.url_name == 'web_services' or m.url_name == 'web_service_detail' %} active{% endif %}" href="{% url 'pages:web_services' %}"{% if m.url_name == 'web_services' or m.url_name == 'web_service_detail' %} aria-current="page"{% endif %}>Services</a></li>
+        <li class="nav-item"><a class="nav-link{% if m.url_name == 'web_work' or m.url_name == 'web_case_study' %} active{% endif %}" href="{% url 'pages:web_work' %}"{% if m.url_name == 'web_work' or m.url_name == 'web_case_study' %} aria-current="page"{% endif %}>Work</a></li>
         <li class="nav-item"><a class="nav-link{% if m.url_name == 'web_about' %} active{% endif %}" href="{% url 'pages:web_about' %}"{% if m.url_name == 'web_about' %} aria-current="page"{% endif %}>About</a></li>
         <li class="nav-item"><a class="nav-link{% if m.url_name == 'pricing' %} active{% endif %}" href="{% url 'pages:pricing' %}"{% if m.url_name == 'pricing' %} aria-current="page"{% endif %}>Pricing</a></li>
         <li class="nav-item"><a class="btn web-btn-primary btn-sm px-3" href="{% url 'pages:web_contact' %}">Start a Project</a></li>
-        <li class="nav-item"><a class="nav-link small" href="{{ MAIN_SITE_URL }}/">Home Design <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></a></li>
       </ul>
     </div>
   </div>

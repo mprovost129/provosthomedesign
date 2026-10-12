@@ -121,16 +121,16 @@ class SubdomainRoutingTests(TestCase):
         response = self.client.get("/", HTTP_HOST=self.web_host)
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Clear online")
-        self.assertContains(response, "websites for local businesses")
+        self.assertContains(response, "Websites that work.")
+        self.assertContains(response, "professional websites")
         self.assertNotContains(response, "Search Plans")
-        self.assertContains(response, 'content="Provost Home Design Web Services"')
+        self.assertContains(response, 'content="Slater Woods Design Company"')
 
     def test_web_metadata_does_not_inherit_residential_signals(self):
         response = self.client.get("/contact/", HTTP_HOST=self.web_host)
 
         self.assertContains(response, "Practical websites for local businesses")
-        self.assertContains(response, '"name": "Provost Home Design Web Services"')
+        self.assertContains(response, '"name": "Slater Woods Design Company"')
         self.assertContains(
             response,
             "web.provosthomedesign.com/static/images/web-og-preview.png",
@@ -139,7 +139,7 @@ class SubdomainRoutingTests(TestCase):
         self.assertContains(response, 'href="/static/images/web-mark.svg"')
         self.assertContains(
             response,
-            '"logo": "http://web.provosthomedesign.com/static/images/web-mark.svg"',
+            '"logo": "https://web.provosthomedesign.com/static/images/web-mark.svg"',
         )
         self.assertContains(response, 'name="theme-color" content="#17211f"')
         self.assertNotContains(response, "/static/images/og-image.jpg")
@@ -164,7 +164,7 @@ class SubdomainRoutingTests(TestCase):
             HTTP_HOST=self.web_host,
         )
 
-        self.assertContains(response, "/static/images/fisk_truck.jpeg", count=3)
+        self.assertContains(response, "/static/images/web-portfolio/j-fisk.jpg", count=3)
         self.assertNotContains(response, "web-og-preview.png")
 
     def test_standalone_web_pages_are_available(self):
@@ -172,7 +172,7 @@ class SubdomainRoutingTests(TestCase):
             "/services/": "The right-sized build",
             "/work/": "Built for real use",
             "/about/": "A business owner building",
-            "/contact/": "What should the website help",
+            "/contact/": "What should your next project help",
             "/contact/thanks/": "Inquiry received",
             "/privacy/": "Web services privacy notice",
             "/terms/": "Web services terms",
@@ -321,7 +321,7 @@ class SubdomainRoutingTests(TestCase):
         self.assertNotContains(response, "standalone branding")
 
         llms_response = self.client.get("/llms.txt", HTTP_HOST=self.web_host)
-        self.assertContains(llms_response, "Provost Home Design Web Services")
+        self.assertContains(llms_response, "Slater Woods Design Company")
         self.assertNotContains(llms_response, "temporarily hosted")
         self.assertNotContains(llms_response, "standalone brand")
 
@@ -403,7 +403,8 @@ class SubdomainRoutingTests(TestCase):
             response,
             'href="https://web.provosthomedesign.com/"',
         )
-        self.assertContains(response, "Web Services")
+        self.assertContains(response, "Sister Company")
+        self.assertContains(response, "Slater Woods Design Company")
 
     def test_main_terms_only_reference_web_services_in_footer(self):
         response = self.client.get("/terms/", HTTP_HOST=self.main_host)
@@ -414,7 +415,7 @@ class SubdomainRoutingTests(TestCase):
         self.assertContains(
             response,
             'href="https://web.provosthomedesign.com/"',
-            count=1,
+            count=2,
         )
 
     def test_web_subdomain_does_not_expose_house_plan_catalog(self):
@@ -590,7 +591,7 @@ class SubdomainRoutingTests(TestCase):
         )
         acknowledgment = next(
             message for message in mail.outbox
-            if message.subject == "We received your web project inquiry"
+            if message.subject == "Slater Woods Design Company: inquiry received"
         )
         self.assertIn("Alex Building Co.", notification.body)
         self.assertIn("$3,000-$7,000", notification.body)

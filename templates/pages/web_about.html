@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block body_class %}web-site{% endblock %}
-{% block title %}About Michael Provost | Web Designer and Developer{% endblock %}
+{% block title %}About Michael Provost | Slater Woods Design Company{% endblock %}
 {% block meta_description %}Meet Michael Provost and learn how business ownership and production experience shape the websites and Django applications he builds.{% endblock %}
-{% block og_title %}About Michael Provost | Provost Home Design Web{% endblock %}
+{% block og_title %}About Michael Provost | Slater Woods Design Company{% endblock %}
 {% block og_description %}Practical web design and development informed by the realities of running and growing a business.{% endblock %}
 {% block jsonld %}<script type="application/ld+json">{{ about_schema|safe }}</script>{% endblock %}
 
@@ -18,9 +18,9 @@
 <section class="container-lg pb-5">
   <div class="row g-5">
     <div class="col-lg-7">
-      <p class="fs-4">I am Michael Provost. I built the platform behind Provost Home Design because the business needed more than a brochure site. It needed plan discovery, structured inquiries, customer tools, administration, and room to grow.</p>
+      <p class="fs-4">I am Michael Provost, the owner of Slater Woods Design Company, my registered business name for websites, applications, and software. I built the platform behind Provost Home Design because the business needed more than a brochure site. It needed plan discovery, structured inquiries, customer tools, administration, and room to grow.</p>
       <p>That experience shapes every web engagement. A site has to make sense to a first-time visitor, but it also has to remain useful to the people answering leads, updating content, reviewing data, and paying the ongoing bills.</p>
-      <p>I also built the website for J. Fisk Construction, translating a local contractor's work into a focused online presence. The web practice now leads with clear business websites and takes on custom Django applications when the operational need justifies a deeper build.</p>
+      <p>I also built the website for J. Fisk Construction, translating a local contractor's work into a focused online presence. The portfolio also includes Heritage Village of Norton for a client and my own Boston Baseball Ledger publishing project. Each begins with the people who will use it and the work it needs to support.</p>
     </div>
     <aside class="col-lg-5">
       <div class="web-card">
@@ -47,10 +47,11 @@
 <section class="web-section">
   <div class="container-lg">
     <div class="row g-5">
-      <div class="col-lg-5"><p class="web-kicker">Evidence in production</p><h2 class="web-section-title">Two scopes. Both built for real use.</h2><p class="text-muted mt-4">The work ranges from a focused contractor website to the application supporting a residential-design business.</p></div>
+      <div class="col-lg-5"><p class="web-kicker">Evidence in production</p><h2 class="web-section-title">Four projects. Different business needs.</h2><p class="text-muted mt-4">Client work for J. Fisk Construction and Heritage Village sits alongside my own businesses and projects: Provost Home Design and Boston Baseball Ledger.</p></div>
       <div class="col-lg-7">
         <article class="web-rule py-4"><p class="web-kicker">Local business website</p><h3 class="h2">J. Fisk Construction</h3><p>A straightforward service and contact experience for a working construction company.</p><a href="{% url 'pages:web_case_study' 'j-fisk-construction' %}">Read the contractor website case study</a></article>
         <article class="web-rule py-4"><p class="web-kicker">Custom Django application</p><h3 class="h2">Provost Home Design Platform</h3><p>A public catalog and operational foundation spanning discovery, inquiry, customer, administration, and growth tools.</p><a href="{% url 'pages:web_case_study' 'provost-home-design-platform' %}">Read the application case study</a></article>
+        <p class="mt-4"><a href="{% url 'pages:web_work' %}">Explore all four projects</a></p>
       </div>
     </div>
   </div>

@@ -14,4 +14,4 @@ For your security, please do not email passwords, login details, or other sensit
 
 Learn more: {{ web_url }}
 
-Provost Home Design
+Slater Woods Design Company

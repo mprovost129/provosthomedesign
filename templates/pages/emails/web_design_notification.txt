@@ -1,4 +1,4 @@
-New Web Design Inquiry - {{ company|default:"Provost Home Design" }}
+New Web Design Inquiry - {{ company|default:"Slater Woods Design Company" }}
 ================================================================
 
 From:         {{ from_name }} <{{ from_email }}>

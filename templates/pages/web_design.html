@@ -1,61 +1,35 @@
 {% extends "base.html" %}
 {% load static %}
 {% block body_class %}web-site{% endblock %}
-{% block title %}Local Business Websites | Provost Home Design Web{% endblock %}
-{% block meta_description %}Practical, responsive websites for local businesses, plus custom Django applications for businesses that need more than a standard site.{% endblock %}
-{% block og_title %}Websites Built Around Real Business Goals{% endblock %}
-{% block og_description %}Local-business websites first. Custom web applications when your workflow needs more.{% endblock %}
-{% block jsonld %}<script type="application/ld+json">{"@context":"https://schema.org","@type":"ProfessionalService","name":"Provost Home Design Web Services","url":"{{ request.scheme }}://{{ request.get_host }}/","areaServed":["Massachusetts","Rhode Island","New England"],"serviceType":["Business website design","Website redesign","Custom web application development"]}</script>{% endblock %}
-
+{% block title %}Websites & Custom Software | Slater Woods Design Company{% endblock %}
+{% block meta_description %}Slater Woods Design Company builds professional websites, custom web applications, and practical digital solutions for small businesses. Based in Massachusetts.{% endblock %}
+{% block og_title %}Slater Woods Design Company | Websites & Custom Software{% endblock %}
+{% block og_description %}Websites that work. Software that solves problems. Explore four projects and a practical approach to design and development.{% endblock %}
 {% block content %}
 <section class="web-hero">
-  <div class="container-lg position-relative py-5" style="z-index:1">
-    <p class="web-kicker web-reveal">Websites for working businesses</p>
-    <h1 class="mb-4 web-reveal">Clear online.<br>Useful every day.</h1>
-    <p class="lead mb-4 web-reveal">I design and build focused websites for local businesses that need to look credible, explain their work, and turn visits into real conversations.</p>
-    <div class="d-flex flex-wrap gap-3 mb-5 web-reveal">
-      <a class="btn web-btn-primary btn-lg px-4" href="{% url 'pages:web_contact' %}?source=home" data-analytics-event="web_project_cta" data-analytics-label="homepage hero">Discuss your website</a>
-      <a class="btn btn-outline-dark btn-lg px-4" href="{% url 'pages:web_work' %}">See the work</a>
-    </div>
-    <p class="web-hero-note mb-0">Need accounts, dashboards, payments, or workflow automation? Custom Django applications are available as a deeper engagement.</p>
-  </div>
-</section>
-
-<section class="web-section">
-  <div class="container-lg">
-    <div class="row align-items-end g-4 mb-5">
-      <div class="col-lg-8"><p class="web-kicker">Start with the business need</p><h2 class="web-section-title mb-0">Three practical ways to work together.</h2></div>
-      <div class="col-lg-4"><p class="text-muted mb-0">No stack recital. No mystery package. We choose the level of build that fits the job.</p></div>
-    </div>
-    <div class="row g-4">
-      <div class="col-md-4 web-reveal"><article class="web-card"><span class="web-card-number">01 / ESTABLISH</span><h3 class="h2 mt-4">Business website</h3><p>Focused pages, mobile-ready design, clear calls to action, contact capture, and a solid technical foundation.</p><a href="{% url 'pages:web_service_detail' 'business-websites' %}">Explore business sites</a></article></div>
-      <div class="col-md-4 web-reveal"><article class="web-card"><span class="web-card-number">02 / IMPROVE</span><h3 class="h2 mt-4">Website redesign</h3><p>Rework an outdated or confusing site around stronger content, easier navigation, speed, accessibility, and conversion.</p><a href="{% url 'pages:web_service_detail' 'website-redesigns' %}">Explore redesigns</a></article></div>
-      <div class="col-md-4 web-reveal"><article class="web-card"><span class="web-card-number">03 / EXTEND</span><h3 class="h2 mt-4">Custom application</h3><p>Purpose-built tools for customer portals, internal workflows, payments, catalogs, dashboards, and data-heavy operations.</p><a href="{% url 'pages:web_service_detail' 'custom-django-applications' %}">Explore applications</a></article></div>
+  <div class="container-lg py-5">
+    <p class="web-kicker">Slater Woods Design Company</p>
+    <h1>Websites that work.<br><span>Software that<br class="d-none d-lg-block"> solves problems.</span></h1>
+    <div class="row g-4 align-items-end mt-4">
+      <div class="col-lg-8"><p class="lead">We design and develop professional websites, custom web applications, and digital solutions that help businesses attract customers, streamline operations, and grow.</p>
+        <div class="d-flex flex-wrap gap-3 mt-4"><a class="btn web-btn-primary btn-lg px-4" href="{% url 'pages:web_contact' %}?source=home" data-analytics-event="web_project_cta" data-analytics-label="homepage hero">Start a project <span aria-hidden="true">↗</span></a><a class="btn btn-outline-dark btn-lg px-4" href="#selected-work">Explore the work</a></div>
+      </div>
+      <div class="col-lg-4"><p class="web-hero-note mb-0">Independent design &amp; development<br>Massachusetts · Working wherever you are</p></div>
     </div>
   </div>
 </section>
-
-<section class="container-lg pb-5">
-  <div class="web-rule pt-4 d-lg-flex align-items-center justify-content-between gap-4"><div><p class="web-kicker">Massachusetts + Rhode Island</p><h2 class="h2">Web design for local and regional businesses.</h2><p class="text-muted mb-lg-0">A focused service area page explains the approach for contractors, professional services, and independent operators.</p></div><a class="btn btn-outline-dark flex-shrink-0" href="{% url 'pages:web_region' %}">Explore regional web design</a></div>
-</section>
-
-<section class="web-section web-band">
-  <div class="container-lg">
-    <div class="row g-5 align-items-center">
-      <div class="col-lg-7"><p class="web-kicker">Proof in production</p><h2 class="web-section-title">A contractor site and a full business platform.</h2><p class="fs-5 mt-4">The current work spans a clean lead-generation site for J. Fisk Construction and the Django platform behind Provost Home Design, including catalog, inquiry, account, and operational features.</p></div>
-      <div class="col-lg-5"><a class="btn btn-light btn-lg w-100" href="{% url 'pages:web_work' %}">View project details</a></div>
-    </div>
-  </div>
-</section>
-
-<section class="web-section">
-  <div class="container-lg">
-    <p class="web-kicker">A visible process</p><h2 class="web-section-title mb-5">No disappearing act between deposit and launch.</h2>
-    <div class="row g-4">{% for step in process_steps %}<div class="col-sm-6 col-lg-3"><div class="web-rule pt-3"><span class="web-card-number">0{{ forloop.counter }}</span><h3 class="h3 mt-3">{{ step.title }}</h3><p class="text-muted">{{ step.desc }}</p></div></div>{% endfor %}</div>
-  </div>
-</section>
-
-<section class="container-lg pb-5">
-  <div class="web-card d-lg-flex align-items-center justify-content-between gap-4"><div><p class="web-kicker">Have a project in mind?</p><h2 class="h1 mb-2">Tell me what the website needs to accomplish.</h2><p class="text-muted mb-lg-0">A short, practical description is enough to start.</p></div><a class="btn web-btn-primary btn-lg flex-shrink-0" href="{% url 'pages:web_contact' %}?source=home" data-analytics-event="web_project_cta" data-analytics-label="homepage final">Start the conversation</a></div>
-</section>
+<section class="web-section"><div class="container-lg">
+  <div class="row g-4 align-items-end mb-5"><div class="col-lg-8"><p class="web-kicker">Built around your business</p><h2 class="web-section-title">A clear presence.<br>A more useful system.</h2></div><div class="col-lg-4"><p class="text-muted mb-0">From your first customer impression to the work behind the scenes, choose the scope that makes a practical difference.</p></div></div>
+  {% include "includes/web_service_cards.html" %}
+</div></section>
+<section class="web-section web-work-section" id="selected-work"><div class="container-lg">
+  <div class="d-lg-flex justify-content-between align-items-end gap-4 mb-5"><div><p class="web-kicker">Selected work / 01—04</p><h2 class="web-section-title">Different businesses.<br>Purpose in every build.</h2></div><p class="text-muted col-lg-4 mb-0 mt-4">Client websites and our own working businesses. Explore the problem, the approach, and the finished experience.</p></div>
+  <div class="row g-4 g-lg-5">{% for study in case_studies %}<div class="col-lg-6">{% include "includes/web_project_card.html" %}</div>{% endfor %}</div>
+</div></section>
+<section class="web-section web-band"><div class="container-lg">
+  <p class="web-kicker">A practical partnership</p><h2 class="web-section-title col-lg-9">Thoughtful from the first conversation to the next update.</h2>
+  <p class="lead mt-4 col-lg-8">Work directly with Michael Provost. Clear scope, visible progress, and maintainable tools keep the project grounded in what your business actually needs.</p>
+  <div class="row g-4 mt-4">{% for step in process_steps %}<div class="col-sm-6 col-lg-3"><div class="web-rule pt-3"><span class="web-card-number">0{{ forloop.counter }}</span><h3 class="h3 mt-3">{{ step.title }}</h3><p>{{ step.desc }}</p></div></div>{% endfor %}</div>
+</div></section>
+<section class="web-section"><div class="container-lg d-lg-flex align-items-center justify-content-between gap-5"><div><p class="web-kicker">What could work better?</p><h2 class="web-section-title">Let’s build something useful.</h2><p class="text-muted mt-4 mb-lg-0">Tell us about the business, the bottleneck, or the next idea.</p></div><a class="btn web-btn-primary btn-lg flex-shrink-0" href="{% url 'pages:web_contact' %}?source=home" data-analytics-event="web_project_cta" data-analytics-label="homepage final">Start the conversation <span aria-hidden="true">↗</span></a></div></section>
 {% endblock %}

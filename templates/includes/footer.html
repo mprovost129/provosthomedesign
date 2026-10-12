@@ -3,10 +3,11 @@
 
 <footer class="bg-light border-top mt-5 py-4">
   <div class="container">
-    <div class="row gy-4 align-items-start">
+    {# Leave room for the fixed mobile project button below the footer credit. #}
+    <div class="row gy-4 align-items-start mb-5 mb-md-0">
 
       {# LEFT: Logo, name, email, phone, address - with Organization microdata #}
-      <div class="col-md-4" itemscope itemtype="https://schema.org/Organization">
+      <div class="col-md-4 col-lg-3" itemscope itemtype="https://schema.org/Organization">
         <a href="{% url 'pages:home' %}"
            class="d-inline-flex align-items-center mb-2 link-dark text-decoration-none"
            itemprop="url" rel="home">
@@ -44,11 +45,11 @@
         {% endif %}
       </div>
 
-      {# CENTER: Links (two columns) - expose as a nav landmark #}
-      <div class="col-md-4">
+      {# CENTER: Links and sister company - expose as a nav landmark #}
+      <div class="col-md-8 col-lg-6">
         <nav aria-label="Footer">
-          <div class="row">
-            <div class="col-6">
+          <div class="row gy-4">
+            <div class="col-6 col-sm-4">
               <h6 class="fw-semibold">Plans</h6>
               <ul class="list-unstyled small mb-0">
                 <li><a href="{% url 'plans:plan_list' %}" class="text-decoration-none text-muted">Browse Plans</a></li>
@@ -62,12 +63,11 @@
                 {% endif %}
               </ul>
             </div>
-            <div class="col-6">
+            <div class="col-6 col-sm-4">
               <h6 class="fw-semibold">Company</h6>
               <ul class="list-unstyled small mb-0">
                 <li><a href="{% url 'pages:about' %}" class="text-decoration-none text-muted">About Us</a></li>
                 <li><a href="{% url 'pages:services' %}" class="text-decoration-none text-muted">Services</a></li>
-                <li><a href="{{ WEB_DESIGN_URL }}/" class="text-decoration-none text-muted" data-analytics-event="web_services_referral" data-analytics-label="residential footer">Web Services <i class="bi bi-box-arrow-up-right small" aria-hidden="true"></i></a></li>
                 <li><a href="{% url 'pages:privacy' %}" class="text-decoration-none text-muted">Privacy Policy</a></li>
                 <li><a href="{% url 'pages:terms' %}" class="text-decoration-none text-muted">Terms &amp; Conditions</a></li>
                 {% if request.user.is_authenticated and request.user.is_staff %}
@@ -76,13 +76,20 @@
                 {% endif %}
               </ul>
             </div>
+            <div class="col-12 col-sm-4">
+              <h6 class="fw-semibold">Sister Company</h6>
+              <ul class="list-unstyled small mb-2">
+                <li><a href="{{ WEB_DESIGN_URL }}/" class="text-decoration-none text-muted" data-analytics-event="web_services_referral" data-analytics-label="residential footer">Slater Woods Design Company <i class="bi bi-box-arrow-up-right small" aria-hidden="true"></i></a></li>
+              </ul>
+              <p class="text-muted small mb-0">Websites, applications &amp; software.</p>
+            </div>
           </div>
         </nav>
       </div>
 
       {# RIGHT: Social icons + copyright; mark as sameAs #}
-      <div class="col-md-4">
-        <div class="d-flex gap-3 justify-content-md-end mb-2">
+      <div class="col-md-12 col-lg-3">
+        <div class="d-flex gap-3 justify-content-lg-end mb-2">
           <a href="https://www.facebook.com/ProvostHomeDesign"
              target="_blank" rel="me external noopener noreferrer"
              class="text-muted fs-5" aria-label="Facebook"
@@ -102,7 +109,8 @@
             <i class="bi bi-linkedin"></i>
           </a>
         </div>
-        <p class="text-muted small mb-0 text-md-end">© {% current_year %} {{ COMPANY_NAME }}</p>
+        <p class="text-muted small mb-0 text-lg-end">© {% current_year %} {{ COMPANY_NAME }}</p>
+        <p class="text-muted small mt-2 mb-0 text-lg-end">Website by <a href="{{ WEB_DESIGN_URL }}/" class="text-decoration-none text-muted" data-analytics-event="web_services_referral" data-analytics-label="residential footer credit">Slater Woods Design Company</a></p>
       </div>
 
     </div>

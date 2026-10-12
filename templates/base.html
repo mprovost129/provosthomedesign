@@ -11,24 +11,24 @@
     <meta name="theme-color" content="{% if IS_WEB_DESIGN_SITE %}#17211f{% else %}#005ea0{% endif %}">
 
     {# ---- Canonical ---- #}
-    <link rel="canonical" href="{% block canonical_url %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% endblock %}"/>
+    <link rel="canonical" href="{% block canonical_url %}{% if IS_WEB_DESIGN_SITE %}{{ WEB_DESIGN_URL }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% endif %}{{ request.path }}{% endblock %}"/>
 
     {# ---- Meta description (override per page with {% block meta_description %}) ---- #}
     <meta name="description" content="{% block meta_description %}Custom house plans and home design services for New England builders and homeowners. Code-compliant plans built with care.{% endblock %}">
 
     {# ---- Open Graph (override individual blocks in child templates) ---- #}
-    <meta property="og:title"       content="{% block og_title %}{% if IS_WEB_DESIGN_SITE %}Provost Home Design Web Services{% else %}Provost Home Design{% endif %}{% endblock %}" />
+    <meta property="og:title"       content="{% block og_title %}{% if IS_WEB_DESIGN_SITE %}Slater Woods Design Company{% else %}Provost Home Design{% endif %}{% endblock %}" />
     <meta property="og:description" content="{% block og_description %}{% if IS_WEB_DESIGN_SITE %}Practical websites for local businesses and custom web applications for more complex workflows.{% else %}Custom & stock home plans designed for code compliance, with form, function, and style in mind.{% endif %}{% endblock %}" />
-    <meta property="og:image"       content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% if IS_WEB_DESIGN_SITE %}{% static 'images/web-og-preview.png' %}{% else %}{% static 'images/og-image.jpg' %}{% endif %}{% endblock %}" />
-    <meta property="og:url"         content="{% block og_url %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% endblock %}" />
+    <meta property="og:image"       content="{% block og_image %}{% if IS_WEB_DESIGN_SITE %}{{ WEB_DESIGN_URL }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% endif %}{% if IS_WEB_DESIGN_SITE %}{% static 'images/web-og-preview.png' %}{% else %}{% static 'images/og-image.jpg' %}{% endif %}{% endblock %}" />
+    <meta property="og:url"         content="{% block og_url %}{% if IS_WEB_DESIGN_SITE %}{{ WEB_DESIGN_URL }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% endif %}{{ request.path }}{% endblock %}" />
     <meta property="og:type"        content="{% block og_type %}website{% endblock %}" />
-    <meta property="og:site_name"   content="{% if IS_WEB_DESIGN_SITE %}Provost Home Design Web Services{% else %}Provost Home Design{% endif %}" />
+    <meta property="og:site_name"   content="{% if IS_WEB_DESIGN_SITE %}Slater Woods Design Company{% else %}Provost Home Design{% endif %}" />
 
     {# ---- Twitter Card (inherits OG values automatically) ---- #}
     <meta name="twitter:card"        content="summary_large_image" />
-    <meta name="twitter:title"       content="{% block twitter_title %}{% if IS_WEB_DESIGN_SITE %}Provost Home Design Web Services{% else %}Provost Home Design{% endif %}{% endblock %}" />
+    <meta name="twitter:title"       content="{% block twitter_title %}{% if IS_WEB_DESIGN_SITE %}Slater Woods Design Company{% else %}Provost Home Design{% endif %}{% endblock %}" />
     <meta name="twitter:description" content="{% block twitter_description %}{% if IS_WEB_DESIGN_SITE %}Practical websites for local businesses and custom web applications for more complex workflows.{% else %}Custom & stock home plans designed for code compliance, with form, function, and style in mind.{% endif %}{% endblock %}" />
-    <meta name="twitter:image"       content="{% block twitter_image %}{{ request.scheme }}://{{ request.get_host }}{% if IS_WEB_DESIGN_SITE %}{% static 'images/web-og-preview.png' %}{% else %}{% static 'images/og-image.jpg' %}{% endif %}{% endblock %}" />
+    <meta name="twitter:image"       content="{% block twitter_image %}{% if IS_WEB_DESIGN_SITE %}{{ WEB_DESIGN_URL }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% endif %}{% if IS_WEB_DESIGN_SITE %}{% static 'images/web-og-preview.png' %}{% else %}{% static 'images/og-image.jpg' %}{% endif %}{% endblock %}" />
 
     {# ---- Per-page JSON-LD (override in child templates) ---- #}
     {% block jsonld %}{% endblock %}
@@ -78,10 +78,10 @@
     {
       "@context": "https://schema.org",
       "@type": "Organization",
-      "@id": "{{ request.scheme }}://{{ request.get_host }}/#org",
-      "name": "{% if IS_WEB_DESIGN_SITE %}Provost Home Design Web Services{% else %}{{ COMPANY_NAME|default:'Provost Home Design'|escapejs }}{% endif %}",
-      "url": "{{ request.scheme }}://{{ request.get_host }}/",
-      "logo": "{{ request.scheme }}://{{ request.get_host }}{% if IS_WEB_DESIGN_SITE %}{% static 'images/web-mark.svg' %}{% else %}{% static BRAND_LOGO_STATIC|default:'images/phdlogo.svg' %}{% endif %}",
+      "@id": "{% if IS_WEB_DESIGN_SITE %}{{ WEB_DESIGN_URL }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% endif %}/#org",
+      "name": "{% if IS_WEB_DESIGN_SITE %}Slater Woods Design Company{% else %}{{ COMPANY_NAME|default:'Provost Home Design'|escapejs }}{% endif %}",
+      "url": "{% if IS_WEB_DESIGN_SITE %}{{ WEB_DESIGN_URL }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% endif %}/",
+      "logo": "{% if IS_WEB_DESIGN_SITE %}{{ WEB_DESIGN_URL }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% endif %}{% if IS_WEB_DESIGN_SITE %}{% static 'images/web-mark.svg' %}{% else %}{% static BRAND_LOGO_STATIC|default:'images/phdlogo.svg' %}{% endif %}",
       "contactPoint": [{
         "@type": "ContactPoint",
         {% if CONTACT_PHONE %}"telephone": "{{ CONTACT_PHONE|escapejs }}",{% endif %}
@@ -93,7 +93,7 @@
         "https://www.facebook.com/ProvostHomeDesign",
         "https://www.instagram.com/provosthomedesign/",
         "https://www.linkedin.com/in/michael-provost-6077a318/"
-      ]{% else %}"description": "Business websites, website redesigns, and custom web applications."{% endif %}
+      ]{% else %}"description": "Websites, custom web applications, software, and digital solutions."{% endif %}
     }
     </script>
 

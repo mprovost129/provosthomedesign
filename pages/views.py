@@ -23,6 +23,7 @@ from django.templatetags.static import static
 from django.urls import reverse
 
 from core.utils import get_client_ip, verify_recaptcha_v3
+from .web_brand import NAME as WEB_BRAND_NAME, public_url as web_public_url
 from .forms import ContactForm, NewHouseForm, TestimonialForm, WebDesignInquiryForm
 from .models import (
     ContactMessage,
@@ -1339,10 +1340,11 @@ WEB_SERVICE_PAGES = {
 WEB_CASE_STUDIES = {
     "j-fisk-construction": {
         "title": "J. Fisk Construction",
-        "category": "Local business website",
+        "category": "Construction / Contractor Website",
+        "relationship": "Client project",
         "summary": "A focused, responsive website that gives a local construction company a credible online home and a direct path from service interest to contact.",
-        "image": "images/fisk_truck.jpeg",
-        "image_alt": "J. Fisk Construction truck and business branding",
+        "image": "images/web-portfolio/j-fisk.jpg",
+        "image_alt": "Screenshot of the J. Fisk Construction homepage",
         "live_url": "https://www.jfiskconstruction.com/",
         "client_need": "Create a professional web presence that clearly introduces the construction business, makes its services understandable, and gives prospective customers an easy way to reach out.",
         "challenge": "A contractor website has to build confidence quickly without burying visitors in copy. The structure needed to work on phones, keep service information easy to scan, and move interested visitors toward a real conversation.",
@@ -1361,8 +1363,9 @@ WEB_CASE_STUDIES = {
         "outcome": "The finished site is live and gives J. Fisk Construction a clear destination to share with referrals and prospective customers across desktop and mobile devices.",
     },
     "provost-home-design-platform": {
-        "title": "Provost Home Design Platform",
-        "category": "Custom Django application",
+        "title": "Provost Home Design",
+        "category": "Business Website / Custom Web Application",
+        "relationship": "Our own business",
         "summary": "A public website and operational platform built around house-plan discovery, structured inquiries, customer workflows, administration, and long-term growth.",
         "image": "images/hero-blueprint.jpg",
         "image_alt": "House plans representing the Provost Home Design web platform",
@@ -1378,37 +1381,88 @@ WEB_CASE_STUDIES = {
         "deliverables": [
             "Responsive public website and plan catalog",
             "Favorites, comparisons, and guided plan discovery",
-            "Project intake and customer workflows",
+            "Structured project intake, file uploads, tracking, and appointment booking",
             "Administration, media storage, email, analytics, and automation",
         ],
         "outcome": "The platform is live as the working digital foundation of Provost Home Design and can continue evolving as the residential business adds plans, content, and operational tools.",
     },
 }
 
+WEB_CASE_STUDIES.update({
+    "heritage-village-norton": {
+        "title": "Heritage Village of Norton",
+        "category": "Real Estate Development Website",
+        "relationship": "Client project",
+        "summary": "A community website bringing available homes, floor-plan comparisons, and finish selections together in one clear path for prospective buyers.",
+        "image": "images/web-portfolio/heritage.jpg",
+        "image_alt": "Screenshot of the Heritage Village of Norton homepage",
+        "live_url": "https://www.heritagevillagenorton.com/",
+        "client_need": "Help prospective buyers understand the new community, compare home layouts, and connect with the listing team.",
+        "challenge": "Community information, individual residences, floor plans, and finish options need to stay connected without overwhelming the buyer.",
+        "approach": ["Organize the experience around homes, floor plans, community, and location.", "Present the two floor-plan types with readable specifications and dedicated detail pages.", "Connect available-home listings and finish selections to a clear information-request path."],
+        "deliverables": ["Community and location presentation", "Available-home listings and detail pages", "Floor-plan comparison and specifications", "Finish-selection guide and listing-team contact"],
+        "outcome": "Visitors can explore the community, compare layouts and finishes, view a listed home, and reach the listing team from the public website.",
+    },
+    "boston-baseball-ledger": {
+        "title": "Boston Baseball Ledger",
+        "category": "Sports / Digital Publishing Platform",
+        "relationship": "Our own publishing project",
+        "summary": "An independent baseball publishing project that brings an editorial focus to the portfolio alongside business websites and custom applications.",
+        "image": "images/web-portfolio/ledger.svg",
+        "social_image": "images/web-og-preview.png",
+        "image_alt": "Boston Baseball Ledger project graphic, not a website screenshot",
+        "live_url": "https://www.bostonbaseballledger.com/",
+        "client_need": "Create a dedicated home for a baseball-focused digital publication.",
+        "challenge": "A publication needs a recognizable editorial identity and a clear way to present its content to readers.",
+        "approach": ["Treat the publication as a distinct editorial brand.", "Keep its role separate from the service-business and operational applications in the portfolio."],
+        "deliverables": ["Sports publishing website", "Independent editorial brand"],
+        "outcome": "Boston Baseball Ledger is Michael Provost's own publishing project. The portfolio graphic identifies the project; it is not a screenshot of the current website.",
+    },
+})
+WEB_CASE_STUDIES = {slug: WEB_CASE_STUDIES[slug] for slug in (
+    "provost-home-design-platform", "j-fisk-construction", "heritage-village-norton", "boston-baseball-ledger"
+)}
+
+WEB_SERVICE_PAGES["software-digital-solutions"] = {
+    "title": "Software & Digital Solutions",
+    "meta": "Practical integrations, workflow automation, and custom software for everyday business operations.",
+    "kicker": "Software & digital solutions",
+    "headline": "Less repetitive work. More useful connections.",
+    "intro": "Connect the systems your business relies on and give routine work a dependable path from one step to the next.",
+    "project_type": "other", "source": "services_general",
+    "fit": ["Information is copied repeatedly between tools", "Customer requests need structured routing and follow-up", "A business workflow needs an integration or focused internal tool"],
+    "deliverables": ["Review of the existing workflow and systems", "A clearly scoped integration or automation", "Validation, error handling, and access controls", "Testing, documentation, and a maintenance plan"],
+    "boundary_title": "Start with access, scope, and ongoing responsibility.",
+    "boundary": "Integrations depend on the access and interfaces offered by the systems involved. Discovery confirms feasibility, recurring costs, and maintenance before a build is agreed.",
+    "faqs": [{"question": "Can you connect my existing tools?", "answer": "We first review the systems, supported interfaces, and permissions. The proposal identifies what can be connected reliably and what needs a different approach."}],
+    "case_study": "provost-home-design-platform",
+}
+
 
 def web_design(request: HttpRequest) -> HttpResponse:
-    return render(request, "pages/web_design.html", {"process_steps": WEB_PROCESS_STEPS})
+    return render(request, "pages/web_design.html", {"process_steps": WEB_PROCESS_STEPS, "case_studies": [dict(study, slug=slug) for slug, study in WEB_CASE_STUDIES.items()]})
 
 
 def web_services(request: HttpRequest) -> HttpResponse:
-    canonical_url = request.build_absolute_uri()
+    canonical_url = web_public_url(request.path)
     schema = json.dumps({
         "@context": "https://schema.org",
         "@graph": [
             {
                 "@type": "Service",
                 "name": "Business Website Design and Development",
-                "description": "Business websites, website redesigns, and custom Django applications for local and growing businesses.",
+                "description": "Website design and development, custom web applications, and software and digital solutions for local and growing businesses.",
                 "provider": {
                     "@type": "ProfessionalService",
-                    "name": "Provost Home Design Web Services",
-                    "url": request.build_absolute_uri("/"),
+                    "name": "Slater Woods Design Company",
+                    "url": web_public_url(),
                 },
                 "areaServed": ["Massachusetts", "Rhode Island", "New England"],
                 "serviceType": [
                     "Business website design",
                     "Website redesign",
-                    "Custom Django application development",
+                    "Custom web application development",
+                    "Software and digital solutions",
                 ],
                 "url": canonical_url,
             },
@@ -1439,7 +1493,7 @@ def web_service_detail(request: HttpRequest, service_slug: str) -> HttpResponse:
     service = WEB_SERVICE_PAGES.get(service_slug)
     if not service:
         raise Http404("Web service not found")
-    canonical_url = request.build_absolute_uri()
+    canonical_url = web_public_url(request.path)
     schema = json.dumps({
         "@context": "https://schema.org",
         "@graph": [
@@ -1448,7 +1502,7 @@ def web_service_detail(request: HttpRequest, service_slug: str) -> HttpResponse:
                 "name": service["title"],
                 "description": service["meta"],
                 "url": canonical_url,
-                "provider": {"@id": f"{request.build_absolute_uri('/')}#org"},
+                "provider": {"@id": f"{web_public_url()}#org"},
                 "areaServed": ["Massachusetts", "Rhode Island", "New England"],
             },
             {
@@ -1465,7 +1519,7 @@ def web_service_detail(request: HttpRequest, service_slug: str) -> HttpResponse:
             {
                 "@type": "BreadcrumbList",
                 "itemListElement": [
-                    {"@type": "ListItem", "position": 1, "name": "Services", "item": request.build_absolute_uri(reverse("pages:web_services"))},
+                    {"@type": "ListItem", "position": 1, "name": "Services", "item": web_public_url(reverse("pages:web_services"))},
                     {"@type": "ListItem", "position": 2, "name": service["title"], "item": canonical_url},
                 ],
             },
@@ -1482,7 +1536,7 @@ def web_service_detail(request: HttpRequest, service_slug: str) -> HttpResponse:
 
 
 def web_region(request: HttpRequest) -> HttpResponse:
-    canonical_url = request.build_absolute_uri()
+    canonical_url = web_public_url(request.path)
     faqs = [
         {
             "question": "Do you only work with businesses in Massachusetts and Rhode Island?",
@@ -1509,7 +1563,7 @@ def web_region(request: HttpRequest) -> HttpResponse:
                 "name": "Business Website Design in Massachusetts and Rhode Island",
                 "description": "Practical business websites, redesigns, and custom web applications for Massachusetts and Rhode Island businesses.",
                 "url": canonical_url,
-                "provider": {"@id": f"{request.build_absolute_uri('/')}#org"},
+                "provider": {"@id": f"{web_public_url()}#org"},
                 "areaServed": [
                     {"@type": "State", "name": "Massachusetts"},
                     {"@type": "State", "name": "Rhode Island"},
@@ -1534,7 +1588,7 @@ def web_region(request: HttpRequest) -> HttpResponse:
             {
                 "@type": "BreadcrumbList",
                 "itemListElement": [
-                    {"@type": "ListItem", "position": 1, "name": "Home", "item": request.build_absolute_uri(reverse("pages:web_design"))},
+                    {"@type": "ListItem", "position": 1, "name": "Home", "item": web_public_url(reverse("pages:web_design"))},
                     {"@type": "ListItem", "position": 2, "name": "Massachusetts and Rhode Island Web Design", "item": canonical_url},
                 ],
             },
@@ -1555,7 +1609,7 @@ def web_case_study(request: HttpRequest, case_study_slug: str) -> HttpResponse:
     case_study = WEB_CASE_STUDIES.get(case_study_slug)
     if not case_study:
         raise Http404("Web case study not found")
-    canonical_url = request.build_absolute_uri()
+    canonical_url = web_public_url(request.path)
     schema = json.dumps({
         "@context": "https://schema.org",
         "@graph": [
@@ -1564,13 +1618,13 @@ def web_case_study(request: HttpRequest, case_study_slug: str) -> HttpResponse:
                 "headline": case_study["title"],
                 "description": case_study["summary"],
                 "author": {"@type": "Person", "name": "Michael Provost"},
-                "publisher": {"@id": f"{request.build_absolute_uri('/')}#org"},
+                "publisher": {"@id": f"{web_public_url()}#org"},
                 "mainEntityOfPage": {"@type": "WebPage", "@id": canonical_url},
             },
             {
                 "@type": "BreadcrumbList",
                 "itemListElement": [
-                    {"@type": "ListItem", "position": 1, "name": "Work", "item": request.build_absolute_uri(reverse("pages:web_work"))},
+                    {"@type": "ListItem", "position": 1, "name": "Work", "item": web_public_url(reverse("pages:web_work"))},
                     {"@type": "ListItem", "position": 2, "name": case_study["title"], "item": canonical_url},
                 ],
             },
@@ -1583,7 +1637,7 @@ def web_case_study(request: HttpRequest, case_study_slug: str) -> HttpResponse:
 
 
 def web_about(request: HttpRequest) -> HttpResponse:
-    canonical_url = request.build_absolute_uri()
+    canonical_url = web_public_url(request.path)
     schema = json.dumps({
         "@context": "https://schema.org",
         "@type": "ProfilePage",
@@ -1595,7 +1649,7 @@ def web_about(request: HttpRequest) -> HttpResponse:
             "url": canonical_url,
             "jobTitle": "Web Designer and Developer",
             "worksFor": {
-                "@id": f"{request.build_absolute_uri('/')}#org",
+                "@id": f"{web_public_url()}#org",
             },
             "sameAs": [
                 "https://www.linkedin.com/in/michael-provost-6077a318/",
@@ -1686,9 +1740,9 @@ def web_server_error(request: HttpRequest) -> HttpResponse:
 @ratelimit(key="ip", rate="5/m", block=True)
 def web_contact(request: HttpRequest) -> HttpResponse:
     s = SiteSettings.load()
-    company = s.company_name or getattr(settings, "COMPANY_NAME", "Provost Home Design")
+    company = WEB_BRAND_NAME
     email = s.contact_email or getattr(settings, "CONTACT_EMAIL", "mike@provosthomedesign.com")
-    logo_url = s.logo_url
+    logo_url = web_public_url(static("images/web-mark.svg"))
 
     to_emails = (
         _as_list(getattr(settings, "CONTACT_TO_EMAILS", None))
@@ -1771,8 +1825,8 @@ def web_contact(request: HttpRequest) -> HttpResponse:
                 "timeline": inquiry.get_timeline_display() or "Not specified",
                 "source": inquiry.get_source_display() or "Direct / not specified",
                 "message": cd["message"],
-                "admin_url": request.build_absolute_uri(f"/admin/pages/webdesigninquiry/{inquiry.pk}/change/"),
-                "request_url": request.build_absolute_uri(),
+                "admin_url": getattr(settings, "MAIN_SITE_URL", "https://www.provosthomedesign.com").rstrip("/") + f"/admin/pages/webdesigninquiry/{inquiry.pk}/change/",
+                "request_url": web_public_url(request.path),
             }
 
             try:
@@ -1805,14 +1859,14 @@ def web_contact(request: HttpRequest) -> HttpResponse:
                 "web_url": getattr(
                     settings,
                     "WEB_DESIGN_URL",
-                    request.build_absolute_uri("/"),
+                    web_public_url(),
                 ).rstrip("/"),
             }
             try:
                 ack_text = render_to_string("pages/emails/web_design_ack.txt", ack_ctx)
                 ack_html = render_to_string("pages/emails/web_design_ack.html", ack_ctx)
                 acknowledgment = EmailMultiAlternatives(
-                    subject="We received your web project inquiry",
+                    subject=f"{WEB_BRAND_NAME}: inquiry received",
                     body=ack_text,
                     from_email=getattr(
                         settings,
@@ -1901,14 +1955,14 @@ def web_robots_txt(request):
     lines = [
         "User-agent: *",
         "Allow: /",
-        f"Sitemap: {request.build_absolute_uri(reverse('sitemap'))}",
+        f"Sitemap: {web_public_url(reverse('sitemap'))}",
     ]
     return HttpResponse("\n".join(lines), content_type="text/plain")
 
 
 def web_llms_txt(request):
-    base = request.build_absolute_uri("/").rstrip("/")
-    content = f"""# Provost Home Design Web Services
+    base = web_public_url().rstrip("/")
+    content = f"""# Slater Woods Design Company
 
 > Practical business websites, website redesigns, and custom web applications built around clear goals and reliable operation.
 
@@ -1923,6 +1977,9 @@ def web_llms_txt(request):
 - [Work]({base}/work/): Selected live website and application projects.
 - [J. Fisk Construction Case Study]({base}/work/j-fisk-construction/): Focused local-contractor business website.
 - [Provost Home Design Platform Case Study]({base}/work/provost-home-design-platform/): Custom Django catalog and business platform.
+- [Heritage Village of Norton]({base}/work/heritage-village-norton/): Client real estate development website.
+- [Boston Baseball Ledger]({base}/work/boston-baseball-ledger/): Owner-operated digital publishing project.
+- [Software and Digital Solutions]({base}/services/software-digital-solutions/): Integrations and workflow automation.
 - [About]({base}/about/): Michael Provost's approach to practical business websites and software.
 - [Pricing]({base}/pricing/): Project cost drivers, proposal approach, and published planning rates when available.
 - [Contact]({base}/contact/): Web project inquiry form.

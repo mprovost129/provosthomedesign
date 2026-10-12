@@ -1,0 +1,16 @@
+{% load static %}
+<article class="web-project h-100">
+  <a class="web-project-preview" href="{% url 'pages:web_case_study' study.slug %}">
+    <img src="{% static study.image %}" alt="{{ study.image_alt }}" width="1200" height="750" loading="lazy" decoding="async">
+  </a>
+  <div class="web-project-copy">
+    <p class="web-kicker">{{ study.category }}</p>
+    <h2 class="h2"><a href="{% url 'pages:web_case_study' study.slug %}">{{ study.title }}</a></h2>
+    <p class="web-project-relationship">{{ study.relationship }}</p>
+    <p>{{ study.summary }}</p>
+    <div class="d-flex flex-wrap gap-3 mt-4">
+      <a class="web-text-link" href="{% url 'pages:web_case_study' study.slug %}">Explore project <span aria-hidden="true">↗</span><span class="visually-hidden">: {{ study.title }}</span></a>
+      <a class="web-text-link" href="{{ study.live_url }}" target="_blank" rel="noopener noreferrer" data-analytics-event="web_portfolio_visit" data-analytics-label="{{ study.title }}">Visit Website<span class="visually-hidden">: {{ study.title }} (opens in a new tab)</span></a>
+    </div>
+  </div>
+</article>
