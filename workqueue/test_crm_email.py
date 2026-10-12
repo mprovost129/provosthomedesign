@@ -61,7 +61,8 @@ class ContactEmailTests(TestCase):
         self.assertEqual(event.changes["after"]["email"], "corrected@example.com")
 
     def test_duplicate_invalid_and_stale_emails_rejected_without_losing_original(self):
-        create_work(data=work_data(contact_email="taken@example.com"), actor=self.owner)
+        save_contact(client_id=self.account.pk, version=self.account.version, contact_id=None,
+            data={"full_name": "Other contact", "phone": "", "email": "taken@example.com"}, actor=self.owner)
         self.save(email="my@example.com")
         for value in ["TAKEN@example.com", "not-an-email"]:
             with self.assertRaises(ValidationError):
@@ -113,16 +114,20 @@ class EmailConcurrencyTests(TransactionTestCase):
     def test_two_staff_edits_cannot_claim_the_same_email(self):
         QueueState.objects.get_or_create(pk=1)
         actor = get_user_model().objects.create_superuser("concurrent-email", "owner@example.invalid", "local-only")
-        accounts = [create_client(data=client_data(name=f"Phone client {i}"), nonce=uuid.uuid4(), actor=actor)[0]
-                    for i in range(2)]
-        contacts = [account.contacts.get() for account in accounts]
+        account = create_client(data=client_data(), nonce=uuid.uuid4(), actor=actor)[0]
+        first = account.contacts.get()
+        second = save_contact(client_id=account.pk, version=account.version, contact_id=None,
+            data={"full_name": "Second contact", "phone": "", "email": ""}, actor=actor)
+        account.refresh_from_db()
+        accounts = [account, account]
+        contacts = [first, second]
         def save(i):
             close_old_connections()
             try:
                 save_contact(client_id=accounts[i].pk, version=accounts[i].version, contact_id=contacts[i].pk,
                     data={"email": "same@example.com", "full_name": "Phone client", "phone": ""}, actor=actor)
                 return "saved"
-            except ValidationError:
+            except (ValidationError, EditConflict):
                 return "conflict"
             finally:
                 close_old_connections()

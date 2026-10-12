@@ -2,7 +2,7 @@
 from datetime import timedelta
 import re
 from django.db.models import BooleanField, Case, CharField, Exists, OuterRef, Q, Value, When
-from django.db.models.functions import Lower, Trim, Upper
+from django.db.models.functions import Lower, Trim, Upper, Coalesce
 from django.utils import timezone
 from .freshbooks_models import FreshBooksInvoice
 from .models import WorkItem, CLOSED_STATUSES
@@ -11,20 +11,20 @@ from .models import WorkItem, CLOSED_STATUSES
 STATUS_LABELS = {
     'created': 'Created', 'draft': 'Draft', 'sent': 'Sent', 'viewed': 'Viewed',
     'paid': 'Paid', 'autopaid': 'Automatically paid', 'partial': 'Partially paid',
-    'deposit-partial': 'Deposit partially paid', 'overdue': 'Overdue',
+    'deposit-paid': 'Deposit paid', 'deposit-partial': 'Deposit partially paid', 'overdue': 'Overdue',
     'disputed': 'Disputed', 'resolved': 'Dispute resolved', 'failed': 'Payment failed',
     'retry': 'Payment retry pending', 'success': 'Automatic payment succeeded',
     'deleted': 'Deleted', 'voided': 'Voided',
 }
 BUCKET_LABELS = {'preparing': 'Preparing draft', 'draft': 'Draft',
     'outstanding': 'Outstanding', 'overdue': 'Overdue', 'paid': 'Paid',
-    'review': 'Needs review', 'closed': 'Voided or deleted'}
-RECEIVABLE_STATUSES = ('sent', 'viewed', 'partial', 'deposit-partial', 'overdue', 'resolved')
+    'review': 'Needs review', 'released': 'Released before creation', 'closed': 'Voided or deleted'}
+RECEIVABLE_STATUSES = ('sent', 'viewed', 'partial', 'deposit-paid', 'deposit-partial', 'overdue', 'resolved')
 
 
 def invoice_queryset(search='', scope='all', now=None):
     now = now or timezone.now()
-    jobs = WorkItem.objects.filter(project_id=OuterRef('proposal__project_id'))
+    jobs = WorkItem.objects.filter(project_id=OuterRef('effective_project_id'))
     linked = Q(state='linked', invoice_id__isnull=False)
     valid_currency = Q(currency_code__regex=r'^[A-Z]{3}$')
     balances = Q(amount__isnull=False, paid__isnull=False, outstanding__isnull=False,
@@ -41,7 +41,9 @@ def invoice_queryset(search='', scope='all', now=None):
     receivable = linked & Q(remote_status__in=RECEIVABLE_STATUSES, outstanding__gt=0) & valid_currency & balances
     # Draft and closed balances are not receivables. Provider errors remain visible
     # with last-saved balances, explicitly identified as needing review.
-    invoices = FreshBooksInvoice.objects.select_related('proposal__project', 'proposal__client', 'revision').annotate(
+    invoices = FreshBooksInvoice.objects.select_related('proposal__project', 'proposal__client', 'revision', 'project', 'client', 'time_batch').defer('payload', 'time_batch__snapshot', 'revision__snapshot').annotate(
+        effective_project_id=Coalesce('project_id', 'proposal__project_id'),
+    ).annotate(
         remote_status=Lower(Trim('billing_status')), currency_code=Upper(Trim('currency')),
         active_project=Exists(jobs.exclude(status__in=CLOSED_STATUSES)),
     ).annotate(
@@ -50,6 +52,7 @@ def invoice_queryset(search='', scope='all', now=None):
             default=Value(False), output_field=BooleanField()),
         receivable=Case(When(receivable, then=Value(True)), default=Value(False), output_field=BooleanField()),
         billing_bucket=Case(
+            When(state='released', then=Value('released')),
             When(pending, then=Value('preparing')),
             When(closed, then=Value('closed')),
             When(issue, then=Value('review')),
@@ -70,12 +73,18 @@ def invoice_queryset(search='', scope='all', now=None):
             Q(invoice_number__icontains=search) | Q(proposal__number__icontains=search) |
             Q(proposal__title__icontains=search) | Q(proposal__project__name__icontains=search) |
             Q(proposal__project__street__icontains=search) | Q(proposal__client__name__icontains=search) |
-            Q(revision__recipient__icontains=search) | Q(matching_job=True))
+            Q(revision__recipient__icontains=search) | Q(matching_job=True) |
+            Q(project__name__icontains=search) | Q(project__street__icontains=search) | Q(client__name__icontains=search))
     return invoices
 
 
 def invoice_row(invoice):
-    return {'invoice': invoice, 'label': BUCKET_LABELS[invoice.billing_bucket],
+    from django.urls import reverse
+    return {'project': invoice.proposal.project if invoice.proposal_id else invoice.project,
+        'client': invoice.proposal.client if invoice.proposal_id else invoice.client,
+        'billing_caption': invoice.proposal.number if invoice.proposal_id else 'Hourly billing',
+        'billing_url': reverse('workqueue:proposal_detail',args=[invoice.proposal_id]) if invoice.proposal_id else reverse('workqueue:time_bill_detail',args=[invoice.time_batch.pk]),
+        'invoice': invoice, 'label': BUCKET_LABELS[invoice.billing_bucket],
         'remote_label': STATUS_LABELS.get(invoice.remote_status, 'Status unavailable'),
         'currency': invoice.currency_code if len(invoice.currency_code) == 3 and invoice.currency_code.isalpha() and invoice.currency_code.isascii() else 'Currency unavailable',
         'url': f'https://my.freshbooks.com/#/invoice/{invoice.account_id}-{invoice.invoice_id}'

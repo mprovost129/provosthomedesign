@@ -3,6 +3,7 @@ from django import forms
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
+from django.db.models import Exists, OuterRef
 from django.http import JsonResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -11,6 +12,7 @@ from django.views.decorators.http import require_http_methods
 from .models import WorkProject
 from .pm_views import staff_view, editable, error_text
 from .time_models import TimeEntry
+from .time_billing_models import TimeBillingLine
 from .time_forms import TimerForm, TimeForm
 from .time_services import active_timer, start_timer, stop_timer, save_time, archive_time, time_summary
 from .services import EditConflict
@@ -128,10 +130,12 @@ def project_time(request, project_id):
         else:
             messages.success(request, 'Time record saved. Billing and queue order are unchanged.')
             return redirect(reverse('workqueue:project_time', args=[project.pk]) + ('?show=removed' if action == 'remove' else ''))
-    entries = project.time_entries.filter(duration_seconds__isnull=False).select_related('actor', 'work_item')
+    claims = TimeBillingLine.objects.filter(entry_id=OuterRef('pk'), active=True)
+    entries = project.time_entries.filter(duration_seconds__isnull=False).select_related('actor', 'work_item').annotate(billing_reserved=Exists(claims))
     removed = request.GET.get('show') == 'removed'
     entries = entries.filter(deleted_at__isnull=not removed)
     return render(request, 'workqueue/project_time.html', {'project':project, 'time_form':form, 'editing_entry':entry,
         'time_totals':time_summary(project), 'removed':removed, 'page':Paginator(entries, 30).get_page(request.GET.get('page')),
+        'editing_reserved': bool(entry and entry.billing_lines.filter(active=True).exists()),
         'can_change':not staff_preview(request)
             and request.user.has_perm('workqueue.change_workitem'), **timer_context(request.user, project)}, status=status)

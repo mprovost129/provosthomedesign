@@ -8,6 +8,7 @@ from .models import WorkProject, WorkItem
 from .pm_services import event
 from .services import EditConflict, lock_queue
 from .time_models import TimeEntry
+from .time_billing import assert_time_editable
 
 
 def active_timer(actor):
@@ -80,6 +81,7 @@ def save_time(project_id, data, actor):
             return entry  # Idempotent manual entry, including double-click/retry.
         if entry.version != version:
             raise EditConflict('This time entry changed. Reload before editing it.')
+        assert_time_editable(entry)
         if entry.running or entry.deleted_at:
             raise ValidationError('Stop the timer or restore this entry before editing it.')
     elif version != 0:
@@ -114,6 +116,7 @@ def archive_time(project_id, entry_id, version, actor, restore=False):
     entry = TimeEntry.objects.get(pk=entry_id, project_id=project_id)
     if entry.version != version:
         raise EditConflict('This time entry changed. Reload before updating it.')
+    assert_time_editable(entry)
     if entry.running or entry.duration_seconds is None:
         raise ValidationError('Stop the timer first. Discarded timers cannot become recorded time.')
     entry.deleted_at = None if restore else timezone.now()

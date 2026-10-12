@@ -64,16 +64,17 @@ class ContactLifecycleTests(TestCase):
 
     def test_deleted_email_can_be_used_again_and_conflicting_restore_requires_explicit_choice(self):
         archive_contact(**self.args())
-        fresh = create_work(data=work_data(), actor=None)[0]
-        self.assertNotEqual(fresh.client_contact_id, self.contact.pk)
-        self.assertNotEqual(fresh.client_contact.client_id, self.account.pk)
+        self.account.refresh_from_db()
+        fresh = save_contact(client_id=self.account.pk, version=self.account.version, contact_id=None,
+            data={"full_name": "Replacement", "phone": "", "email": "morgan@example.com"}, actor=self.actor)
+        self.assertNotEqual(fresh.pk, self.contact.pk)
         with self.assertRaises(ValidationError):
             restore_contact(**self.args())
         restored = restore_contact(**self.args(), restore_email=False)
         self.assertIsNone(restored.email)
         self.assertIsNone(restored.archived_at)
-        fresh.client_contact.refresh_from_db()
-        self.assertEqual(fresh.client_contact.email, "morgan@example.com")
+        fresh.refresh_from_db()
+        self.assertEqual(fresh.email, "morgan@example.com")
 
     def test_deleted_contacts_not_selectable_for_manual_work_or_edits_and_other_clients_protected(self):
         other = create_work(data=work_data(contact_email="other@example.com"), actor=self.actor)[0].client_contact

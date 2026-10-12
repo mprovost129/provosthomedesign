@@ -312,6 +312,10 @@ def process_invoice(local_id):
         local.save(update_fields=['state', 'attempted_at'])
     posted = False
     try:
+        if not local.proposal_id:
+            batch = local.time_batch
+            if batch.released_at or not FreshBooksClientLink.objects.filter(client=local.client, account_id=local.account_id, customer_id=local.customer_id).exists():
+                raise BillingError('The hourly billing company or reservation changed. Review the draft before retrying.')
         if account_id() != local.account_id:
             raise BillingError('The connected billing business changed. Review this draft before retrying.')
         token = access_token()
@@ -320,7 +324,7 @@ def process_invoice(local_id):
         posted = True
         body = wire('POST', f'/accounting/account/{local.account_id}/invoices/invoices', token=token, data=local.payload)
         remote = body['response']['result']['invoice']
-        if remote.get('po_number') != local.marker:
+        if remote.get('po_number') != local.marker or remote.get('currency_code') != 'USD' or money(remote, 'amount') != expected_total(local):
             raise BillingError('FreshBooks returned an unexpected invoice reference.')
         save_remote(local, remote)
     except (BillingError, KeyError, TypeError, ValueError, IntegrityError) as exc:
@@ -340,7 +344,7 @@ def sync_invoice(local, reconcile=False):
         result = api('GET', path, params={'search[po_number]':local.marker, 'per_page':100}).get('response', {}).get('result', {})
         matches = [item for item in result.get('invoices', []) if item.get('po_number') == local.marker and
             int(item.get('customerid', 0)) == local.customer_id and item.get('currency_code') == 'USD' and
-            money(item, 'amount') == Decimal(local.revision.snapshot['total'])]
+            money(item, 'amount') == expected_total(local)]
         if len(matches) != 1:
             raise BillingError('No single matching invoice was found. Review FreshBooks; this draft will not be recreated automatically.')
         remote = matches[0]
@@ -371,11 +375,11 @@ def retry_rejected_invoice(local_id, actor, confirm=False):
         if local.state != 'failed' or local.invoice_id:
             raise EditConflict('The invoice action changed. Reload before retrying.')
         proposal = local.proposal
-        if proposal.has_draft or proposal.current_revision_id != local.revision_id or proposal.current_revision.state != 'accepted':
+        if proposal and (proposal.has_draft or proposal.current_revision_id != local.revision_id or proposal.current_revision.state != 'accepted'):
             raise ValidationError('The accepted proposal changed. Review billing directly in FreshBooks.')
         local.state, local.last_error = 'queued', ''
         local.save(update_fields=['state', 'last_error'])
-        event(proposal.project, actor, 'Rejected FreshBooks draft retry requested', number=proposal.number)
+        event(proposal.project if proposal else local.project, actor, 'Rejected FreshBooks draft retry requested', number=proposal.number if proposal else 'Hourly billing')
     return local
 
 
@@ -405,3 +409,7 @@ def sync_billing(limit=10):
 def models_q_stale():
     from django.db.models import Q
     return Q(last_sync_at__lt=timezone.now()-timedelta(minutes=15)) | Q(last_sync_at__isnull=True)
+
+
+def expected_total(local):
+    return Decimal(local.revision.snapshot['total']) if local.revision_id else local.time_batch.total

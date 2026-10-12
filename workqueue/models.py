@@ -93,7 +93,9 @@ class ClientContact(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     client = models.ForeignKey(Client, on_delete=models.PROTECT, related_name="contacts")
-    email = models.EmailField(unique=True, null=True, blank=True)
+    email = models.EmailField(null=True, blank=True)
+    linked_contact = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT,
+        related_name="linked_company_contacts", editable=False)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True, editable=False)
     archived_email = models.EmailField(blank=True, editable=False)
     full_name = models.CharField(max_length=200, blank=True)
@@ -107,6 +109,7 @@ class ClientContact(models.Model):
 
     class Meta:
         ordering = ["full_name", "email", "id"]
+        constraints = [models.UniqueConstraint(fields=["client", "email"], name="wq_contact_company_email")]
 
     def __str__(self):
         return self.full_name or self.email or "Contact details incomplete"
@@ -622,3 +625,5 @@ from .freshbooks_models import FreshBooksConnection, FreshBooksClientLink, Fresh
 from .checklist_models import ProjectChecklist, ChecklistApplication
 
 from .invoice_history_models import InvoiceCSVImport, HistoricalInvoice, InvoiceHistoryEvent, HistoricalInvoiceBalance, InvoiceHistorySync
+
+from .time_billing_models import TimeBillingRate, TimeBillingBatch, TimeBillingLine

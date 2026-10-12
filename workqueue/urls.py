@@ -5,10 +5,12 @@ from . import booking_views
 from . import delivery_views
 from . import health
 from . import crm_views
+from . import shared_contact_views
 from . import communication_views
 from . import pm_views
 from . import freshbooks_views
 from . import time_views
+from . import time_billing_views
 from . import report_views
 from . import checklist_views
 from . import proposal_overview_views
@@ -17,6 +19,10 @@ from . import invoice_history_views
 
 app_name = "workqueue"
 urlpatterns = [
+    path('work-projects/invoices/ready/', time_billing_views.ready, name='ready_to_invoice'),
+    path('work-projects/<uuid:project_id>/billing/', time_billing_views.project_billing, name='project_billing'),
+    path('work-projects/invoices/time/<uuid:batch_id>/', time_billing_views.batch_detail, name='time_bill_detail'),
+    path('clients/<uuid:client_id>/contacts/<uuid:contact_id>/company/', shared_contact_views.link_company, name='link_contact_company'),
     path('work-projects/invoices/history/check/', invoice_history_views.check_history, name='invoice_history_check'),
     path('work-projects/invoices/import/', invoice_history_views.import_invoices, name='invoice_import'),
     path('work-projects/invoices/import/<uuid:batch_id>/', invoice_history_views.import_preview, name='invoice_import_preview'),

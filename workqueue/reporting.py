@@ -17,7 +17,7 @@ def project_report_queryset(search=''):
     jobs = WorkItem.objects.filter(project_id=OuterRef('pk')).order_by().values('project_id')
     time = TimeEntry.objects.filter(project_id=OuterRef('pk'), deleted_at__isnull=True,
         duration_seconds__isnull=False).order_by().values('project_id')
-    invoices = FreshBooksInvoice.objects.filter(proposal__project_id=OuterRef('pk'))
+    invoices = FreshBooksInvoice.objects.filter(Q(proposal__project_id=OuterRef('pk')) | Q(project_id=OuterRef('pk'))).exclude(state='released')
     review = invoices.filter(~Q(state='linked') | Q(last_sync_at__isnull=True)
         | Q(billing_status__iexact='draft') | Q(billing_status='')
         | Q(billing_status__iexact='deleted') | Q(billing_status__iexact='voided'))

@@ -34,14 +34,16 @@ class FreshBooksClientLink(models.Model):
 
 
 class FreshBooksInvoice(models.Model):
-    proposal = models.OneToOneField(Proposal, on_delete=models.PROTECT, related_name='billing_invoice')
-    revision = models.ForeignKey(ProposalRevision, on_delete=models.PROTECT)
+    proposal = models.OneToOneField(Proposal, null=True, blank=True, on_delete=models.PROTECT, related_name='billing_invoice')
+    project = models.ForeignKey('workqueue.WorkProject', null=True, blank=True, on_delete=models.PROTECT, related_name='hourly_invoices')
+    client = models.ForeignKey(Client, null=True, blank=True, on_delete=models.PROTECT, related_name='hourly_invoices')
+    revision = models.ForeignKey(ProposalRevision, null=True, blank=True, on_delete=models.PROTECT)
     account_id = models.CharField(max_length=50)
     customer_id = models.PositiveIntegerField()
     marker = models.CharField(max_length=100, unique=True)
     payload = models.JSONField()
     state = models.CharField(max_length=20, choices=[('queued', 'Queued'), ('creating', 'Creating'),
-        ('linked', 'Linked'), ('unknown', 'Check FreshBooks'), ('failed', 'Needs review')], default='queued')
+        ('linked', 'Linked'), ('unknown', 'Check FreshBooks'), ('failed', 'Needs review'), ('released', 'Released before creation')], default='queued')
     invoice_id = models.PositiveIntegerField(null=True)
     invoice_number = models.CharField(max_length=100, blank=True)
     billing_status = models.CharField(max_length=50, blank=True)
@@ -56,4 +58,5 @@ class FreshBooksInvoice(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
     class Meta:
-        constraints = [models.UniqueConstraint(fields=['account_id', 'invoice_id'], name='wq_fb_invoice_unique')]
+        constraints = [models.UniqueConstraint(fields=['account_id', 'invoice_id'], name='wq_fb_invoice_unique'),
+            models.CheckConstraint(condition=(Q(proposal__isnull=False, revision__isnull=False, project__isnull=True, client__isnull=True) | Q(proposal__isnull=True, revision__isnull=True, project__isnull=False, client__isnull=False)), name='wq_invoice_billing_source')]

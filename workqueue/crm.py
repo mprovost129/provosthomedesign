@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Q
 
-from .crm_identity import company_key, email_key, link_item, normalized_text, phone_key
+from .crm_identity import company_key, email_key, link_item, matching_contact, normalized_text, phone_key
 from .models import Attachment, Client, ClientContact, ClientEvent, ClientFollowUp, PendingUpload, Submission, WorkItem
 from .services import EditConflict, lock_queue
 
@@ -26,7 +26,7 @@ def create_client(*, data, nonce, actor):
     email = email_key(data.get("email"))
     if data.get("email") and not email:
         raise ValidationError("Enter a valid email address or leave it blank.")
-    contact = ClientContact.objects.select_related("client").filter(email=email).first() if email else None
+    contact = matching_contact(Client, ClientContact, email, data["name"] if data["kind"] == Client.Kind.COMPANY else "Homeowner")
     if contact:
         return contact.client, False
     client = Client(id=nonce, **{name: data[name] for name in (
@@ -196,8 +196,8 @@ def save_contact(*, client_id, version, contact_id, data, actor, copy_from_id=No
         raise ValidationError("Enter a valid email address.")
     if not contact_id and not (email or data.get("full_name") or data.get("phone")):
         raise ValidationError("Enter a name, email address or phone number for the contact.")
-    if email and ClientContact.objects.filter(email=email).exclude(pk=contact.pk).exists():
-        raise ValidationError("That email already belongs to another contact. Use the existing contact or the merge preview to connect client records.")
+    if email and ClientContact.objects.filter(client=client, email=email).exclude(pk=contact.pk).exists():
+        raise ValidationError("That email already belongs to another contact at this company. Use that contact. The same email may belong to contacts at other companies.")
     before = {"name": contact.full_name, "phone": contact.phone, "email": contact.email,
               "role": contact.role, "primary_contact": str(client.primary_contact_id or "")}
     contact.email = email
@@ -251,8 +251,8 @@ def restore_contact(*, client_id, version, contact_id, actor, restore_email=True
     if contact is None:
         raise ValidationError("Choose a deleted contact belonging to this client.")
     email = email_key(contact.archived_email) if restore_email else None
-    if email and ClientContact.objects.filter(email=email).exclude(pk=contact.pk).exists():
-        raise ValidationError("The original email is now used by another contact. Uncheck 'Restore original email' to restore without it, or connect the client records first.")
+    if email and ClientContact.objects.filter(client=client, email=email).exclude(pk=contact.pk).exists():
+        raise ValidationError("The original email is now used by another contact at this company. Uncheck 'Restore original email' to restore without it, or connect the client records first.")
     contact.email, contact.archived_at = email, None
     contact.full_clean()
     contact.save(update_fields=["email", "archived_at"])
@@ -269,6 +269,9 @@ def merge_clients(*, source_id, source_version, target_id, target_version, actor
         raise ValidationError("Choose another client to keep.")
     source = checked_client(source_id, source_version)
     target = checked_client(target_id, target_version)
+    emails = source.contacts.exclude(email__isnull=True).values_list('email', flat=True)
+    if target.contacts.filter(email__in=emails).exists():
+        raise ValidationError('Both records have contacts using the same email. Review whether these are separate companies and resolve duplicate contacts before merging. No records were changed.')
     contacts = list(source.contacts.values_list("pk", flat=True))
     tasks = list(source.followups.values_list("pk", flat=True))
     source_primary = str(source.primary_contact_id or "")

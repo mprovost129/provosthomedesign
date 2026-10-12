@@ -329,6 +329,12 @@ def client_detail(request, client_id):
             status = 400
     all_contacts = list(client.contacts.all())
     contacts = [contact for contact in all_contacts if not contact.archived_at]
+    roots = {c.linked_contact_id or c.pk for c in contacts}
+    related = list(ClientContact.objects.filter(Q(pk__in=roots) | Q(linked_contact_id__in=roots),
+        archived_at__isnull=True, client__merged_into__isnull=True).select_related('client'))
+    for contact in contacts:
+        contact.related_companies = [other.client for other in related
+            if other.client_id != client.pk and (other.linked_contact_id or other.pk) == (contact.linked_contact_id or contact.pk)]
     items = WorkItem.objects.filter(client_contact__client=client).with_position().select_related("project", "client_contact").prefetch_related(
         "submissions__attachments", "submissions__notifications", "completed_deliveries__files", "milestones__delivery",
         "information_requests__delivery").order_by("-received_at", "-id")

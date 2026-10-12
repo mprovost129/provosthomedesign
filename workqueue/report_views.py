@@ -34,8 +34,8 @@ def project_reports(request):
     page = Paginator(projects.order_by('name', 'pk'), 30).get_page(request.GET.get('page'))
     visible_projects = list(page)
     invoices = defaultdict(list)
-    for invoice in FreshBooksInvoice.objects.filter(proposal__project_id__in=[p.pk for p in visible_projects]).select_related('proposal').order_by('proposal__number'):
-        invoices[invoice.proposal.project_id].append(invoice)
+    for invoice in FreshBooksInvoice.objects.filter(Q(proposal__project_id__in=[p.pk for p in visible_projects]) | Q(project_id__in=[p.pk for p in visible_projects])).exclude(state='released').select_related('proposal','time_batch').order_by('created_at'):
+        invoices[invoice.proposal.project_id if invoice.proposal_id else invoice.project_id].append(invoice)
     return render(request, 'workqueue/project_reports.html', {
         'page': page, 'rows': [report_row(p, invoices[p.pk]) for p in visible_projects],
         'summary': summary, 'q': q, 'scope': scope, 'attention': attention,

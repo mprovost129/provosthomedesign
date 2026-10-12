@@ -95,7 +95,17 @@ def parse_csv(upload):
 def row_matches(row):
     active = Client.objects.filter(merged_into__isnull=True)
     email = row.get('email')
-    exact = ClientContact.objects.filter(email=email, archived_at__isnull=True).select_related('client').first() if email else None
+    exact = None
+    if email:
+        matches = ClientContact.objects.filter(email=email, archived_at__isnull=True, client__merged_into__isnull=True).select_related('client')
+        if row.get('client id'):
+            matches = matches.filter(client_id=row['client id'])
+        elif row.get('organization'):
+            matches = matches.filter(client__normalized_name=normalized_text(row['name']))
+        else:
+            matches = matches.filter(client__kind='individual')
+        choices = list(matches[:2])
+        exact = choices[0] if len(choices) == 1 else None
     if exact:
         if row.get('client id') and str(exact.client_id) != row['client id']:
             return None, [], 'The email belongs to a different client than Client ID.'
@@ -144,7 +154,7 @@ def build_plan(rows):
             else:
                 entry['candidates'] = [{'id': str(client.pk), 'name': client.name, 'version': client.version} for client in candidates]
                 entry['status'] = 'Review possible match' if candidates else 'Add new client'
-            key = ('email', row['email']) if row['email'] else ('row', json.dumps(
+            key = ('email', row['email'], normalized_text(row['name'])) if row['email'] else ('row', json.dumps(
                 {key: value for key, value in row.items() if key not in {'number', 'error'}}, sort_keys=True))
             if key in seen:
                 entry.update(duplicate=seen[key], status='Repeated contact in this file')

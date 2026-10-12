@@ -22,7 +22,7 @@ class MatchingTests(TestCase):
     def test_same_normalized_email_connects_independent_requests_without_overwriting(self):
         first = self.create(contact_email="Morgan@Example.com", billing_street="Original address")
         second = self.create(contact_email="morgan@example.com", contact_full_name="Another submitted name",
-                             billing_street="Different address", company="Different company")
+                             billing_street="Different address")
         self.assertEqual(first.client_contact_id, second.client_contact_id)
         self.assertNotEqual(first.project_id, second.project_id)
         self.assertNotEqual(first.queue_order, second.queue_order)
@@ -33,11 +33,13 @@ class MatchingTests(TestCase):
         self.assertEqual(Submission.objects.count(), 2)
         self.assertFalse(ProjectAccess.objects.exists())
 
-    def test_same_name_phone_company_or_address_only_suggests_never_merges(self):
+    def test_exact_company_name_groups_private_contacts_without_granting_access(self):
         first = self.create(company="Example Builders")
         second = self.create(company="Example Builders", contact_email="other@example.com")
-        self.assertNotEqual(first.client_contact.client_id, second.client_contact.client_id)
-        self.assertIn(second.client_contact.client, possible_matches(first.client_contact.client))
+        self.assertEqual(first.client_contact.client_id, second.client_contact.client_id)
+        self.assertNotEqual(first.client_contact_id, second.client_contact_id)
+        self.assertNotEqual(first.project_id, second.project_id)
+        self.assertFalse(ProjectAccess.objects.exists())
 
     def test_homeowners_do_not_group_and_email_aliases_remain_distinct(self):
         first = self.create(contact_email="alex+one@gmail.com", contact_full_name="Alex A", contact_phone="5085550101")
@@ -123,7 +125,7 @@ class EditingTests(TestCase):
                 data={"full_name": "Wrong", "phone": ""}, actor=self.owner)
         with self.assertRaises(ValidationError):
             save_contact(client_id=account.pk, version=account.version, contact_id=None,
-                data={"full_name": "Wrong", "phone": "", "email": "SECOND@example.com"}, actor=self.owner)
+                data={"full_name": "Wrong", "phone": "", "email": "MORGAN@example.com"}, actor=self.owner)
         save_contact(client_id=account.pk, version=account.version, contact_id=None,
             data={"full_name": "Another employee", "phone": "", "email": "employee@example.com"}, actor=self.owner)
         new = self.create(contact_email="employee@example.com")
