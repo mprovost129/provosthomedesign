@@ -1,0 +1,5 @@
+{% extends 'workqueue/pm_base.html' %}{% block title %}Import invoice history{% endblock %}{% block pm_content %}
+<header class="pm-heading"><div><span class="brand">Invoices</span><h1>Import invoice history</h1><p>Upload the FreshBooks invoice line-item CSV to review grouped invoices and client matches.</p></div><a href="{% url 'workqueue:invoice_history' %}">Imported history</a></header>
+<section class="pm-card"><p>Business: <strong>{{ connection.business_name|default:'No FreshBooks business selected' }}</strong>.</p><p>Each invoice’s lines are grouped by its invoice number. Existing linked or previously imported invoices are skipped. Changed historical records are held for review. Missing client matches remain unassigned; no duplicate contacts, proposals, or queue jobs are created.</p><p>The export preserves dates, status, and line items. It does not include current paid/outstanding balances or the provider’s invoice IDs. Imported history stays separate from live billing balances.</p>
+<form method="post" enctype="multipart/form-data">{% csrf_token %}{{ form.as_p }}<button>Prepare import preview</button></form></section>
+{% endblock %}

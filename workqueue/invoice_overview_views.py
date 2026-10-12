@@ -4,6 +4,7 @@ from django.db.models import Count, Q, Sum
 from django.shortcuts import render
 from django.views.decorators.http import require_GET
 from .pm_views import staff_view
+from .views import staff_preview
 from .freshbooks_models import FreshBooksConnection
 from .invoice_overview import invoice_queryset, invoice_row, BUCKET_LABELS
 from .reporting import project_report_queryset, BILLING_REVIEW
@@ -43,5 +44,5 @@ def invoice_overview(request):
     return render(request, 'workqueue/invoice_overview.html', {
         'page': page, 'rows': [invoice_row(i) for i in page], 'summary': summary, 'balances': balances,
         'q': q, 'scope': scope, 'state': state, 'review_total': review_total, 'review_projects': review_projects,
-        'connection_ready': connection_ready,
+        'connection_ready': connection_ready, 'can_import': request.user.has_perm('workqueue.change_workitem') and not staff_preview(request),
     })

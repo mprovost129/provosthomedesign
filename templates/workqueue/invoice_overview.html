@@ -3,6 +3,7 @@
 {% block tool_styles %}{{ block.super }}<link rel="stylesheet" href="{% static 'css/invoice-overview.css' %}">{% endblock %}
 {% block pm_content %}
 <header class="pm-heading"><div><span class="brand">Project management</span><h1>Invoices</h1><p>Review linked FreshBooks invoices, saved balances, and projects that need billing attention.</p></div><a href="https://my.freshbooks.com/#/invoices?page=1" target="_blank" rel="noopener noreferrer">Open all invoices in FreshBooks</a></header>
+<nav class="pm-nav" aria-label="Invoice sources"><a href="{% url 'workqueue:invoice_overview' %}" aria-current="page">Linked FreshBooks invoices</a><a href="{% url 'workqueue:invoice_history' %}">Imported history</a>{% if can_import %}<a href="{% url 'workqueue:invoice_import' %}">Import CSV</a>{% endif %}</nav>
 {% if not connection_ready %}<p class="notice" role="status">FreshBooks is not ready to refresh billing. Saved records remain available.{% if user.is_superuser %} <a href="{% url 'workqueue:freshbooks_connection' %}">Review the connection</a>.{% endif %}</p>{% endif %}
 <form method="get" class="pm-filter invoice-filter">
   <label>Search<input type="search" name="q" value="{{ q }}" placeholder="Invoice, proposal, project, client, job number, or email"></label>
