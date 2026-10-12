@@ -52,6 +52,14 @@ Creation requests are durably recorded before making the API call. An interrupte
 
 API-disabled installations retain the project/proposal workflow. Production billing activation requires real credentials and user OAuth consent; local checks use fake providers and never create customer invoices.
 
+Client merge previews include the FreshBooks connections that will move or remain.
+A connection moves to the kept CRM client when that client has no connection for
+the same FreshBooks business. Conflicting customer connections block the merge
+until reviewed. Merge undo restores moved connections only while client versions
+and the recorded billing connections are unchanged. Linking a billing customer
+updates the client's audit history/version, invalidating older merge previews and
+undo actions. These operations do not change existing invoices in FreshBooks.
+
 Official API references: [OAuth](https://www.freshbooks.com/api/authentication), [clients](https://www.freshbooks.com/api/clients), [invoices](https://www.freshbooks.com/api/invoices), [payment options](https://www.freshbooks.com/api/online-payments).
 
 ## Project reports

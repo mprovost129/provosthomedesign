@@ -15,7 +15,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction, IntegrityError
 from django.utils import timezone
-from .crm import require_staff
+from .crm import require_staff, changed
 from .freshbooks_models import FreshBooksConnection, FreshBooksClientLink, FreshBooksInvoice
 from .pm_models import Proposal
 from .pm_services import current_client, event
@@ -215,6 +215,9 @@ def link_client(client, customer_id, actor):
     try:
         with transaction.atomic():
             lock_queue()
+            # A merge can happen while the provider lookup is in flight.
+            client.refresh_from_db()
+            client = current_client(client)
             linked = FreshBooksClientLink.objects.filter(account_id=account, customer_id=customer_id).first()
             if linked and current_client(linked.client).pk != client.pk:
                 raise ValidationError('That FreshBooks client is connected to another CRM client. Review or merge them first.')
@@ -222,6 +225,7 @@ def link_client(client, customer_id, actor):
                 linked.delete()
             link, _ = FreshBooksClientLink.objects.update_or_create(client=client, account_id=account,
                 defaults={'customer_id':customer_id, 'label':label, 'email':remote.get('email') or '', 'actor':actor})
+            changed(client, actor, 'Billing connection updated', {'account': account, 'customer': customer_id})
             return link
     except IntegrityError:
         raise ValidationError('This billing connection changed. Reload before linking the client.') from None

@@ -1,0 +1,42 @@
+name: CRM and work queue
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: crm_test
+          POSTGRES_PASSWORD: local-ci-only
+          POSTGRES_DB: phd_queue_test_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U crm_test -d phd_queue_test_ci"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      QUEUE_TEST_DATABASE_URL: postgresql://crm_test:local-ci-only@127.0.0.1:5432/phd_queue_test_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python -m pip install -r requirements.txt
+      - run: python manage.py check --settings=config.settings_queue_postgres_test
+      - run: python manage.py makemigrations --check --dry-run --settings=config.settings_queue_postgres_test
+      - run: python manage.py test --settings=config.settings_queue_postgres_test --noinput
+      - run: node --test workqueue/js_tests/*.test.cjs ops/test_website_monitor.cjs

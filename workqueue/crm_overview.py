@@ -73,9 +73,21 @@ def client_emails(client):
     return sorted(email for email in emails if email)
 
 
+def client_appointments(client):
+    """Project association wins over a mailbox shared by multiple companies.
+
+    Unassigned appointments remain discoverable by contact email, but the UI
+    labels them explicitly rather than claiming they belong to this company.
+    """
+    projects = WorkItem.objects.filter(client_contact__client=client).exclude(
+        project__isnull=True).values("project_id")
+    return Appointment.objects.filter(
+        Q(project_id__in=projects) | Q(project__isnull=True, email__in=client_emails(client)))
+
+
 def timeline(client, page_number):
     visible = {"work_item__client_contact__client": client, "work_item__deleted_at__isnull": True}
-    emails = client_emails(client)
+    appointments = client_appointments(client)
     profile_ids, frontier = {client.pk}, {client.pk}
     while frontier:
         frontier = set(Client.objects.filter(merged_into_id__in=frontier).values_list("pk", flat=True)) - profile_ids
@@ -85,13 +97,13 @@ def timeline(client, page_number):
         | Q(information_request__work_item__client_contact__client=client, information_request__work_item__deleted_at__isnull=True)
         | Q(information_reminder__work_item__client_contact__client=client, information_reminder__work_item__deleted_at__isnull=True)
         | Q(completed_delivery__work_item__client_contact__client=client, completed_delivery__work_item__deleted_at__isnull=True)
-        | Q(appointment__email__in=emails))
+        | Q(appointment__in=appointments))
     sources = {
         "client": (ClientEvent.objects.filter(client_id__in=profile_ids).exclude(action__in=["Request added", "Client email prepared"]).select_related("actor"), "created_at"),
         "correspondence": (ClientEmail.objects.filter(client_id__in=profile_ids).select_related('delivery', 'project', 'actor'), 'created_at'),
         "submission": (Submission.objects.filter(**visible).select_related("work_item").prefetch_related("attachments"), "received_at"),
         "delivery": (CompletedDelivery.objects.filter(**visible).select_related("work_item").prefetch_related("files"), "created_at"),
-        "appointment": (Appointment.objects.filter(email__in=emails).select_related("project"), "created_at"),
+        "appointment": (appointments.select_related("project"), "created_at"),
         "job": (AuditEvent.objects.filter(**visible).exclude(action="created").select_related("work_item", "actor"), "created_at"),
         "email": (NotificationDelivery.objects.filter(notices).annotate(email_date=Coalesce("sent_at", "created_at")), "email_date"),
     }
@@ -128,6 +140,7 @@ def timeline(client, page_number):
         elif kind == "appointment":
             title = f"Appointment · {obj.get_state_display()}"
             body = f"{timezone.localtime(obj.starts_at):%b %d, %Y at %I:%M %p} · {obj.purpose}"
+            body += f" · {obj.project.name}" if obj.project_id else " · No project assigned; matched by contact email"
         elif kind == "job":
             title = f"{WORK_ACTIVITY_LABELS.get(obj.action, 'Work updated')} · {obj.work_item.reference}"
             status = obj.changes.get("status")

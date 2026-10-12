@@ -261,14 +261,35 @@ def restore_contact(*, client_id, version, contact_id, actor, restore_email=True
     return contact
 
 
+def billing_connections(*clients):
+    """A stable snapshot for merge previews and guarded undo; no provider calls."""
+    from .freshbooks_models import FreshBooksClientLink
+    return list(FreshBooksClientLink.objects.filter(client__in=clients).order_by("pk").values(
+        "id", "account_id", "customer_id", "label", "email"))
+
+
+def merge_billing_preview(source, target):
+    source_links = billing_connections(source)
+    target_links = billing_connections(target)
+    if {link["account_id"] for link in source_links} & {link["account_id"] for link in target_links}:
+        raise ValidationError(
+            "These clients have different FreshBooks customers in the same business. "
+            "Review and reconcile their billing connections before connecting client records. "
+            "No records were changed.")
+    return {"source": source_links, "target": target_links}
+
+
 @transaction.atomic
-def merge_clients(*, source_id, source_version, target_id, target_version, actor):
+def merge_clients(*, source_id, source_version, target_id, target_version, actor, reviewed_billing=None):
     require_staff(actor, "workqueue.change_workitem")
     lock_queue()
     if source_id == target_id:
         raise ValidationError("Choose another client to keep.")
     source = checked_client(source_id, source_version)
     target = checked_client(target_id, target_version)
+    billing = merge_billing_preview(source, target)
+    if reviewed_billing is not None and reviewed_billing != billing:
+        raise EditConflict("A billing connection changed. Preview the client connection again.")
     emails = source.contacts.exclude(email__isnull=True).values_list('email', flat=True)
     if target.contacts.filter(email__in=emails).exists():
         raise ValidationError('Both records have contacts using the same email. Review whether these are separate companies and resolve duplicate contacts before merging. No records were changed.')
@@ -281,12 +302,15 @@ def merge_clients(*, source_id, source_version, target_id, target_version, actor
     source.primary_contact = None
     ClientFollowUp.objects.filter(client=source).update(client=target)
     ClientContact.objects.filter(client=source).update(client=target)
+    from .freshbooks_models import FreshBooksClientLink
+    FreshBooksClientLink.objects.filter(client=source).update(client=target)
     source.merged_into = target
     changed(source, actor, "Merged into another client", {"target": str(target.pk), "name": target.name})
     changed(target, actor, "Client records merged", {"source": str(source.pk), "name": source.name,
         "contacts": [str(pk) for pk in contacts], "source_version": source.version,
         "tasks": [str(pk) for pk in tasks], "source_primary": source_primary, "target_primary": target_primary,
-        "target_version": target.version + 1})
+        "target_version": target.version + 1, "billing_before": billing,
+        "billing_after": billing_connections(target)})
     return target
 
 
@@ -304,6 +328,14 @@ def undo_merge(*, client_id, version, event_id, actor):
             or source.merged_into_id != target.pk
             or ClientContact.objects.filter(pk__in=ids, client=target).count() != len(ids)):
         raise EditConflict("These records changed after the merge. Review their contact history before correcting them.")
+    # Older merge events did not track billing. Only reverse those automatically
+    # when neither profile has a connection that would need an ownership decision.
+    expected_billing = event.changes.get("billing_after", [])
+    if billing_connections(source) or billing_connections(target) != expected_billing:
+        raise EditConflict("Billing connections changed after the merge. Review them before correcting these clients.")
+    from .freshbooks_models import FreshBooksClientLink
+    moved_links = event.changes.get("billing_before", {}).get("source", [])
+    FreshBooksClientLink.objects.filter(pk__in=[link["id"] for link in moved_links], client=target).update(client=source)
     ClientContact.objects.filter(pk__in=ids, client=target).update(client=source)
     ClientFollowUp.objects.filter(pk__in=event.changes.get("tasks", []), client=target).update(client=source)
     if "source_primary" in event.changes:
