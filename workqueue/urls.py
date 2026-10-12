@@ -17,6 +17,7 @@ from . import invoice_history_views
 
 app_name = "workqueue"
 urlpatterns = [
+    path('work-projects/invoices/history/check/', invoice_history_views.check_history, name='invoice_history_check'),
     path('work-projects/invoices/import/', invoice_history_views.import_invoices, name='invoice_import'),
     path('work-projects/invoices/import/<uuid:batch_id>/', invoice_history_views.import_preview, name='invoice_import_preview'),
     path('work-projects/invoices/history/', invoice_history_views.history, name='invoice_history'),

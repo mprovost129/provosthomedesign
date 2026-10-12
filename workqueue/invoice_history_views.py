@@ -1,3 +1,4 @@
+from datetime import timedelta
 from django import forms
 from django.contrib import messages
 from django.core import signing
@@ -8,6 +9,7 @@ from django.db.models import Count, Q, Sum
 from django.db.models.functions import Lower
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_http_methods
+from django.utils import timezone
 from .pm_views import staff_view, editable, error_text, query_uuid
 from .models import Client, WorkProject
 from .freshbooks_models import FreshBooksConnection
@@ -15,6 +17,8 @@ from .invoice_history_models import HistoricalInvoice, InvoiceCSVImport, Invoice
 from .invoice_csv import parse_export, preview_plan, digest, apply_export, change_batch_visibility
 from .services import EditConflict, lock_queue
 from .views import staff_preview
+from .invoice_history_models import InvoiceHistorySync
+from .invoice_history_sync import request_sync, live_context, contact_suggestions
 
 SALT = 'workqueue.invoice-import.v1'
 
@@ -91,12 +95,15 @@ def import_preview(request, batch_id):
 @staff_view
 @require_GET
 def history(request):
+    connection = FreshBooksConnection.objects.filter(pk=1).first()
     q = request.GET.get('q', '').strip()[:200]
     state = request.GET.get('state', 'all')
     state = state if state in ('all', 'paid', 'unpaid', 'draft', 'unassigned') else 'all'
+    live_filter = request.GET.get('live', 'all')
+    live_filter = live_filter if live_filter in ('all', 'due', 'review') else 'all'
     client_filter = get_object_or_404(Client, pk=query_uuid(request.GET['client'])) if request.GET.get('client') else None
     project_filter = get_object_or_404(WorkProject, pk=query_uuid(request.GET['project'])) if request.GET.get('project') else None
-    invoices = HistoricalInvoice.objects.filter(removed_at__isnull=True).select_related('client', 'project', 'batch').annotate(status_key=Lower('exported_status'))
+    invoices = HistoricalInvoice.objects.filter(removed_at__isnull=True).select_related('client', 'project', 'batch', 'live_balance').annotate(status_key=Lower('exported_status'))
     if client_filter:
         # Merged profiles preserve their original invoice associations. Follow all
         # descendant profiles for the kept client's history without rewriting facts.
@@ -115,12 +122,25 @@ def history(request):
     elif state == 'draft': invoices = invoices.filter(status_key__in=['draft', 'created'])
     elif state == 'unassigned': invoices = invoices.filter(client__isnull=True)
     elif state == 'unpaid': invoices = invoices.exclude(status_key__in=['paid', 'autopaid', 'draft', 'created', 'deleted', 'voided'])
+    current = Q(live_balance__verified_at__gte=timezone.now()-timedelta(hours=24), live_balance__error='',
+                account_id=connection.account_id if connection and not connection.needs_reconnect else '')
+    sent_states = ['sent', 'viewed', 'partial', 'overdue', 'deposit-paid', 'deposit-partial']
+    if live_filter == 'due':
+        invoices = invoices.filter(live_balance__outstanding__gt=0, live_balance__status__in=sent_states)
+    elif live_filter == 'review':
+        invoices = invoices.exclude(current)
     summary = invoices.aggregate(total=Count('pk'), paid_count=Count('pk', filter=Q(status_key__in=['paid', 'autopaid'])), unassigned=Count('pk', filter=Q(client__isnull=True)))
     totals = list(invoices.order_by().values('currency').annotate(exported_total=Sum('line_total')).order_by('currency'))
+    live_totals = list(invoices.filter(current, live_balance__outstanding__gt=0, live_balance__status__in=sent_states)
+                      .order_by().values('live_balance__currency').annotate(balance_due=Sum('live_balance__outstanding'))
+                      .order_by('live_balance__currency'))
     page = Paginator(invoices.order_by('-issued', '-number', '-pk'), 30).get_page(request.GET.get('page'))
     return render(request, 'workqueue/invoice_history.html', {'page': page, 'summary': summary, 'totals': totals,
-        'q': q, 'state': state, 'client_filter': client_filter, 'project_filter': project_filter,
-        'can_change': request.user.has_perm('workqueue.change_workitem') and not staff_preview(request)})
+        'q': q, 'state': state, 'live_filter': live_filter, 'live_totals': live_totals,
+        'client_filter': client_filter, 'project_filter': project_filter,
+        'can_change': request.user.has_perm('workqueue.change_workitem') and not staff_preview(request),
+        'sync_job': InvoiceHistorySync.objects.filter(account_id=connection.account_id if connection else '').order_by('-created_at', '-pk').first(),
+        'invoice_rows': [{'invoice': i, 'live': live_context(i, connection)} for i in page]})
 
 
 class AssociationForm(forms.Form):
@@ -132,7 +152,7 @@ class AssociationForm(forms.Form):
 @staff_view
 @require_http_methods(['GET', 'POST'])
 def history_detail(request, invoice_id):
-    invoice = get_object_or_404(HistoricalInvoice.objects.select_related('client', 'project', 'batch'), pk=invoice_id)
+    invoice = get_object_or_404(HistoricalInvoice.objects.select_related('client', 'project', 'batch', 'live_balance'), pk=invoice_id)
     can_change = not staff_preview(request) and request.user.has_perm('workqueue.change_workitem') and not invoice.removed_at
     form = AssociationForm(request.POST or None, initial={'client': invoice.client_id, 'project': invoice.project_id, 'version': invoice.version})
     status = 200
@@ -163,4 +183,22 @@ def history_detail(request, invoice_id):
     return render(request, 'workqueue/invoice_history_detail.html', {'invoice': invoice, 'form': form,
         'line_cells': [[line.get(k, '') for k in ('Item Name', 'Item Description', 'Rate', 'Quantity',
             'Discount Percentage', 'Line Subtotal', 'Tax 1 Amount', 'Tax 2 Amount', 'Line Total')] for line in invoice.lines],
+        'live': live_context(invoice), 'suggestions': contact_suggestions(invoice),
         'can_change': can_change, 'events': invoice.events.select_related('actor').order_by('-created_at', '-pk')[:20]}, status=status)
+
+
+@staff_view
+@require_http_methods(['POST'])
+def check_history(request):
+    editable(request)
+    try:
+        job = request_sync(actor=request.user)
+        if not job:
+            messages.info(request, 'There is no imported history for the selected FreshBooks business.')
+        elif job.state in ('scanning', 'contacts'):
+            messages.success(request, 'FreshBooks check queued. Your background worker will update this page; reload to see the results.')
+        else:
+            messages.info(request, 'A check was recently requested. Please wait five minutes before requesting another.')
+    except ValidationError as exc:
+        messages.error(request, error_text(exc))
+    return redirect('workqueue:invoice_history')

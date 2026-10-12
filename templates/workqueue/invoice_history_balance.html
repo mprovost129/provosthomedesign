@@ -1,0 +1,5 @@
+<div class="history-live">
+{% if live.balance.verified_at %}<p><strong>FreshBooks: {{ live.balance.status }}</strong>{% if live.balance.archived %} · Archived{% endif %}</p><p>Total {{ live.balance.currency }} {{ live.balance.amount|floatformat:2 }} · Paid {{ live.balance.currency }} {{ live.balance.paid|floatformat:2 }} · Balance due <strong>{{ live.balance.currency }} {{ live.balance.outstanding|floatformat:2 }}</strong>{% if live.balance.due %} · Due {{ live.balance.due|date:'M j, Y' }}{% endif %}</p><p>Verified {{ live.balance.verified_at|date:'M j, Y, g:i A' }}.{% if live.stale %} <strong>Needs a new check; these are the last verified values.</strong>{% endif %}</p>{% else %}<p>Current balance not yet verified.</p>{% endif %}
+{% if live.balance.error %}<p class="notice">{{ live.balance.error }}</p>{% endif %}
+{% if live.url %}<a href="{{ live.url }}" target="_blank" rel="noopener noreferrer">Open in FreshBooks</a>{% endif %}
+</div>

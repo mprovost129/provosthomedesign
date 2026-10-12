@@ -48,3 +48,44 @@ class InvoiceHistoryEvent(models.Model):
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
     changes = models.JSONField()
     created_at = models.DateTimeField(default=timezone.now)
+
+
+class HistoricalInvoiceBalance(models.Model):
+    """Verified provider snapshot; exported facts are never overwritten."""
+    invoice = models.OneToOneField(HistoricalInvoice, on_delete=models.CASCADE, related_name='live_balance')
+    provider_invoice_id = models.PositiveBigIntegerField(null=True)
+    customer_id = models.PositiveBigIntegerField(null=True)
+    status = models.CharField(max_length=50, blank=True)
+    currency = models.CharField(max_length=3, blank=True)
+    amount = models.DecimalField(max_digits=14, decimal_places=2, null=True)
+    paid = models.DecimalField(max_digits=14, decimal_places=2, null=True)
+    outstanding = models.DecimalField(max_digits=14, decimal_places=2, null=True)
+    due = models.DateField(null=True)
+    archived = models.BooleanField(default=False)
+    verified_at = models.DateTimeField(null=True)
+    attempted_at = models.DateTimeField(null=True)
+    error = models.CharField(max_length=300, blank=True)
+    billing_name = models.CharField(max_length=200, blank=True)
+    billing_email = models.EmailField(blank=True)
+    contact_verified_at = models.DateTimeField(null=True)
+
+
+class InvoiceHistorySync(models.Model):
+    """A bounded, resumable, read-only scan of the selected billing business."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    account_id = models.CharField(max_length=50)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
+    state = models.CharField(max_length=20, default='scanning')
+    targets = models.JSONField(default=dict)
+    matches = models.JSONField(default=dict)
+    customers = models.JSONField(default=list)
+    page = models.PositiveIntegerField(default=1)
+    pages = models.PositiveIntegerField(null=True)
+    total = models.PositiveIntegerField(null=True)
+    seen = models.PositiveIntegerField(default=0)
+    lease = models.UUIDField(null=True)
+    lease_until = models.DateTimeField(null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    finished_at = models.DateTimeField(null=True)
+    error = models.CharField(max_length=300, blank=True)
+    result = models.JSONField(default=dict)

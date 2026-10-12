@@ -621,4 +621,4 @@ from .time_models import TimeEntry
 from .freshbooks_models import FreshBooksConnection, FreshBooksClientLink, FreshBooksInvoice
 from .checklist_models import ProjectChecklist, ChecklistApplication
 
-from .invoice_history_models import InvoiceCSVImport, HistoricalInvoice, InvoiceHistoryEvent
+from .invoice_history_models import InvoiceCSVImport, HistoricalInvoice, InvoiceHistoryEvent, HistoricalInvoiceBalance, InvoiceHistorySync
