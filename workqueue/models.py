@@ -506,7 +506,7 @@ class EmailAccessToken(models.Model):
     email = models.EmailField()
     digest = models.CharField(max_length=64, unique=True)
     reference = models.CharField(max_length=32, blank=True)
-    destination = models.CharField(max_length=10, default="tracking", choices=[("tracking", "Tracking"), ("booking", "Booking")])
+    destination = models.CharField(max_length=10, default="tracking", choices=[("tracking", "Tracking"), ("booking", "Booking"), ("portal", "Client portal")])
     expires_at = models.DateTimeField()
     used_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
@@ -627,3 +627,4 @@ from .checklist_models import ProjectChecklist, ChecklistApplication
 from .invoice_history_models import InvoiceCSVImport, HistoricalInvoice, InvoiceHistoryEvent, HistoricalInvoiceBalance, InvoiceHistorySync
 
 from .time_billing_models import TimeBillingRate, TimeBillingBatch, TimeBillingLine
+from .portal_models import ClientProject, ProjectPortal, PortalMember, PortalDocument, PortalDocumentVersion

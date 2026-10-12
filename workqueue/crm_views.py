@@ -350,7 +350,7 @@ def client_detail(request, client_id):
         prefix=f"task-{task.pk}", initial={"version": client.version, "task_id": task.pk, "task_version": task.version}))
         for task in client.followups.filter(completed_at__isnull=True, canceled_at__isnull=True)]
     visible_jobs = Q(work_items__deleted_at__isnull=True, work_items__client_contact__client=client)
-    projects = WorkProject.objects.filter(visible_jobs).annotate(
+    projects = WorkProject.objects.filter(visible_jobs | Q(client_links__client=client)).annotate(
         job_count=Count("work_items", filter=visible_jobs, distinct=True),
         active_jobs=Count("work_items", filter=visible_jobs & ~Q(work_items__status__in=CLOSED_STATUSES), distinct=True),
         latest_job=Max("work_items__received_at", filter=visible_jobs)).order_by("-latest_job", "name")

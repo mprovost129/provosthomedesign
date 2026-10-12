@@ -309,6 +309,14 @@ def confirm_access(request):
             request.session.cycle_key()
             request.session["queue_verified_email"] = record.email
             request.session["queue_email_verified_until"] = (timezone.now() + timedelta(days=7)).timestamp()
+            if record.destination == 'portal':
+                project_id = request.session.pop('portal_return_project', '')
+                from .portal_services import memberships
+                try:
+                    member = memberships(record.email).filter(project_id=uuid.UUID(project_id)).first() if project_id else None
+                except (ValueError, TypeError):
+                    member = None
+                return redirect('workqueue:portal_project', member.project_id) if member else redirect('workqueue:portal_home')
             target = reverse("workqueue:book" if record.destination == "booking" and getattr(settings, "BOOKING_ENABLED", False) else "workqueue:tracking")
             if record.reference:
                 from urllib.parse import urlencode

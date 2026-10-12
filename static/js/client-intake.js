@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const form = document.getElementById('client-intake') || document.getElementById('completion-delivery') || document.getElementById('crm-work-entry');
+  const form = document.getElementById('client-intake') || document.getElementById('completion-delivery') || document.getElementById('crm-work-entry') || document.getElementById('portal-publication');
   if (!form) return;
   const delivery = form.id !== 'client-intake';
   const submit = document.getElementById('submit-request');

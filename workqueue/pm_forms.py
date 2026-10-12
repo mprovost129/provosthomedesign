@@ -52,7 +52,8 @@ class ProposalForm(forms.Form):
     valid_until = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), label='Valid through')
     def __init__(self, *args, project, proposal=None, **kwargs):
         super().__init__(*args, **kwargs)
-        ids = WorkItem.objects.filter(project=project, client_contact__isnull=False).values_list('client_contact__client_id', flat=True)
+        ids = list(WorkItem.objects.filter(project=project, client_contact__isnull=False).values_list('client_contact__client_id', flat=True))
+        ids += list(project.client_links.values_list('client_id', flat=True))
         if proposal:
             from .pm_services import current_client
             ids = list(ids) + [current_client(proposal.client).pk]

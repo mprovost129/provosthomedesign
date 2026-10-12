@@ -4,6 +4,7 @@ from . import client_views
 from . import booking_views
 from . import delivery_views
 from . import health
+from . import portal_views
 from . import crm_views
 from . import shared_contact_views
 from . import communication_views
@@ -19,6 +20,12 @@ from . import invoice_history_views
 
 app_name = "workqueue"
 urlpatterns = [
+    path('client-portal/', portal_views.home, name='portal_home'),
+    path('client-portal/sign-out/', portal_views.sign_out, name='portal_logout'),
+    path('client-portal/projects/<uuid:project_id>/', portal_views.project, name='portal_project'),
+    path('client-portal/projects/<uuid:project_id>/documents/<uuid:version_id>/', portal_views.document, name='portal_document'),
+    path('client-portal/projects/<uuid:project_id>/proposals/<uuid:revision_id>/', portal_views.proposal, name='portal_proposal'),
+    path('work-projects/<uuid:project_id>/sharing/', portal_views.manage, name='portal_manage'),
     path('work-projects/invoices/ready/', time_billing_views.ready, name='ready_to_invoice'),
     path('work-projects/<uuid:project_id>/billing/', time_billing_views.project_billing, name='project_billing'),
     path('work-projects/invoices/time/<uuid:batch_id>/', time_billing_views.batch_detail, name='time_bill_detail'),

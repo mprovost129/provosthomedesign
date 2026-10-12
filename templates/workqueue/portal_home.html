@@ -1,0 +1,11 @@
+{% extends 'workqueue/portal_base.html' %}
+{% block title %}Client portal{% endblock %}
+{% block portal_content %}
+<header class="portal-heading"><p class="eyebrow">Provost Home Design · Client portal</p><h1>{% if client_email %}Your projects{% else %}Your project, in one place.{% endif %}</h1><p>Plans, shared documents, proposals and invoices—organized around your project.</p></header>
+{% if sent %}<p class="notice" role="status">If this address has portal access, a secure sign-in link will arrive shortly. Check your inbox and spam folder.</p>{% endif %}
+{% if client_email %}
+<div class="portal-grid">{% for membership in memberships %}<article class="portal-project-card"><p class="eyebrow">{{ membership.project.canonical_reference|default:'Project' }}</p><h2><a href="{% url 'workqueue:portal_project' membership.project_id %}">{{ membership.project.name }}</a></h2><p>{{ membership.project.street }}{% if membership.project.city %}<br>{{ membership.project.city }}, {{ membership.project.state }} {{ membership.project.zip_code }}{% endif %}</p><p class="muted">{{ membership.client.name }}</p><a class="portal-open" href="{% url 'workqueue:portal_project' membership.project_id %}">Open project <span aria-hidden="true">→</span></a></article>{% empty %}<section class="card portal-empty"><h2>No shared projects yet</h2><p>Ask Provost Home Design to connect this email address to your project. If you normally use another email, sign out and use that address.</p><a href="/contact/">Contact us</a></section>{% endfor %}</div>
+{% else %}
+<section class="card portal-signin"><h2>Sign in with your email</h2><p>Use the email address approved for your project. No password is needed.</p><form method="post" data-recaptcha-action="work_tracking_signin">{% csrf_token %}{{ form.non_field_errors }}{% for field in form %}{% include 'workqueue/client_field.html' %}{% endfor %}{% include 'workqueue/recaptcha_fields.html' %}<button>Send secure sign-in link</button></form><p class="muted">The link works once and expires in 24 hours. Need access? <a href="/contact/">Contact us.</a></p></section>
+{% endif %}
+{% endblock %}

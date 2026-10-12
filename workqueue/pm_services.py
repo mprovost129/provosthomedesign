@@ -33,7 +33,8 @@ def current_client(client):
 
 def client_for_project(project, client_id, proposal=None):
     client = Client.objects.get(pk=client_id, merged_into__isnull=True)
-    if not WorkItem.objects.filter(project=project, client_contact__client=client).exists() and not (
+    from .portal_models import ClientProject
+    if not WorkItem.objects.filter(project=project, client_contact__client=client).exists() and not ClientProject.objects.filter(project=project, client=client).exists() and not (
             proposal and current_client(proposal.client).pk == client.pk):
         raise ValidationError('Choose a client connected to this project.')
     return client

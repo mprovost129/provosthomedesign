@@ -111,7 +111,8 @@ def project_detail(request, project_id):
             return redirect('workqueue:project_detail', project.pk)
     items = WorkItem.objects.filter(project=project).with_position().select_related('client_contact__client').prefetch_related('submissions__attachments')
     files = Attachment.objects.filter(submission__work_item__in=items).select_related('submission__work_item').order_by('-uploaded_at')
-    clients = Client.objects.filter(contacts__work_items__in=items, merged_into__isnull=True).distinct()
+    from .portal_services import related_clients
+    clients = related_clients(project)
     proposals = project.proposals.select_related('current_revision', 'client')
     accepted = ProposalRevision.objects.filter(proposal__project=project, state='accepted').order_by('-accepted_at')
     correspondence = ClientEmail.objects.filter(Q(project=project) | Q(work_item__in=items)).select_related('client', 'delivery').order_by('-created_at')[:20]

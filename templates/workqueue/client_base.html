@@ -2,7 +2,7 @@
 {% block tool_styles %}<link rel="stylesheet" href="{% static 'css/client-intake.css' %}">{% endblock %}
 {% block workspace %}
 <div class="client-work">
-<nav class="client-tools" aria-label="Client tools"><a href="{% url 'workqueue:submit' %}">Submit work</a><a href="{% url 'workqueue:tracking' %}">Track my project</a>{% if booking_enabled %}<a href="{% url 'workqueue:book' %}">Book an appointment</a>{% endif %}</nav>
+<nav class="client-tools" aria-label="Client tools"><a href="{% url 'workqueue:portal_home' %}">My projects</a><a href="{% url 'workqueue:submit' %}">Submit work</a><a href="{% url 'workqueue:tracking' %}">Track my project</a>{% if booking_enabled %}<a href="{% url 'workqueue:book' %}">Book an appointment</a>{% endif %}</nav>
 <main id="content" tabindex="-1">{% for message in messages %}<p class="notice" role="status">{{ message }}</p>{% endfor %}{% block content %}{% endblock %}</main>
 </div>
 {% endblock %}
