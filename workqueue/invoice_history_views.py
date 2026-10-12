@@ -103,7 +103,9 @@ def history(request):
     live_filter = live_filter if live_filter in ('all', 'due', 'review') else 'all'
     client_filter = get_object_or_404(Client, pk=query_uuid(request.GET['client'])) if request.GET.get('client') else None
     project_filter = get_object_or_404(WorkProject, pk=query_uuid(request.GET['project'])) if request.GET.get('project') else None
-    invoices = HistoricalInvoice.objects.filter(removed_at__isnull=True).select_related('client', 'project', 'batch', 'live_balance').annotate(status_key=Lower('exported_status'))
+    # A batch contains the full CSV. Joining it here decoded the same large
+    # import 30 times per page; cards only need each invoice's own facts.
+    invoices = HistoricalInvoice.objects.filter(removed_at__isnull=True).select_related('client', 'project', 'live_balance').annotate(status_key=Lower('exported_status'))
     if client_filter:
         # Merged profiles preserve their original invoice associations. Follow all
         # descendant profiles for the kept client's history without rewriting facts.
@@ -139,7 +141,8 @@ def history(request):
         'q': q, 'state': state, 'live_filter': live_filter, 'live_totals': live_totals,
         'client_filter': client_filter, 'project_filter': project_filter,
         'can_change': request.user.has_perm('workqueue.change_workitem') and not staff_preview(request),
-        'sync_job': InvoiceHistorySync.objects.filter(account_id=connection.account_id if connection else '').order_by('-created_at', '-pk').first(),
+        'sync_job': InvoiceHistorySync.objects.filter(account_id=connection.account_id if connection else '')
+            .defer('targets', 'matches', 'customers').order_by('-created_at', '-pk').first(),
         'invoice_rows': [{'invoice': i, 'live': live_context(i, connection)} for i in page]})
 
 
@@ -152,7 +155,8 @@ class AssociationForm(forms.Form):
 @staff_view
 @require_http_methods(['GET', 'POST'])
 def history_detail(request, invoice_id):
-    invoice = get_object_or_404(HistoricalInvoice.objects.select_related('client', 'project', 'batch', 'live_balance'), pk=invoice_id)
+    invoice = get_object_or_404(HistoricalInvoice.objects.select_related('client', 'project', 'batch', 'live_balance')
+                               .defer('batch__invoices'), pk=invoice_id)
     can_change = not staff_preview(request) and request.user.has_perm('workqueue.change_workitem') and not invoice.removed_at
     form = AssociationForm(request.POST or None, initial={'client': invoice.client_id, 'project': invoice.project_id, 'version': invoice.version})
     status = 200

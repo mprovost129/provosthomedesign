@@ -4,6 +4,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
 from django.test import TestCase, override_settings
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 from .models import Client, ClientContact, WorkItem, NotificationDelivery
@@ -226,3 +228,18 @@ class HistorySyncTests(TestCase):
             self.assertEqual(InvoiceHistorySync.objects.get().state,'contacts')
             self.assertEqual(sync_history(limit=1),1);self.assertEqual(api.call_count,2)
         self.assertEqual(InvoiceHistorySync.objects.get().state,'complete')
+
+    def test_history_pages_never_fetch_full_csv_batches_or_worker_staging_json(self):
+        request_sync(self.owner)
+        for url in [reverse('workqueue:invoice_history'),
+                    reverse('workqueue:invoice_history_detail',args=[self.invoice.pk])]:
+            with CaptureQueriesContext(connection) as captured:
+                response=self.client.get(url)
+            self.assertEqual(response.status_code,200)
+            sql='\n'.join(q['sql'] for q in captured)
+            self.assertNotIn('"workqueue_invoicecsvimport"."invoices"',sql)
+            self.assertNotIn('"workqueue_invoicehistorysync"."targets"',sql)
+            self.assertNotIn('"workqueue_invoicehistorysync"."matches"',sql)
+        # Original invoice lines and source metadata remain available on detail.
+        self.assertContains(response,'Roof plan,')
+        self.assertContains(response,'freshbooks.csv')

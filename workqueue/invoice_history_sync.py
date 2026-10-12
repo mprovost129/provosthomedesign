@@ -30,7 +30,8 @@ def selected_account():
 def target_records(account):
     return {i.number: {'id': str(i.pk), 'fingerprint': i.fingerprint, 'issued': i.issued.isoformat(),
                       'currency': i.currency, 'provider_invoice_id': getattr(getattr(i, 'live_balance', None), 'provider_invoice_id', None)}
-            for i in HistoricalInvoice.objects.filter(account_id=account, removed_at__isnull=True).select_related('live_balance')}
+            for i in HistoricalInvoice.objects.filter(account_id=account, removed_at__isnull=True)
+                .select_related('live_balance').defer('lines')}
 
 
 def request_sync(actor=None, automatic=False):
