@@ -629,3 +629,4 @@ from .invoice_history_models import InvoiceCSVImport, HistoricalInvoice, Invoice
 from .time_billing_models import TimeBillingRate, TimeBillingBatch, TimeBillingLine
 from .portal_models import ClientProject, ProjectPortal, PortalMember, PortalDocument, PortalDocumentVersion
 from .portal_review_models import PlanReview
+from .portal_export_models import PlanReviewExport

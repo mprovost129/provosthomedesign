@@ -13,6 +13,12 @@ if (app) {
   const pageSelect = document.getElementById('review-page');
   const zoom = document.getElementById('review-zoom');
   const add = document.getElementById('add-pin');
+  const tools = document.getElementById('mark-tool');
+  const undo = document.getElementById('undo-mark');
+  const shapes = document.getElementById('plan-shapes');
+  let stroke = null;
+  const undoStack = [];
+  const tool = () => tools?.value || 'pin';
   const saveButton = document.getElementById('save-review');
   const submitButton = document.getElementById('submit-review');
   let page = 1, pdf = null, placing = false, selected = '';
@@ -79,6 +85,9 @@ if (app) {
   }
   function drawPins() {
     pins.replaceChildren();
+    shapes.replaceChildren();
+    state.annotations.forEach(mark => { if (mark.page === page && mark.type && mark.type !== 'pin') drawShape(mark); });
+    if (stroke) drawShape(stroke);
     state.annotations.forEach((pin, index) => {
       if (pin.page !== page) return;
       const button = document.createElement('button');
@@ -100,13 +109,13 @@ if (app) {
       const entry = document.createElement('li'); entry.dataset.pin = pin.id;
       const heading = document.createElement('div'); heading.className = 'review-note-heading';
       const jump = document.createElement('button'); jump.type = 'button'; jump.className = 'secondary';
-      jump.textContent = `Note ${index + 1} · Page ${pin.page}`;
+      jump.textContent = `Note ${index + 1} · Page ${pin.page}${pin.type && pin.type !== 'pin' ? ' · ' + pin.type : ''}`;
       jump.addEventListener('click', () => { highlight(pin.id); if (pdf) { pageSelect.value = pin.page; page = pin.page; renderPage(); } });
       heading.append(jump);
       if (state.editable) {
         const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'secondary';
         remove.textContent = 'Remove'; remove.setAttribute('aria-label', `Remove note ${index + 1}`);
-        remove.addEventListener('click', () => { state.annotations = state.annotations.filter(note => note.id !== pin.id); markDirty(); buildNotes(); drawPins(); });
+        remove.addEventListener('click', () => { undoStack.push({kind: 'remove', mark: structuredClone(pin), index}); state.annotations = state.annotations.filter(note => note.id !== pin.id); undo.disabled = false; markDirty(); buildNotes(); drawPins(); });
         heading.append(remove);
       }
       entry.append(heading);
@@ -129,24 +138,89 @@ if (app) {
     if (focus) document.getElementById(`note-${focus}`)?.focus({preventScroll: true});
   }
   function setPlacing(value) {
-    placing = value; surface.classList.toggle('placing', value);
-    if (add) { add.setAttribute('aria-pressed', String(value)); add.textContent = value ? 'Cancel adding note' : 'Add a note'; }
+    stroke = null; placing = value; surface.classList.toggle('placing', value);
+    surface.classList.toggle('drawing', value && tool() !== 'pin');
+    if (!value) drawPins();
+    if (add) { add.setAttribute('aria-pressed', String(value)); add.textContent = value ? 'Cancel' : (tool() === 'pin' ? 'Add a note' : 'Draw ' + tool()); }
   }
   function place(x, y) {
     if (!placing || !pdf || !state.editable) return;
     if (state.annotations.length >= 100) { showStatus('Use at most 100 notes per review.', true); return; }
     const pin = {id: crypto.randomUUID(), page, x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)), text: ''};
-    state.annotations.push(pin); selected = pin.id;
+    state.annotations.push(pin); undoStack.push({kind: 'add', id: pin.id}); undo.disabled = false; selected = pin.id;
     setPlacing(false); markDirty(); buildNotes(pin.id); drawPins();
     document.getElementById(`note-${pin.id}`).scrollIntoView({block: 'nearest', behavior: 'smooth'});
   }
   surface.addEventListener('click', event => {
-    if (event.target.closest('.plan-pin')) return;
+    if (event.target.closest('.plan-pin') || tool() !== 'pin') return;
     const bounds = surface.getBoundingClientRect();
     place((event.clientX - bounds.left) / bounds.width, (event.clientY - bounds.top) / bounds.height);
   });
-  surface.addEventListener('keydown', event => { if (placing && event.key === 'Enter') { event.preventDefault(); place(.5, .5); } if (event.key === 'Escape') setPlacing(false); });
+  surface.addEventListener('keydown', event => { if (placing && tool() === 'pin' && event.key === 'Enter') { event.preventDefault(); place(.5, .5); } if (event.key === 'Escape') setPlacing(false); });
   add?.addEventListener('click', () => { setPlacing(!placing); if (placing) surface.focus({preventScroll: true}); });
+  tools?.addEventListener('change', () => setPlacing(false));
+  undo?.addEventListener('click', () => {
+    const last = undoStack.pop(); if (!last) return;
+    if (last.kind === 'add') state.annotations = state.annotations.filter(mark => mark.id !== last.id);
+    else state.annotations.splice(last.index, 0, last.mark);
+    undo.disabled = !undoStack.length; markDirty(); buildNotes(); drawPins();
+  });
+  function drawShape(mark) {
+    const bounds = surface.getBoundingClientRect();
+    shapes.setAttribute('viewBox', `0 0 ${bounds.width} ${bounds.height}`);
+    const points = mark.points.map(point => [point[0]*bounds.width, point[1]*bounds.height]);
+    const svg = name => document.createElementNS('http://www.w3.org/2000/svg', name);
+    let node;
+    if (mark.type === 'box') {
+      node = svg('rect'); const a = points[0], b = points[1];
+      for (const [key,value] of Object.entries({x:Math.min(a[0],b[0]),y:Math.min(a[1],b[1]),width:Math.abs(a[0]-b[0]),height:Math.abs(a[1]-b[1])})) node.setAttribute(key,value);
+    } else {
+      node = svg('polyline'); node.setAttribute('points',points.map(point => point.join(',')).join(' '));
+    }
+    node.setAttribute('fill','none'); node.setAttribute('stroke','#b83825'); node.setAttribute('stroke-width','3');
+    node.setAttribute('stroke-linecap','round'); node.setAttribute('stroke-linejoin','round'); shapes.append(node);
+    if (mark.type === 'arrow' && points.length === 2) {
+      const a=points[0],b=points[1],angle=Math.atan2(b[1]-a[1],b[0]-a[0]);
+      const head=svg('polyline'); head.setAttribute('points',[[b[0]-14*Math.cos(angle-.45),b[1]-14*Math.sin(angle-.45)],b,[b[0]-14*Math.cos(angle+.45),b[1]-14*Math.sin(angle+.45)]].map(point=>point.join(',')).join(' '));
+      head.setAttribute('stroke','#b83825');head.setAttribute('stroke-width','3');head.setAttribute('fill','none');shapes.append(head);
+    }
+  }
+  function pointerPoint(event) {
+    const box=surface.getBoundingClientRect();
+    return [event.clientX-box.left,event.clientY-box.top].map((value,index)=>Math.round(Math.max(0,Math.min(1,value/(index ? box.height : box.width)))*10000)/10000);
+  }
+  surface.addEventListener('pointerdown', event => {
+    if (!placing || !state.editable || !pdf || tool()==='pin' || event.target.closest('.plan-pin')) return;
+    if (state.annotations.length>=100) { showStatus('Use at most 100 notes per review.',true); return; }
+    event.preventDefault();surface.setPointerCapture(event.pointerId);
+    const point=pointerPoint(event);
+    stroke={id:crypto.randomUUID(),type:tool(),page,x:point[0],y:point[1],points:[point,point],text:''};
+    drawPins();
+  });
+  surface.addEventListener('pointermove', event => {
+    if (!stroke) return;
+    const point=pointerPoint(event);
+    if (stroke.type==='freehand') {
+      const last=stroke.points.at(-1);
+      if (Math.hypot(point[0]-last[0],point[1]-last[1])>.001) {
+        if (stroke.points.length>=300) stroke.points=stroke.points.filter((_,index)=>index%2===0);
+        stroke.points.push(point);
+      }
+    } else stroke.points[1]=point;
+    drawPins();
+  });
+  surface.addEventListener('pointerup', event => {
+    if (!stroke) return;
+    const mark=stroke; stroke=null;
+    if (surface.hasPointerCapture(event.pointerId)) surface.releasePointerCapture(event.pointerId);
+    if (Math.max(...mark.points.map(point=>Math.abs(point[0]-mark.x)+Math.abs(point[1]-mark.y)))<.001) { drawPins();return; }
+    const pointCount=state.annotations.reduce((count,entry)=>count+(entry.points?.length||0),0)+mark.points.length;
+    if (pointCount>3000) { showStatus('Use fewer strokes or start a separate review for more drawing detail.',true);drawPins();return; }
+    state.annotations.push(mark);undoStack.push({kind:'add',id:mark.id});undo.disabled=false;selected=mark.id;
+    setPlacing(false);markDirty();buildNotes(mark.id);drawPins();
+    document.getElementById(`note-${mark.id}`).scrollIntoView({block:'nearest',behavior:'smooth'});
+  });
+  surface.addEventListener('pointercancel',()=>{stroke=null;drawPins();});
   async function renderPage() {
     if (!pdf) return;
     const current = ++renderGeneration;
@@ -198,8 +272,8 @@ if (app) {
     form.addEventListener('submit', async event => {
       event.preventDefault();
       if (submitting || !form.reportValidity()) return;
-      submitting = true; submitButton.disabled = true; saveButton.disabled = true; add.disabled = true;
-      summary.readOnly = true; for (const input of list.querySelectorAll('textarea,button')) input.disabled = true;
+      setPlacing(false); submitting = true; submitButton.disabled = true; saveButton.disabled = true; add.disabled = true;
+      if (tools) tools.disabled = true; if (undo) undo.disabled = true; summary.readOnly = true; for (const input of list.querySelectorAll('textarea,button')) input.disabled = true;
       try {
         await flush();
         showStatus('Submitting your revision request…');
@@ -209,7 +283,7 @@ if (app) {
       } catch (error) {
         showStatus(error.name === 'AbortError' ? 'The response timed out. Your request may have arrived; retrying this review will not create a duplicate.' : error.message, true);
         submitting = false; submitButton.disabled = false; saveButton.disabled = false; add.disabled = !pdf;
-        summary.readOnly = false; for (const input of list.querySelectorAll('textarea,button')) input.disabled = false;
+        if (tools) tools.disabled = false; if (undo) undo.disabled = !undoStack.length; summary.readOnly = false; for (const input of list.querySelectorAll('textarea,button')) input.disabled = false;
       }
     });
     window.addEventListener('beforeunload', event => { if (state.editable && revision !== savedRevision) { event.preventDefault(); event.returnValue = ''; } });

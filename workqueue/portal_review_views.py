@@ -68,6 +68,8 @@ def payload_from(request):
 
 def review_context(record, *, staff=False, can_edit=False):
     project = record.document_version.document.project
+    from .portal_export_models import PlanReviewExport
+    export_record = PlanReviewExport.objects.filter(review=record).first() if record.submitted_at else None
     current_position = None
     if record.work_item_id:
         from .models import WorkItem
@@ -77,6 +79,7 @@ def review_context(record, *, staff=False, can_edit=False):
         'workqueue:portal_document', args=[project.pk, record.document_version_id]) + '?view=1'
     return {'project': project, 'review': record, 'client_email': '' if staff else record.author_email,
         'staff_review': staff, 'can_edit': can_edit, 'current_position': current_position,
+        'export_record': export_record, 'export_url': reverse('workqueue:staff_marked_plan' if staff else 'workqueue:portal_marked_plan', args=[project.pk,record.pk]),
         'review_data': {'version': record.version, 'summary': record.summary,
             'annotations': record.annotations, 'geometry': record.geometry, 'editable': can_edit,
             'pdf_url': pdf_url, 'save_url': reverse('workqueue:save_plan_review', args=[project.pk, record.pk]),

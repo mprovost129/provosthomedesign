@@ -51,7 +51,7 @@ def start_review(member, revision, token):
         check_identity(draft, member)
         return draft
     return PlanReview.objects.create(id=token, member=member, document_version=revision, client=member.client,
-        contact=member.contact, author_email=member.email, author_name=member.contact.full_name or member.email,
+        contact=member.contact, author_email=member.email, author_name=member.contact.full_name or member.email[:200],
         company_name=member.client.name, grant_at=member.granted_at, document_title=revision.document.title)
 
 
@@ -74,8 +74,10 @@ def clean_payload(payload):
                 or page['rotation'] not in {0, 90, 180, 270}):
             raise ValidationError('Invalid plan page geometry.')
         seen_pages.add(page['page'])
+    from .portal_marks import validate_shape
+    point_count = 0
     for pin in pins:
-        if (not isinstance(pin, dict) or set(pin) != {'id', 'page', 'x', 'y', 'text'}
+        if (not isinstance(pin, dict) or not {'id', 'page', 'x', 'y', 'text'}.issubset(pin)
                 or not isinstance(pin['id'], str) or len(pin['id']) > 36 or pin['id'] in seen_pins
                 or type(pin['page']) is not int or pin['page'] not in seen_pages
                 or not number(pin['x'], 0, 1) or not number(pin['y'], 0, 1)
@@ -86,6 +88,9 @@ def clean_payload(payload):
             uuid.UUID(pin['id'])
         except ValueError:
             raise ValidationError('Invalid note reference.') from None
+        point_count += validate_shape(pin)
+        if point_count > 3000:
+            raise ValidationError('This review has too much drawing detail. Use fewer strokes or separate reviews.')
         seen_pins.add(pin['id'])
     if any(ord(char) < 32 and char not in '\n\r\t' for char in summary):
         raise ValidationError('Invalid characters in the review notes.')
@@ -117,7 +122,7 @@ def review_text(review):
     revision = review.document_version
     parts = [f'{review.document_title} — Version {revision.sequence}', f'File: {revision.original_name}', review.summary]
     for index, pin in enumerate(review.annotations, 1):
-        parts.append(f'Note {index} · Page {pin["page"]} · {pin["x"]:.1%} from left, {pin["y"]:.1%} from top\n{pin["text"]}')
+        parts.append(f'Note {index} ({pin.get("type", "pin")}) · Page {pin["page"]} · {pin["x"]:.1%} from left, {pin["y"]:.1%} from top\n{pin["text"]}')
     return '\n\n'.join(part for part in parts if part)
 
 

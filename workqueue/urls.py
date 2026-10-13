@@ -6,6 +6,7 @@ from . import delivery_views
 from . import health
 from . import portal_views
 from . import portal_review_views
+from . import portal_export_views
 from . import crm_views
 from . import shared_contact_views
 from . import communication_views
@@ -21,6 +22,8 @@ from . import invoice_history_views
 
 app_name = "workqueue"
 urlpatterns = [
+    path('client-portal/projects/<uuid:project_id>/reviews/<uuid:review_id>/marked-plan/', portal_export_views.client_export, name='portal_marked_plan'),
+    path('work-projects/<uuid:project_id>/reviews/<uuid:review_id>/marked-plan/', portal_export_views.staff_export, name='staff_marked_plan'),
     path('client-portal/projects/<uuid:project_id>/documents/<uuid:version_id>/review/', portal_review_views.start, name='start_plan_review'),
     path('client-portal/projects/<uuid:project_id>/reviews/<uuid:review_id>/', portal_review_views.review, name='portal_review'),
     path('client-portal/projects/<uuid:project_id>/reviews/<uuid:review_id>/save/', portal_review_views.save, name='save_plan_review'),

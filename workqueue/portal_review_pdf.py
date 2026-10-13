@@ -1,6 +1,7 @@
 """Small review report. Original PDFs stay immutable; no untrusted PDF processing on the web worker."""
 from html import escape
 from io import BytesIO
+from django.utils import timezone
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
@@ -18,7 +19,7 @@ def review_pdf(review):
         text(f'{review.document_title} | Version {revision.sequence} | {revision.original_name}'),
         text(f'{review.author_name} | {review.company_name} | {review.author_email}'),
         text(f'Request: {review.work_item.reference}' if review.submitted_at else 'DRAFT — not submitted'),
-        text(f'Submitted: {review.submitted_at.isoformat()}' if review.submitted_at else f'Saved: {review.updated_at.isoformat()}'),
+        text(f'Submitted: {timezone.localtime(review.submitted_at).strftime('%b %d, %Y at %I:%M %p %Z')}' if review.submitted_at else f'Saved: {timezone.localtime(review.updated_at).strftime('%b %d, %Y at %I:%M %p %Z')}'),
         text('This report records comments on the named original plan version. Download that PDF separately to view the drawing. Locations are measured from the top left of its displayed page; the plan itself has not been changed.'),
         Spacer(1, 12), text('Requested changes', 'Heading2'), text(review.summary or 'See the page notes below.')]
     for index, pin in enumerate(review.annotations, 1):

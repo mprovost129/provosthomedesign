@@ -27,6 +27,7 @@ class Command(BaseCommand):
                 ("sync_crm_clients", {}),
                 ("process_queue_emails", {"limit": options["email_limit"]}),
                 ("cleanup_queue_uploads", {}),
+                ("process_plan_exports", {}),
             ])
         if not tasks:
             self.stdout.write("Queue features are disabled; no background tasks ran.")
