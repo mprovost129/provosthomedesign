@@ -81,6 +81,7 @@ def deliver_pending(limit=100):
     from .crm_mail import queue_morning_digest
     queue_morning_digest()
     from .portal_discussions import cancel_ineligible_reply
+    from .calendar_reconciliation import cancel_obsolete_appointment_notice
     # A worker that crashed after handing a message to the provider may have sent it.
     # Hold stale sending records instead of automatically sending a second copy.
     NotificationDelivery.objects.filter(state="sending", last_attempt_at__lt=timezone.now()-timedelta(minutes=15)).update(
@@ -100,6 +101,8 @@ def deliver_pending(limit=100):
             if deleted:
                 record.state, record.body = 'canceled', ''
                 record.save(update_fields=['state', 'body'])
+                continue
+            if cancel_obsolete_appointment_notice(record):
                 continue
             if cancel_ineligible_portal_notice(record):
                 continue

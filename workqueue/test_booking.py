@@ -32,7 +32,7 @@ class CalendarDouble:
         self.fail_after_save = False
         self.fail_delete = False
 
-    def identity(self, calendar_id):
+    def identity(self, calendar_id, *, refresh=False):
         return {"id": calendar_id, "timeZone": "America/New_York"}
 
     def busy(self, start, end, exclude=(), calendar_id=None):
@@ -49,6 +49,17 @@ class CalendarDouble:
         if self.fail_after_save:
             self.fail_after_save = False
             raise CalendarUnavailable("Calendar request could not be verified.")
+
+    def reconcile_buffer(self, appointment, expected):
+        actual = self.events.get(expected['id'])
+        if actual and actual.get('extendedProperties', {}).get('private', {}).get('phdAppointment') != str(appointment.pk):
+            raise CalendarMismatch('Calendar buffer identity changed.')
+        self.events[expected['id']] = {**expected, 'etag':'test-only'}
+
+    def remove_buffer(self, appointment):
+        if self.fail_delete:
+            raise CalendarUnavailable('Calendar deletion could not be verified.')
+        self.events.pop(appointment.event_ids[1], None)
 
     def remove(self, appointment):
         if self.fail_delete:
@@ -179,8 +190,9 @@ class BookingTests(TestCase):
         sync_appointment(item.pk, self.calendar)
         sync_appointment(item.pk, self.calendar)
         item.refresh_from_db()
-        self.assertEqual(item.state, "attention")
+        self.assertEqual(item.state, "canceled")
         self.assertNotIn(item.event_ids[0], self.calendar.events)
+        self.assertNotIn(item.event_ids[1], self.calendar.events)
 
     def test_stale_worker_claim_is_reconciled(self):
         item = self.reserve()

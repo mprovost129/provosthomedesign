@@ -45,11 +45,26 @@ def active_appointments():
     return Appointment.objects.filter(state__in=HOLD_STATES)
 
 
+def meeting_duration(previous=None):
+    return timedelta(minutes=previous.duration_minutes if previous else 30)
+
+
+def reservation_length(previous=None):
+    return meeting_duration(previous)+timedelta(minutes=30)
+
+
+def fits_booking_hours(start, previous=None):
+    local = start.astimezone(EASTERN)
+    return local+reservation_length(previous) <= datetime.combine(local.date(), time(14), EASTERN)
+
+
 def valid_local_slot(start, email, *, previous=None, exclude=None, now=None):
     now = now or timezone.now()
     start = start.astimezone(EASTERN)
     if start not in candidate_times(start.date(), now):
         raise ValidationError("Choose an available Tuesday–Friday time at least 24 hours ahead.")
+    if not fits_booking_hours(start, previous):
+        raise ValidationError('Choose an earlier time so the full meeting and buffer end by 2 PM Eastern.')
     held = active_appointments()
     if exclude:
         held = held.exclude(pk=exclude)
@@ -59,7 +74,7 @@ def valid_local_slot(start, email, *, previous=None, exclude=None, now=None):
         raise ValidationError("You already have an upcoming appointment. Reschedule or cancel that appointment first.")
     if held.filter(local_date=start.date()).count() >= 2:
         raise ValidationError("That day already has two appointments. Please choose another day.")
-    if held.filter(starts_at__lt=start+timedelta(hours=1), reserved_until__gt=start).exists():
+    if held.filter(starts_at__lt=start+reservation_length(previous), reserved_until__gt=start).exists():
         raise ValidationError("That time has just been reserved. Please choose another time.")
 
 
@@ -79,7 +94,7 @@ def available_times(day, *, email, previous=None, provider=None):
             valid_local_slot(start, email, previous=previous)
         except ValidationError:
             continue
-        if not overlaps(start, start+timedelta(hours=1), busy):
+        if not overlaps(start, start+reservation_length(previous), busy):
             result.append(start)
     return result
 
@@ -119,8 +134,9 @@ def available_days(first, last, *, email, previous=None, provider=None, now=None
             continue
         slots = [start for start in choices if
                  (not previous or start != previous.starts_at) and
-                 not overlaps(start,start+timedelta(hours=1),busy) and
-                 not any(start < record['reserved_until'] and start+timedelta(hours=1) > record['starts_at']
+                 fits_booking_hours(start, previous) and
+                 not overlaps(start,start+reservation_length(previous),busy) and
+                 not any(start < record['reserved_until'] and start+reservation_length(previous) > record['starts_at']
                          for record in records)]
         if slots:
             result[day] = slots
@@ -139,10 +155,11 @@ def reserve_appointment(*, email, start, full_name, phone, purpose, key, project
     # Read external availability before taking a database lock. The worker checks
     # it again before and after writing Google events, before any confirmation.
     previous = Appointment.objects.filter(pk=previous_id, email=email).first() if previous_id else None
+    previous_snapshot = (previous.starts_at, previous.ends_at, tuple(previous.event_ids)) if previous else None
     calendar_id = provider.identity(settings.GOOGLE_CALENDAR_ID)["id"]
     if previous and previous.calendar_id != calendar_id:
         raise ValidationError("The appointment calendar changed. Please contact Mike before rescheduling.")
-    busy = provider.busy(start, start+timedelta(hours=1), exclude=previous.event_ids if previous else [], calendar_id=calendar_id)
+    busy = provider.busy(start, start+reservation_length(previous), exclude=previous.event_ids if previous else [], calendar_id=calendar_id)
     with transaction.atomic():
         lock_bookings()
         existing = Appointment.objects.filter(idempotency_key=key).first()
@@ -157,6 +174,8 @@ def reserve_appointment(*, email, start, full_name, phone, purpose, key, project
                 state="confirmed", cancel_requested=False, starts_at__gt=timezone.now()).first()
             if not previous or Appointment.objects.filter(previous=previous, state__in=HOLD_STATES).exists():
                 raise ValidationError("This appointment cannot be rescheduled. Review your upcoming appointment.")
+            if previous_snapshot != (previous.starts_at, previous.ends_at, tuple(previous.event_ids)):
+                raise ValidationError('The appointment changed. Reload and review its current time before rescheduling.')
             if start == previous.starts_at:
                 raise ValidationError("Choose a different time to reschedule this appointment.")
         project = None
@@ -165,11 +184,11 @@ def reserve_appointment(*, email, start, full_name, phone, purpose, key, project
             if not project:
                 raise ValidationError("Choose one of your connected projects.")
         valid_local_slot(start, email, previous=previous)
-        if overlaps(start, start+timedelta(hours=1), busy):
+        if overlaps(start, start+reservation_length(previous), busy):
             raise ValidationError("Your calendar time is no longer available. Please choose another.")
         item = Appointment.objects.create(email=email, full_name=full_name.strip(), phone=phone.strip(),
             purpose=purpose.strip(), project=project, previous=previous, starts_at=start,
-            ends_at=start+timedelta(minutes=30), reserved_until=start+timedelta(hours=1),
+            ends_at=start+meeting_duration(previous), reserved_until=start+reservation_length(previous),
             local_date=start.astimezone(EASTERN).date(), calendar_id=calendar_id, idempotency_key=key)
         consent = {"terms_url": terms_url, "terms_accepted_at": timezone.now().isoformat()} if terms_url else {}
         BookingAudit.objects.create(appointment=item, action="reschedule_requested" if previous else "booking_requested", details=consent)
@@ -211,14 +230,17 @@ def set_booking_access(email, allow, actor):
 
 
 def appointment_notices(item, event):
-    action = "canceled" if event == "canceled" else "rescheduled" if item.previous_id else "confirmed"
+    if NotificationDelivery.objects.filter(appointment=item, appointment_event=event).count() == 2:
+        return
+    action = ("canceled" if event == "canceled" or event.startswith('canceled-') else "restored" if event.startswith('restored-')
+        else "updated" if event.startswith('changed-') else "rescheduled" if item.previous_id else "confirmed")
     start = item.starts_at.astimezone(EASTERN)
     display = start.strftime("%A, %B %d, %Y at %I:%M %p") + " Eastern"
     _, raw = mint_email_token(item.email, destination="booking")
     common = (f"Your appointment is {action}.\nAppointment: {item.reference}\nWhen: {display}\n"
-              f"Meeting length: 30 minutes\n\nPurpose: {item.purpose}\n\n")
+              f"Meeting length: {item.duration_minutes} minutes\n\nPurpose: {item.purpose}\n\n")
     client_body = common + f"Manage your appointment:\n{access_url(raw)}\n\nThis sign-in link expires in 24 hours and can be used once.\n"
-    if event != "canceled":
+    if action != "canceled":
         client_body += "We will contact you to coordinate meeting details. This appointment does not change your project's place in line.\n"
     owner_body = common + f"Client: {item.full_name}\nEmail: {item.email}\nPhone: {item.phone}\n" + (
         f"Project: {item.project}\n" if item.project_id else "") + f"\nManage appointments:\n{site_url(reverse('workqueue:queue'))}#appointments\n"
@@ -235,36 +257,36 @@ def sync_appointment(appointment_id, provider=None):
         # Optional joins cannot be locked by PostgreSQL. The booking singleton
         # serializes related changes; lock only the appointment being processed.
         item = Appointment.objects.select_for_update(of=("self",)).select_related("previous", "project").get(pk=appointment_id)
-        if item.state in ("canceled", "completed"):
+        original_state = item.state
+        previously_closed = original_state in {"canceled", "completed"}
+        if previously_closed and (not item.confirmed_at or item.starts_at < timezone.now()-timedelta(days=7)):
             return False
         if item.state == "syncing" and item.sync_started_at and item.sync_started_at > timezone.now()-timedelta(minutes=15):
             return False
+        if (previously_closed and item.sync_token and item.sync_started_at
+                and item.sync_started_at > timezone.now()-timedelta(minutes=15)
+                and (item.last_sync_at is None or item.last_sync_at < item.sync_started_at)):
+            return False
         was_confirmed = item.confirmed_at is not None
-        item.state = "syncing"
+        if not previously_closed:
+            item.state = "syncing"
+        else:
+            # Watching a deleted/finished meeting must not hold its old slot.
+            item.last_sync_at = None
         item.sync_started_at = timezone.now()
         item.sync_token = uuid.uuid4()
-        item.save(update_fields=["state", "sync_started_at", "sync_token"])
-    outcome, error = None, ""
+        item.save(update_fields=["state", "sync_started_at", "sync_token", "last_sync_at"])
+    outcome, error, google_deleted = None, "", False
+    from .calendar_reconciliation import LostClaim, reconcile_confirmed, original_deleted
     try:
-        if item.cancel_requested:
+        if item.cancel_requested and not previously_closed:
             provider.remove(item)
             outcome = "canceled"
         elif was_confirmed:
-            # Edits/deletions made directly in Google need owner review, rather
-            # than silently recreating or accepting a different appointment.
-            from .calendar_provider import validate_event
-            for expected in expected_events(item):
-                actual = provider.get(item.calendar_id, expected["id"])
-                if actual is None:
-                    raise CalendarUnavailable("Calendar event missing; review or cancel this booking.")
-                validate_event(actual, expected)
-            if item.starts_at > timezone.now() and overlaps(item.starts_at, item.reserved_until,
-                    provider.busy(item.starts_at, item.reserved_until, exclude=item.event_ids, calendar_id=item.calendar_id)):
-                raise CalendarUnavailable("Calendar conflict; review this confirmed appointment.")
-            if item.reserved_until <= timezone.now():
-                outcome = "completed"
-            else:
-                outcome = "confirmed"
+            outcome, google_deleted = reconcile_confirmed(item, provider, previously_closed=previously_closed)
+        elif original_deleted(item.previous_id):
+            provider.remove(item)
+            outcome = "canceled"
         else:
             if item.starts_at <= timezone.now():
                 raise CalendarUnavailable("Booking time passed before confirmation; owner review required.")
@@ -280,6 +302,8 @@ def sync_appointment(appointment_id, provider=None):
             if item.previous_id:
                 provider.remove(item.previous)
             outcome = "confirmed"
+    except LostClaim:
+        return False
     except CalendarUnavailable as exc:
         error = str(exc)[:200]
     except Exception:
@@ -294,21 +318,39 @@ def sync_appointment(appointment_id, provider=None):
         current.last_sync_at = timezone.now()
         current.last_error = error
         if error:
-            current.state = "attention"
-        elif current.cancel_requested and outcome != "canceled":
+            if not previously_closed or current.state != original_state:
+                current.state = "attention"
+        elif (current.cancel_requested or (not was_confirmed and original_deleted(current.previous_id))) and outcome != "canceled":
+            current.cancel_requested = True
             # Cancellation arriving during a provider write suppresses confirmation.
             current.state = "pending"
         else:
             current.state = outcome
             if outcome == "confirmed" and current.confirmed_at is None:
                 current.confirmed_at = timezone.now()
-            if outcome == "confirmed" and item.previous_id:
+            if outcome == "confirmed" and item.previous_id and not was_confirmed:
                 previous = Appointment.objects.select_for_update().get(pk=item.previous_id)
                 previous.state = "canceled"
                 previous.save(update_fields=["state"])
                 BookingAudit.objects.create(appointment=previous, action="replaced_by_reschedule", details={"replacement": str(item.pk)})
-            if outcome in ("confirmed", "canceled") and not (outcome == "confirmed" and was_confirmed):
-                appointment_notices(current, outcome)
-            BookingAudit.objects.create(appointment=current, action="calendar_" + outcome)
-        current.save(update_fields=["state", "last_sync_at", "last_error", "confirmed_at"])
+            if outcome == "confirmed":
+                current.buffer_pending_insert = False
+                if current.calendar_change_kind:
+                    appointment_notices(current, f"{current.calendar_change_kind}-{current.calendar_change_number}")
+                    current.calendar_change_kind = ''
+                elif not was_confirmed:
+                    appointment_notices(current, outcome)
+            elif outcome == "canceled" and original_state != "canceled":
+                appointment_notices(current, f"canceled-{current.calendar_change_number}" if current.calendar_change_number else outcome)
+            if outcome in {"canceled", "completed"}:
+                current.calendar_change_kind = ''
+                current.buffer_pending_insert = False
+            if google_deleted and original_state != "canceled":
+                BookingAudit.objects.create(appointment=current, action="google_canceled")
+            if outcome != original_state:
+                BookingAudit.objects.create(appointment=current, action="calendar_" + outcome)
+        current.sync_token = None
+        current.sync_started_at = None
+        current.save(update_fields=["state", "last_sync_at", "last_error", "confirmed_at", "cancel_requested",
+            "buffer_pending_insert", "calendar_change_kind", "sync_token", "sync_started_at"])
     return True

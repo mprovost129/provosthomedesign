@@ -20,9 +20,12 @@ class Command(BaseCommand):
         if not 1 <= options["limit"] <= 1000:
             raise CommandError("Use a limit from 1 to 1000.")
         now = timezone.now()
-        candidates = Appointment.objects.exclude(state__in=["canceled", "completed"]).filter(
-            Q(last_sync_at__isnull=True) | Q(last_sync_at__lt=now-timedelta(minutes=5))).exclude(
-            state="syncing", sync_started_at__gt=now-timedelta(minutes=15)).order_by("-cancel_requested", F("last_sync_at").asc(nulls_first=True), "created_at")
+        candidates = Appointment.objects.filter(
+            ~Q(state__in=["canceled", "completed"]) | Q(confirmed_at__isnull=False, starts_at__gte=now-timedelta(days=7))).filter(
+            Q(last_sync_at__isnull=True) | Q(last_sync_at__lt=now-timedelta(seconds=45))).exclude(
+            Q(sync_started_at__gt=now-timedelta(minutes=15)) & (
+                Q(state="syncing") | (Q(state__in=["canceled", "completed"]) & (
+                    Q(last_sync_at__isnull=True) | Q(last_sync_at__lt=F('sync_started_at')))))).order_by("-cancel_requested", F("last_sync_at").asc(nulls_first=True), "created_at")
         provider = calendar_provider()
         processed = sum(sync_appointment(pk, provider) for pk in list(candidates.values_list("pk", flat=True)[:options["limit"]]))
         self.stdout.write(f"Reconciled {processed} appointments; uncertain outcomes remain reserved for review.")

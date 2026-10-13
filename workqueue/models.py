@@ -415,6 +415,19 @@ class NotificationDelivery(models.Model):
                                               name="wq_appointment_notice_unique")]
 
 
+    @property
+    def appointment_event_label(self):
+        if self.appointment_event.startswith('changed-'):
+            return 'Time updated'
+        if self.appointment_event.startswith('restored-'):
+            return 'Restored'
+        if self.appointment_event == 'canceled' or self.appointment_event.startswith('canceled-'):
+            return 'Canceled'
+        if self.appointment_event == 'confirmed':
+            return 'Confirmation'
+        return self.appointment_event
+
+
 class CRMSettings(models.Model):
     """Owner communication preferences; reminders stay off until enabled."""
     id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
@@ -582,6 +595,11 @@ class Appointment(models.Model):
     confirmed_at = models.DateTimeField(null=True, blank=True)
     sync_started_at = models.DateTimeField(null=True, blank=True)
     sync_token = models.UUIDField(null=True, blank=True)
+    buffer_event_id = models.CharField(max_length=64, blank=True, default='', db_default='')
+    buffer_pending_insert = models.BooleanField(default=False, db_default=False)
+    calendar_change_number = models.PositiveIntegerField(default=0, db_default=0)
+    calendar_change_kind = models.CharField(max_length=10, blank=True, default='', db_default='',
+        choices=[('', 'No pending change'), ('changed', 'Time changed'), ('restored', 'Restored')])
     last_error = models.CharField(max_length=200, blank=True)
 
     class Meta:
@@ -591,12 +609,16 @@ class Appointment(models.Model):
                        models.UniqueConstraint(fields=["previous"], condition=Q(state__in=["pending", "syncing", "confirmed", "attention"]),
                                                name="wq_one_active_reschedule"),
                        models.CheckConstraint(condition=Q(state__in=["pending", "syncing", "confirmed", "attention", "canceled", "completed"]), name="wq_valid_appointment_state"),
-                       models.CheckConstraint(condition=Q(ends_at=models.F("starts_at")+timedelta(minutes=30)), name="wq_30_minute_meeting"),
+                       models.CheckConstraint(condition=Q(ends_at__lte=models.F("starts_at")+timedelta(hours=8)), name="wq_meeting_duration_limit"),
                        models.CheckConstraint(condition=Q(reserved_until=models.F("ends_at")+timedelta(minutes=30)), name="wq_30_minute_buffer")]
 
     @property
     def event_ids(self):
-        return ["phd" + self.pk.hex + "a", "phd" + self.pk.hex + "b"]
+        return ["phd" + self.pk.hex + "a", self.buffer_event_id or "phd" + self.pk.hex + "b"]
+
+    @property
+    def duration_minutes(self):
+        return int((self.ends_at.timestamp()-self.starts_at.timestamp())/60)
 
     @property
     def reference(self):

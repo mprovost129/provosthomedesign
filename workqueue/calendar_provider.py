@@ -95,10 +95,10 @@ class GoogleCalendar:
     def path(self, calendar_id, event_id=""):
         return "/calendars/" + quote(calendar_id, safe="") + "/events" + ("/" + quote(event_id, safe="") if event_id else "")
 
-    def identity(self, calendar_id):
+    def identity(self, calendar_id, *, refresh=False):
         if not hasattr(self, "_identities"):
             self._identities = {}
-        if calendar_id not in self._identities:
+        if refresh or calendar_id not in self._identities:
             metadata = self.request("GET", "/calendars/" + quote(calendar_id, safe=""))
             if not metadata.get("id") or not metadata.get("timeZone"):
                 raise CalendarUnavailable("Calendar identity could not be verified.")
@@ -146,8 +146,36 @@ class GoogleCalendar:
             raise CalendarUnavailable("Calendar save could not be verified.")
         validate_event(actual, expected)
 
+    def reconcile_buffer(self, appointment, expected):
+        actual = self.get(appointment.calendar_id, expected['id'])
+        if actual is None:
+            self.ensure(appointment, expected)
+            return
+        if (actual.get('id') != expected['id'] or actual.get('status') == 'cancelled'
+                or actual.get('extendedProperties', {}).get('private', {}).get('phdAppointment') != str(appointment.pk)
+                or not actual.get('etag')):
+            raise CalendarMismatch('Calendar buffer identity changed; please review this meeting.')
+        try:
+            validate_event(actual, expected)
+        except CalendarMismatch:
+            self.request('PATCH', self.path(appointment.calendar_id, expected['id']),
+                json={key:expected[key] for key in ['start','end','transparency','visibility']},
+                headers={'If-Match':actual['etag']}, params={'sendUpdates':'none'})
+            verified = self.get(appointment.calendar_id, expected['id'])
+            if verified is None:
+                raise CalendarUnavailable('Calendar buffer update could not be verified.')
+            validate_event(verified, expected)
+
     def remove(self, appointment):
+        self._remove_events(appointment, appointment.event_ids)
+
+    def remove_buffer(self, appointment):
+        self._remove_events(appointment, [appointment.event_ids[1]])
+
+    def _remove_events(self, appointment, event_ids):
         for expected in expected_events(appointment):
+            if expected['id'] not in event_ids:
+                continue
             actual = self.get(appointment.calendar_id, expected["id"])
             if actual is None or actual.get("status") == "cancelled":
                 continue
@@ -157,7 +185,7 @@ class GoogleCalendar:
                 raise CalendarUnavailable("Calendar deletion could not be verified.")
             self.request("DELETE", self.path(appointment.calendar_id, expected["id"]), absent=True,
                          headers={"If-Match": actual["etag"]}, params={"sendUpdates": "none"})
-        for event_id in appointment.event_ids:
+        for event_id in event_ids:
             actual = self.get(appointment.calendar_id, event_id)
             if actual and actual.get("status") != "cancelled":
                 raise CalendarUnavailable("Calendar deletion could not be verified.")
@@ -172,7 +200,7 @@ class PreviewCalendar:
         events.update(cache.get("phd-preview-calendar-events", {}))
         return events
 
-    def identity(self, calendar_id):
+    def identity(self, calendar_id, *, refresh=False):
         return {"id": calendar_id, "timeZone": "America/New_York"}
 
     def busy(self, start, end, *, exclude=(), calendar_id=None):
@@ -189,6 +217,19 @@ class PreviewCalendar:
         else:
             events[expected["id"]] = {**expected, "etag": "preview-only"}
             cache.set("phd-preview-calendar-events", events, None)
+
+    def reconcile_buffer(self, appointment, expected):
+        events = self.events()
+        actual = events.get(expected['id'])
+        if actual and actual.get('extendedProperties', {}).get('private', {}).get('phdAppointment') != str(appointment.pk):
+            raise CalendarMismatch('Calendar buffer identity changed.')
+        events[expected['id']] = {**expected, 'etag':'preview-only'}
+        cache.set('phd-preview-calendar-events', events, None)
+
+    def remove_buffer(self, appointment):
+        events = self.events()
+        events.pop(appointment.event_ids[1], None)
+        cache.set('phd-preview-calendar-events', events, None)
 
     def remove(self, appointment):
         events = self.events()
