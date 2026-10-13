@@ -71,6 +71,9 @@ class BookingTests(TestCase):
         self.provider = patch("workqueue.booking_views.available_times", side_effect=lambda day, **kw: available_times(day, provider=self.calendar, **kw))
         self.provider.start()
         self.addCleanup(self.provider.stop)
+        month_provider = patch("workqueue.booking.calendar_provider", return_value=self.calendar)
+        month_provider.start()
+        self.addCleanup(month_provider.stop)
 
     def reserve(self, email="alex@example.invalid", start=START, **kwargs):
         BookingAccess.objects.get_or_create(email=email)

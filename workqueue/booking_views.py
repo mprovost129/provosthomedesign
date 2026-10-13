@@ -16,13 +16,14 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 
 from .access import authorized_projects, authorized_work, new_intake_token, read_intake_token, session_digest, verified_email
-from .booking import (HOLD_STATES, available_times, eligible, lock_bookings, request_cancel,
+from .booking import (HOLD_STATES, available_days, available_times, eligible, lock_bookings, request_cancel,
                       reserve_appointment, set_booking_access, sync_appointment)
 from .calendar_provider import EASTERN, CalendarUnavailable
 from .client_views import limited
 from .client_security import verify_form
 from .models import Appointment, BookingAudit, NotificationDelivery
 from .notifications import queue_signin
+from .booking_calendar import calendar_month, month_context
 
 
 def booking_enabled(view):
@@ -39,7 +40,7 @@ class AppointmentForm(forms.Form):
         error_messages={"required": "Please agree to the Terms & Conditions before requesting an appointment."})
     token = forms.CharField(widget=forms.HiddenInput)
     day = forms.DateField(label="Appointment date", widget=forms.DateInput(attrs={"type": "date"}))
-    slot = forms.ChoiceField(label="Available start time (Eastern)")
+    slot = forms.ChoiceField(label="Available start time (Eastern)", widget=forms.RadioSelect)
     full_name = forms.CharField(label="Full name", max_length=200)
     phone = forms.CharField(label="Phone number", max_length=50)
     purpose = forms.CharField(label="What would you like to discuss?", max_length=3000, widget=forms.Textarea(attrs={"rows": 3}))
@@ -47,7 +48,7 @@ class AppointmentForm(forms.Form):
 
     def __init__(self, *args, slots=(), email="", **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["slot"].choices = [("", "Choose a time"), *[(start.isoformat(), start.strftime("%I:%M %p").lstrip("0")) for start in slots]]
+        self.fields["slot"].choices = [(start.isoformat(), start.strftime("%I:%M %p").lstrip("0")) for start in slots]
         self.fields["project"].queryset = authorized_projects(email)
 
 
@@ -91,9 +92,9 @@ def book(request):
     raw_day = request.POST.get("day") if request.method == "POST" else request.GET.get("day")
     day_error = ""
     try:
-        day = forms.DateField().clean(raw_day) if raw_day else timezone.now().astimezone(EASTERN).date()+timedelta(days=1)
+        day = forms.DateField().clean(raw_day) if raw_day else None
     except ValidationError:
-        day = timezone.now().astimezone(EASTERN).date()+timedelta(days=1)
+        day = None
         day_error = "Choose a valid date."
     initial = {"token": new_intake_token(request), "day": day}
     recent = authorized_work(email).filter(submissions__owner_email=email).order_by("-received_at").first() if email else None
@@ -101,11 +102,17 @@ def book(request):
         initial.update(full_name=recent.contact_full_name, phone=recent.contact_phone)
     if previous:
         initial.update(full_name=previous.full_name, phone=previous.phone, purpose=previous.purpose, project=previous.project_id)
-    slots, unavailable = [], ""
+    slots, unavailable, availability = [], "", {}
+    now = timezone.now()
+    month = calendar_month(request.GET.get('month',''),day,now)
     has_upcoming = bool(email and Appointment.objects.filter(email=email, state__in=HOLD_STATES, reserved_until__gt=timezone.now()).exists())
     if permitted and not day_error and (previous or not has_upcoming):
         try:
-            slots = available_times(day, email=email, previous=previous)
+            last = (month.replace(day=28)+timedelta(days=4)).replace(day=1)-timedelta(days=1)
+            availability = available_days(month,last,email=email,previous=previous)
+            if day:
+                # Recheck the selected day; month display is not a reservation.
+                slots = available_times(day, email=email, previous=previous)
         except CalendarUnavailable:
             unavailable = "We cannot check calendar availability right now. Please try again later."
     form = AppointmentForm(request.POST or None, initial=initial, slots=slots, email=email)
@@ -142,6 +149,9 @@ def book(request):
     records = list(appointments)
     return render(request, "workqueue/booking.html", {"client_email": email, "permitted": permitted, "form": form,
         "day": day, "day_error": day_error, "unavailable": unavailable, "slots": slots, "previous": previous,
+        "booking_calendar": month_context(month,availability,day,now,previous),
+        "calendar_slots": {key.isoformat(): [{'value':start.isoformat(),'label':start.strftime('%I:%M %p').lstrip('0')}
+                                             for start in values] for key,values in availability.items()},
         "access_form": access_form, "sent": sent, "has_upcoming": has_upcoming,
         "appointments": [item for item in records if item.state in HOLD_STATES],
         "closed_appointments": [item for item in records if item.state not in HOLD_STATES],

@@ -1,0 +1,21 @@
+<section class="card appointment-calendar" id="booking-calendar" aria-labelledby="calendar-heading">
+  <h2 id="calendar-heading">{% if previous %}Choose a new date{% else %}Choose a date{% endif %}</h2>
+  <p>Choose an available day, then a start time. All times are Eastern.</p>
+  {% if day_error %}<p class="errorlist" role="alert">{{ day_error }}</p>{% endif %}
+  {% if unavailable %}<p class="errorlist" role="alert">{{ unavailable }} <a href="{{ booking_calendar.month_url }}">Try again</a></p>{% endif %}
+  <nav class="calendar-month" aria-label="Calendar months">
+    {% if booking_calendar.previous_url %}<a href="{{ booking_calendar.previous_url }}" data-calendar-navigation aria-label="Previous month">‹ Previous</a>{% else %}<span aria-hidden="true"></span>{% endif %}
+    <h3>{{ booking_calendar.month|date:'F Y' }}</h3>
+    {% if booking_calendar.next_url %}<a href="{{ booking_calendar.next_url }}" data-calendar-navigation aria-label="Next month">Next ›</a>{% else %}<span aria-hidden="true"></span>{% endif %}
+  </nav>
+  <form method="get" action="{% url 'workqueue:book' %}#meeting" id="calendar-day-form">
+    {% if previous %}<input type="hidden" name="reschedule" value="{{ previous.pk }}">{% endif %}
+    <table class="calendar-grid"><caption class="visually-hidden">{{ booking_calendar.month|date:'F Y' }} appointment availability</caption>
+      <thead><tr><th scope="col"><abbr title="Sunday">Sun</abbr></th><th scope="col"><abbr title="Monday">Mon</abbr></th><th scope="col"><abbr title="Tuesday">Tue</abbr></th><th scope="col"><abbr title="Wednesday">Wed</abbr></th><th scope="col"><abbr title="Thursday">Thu</abbr></th><th scope="col"><abbr title="Friday">Fri</abbr></th><th scope="col"><abbr title="Saturday">Sat</abbr></th></tr></thead>
+      <tbody>{% for week in booking_calendar.weeks %}<tr>{% for cell in week %}<td><button type="submit" name="day" value="{{ cell.date|date:'Y-m-d' }}" data-day-label="{{ cell.date|date:'l, F j, Y' }}" class="calendar-day{% if cell.selected %} selected{% endif %}{% if cell.outside %} outside{% endif %}" {% if not cell.available %}disabled{% endif %} aria-label="{{ cell.date|date:'l, F j, Y' }} — {% if cell.available %}available{% else %}unavailable{% endif %}" {% if cell.selected %}aria-pressed="true"{% endif %}>{% if cell.outside %}<span aria-hidden="true">{{ cell.date|date:'j' }}</span>{% else %}{{ cell.date|date:'j' }}{% endif %}</button></td>{% endfor %}</tr>{% endfor %}</tbody>
+    </table>
+  </form>
+  <p class="calendar-key"><span class="available-dot" aria-hidden="true"></span> Available <span class="unavailable-dot" aria-hidden="true"></span> Gray days have no bookable times.</p>
+  {% if booking_calendar.earliest %}<p>Next opening this month: <a href="{{ booking_calendar.earliest_url }}" data-calendar-day="{{ booking_calendar.earliest|date:'Y-m-d' }}">{{ booking_calendar.earliest|date:'l, F j' }}</a>.</p>{% elif not unavailable %}<p>No openings in this month. {% if booking_calendar.next_url %}<a href="{{ booking_calendar.next_url }}" data-calendar-navigation>Check next month</a>.{% else %}Please contact Mike if you need another time.{% endif %}</p>{% endif %}
+  <p class="muted">Availability includes Mike’s calendar, the 30-minute buffer, the two-appointment daily limit and 24-hour notice. A date selection holds no time; we check again when you request it.</p>
+</section>

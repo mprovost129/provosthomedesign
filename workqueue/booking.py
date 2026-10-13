@@ -84,6 +84,49 @@ def available_times(day, *, email, previous=None, provider=None):
     return result
 
 
+def available_days(first, last, *, email, previous=None, provider=None, now=None):
+    """One bounded calendar read and one local reservation read for a month.
+
+    Returns only bookable start times, never private calendar event details.
+    The reservation path still validates the chosen time again under its lock.
+    """
+    if not 0 <= (last-first).days <= 30:
+        raise ValueError('Availability must cover at most one calendar month.')
+    now = now or timezone.now()
+    candidates = {}
+    for index in range((last-first).days+1):
+        day = first+timedelta(days=index)
+        choices = candidate_times(day, now)
+        if choices:
+            candidates[day] = choices
+    if not candidates:
+        return {}
+    held = active_appointments()
+    if previous:
+        held = held.exclude(pk=previous.pk)
+    records = list(held.filter(Q(local_date__range=(first,last)) |
+                              Q(email=email, reserved_until__gt=now)).values(
+                                  'email','local_date','starts_at','reserved_until'))
+    if any(record['email'] == email and record['reserved_until'] > now for record in records):
+        return {}
+    provider = provider or calendar_provider()
+    busy = provider.busy(datetime.combine(min(candidates),time(),EASTERN),
+                         datetime.combine(max(candidates)+timedelta(days=1),time(),EASTERN),
+                         exclude=previous.event_ids if previous else [])
+    result = {}
+    for day, choices in candidates.items():
+        if sum(record['local_date'] == day for record in records) >= 2:
+            continue
+        slots = [start for start in choices if
+                 (not previous or start != previous.starts_at) and
+                 not overlaps(start,start+timedelta(hours=1),busy) and
+                 not any(start < record['reserved_until'] and start+timedelta(hours=1) > record['starts_at']
+                         for record in records)]
+        if slots:
+            result[day] = slots
+    return result
+
+
 def reserve_appointment(*, email, start, full_name, phone, purpose, key, project_id=None, previous_id=None, provider=None, terms_url=""):
     email = normalize_email(email)
     if (not full_name.strip() or not phone.strip() or not purpose.strip()
