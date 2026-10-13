@@ -1,5 +1,5 @@
 """Global attention counts and filters; positions still use the full active queue."""
-from django.db.models import Exists, OuterRef, Q
+from django.db.models import Exists, OuterRef, Q, F
 from django.utils import timezone
 
 from .models import CLOSED_STATUSES, InformationResponse, NotificationDelivery, Status, WorkItem
@@ -26,10 +26,16 @@ def with_email_attention(items):
         | Q(completed_delivery__work_item_id=OuterRef("pk"))
         | Q(information_reminder__work_item_id=OuterRef("pk"))
         | Q(client_email__work_item_id=OuterRef("pk"))
+        | Q(review_message__review__work_item_id=OuterRef("pk"))
     )
     replies = InformationResponse.objects.filter(information_request__work_item_id=OuterRef("pk"), reviewed_at__isnull=True,
                                                   work_item__deleted_at__isnull=True)
-    return items.annotate(email_attention=Exists(issues), response_attention=Exists(replies))
+    from .portal_discussion_models import ReviewMessage
+    review_replies = ReviewMessage.objects.filter(review__work_item_id=OuterRef("pk"), from_staff=False,
+        review__work_item__deleted_at__isnull=True).filter(
+            Q(review__discussion__isnull=True) | Q(pk__gt=F("review__discussion__read_through")))
+    return items.annotate(email_attention=Exists(issues), review_reply_attention=Exists(review_replies),
+        response_attention=Exists(replies) | Exists(review_replies))
 
 
 def attention_summary():

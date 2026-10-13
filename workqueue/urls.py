@@ -7,6 +7,8 @@ from . import health
 from . import portal_views
 from . import portal_review_views
 from . import portal_export_views
+from . import portal_discussion_views
+from . import portal_notice_views
 from . import crm_views
 from . import shared_contact_views
 from . import communication_views
@@ -22,6 +24,9 @@ from . import invoice_history_views
 
 app_name = "workqueue"
 urlpatterns = [
+    path('work-projects/<uuid:project_id>/invitations/', portal_notice_views.invitations, name='portal_invitations'),
+    path('client-portal/projects/<uuid:project_id>/reviews/<uuid:review_id>/conversation/', portal_discussion_views.client_action, name='portal_review_discussion'),
+    path('work-projects/<uuid:project_id>/reviews/<uuid:review_id>/conversation/', portal_discussion_views.staff_action, name='staff_review_discussion'),
     path('client-portal/projects/<uuid:project_id>/reviews/<uuid:review_id>/marked-plan/', portal_export_views.client_export, name='portal_marked_plan'),
     path('work-projects/<uuid:project_id>/reviews/<uuid:review_id>/marked-plan/', portal_export_views.staff_export, name='staff_marked_plan'),
     path('client-portal/projects/<uuid:project_id>/documents/<uuid:version_id>/review/', portal_review_views.start, name='start_plan_review'),

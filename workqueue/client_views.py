@@ -311,11 +311,23 @@ def confirm_access(request):
             request.session["queue_email_verified_until"] = (timezone.now() + timedelta(days=7)).timestamp()
             if record.destination == 'portal':
                 project_id = request.session.pop('portal_return_project', '')
+                review_id = request.session.pop('portal_return_review', '')
                 from .portal_services import memberships
                 try:
                     member = memberships(record.email).filter(project_id=uuid.UUID(project_id)).first() if project_id else None
                 except (ValueError, TypeError):
                     member = None
+                if member and review_id:
+                    from .portal_review_models import PlanReview
+                    from .portal_services import visible_documents
+                    try:
+                        review = PlanReview.objects.filter(pk=uuid.UUID(review_id), member=member,
+                            client_id=member.client_id, contact_id=member.contact_id, author_email=member.email,
+                            document_version__document__in=visible_documents(member)).first()
+                    except (ValueError, TypeError):
+                        review = None
+                    if review:
+                        return redirect(reverse('workqueue:portal_review', args=[member.project_id, review.pk])+'#discussion')
                 return redirect('workqueue:portal_project', member.project_id) if member else redirect('workqueue:portal_home')
             target = reverse("workqueue:book" if record.destination == "booking" and getattr(settings, "BOOKING_ENABLED", False) else "workqueue:tracking")
             if record.reference:

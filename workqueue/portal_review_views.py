@@ -101,6 +101,7 @@ def download_report(record):
 def review(request, project_id, review_id):
     if not verified_email(request):
         request.session['portal_return_project'] = str(project_id)
+        request.session['portal_return_review'] = str(review_id)
         return redirect('workqueue:portal_home')
     member, record = client_review(request, project_id, review_id)
     if request.GET.get('report') == '1':
@@ -112,7 +113,10 @@ def review(request, project_id, review_id):
             check_identity(record, member)
         except PermissionDenied:
             can_edit = False
-    return render(request, 'workqueue/portal_review.html', review_context(record, can_edit=can_edit))
+    context = review_context(record, can_edit=can_edit)
+    from .portal_discussion_views import discussion_context
+    context.update(discussion_context(record, page=request.GET.get('discussion_page')))
+    return render(request, 'workqueue/portal_review.html', context)
 
 
 @intake_enabled
@@ -189,6 +193,9 @@ def staff_review(request, project_id, review_id):
     context = review_context(record, staff=True)
     from .views import staff_preview
     context['can_mark_reviewed'] = not staff_preview(request) and request.user.has_perm('workqueue.change_workitem')
+    context['can_manage_discussion'] = context['can_mark_reviewed']
+    from .portal_discussion_views import discussion_context
+    context.update(discussion_context(record, staff=True, page=request.GET.get('discussion_page')))
     return render(request, 'workqueue/portal_review.html', context)
 
 

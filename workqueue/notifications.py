@@ -76,8 +76,11 @@ def queue_signin(email, reference="", destination="tracking"):
 def deliver_pending(limit=100):
     from .reminders import queue_due_reminders, cancel_ineligible_reminder
     queue_due_reminders(limit)
+    from .portal_notices import queue_review_reminders, cancel_ineligible_portal_notice
+    queue_review_reminders(limit)
     from .crm_mail import queue_morning_digest
     queue_morning_digest()
+    from .portal_discussions import cancel_ineligible_reply
     # A worker that crashed after handing a message to the provider may have sent it.
     # Hold stale sending records instead of automatically sending a second copy.
     NotificationDelivery.objects.filter(state="sending", last_attempt_at__lt=timezone.now()-timedelta(minutes=15)).update(
@@ -97,6 +100,10 @@ def deliver_pending(limit=100):
             if deleted:
                 record.state, record.body = 'canceled', ''
                 record.save(update_fields=['state', 'body'])
+                continue
+            if cancel_ineligible_portal_notice(record):
+                continue
+            if cancel_ineligible_reply(record):
                 continue
             if cancel_ineligible_reminder(record):
                 continue

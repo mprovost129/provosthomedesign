@@ -630,3 +630,7 @@ from .time_billing_models import TimeBillingRate, TimeBillingBatch, TimeBillingL
 from .portal_models import ClientProject, ProjectPortal, PortalMember, PortalDocument, PortalDocumentVersion
 from .portal_review_models import PlanReview
 from .portal_export_models import PlanReviewExport
+
+from .portal_discussion_models import ReviewDiscussion, ReviewNoteState, ReviewMessage
+
+from .portal_notice_models import PortalInvitationBatch, PortalInvitation, PortalReviewReminder

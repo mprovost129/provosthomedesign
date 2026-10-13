@@ -148,7 +148,7 @@ def proposal(request, project_id, revision_id):
 @private_view
 @require_http_methods(['POST'])
 def sign_out(request):
-    for key in ['queue_verified_email', 'queue_email_verified_until', 'portal_return_project', 'proposal_invitation']:
+    for key in ['queue_verified_email', 'queue_email_verified_until', 'portal_return_project', 'portal_return_review', 'proposal_invitation']:
         request.session.pop(key, None)
     request.session.cycle_key()
     return redirect('workqueue:portal_home')
