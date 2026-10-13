@@ -5,6 +5,7 @@ from . import booking_views
 from . import delivery_views
 from . import health
 from . import portal_views
+from . import portal_review_views
 from . import crm_views
 from . import shared_contact_views
 from . import communication_views
@@ -20,6 +21,13 @@ from . import invoice_history_views
 
 app_name = "workqueue"
 urlpatterns = [
+    path('client-portal/projects/<uuid:project_id>/documents/<uuid:version_id>/review/', portal_review_views.start, name='start_plan_review'),
+    path('client-portal/projects/<uuid:project_id>/reviews/<uuid:review_id>/', portal_review_views.review, name='portal_review'),
+    path('client-portal/projects/<uuid:project_id>/reviews/<uuid:review_id>/save/', portal_review_views.save, name='save_plan_review'),
+    path('client-portal/projects/<uuid:project_id>/reviews/<uuid:review_id>/submit/', portal_review_views.submit, name='submit_plan_review'),
+    path('work-projects/<uuid:project_id>/reviews/', portal_review_views.staff_reviews, name='staff_plan_reviews'),
+    path('work-projects/<uuid:project_id>/reviews/<uuid:review_id>/', portal_review_views.staff_review, name='staff_plan_review'),
+    path('work-projects/<uuid:project_id>/reviews/<uuid:review_id>/plan/', portal_review_views.staff_plan, name='staff_review_plan'),
     path('client-portal/', portal_views.home, name='portal_home'),
     path('client-portal/sign-out/', portal_views.sign_out, name='portal_logout'),
     path('client-portal/projects/<uuid:project_id>/', portal_views.project, name='portal_project'),

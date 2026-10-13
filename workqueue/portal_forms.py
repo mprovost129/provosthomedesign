@@ -24,6 +24,7 @@ class MembershipForm(forms.Form):
     version = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
     contact = ContactChoice(queryset=ClientContact.objects.none(), label='Client and contact')
     financial_access = forms.BooleanField(required=False, label='Include this client’s sent proposals and invoices')
+    review_access = forms.BooleanField(required=False, label='Allow plan comments and revision requests')
     confirm = forms.BooleanField(label='I reviewed this email address and approve access to this project.')
 
     def __init__(self, *args, project, **kwargs):

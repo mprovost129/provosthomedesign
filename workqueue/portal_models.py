@@ -30,6 +30,7 @@ class PortalMember(models.Model):
     # Frozen at approval: editing/merging CRM contacts must not grant a new identity access.
     email = models.EmailField()
     financial_access = models.BooleanField(default=False)
+    review_access = models.BooleanField(default=False)
     granted_at = models.DateTimeField(default=timezone.now)
     revoked_at = models.DateTimeField(null=True, blank=True)
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)

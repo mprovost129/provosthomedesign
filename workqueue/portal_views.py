@@ -101,7 +101,8 @@ def project(request, project_id):
         document.latest = document.history[0] if document.history else None
     invoices, history = financial_records(member)
     return render(request, 'workqueue/portal_project.html', {'project': member.project, 'member': member,
-        'client_email': member.email, 'documents': documents, 'proposals': visible_proposals(member),
+        'client_email': member.email, 'documents': documents,
+        'plan_reviews': member.plan_reviews.filter(client_id=member.client_id, contact_id=member.contact_id, author_email=member.email, document_version__document__in=visible_documents(member)).select_related('document_version', 'work_item')[:50], 'proposals': visible_proposals(member),
         'has_general_documents': any(doc.kind != 'invoice' for doc in documents),
         'invoices': invoices, 'invoice_history': history})
 
@@ -179,7 +180,7 @@ def manage(request, project_id):
                     raise ValidationError('Review the client, permissions, and approval checkbox.')
                 data = access_form.cleaned_data
                 grant_member(project, version=data['version'], contact_id=data['contact'].pk,
-                    financial_access=data['financial_access'], actor=request.user)
+                    financial_access=data['financial_access'], review_access=data['review_access'], actor=request.user)
                 messages.success(request, 'Project access saved. Copy the project link below to share it with this contact.')
             elif action == 'publish':
                 if not publication.is_valid():
@@ -220,7 +221,8 @@ def manage(request, project_id):
         doc.latest = next(iter(doc.revisions.all()), None)
     return render(request, 'workqueue/portal_manage.html', {'project': project, 'version': version,
         'client_form': client_form, 'access_form': access_form, 'publication': publication, 'documents': docs,
-        'members': project.portal_members.select_related('client', 'contact'), 'ready_uploads': ready,
+        'members': project.portal_members.select_related('client', 'contact'),
+        'plan_reviews': project.portal_documents.filter(revisions__plan_reviews__submitted_at__isnull=False).exists(), 'ready_uploads': ready,
         'project_link': site_url(reverse('workqueue:portal_project', args=[project.pk])),
         'direct_uploads': settings.INTAKE_DIRECT_UPLOADS,
         'can_change': not staff_preview(request) and request.user.has_perm('workqueue.change_workitem')}, status=status)

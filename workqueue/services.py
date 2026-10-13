@@ -26,7 +26,7 @@ def audit_value(value):
 
 
 @transaction.atomic
-def create_work(*, data, actor, idempotency_key=None, staff_contact=None):
+def create_work(*, data, actor, idempotency_key=None, staff_contact=None, portal_member=None):
     state = lock_queue()
     if staff_contact is not None:
         from .models import ClientContact
@@ -37,6 +37,19 @@ def create_work(*, data, actor, idempotency_key=None, staff_contact=None):
         staff_contact = ClientContact.objects.select_related("client").get(pk=staff_contact.pk)
         if staff_contact.client.merged_into_id or staff_contact.archived_at:
             raise ValidationError("Choose an active contact on the current client record.")
+    if portal_member is not None:
+        from .portal_models import PortalMember
+        from .access import normalize_email
+        from django.core.exceptions import PermissionDenied
+        if staff_contact is not None or actor is not None:
+            raise PermissionDenied
+        portal_member = PortalMember.objects.select_related('contact', 'client').get(pk=portal_member.pk)
+        if (portal_member.revoked_at or not portal_member.review_access or portal_member.client.merged_into_id
+                or portal_member.contact.archived_at or portal_member.contact.client_id != portal_member.client_id
+                or normalize_email(portal_member.contact.email or '') != portal_member.email
+                or data.get('project') is None or data['project'].pk != portal_member.project_id
+                or data.get('kind') != 'update' or normalize_email(data.get('contact_email', '')) != portal_member.email):
+            raise PermissionDenied
     key = idempotency_key or f"staff:{uuid.uuid4()}"
     existing = Submission.objects.select_related("work_item").filter(idempotency_key=key).first()
     if existing:
@@ -56,7 +69,7 @@ def create_work(*, data, actor, idempotency_key=None, staff_contact=None):
     # Only authenticated staff recording work for an explicit CRM contact may
     # retain unknown email/phone. Public intake retains its full validation.
     missing_contact = {name for name in ("contact_email", "contact_phone")
-                       if staff_contact is not None and not getattr(item, name)}
+                       if (staff_contact is not None or portal_member is not None) and not getattr(item, name)}
     item.full_clean(exclude=missing_contact)
     if item.kind == WorkItem.Kind.NEW and project is None:
         project = WorkProject.objects.create(
@@ -65,10 +78,12 @@ def create_work(*, data, actor, idempotency_key=None, staff_contact=None):
             zip_code=item.project_zip, canonical_reference=item.reference,
         )
         item.project = project
-    if staff_contact is not None:
-        item.client_contact = staff_contact
+    if staff_contact is not None or portal_member is not None:
+        item.client_contact = staff_contact or portal_member.contact
     item.save()
-    if staff_contact is None:
+    if portal_member is not None:
+        pass  # Exact approved portal contact; never fuzzy-match or expand CRM access.
+    elif staff_contact is None:
         from .crm import attach_client
         attach_client(item)
     else:

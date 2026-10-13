@@ -96,7 +96,7 @@ def link_project_client(project, *, version, client_id, actor):
 
 
 @transaction.atomic
-def grant_member(project, *, version, contact_id, financial_access, actor):
+def grant_member(project, *, version, contact_id, financial_access, actor, review_access=False):
     require_staff(actor, 'workqueue.change_workitem')
     lock_queue()
     portal = checked_portal(project, version)
@@ -106,9 +106,9 @@ def grant_member(project, *, version, contact_id, financial_access, actor):
     email = normalize_email(contact.email)
     validate_email(email)
     member, _ = PortalMember.objects.update_or_create(project=project, email=email, defaults={
-        'client': contact.client, 'contact': contact, 'financial_access': financial_access,
+        'client': contact.client, 'contact': contact, 'financial_access': financial_access, 'review_access': review_access,
         'revoked_at': None, 'granted_at': timezone.now(), 'actor': actor})
-    changed(portal, actor, 'Client portal access approved', email=email, client=str(contact.client_id), financial_access=financial_access)
+    changed(portal, actor, 'Client portal access approved', email=email, client=str(contact.client_id), financial_access=financial_access, review_access=review_access)
     return member
 
 

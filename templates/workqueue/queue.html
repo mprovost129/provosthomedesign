@@ -94,6 +94,7 @@
               </form>{% endif %}
             </article>{% endfor %}<p class="muted">Marking reviewed clears this notice. Change the job status separately if needed.</p>
           </details>{% endif %}
+          {% if item.plan_review %}<a class="response-flag" href="{% url 'workqueue:staff_plan_review' item.plan_review.document_version.document.project_id item.plan_review.pk %}">Plan review · {{ item.plan_review.annotations|length }} note{{ item.plan_review.annotations|length|pluralize }}{% if not item.plan_review.reviewed_at %} · New{% endif %}</a>{% endif %}
           {% if row.files %}<details class="request-files"><summary aria-label="Files ({{ row.files|length }}) for {{ item.reference }}">Files ({{ row.files|length }})</summary><ul>
             {% for attachment in row.files %}<li>{% if attachment.storage_key or attachment.legacy_drive_id %}<a href="{% url 'workqueue:download' attachment.pk %}" target="_blank" rel="noopener">{{ attachment.original_name }}</a>{% else %}{{ attachment.original_name }} · Archive record{% endif %}
               {% if attachment.storage_key %}<small>{{ attachment.size_bytes|filesizeformat }}</small>{% elif attachment.legacy_drive_id %}<small>Original Google Drive file</small>{% endif %}
