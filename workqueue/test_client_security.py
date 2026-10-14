@@ -153,7 +153,7 @@ class ClientSecurityTests(TestCase):
              patch("workqueue.booking.calendar_provider", return_value=calendar):
             token = self.client.get(reverse("workqueue:book"), {"day": START.date().isoformat()}).context["form"].initial["token"]
             data = {"token": token, "day": START.date().isoformat(), "slot": START.isoformat(),
-                "full_name": "Alex", "phone": "555", "purpose": "Review", "terms_accepted": "on"}
+                "full_name": "Alex", "phone": "555", "purpose": "Review", "terms_accepted": "on", "meeting_method": "phone"}
             self.assertEqual(self.client.post(reverse("workqueue:book"), data).status_code, 400)
             self.assertFalse(Appointment.objects.exists())
             with self.assessment(action="work_booking") as api:

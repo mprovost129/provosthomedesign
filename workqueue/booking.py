@@ -143,11 +143,13 @@ def available_days(first, last, *, email, previous=None, provider=None, now=None
     return result
 
 
-def reserve_appointment(*, email, start, full_name, phone, purpose, key, project_id=None, previous_id=None, provider=None, terms_url=""):
+def reserve_appointment(*, email, start, full_name, phone, purpose, key, project_id=None, previous_id=None, provider=None, terms_url="", meeting_method=None):
     email = normalize_email(email)
     if (not full_name.strip() or not phone.strip() or not purpose.strip()
             or len(purpose) > 3000 or len(full_name) > 200 or len(phone) > 50 or timezone.is_naive(start)):
         raise ValidationError("Provide your name, phone number and what you would like to discuss.")
+    if meeting_method is not None and meeting_method not in Appointment.MeetingMethod.values:
+        raise ValidationError("Choose how you would like to meet.")
     existing = Appointment.objects.filter(idempotency_key=key, email=email).first()
     if existing:
         return existing, False
@@ -186,7 +188,12 @@ def reserve_appointment(*, email, start, full_name, phone, purpose, key, project
         valid_local_slot(start, email, previous=previous)
         if overlaps(start, start+reservation_length(previous), busy):
             raise ValidationError("Your calendar time is no longer available. Please choose another.")
-        item = Appointment.objects.create(email=email, full_name=full_name.strip(), phone=phone.strip(),
+        method = meeting_method if meeting_method is not None else (previous.meeting_method if previous else '')
+        address = (getattr(settings, "CONTACT_ADDRESS", "7 Park St. Unit 1, Rehoboth, MA 02769").strip()
+            if method == Appointment.MeetingMethod.IN_PERSON else '')
+        if method == Appointment.MeetingMethod.IN_PERSON and (not address or 'Your City' in address):
+            raise ValidationError("Please contact Mike to confirm the office address before booking in person.")
+        item = Appointment.objects.create(meeting_method=method, meeting_address=address, email=email, full_name=full_name.strip(), phone=phone.strip(),
             purpose=purpose.strip(), project=project, previous=previous, starts_at=start,
             ends_at=start+meeting_duration(previous), reserved_until=start+reservation_length(previous),
             local_date=start.astimezone(EASTERN).date(), calendar_id=calendar_id, idempotency_key=key)
@@ -238,10 +245,11 @@ def appointment_notices(item, event):
     display = start.strftime("%A, %B %d, %Y at %I:%M %p") + " Eastern"
     _, raw = mint_email_token(item.email, destination="booking")
     common = (f"Your appointment is {action}.\nAppointment: {item.reference}\nWhen: {display}\n"
-              f"Meeting length: {item.duration_minutes} minutes\n\nPurpose: {item.purpose}\n\n")
+              f"Meeting length: {item.duration_minutes} minutes\n"
+              f"Meeting type: {item.get_meeting_method_display() or 'To be arranged'}\n{item.meeting_instructions}\n\nPurpose: {item.purpose}\n\n")
     client_body = common + f"Manage your appointment:\n{access_url(raw)}\n\nThis sign-in link expires in 24 hours and can be used once.\n"
     if action != "canceled":
-        client_body += "We will contact you to coordinate meeting details. This appointment does not change your project's place in line.\n"
+        client_body += "This appointment does not change your project's place in line.\n"
     owner_body = common + f"Client: {item.full_name}\nEmail: {item.email}\nPhone: {item.phone}\n" + (
         f"Project: {item.project}\n" if item.project_id else "") + f"\nManage appointments:\n{site_url(reverse('workqueue:queue'))}#appointments\n"
     for kind, recipient, body in [("client", item.email, client_body), ("owner", settings.INTAKE_OWNER_EMAIL, owner_body)]:
@@ -277,6 +285,7 @@ def sync_appointment(appointment_id, provider=None):
         item.sync_token = uuid.uuid4()
         item.save(update_fields=["state", "sync_started_at", "sync_token", "last_sync_at"])
     outcome, error, google_deleted = None, "", False
+    meet_url = item.meet_url
     from .calendar_reconciliation import LostClaim, reconcile_confirmed, original_deleted
     try:
         if item.cancel_requested and not previously_closed:
@@ -299,9 +308,15 @@ def sync_appointment(appointment_id, provider=None):
             busy = provider.busy(item.starts_at, item.reserved_until, exclude=exclude, calendar_id=item.calendar_id)
             if overlaps(item.starts_at, item.reserved_until, busy):
                 raise CalendarUnavailable("Calendar conflict after save; owner review required.")
+            if item.meeting_method == Appointment.MeetingMethod.GOOGLE_MEET:
+                from .calendar_provider import verified_meet_url
+                meet_url = verified_meet_url(provider.get(item.calendar_id, item.event_ids[0]), item)
             if item.previous_id:
                 provider.remove(item.previous)
             outcome = "confirmed"
+        if was_confirmed and outcome == 'confirmed' and item.meeting_method == Appointment.MeetingMethod.GOOGLE_MEET:
+            from .calendar_provider import verified_meet_url
+            meet_url = verified_meet_url(provider.get(item.calendar_id, item.event_ids[0]), item)
     except LostClaim:
         return False
     except CalendarUnavailable as exc:
@@ -334,6 +349,7 @@ def sync_appointment(appointment_id, provider=None):
                 previous.save(update_fields=["state"])
                 BookingAudit.objects.create(appointment=previous, action="replaced_by_reschedule", details={"replacement": str(item.pk)})
             if outcome == "confirmed":
+                current.meet_url = meet_url
                 current.buffer_pending_insert = False
                 if current.calendar_change_kind:
                     appointment_notices(current, f"{current.calendar_change_kind}-{current.calendar_change_number}")
@@ -352,5 +368,5 @@ def sync_appointment(appointment_id, provider=None):
         current.sync_token = None
         current.sync_started_at = None
         current.save(update_fields=["state", "last_sync_at", "last_error", "confirmed_at", "cancel_requested",
-            "buffer_pending_insert", "calendar_change_kind", "sync_token", "sync_started_at"])
+            "buffer_pending_insert", "calendar_change_kind", "sync_token", "sync_started_at", "meet_url"])
     return True

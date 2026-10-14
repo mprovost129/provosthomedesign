@@ -1,5 +1,12 @@
 (() => {
   'use strict';
+  const method = document.getElementById('id_meeting_method');
+  if (method) {
+    const explain = () => document.querySelectorAll('[data-meeting-method]').forEach(
+      item => { item.hidden = item.dataset.meetingMethod !== method.value; });
+    method.addEventListener('change', explain);
+    explain();
+  }
   const calendar = document.getElementById('calendar-day-form');
   const meeting = document.getElementById('meeting');
   const form = document.getElementById('appointment-form');

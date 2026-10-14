@@ -1,6 +1,7 @@
 """Google event operations use stable IDs; errors never imply an empty calendar."""
 from datetime import datetime, time, timedelta
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
+import re
 from zoneinfo import ZoneInfo
 from html import escape
 
@@ -43,7 +44,42 @@ def expected_events(appointment):
                 f"{appointment.phone}\n\n{appointment.purpose}") if index == 0 else "Reserved 30-minute buffer after client meeting."),
             "start": {"dateTime": start.isoformat(), "timeZone": "America/New_York"},
             "end": {"dateTime": end.isoformat(), "timeZone": "America/New_York"}})
+    if appointment.meeting_method:
+        events[0]['description'] += "\n\n" + escape(appointment.get_meeting_method_display() + "\n" + appointment.meeting_instructions)
+        if appointment.meeting_method == 'in_person':
+            events[0]['location'] = appointment.meeting_address
+        elif appointment.meeting_method == 'phone':
+            events[0]['location'] = 'Phone: ' + appointment.phone
+        elif appointment.meeting_method == 'google_meet':
+            events[0]['conferenceData'] = {'createRequest': {
+                'requestId': 'phd-meet-' + appointment.pk.hex,
+                'conferenceSolutionKey': {'type': 'hangoutsMeet'}}}
     return events
+
+
+def verified_meet_url(event, appointment=None):
+    if appointment is not None:
+        if event is None:
+            raise CalendarUnavailable('The meeting changed during sync. It will be checked again shortly.')
+        validate_event(event, expected_events(appointment)[0])
+    conference = (event or {}).get('conferenceData') or {}
+    status = conference.get('createRequest', {}).get('status', {}).get('statusCode')
+    if status == 'failure':
+        raise CalendarUnavailable('Google Meet could not be created. Please review the meeting in Google Calendar.')
+    if status == 'pending':
+        raise CalendarUnavailable('Google is preparing the Meet link. This reservation will be checked again shortly.')
+    if conference.get('conferenceSolution', {}).get('key', {}).get('type') != 'hangoutsMeet':
+        raise CalendarUnavailable('Google Meet link is not ready. This reservation will be checked again shortly.')
+    for entry in conference.get('entryPoints', []):
+        if entry.get('entryPointType') != 'video':
+            continue
+        value = entry.get('uri', '')
+        parsed = urlparse(value)
+        if (parsed.scheme == 'https' and parsed.netloc == 'meet.google.com'
+                and re.fullmatch(r'/[a-z]{3}-[a-z]{4}-[a-z]{3}', parsed.path)
+                and not parsed.query and not parsed.fragment):
+            return value
+    raise CalendarUnavailable('Google Meet link is not ready. This reservation will be checked again shortly.')
 
 
 def validate_event(actual, expected):
@@ -140,11 +176,23 @@ class GoogleCalendar:
         actual = self.get(appointment.calendar_id, expected["id"])
         if actual is None:
             self.request("POST", self.path(appointment.calendar_id), json=expected,
-                         params={"sendUpdates": "none"}, conflict=True)
+                         params={"sendUpdates": "none", "conferenceDataVersion": 1}, conflict=True)
             actual = self.get(appointment.calendar_id, expected["id"])
         if actual is None:
             raise CalendarUnavailable("Calendar save could not be verified.")
         validate_event(actual, expected)
+        if 'conferenceData' in expected:
+            if not actual.get('conferenceData'):
+                if not actual.get('etag'):
+                    raise CalendarUnavailable('Calendar conference update could not be verified.')
+                self.request('PATCH', self.path(appointment.calendar_id, expected['id']),
+                    json={'conferenceData': expected['conferenceData']}, headers={'If-Match': actual['etag']},
+                    params={'sendUpdates':'none', 'conferenceDataVersion':1})
+                actual = self.get(appointment.calendar_id, expected['id'])
+                if actual is None:
+                    raise CalendarUnavailable('Calendar conference update could not be verified.')
+                validate_event(actual, expected)
+            verified_meet_url(actual)
 
     def reconcile_buffer(self, appointment, expected):
         actual = self.get(appointment.calendar_id, expected['id'])
@@ -160,7 +208,7 @@ class GoogleCalendar:
         except CalendarMismatch:
             self.request('PATCH', self.path(appointment.calendar_id, expected['id']),
                 json={key:expected[key] for key in ['start','end','transparency','visibility']},
-                headers={'If-Match':actual['etag']}, params={'sendUpdates':'none'})
+                headers={'If-Match':actual['etag']}, params={'sendUpdates':'none', 'conferenceDataVersion':1})
             verified = self.get(appointment.calendar_id, expected['id'])
             if verified is None:
                 raise CalendarUnavailable('Calendar buffer update could not be verified.')
@@ -216,6 +264,9 @@ class PreviewCalendar:
             validate_event(events[expected["id"]], expected)
         else:
             events[expected["id"]] = {**expected, "etag": "preview-only"}
+            if 'conferenceData' in expected:
+                events[expected['id']]['conferenceData'] = {'conferenceSolution': {'key': {'type': 'hangoutsMeet'}},
+                    'entryPoints': [{'entryPointType': 'video', 'uri': 'https://meet.google.com/abc-defg-hij'}]}
             cache.set("phd-preview-calendar-events", events, None)
 
     def reconcile_buffer(self, appointment, expected):

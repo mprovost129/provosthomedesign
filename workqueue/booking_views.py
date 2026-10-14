@@ -43,6 +43,8 @@ class AppointmentForm(forms.Form):
     slot = forms.ChoiceField(label="Available start time (Eastern)", widget=forms.RadioSelect)
     full_name = forms.CharField(label="Full name", max_length=200)
     phone = forms.CharField(label="Phone number", max_length=50)
+    meeting_method = forms.ChoiceField(label="How would you like to meet?",
+        choices=[('', 'Choose how to meet')] + list(Appointment.MeetingMethod.choices))
     purpose = forms.CharField(label="What would you like to discuss?", max_length=3000, widget=forms.Textarea(attrs={"rows": 3}))
     project = forms.ModelChoiceField(queryset=None, label="Related project, if applicable", required=False)
 
@@ -101,7 +103,7 @@ def book(request):
     if recent:
         initial.update(full_name=recent.contact_full_name, phone=recent.contact_phone)
     if previous:
-        initial.update(full_name=previous.full_name, phone=previous.phone, purpose=previous.purpose, project=previous.project_id)
+        initial.update(full_name=previous.full_name, phone=previous.phone, purpose=previous.purpose, project=previous.project_id, meeting_method=previous.meeting_method)
     slots, unavailable, availability = [], "", {}
     now = timezone.now()
     month = calendar_month(request.GET.get('month',''),day,now)
@@ -134,7 +136,7 @@ def book(request):
                     full_name=form.cleaned_data["full_name"], phone=form.cleaned_data["phone"], purpose=form.cleaned_data["purpose"],
                     project_id=form.cleaned_data["project"].pk if form.cleaned_data["project"] else None,
                     previous_id=previous.pk if previous else None, key=f"booking:{session_digest(request)}:{nonce}",
-                    terms_url=reverse("pages:terms"))
+                    terms_url=reverse("pages:terms"), meeting_method=form.cleaned_data["meeting_method"])
             except (ValidationError, CalendarUnavailable) as exc:
                 form.add_error(None, " ".join(exc.messages) if isinstance(exc, ValidationError) else "Calendar unavailable. Please try again later.")
             else:
@@ -148,6 +150,7 @@ def book(request):
         display_order=Case(When(state__in=HOLD_STATES, then=Value(0)), default=Value(1), output_field=IntegerField())).order_by("display_order", "-starts_at")[:20] if email else []
     records = list(appointments)
     return render(request, "workqueue/booking.html", {"client_email": email, "permitted": permitted, "form": form,
+        "booking_office_address": getattr(settings, "CONTACT_ADDRESS", "7 Park St. Unit 1, Rehoboth, MA 02769"),
         "day": day, "day_error": day_error, "unavailable": unavailable, "slots": slots, "previous": previous,
         "booking_calendar": month_context(month,availability,day,now,previous),
         "calendar_slots": {key.isoformat(): [{'value':start.isoformat(),'label':start.strftime('%I:%M %p').lstrip('0')}

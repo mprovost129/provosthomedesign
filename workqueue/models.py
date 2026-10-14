@@ -580,6 +580,14 @@ class Appointment(models.Model):
     full_name = models.CharField(max_length=200)
     phone = models.CharField(max_length=50)
     purpose = models.TextField()
+    class MeetingMethod(models.TextChoices):
+        IN_PERSON = "in_person", "In person"
+        PHONE = "phone", "Phone"
+        GOOGLE_MEET = "google_meet", "Google Meet"
+
+    meeting_method = models.CharField(max_length=20, choices=MeetingMethod.choices, blank=True, default='', db_default='')
+    meeting_address = models.CharField(max_length=500, blank=True, default='', db_default='')
+    meet_url = models.URLField(max_length=500, blank=True, default='', db_default='')
     project = models.ForeignKey(WorkProject, null=True, blank=True, on_delete=models.PROTECT, related_name="appointments")
     previous = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT, related_name="replacements")
     starts_at = models.DateTimeField(db_index=True)
@@ -611,6 +619,16 @@ class Appointment(models.Model):
                        models.CheckConstraint(condition=Q(state__in=["pending", "syncing", "confirmed", "attention", "canceled", "completed"]), name="wq_valid_appointment_state"),
                        models.CheckConstraint(condition=Q(ends_at__lte=models.F("starts_at")+timedelta(hours=8)), name="wq_meeting_duration_limit"),
                        models.CheckConstraint(condition=Q(reserved_until=models.F("ends_at")+timedelta(minutes=30)), name="wq_30_minute_buffer")]
+
+    @property
+    def meeting_instructions(self):
+        if self.meeting_method == self.MeetingMethod.IN_PERSON:
+            return "Office address: " + self.meeting_address
+        if self.meeting_method == self.MeetingMethod.PHONE:
+            return "Mike will call you at " + self.phone + "."
+        if self.meeting_method == self.MeetingMethod.GOOGLE_MEET:
+            return "Join Google Meet: " + self.meet_url if self.meet_url else "Your Google Meet link will be provided when your appointment is confirmed."
+        return "We will contact you to coordinate meeting details."
 
     @property
     def event_ids(self):

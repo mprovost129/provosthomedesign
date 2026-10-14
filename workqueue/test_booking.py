@@ -324,7 +324,7 @@ class BookingTests(TestCase):
         response = self.client.get(reverse("workqueue:book"), {"day": START.date().isoformat()})
         token = response.context["form"].initial["token"]
         data = {"token": token, "day": START.date().isoformat(), "slot": START.isoformat(),
-                "full_name": "Alex Example", "phone": "555", "purpose": "Project review", "terms_accepted": "on"}
+                "full_name": "Alex Example", "phone": "555", "purpose": "Project review", "terms_accepted": "on", "meeting_method": "phone"}
         with patch("workqueue.booking.calendar_provider", return_value=self.calendar):
             self.assertEqual(self.client.post(reverse("workqueue:book"), data).status_code, 302)
             self.assertEqual(self.client.post(reverse("workqueue:book"), data).status_code, 302)
@@ -342,7 +342,7 @@ class BookingTests(TestCase):
         session["queue_email_verified_until"] = (NOW+timedelta(days=7)).timestamp()
         session.save()
         data = {"token": response.context["form"].initial["token"], "day": START.date().isoformat(),
-                "slot": START.isoformat(), "full_name": "Alex", "phone": "555", "purpose": "Review", "terms_accepted": "on"}
+                "slot": START.isoformat(), "full_name": "Alex", "phone": "555", "purpose": "Review", "terms_accepted": "on", "meeting_method": "phone"}
         self.assertEqual(other.post(reverse("workqueue:book"), data).status_code, 400)
         self.assertEqual(Appointment.objects.count(), 0)
 
