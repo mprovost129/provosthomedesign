@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Prefetch
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -243,7 +244,9 @@ def tracking(request):
     elif request.method == "POST":
         status = 400
     reference = request.GET.get("reference", "").strip().upper()[:32]
-    items = authorized_work(email).with_position().select_related("project").prefetch_related("submissions__attachments", "completed_deliveries__files")
+    items = authorized_work(email).with_position().select_related("project").prefetch_related(
+        Prefetch('submissions', queryset=Submission.objects.exclude(channel='staff_files').prefetch_related('attachments')),
+        "completed_deliveries__files")
     selected = items.filter(reference=reference).first() if reference else None
     unavailable = bool(email and reference and selected is None)
     if selected and selected.project_id:
@@ -272,7 +275,7 @@ def receipt_download(request, submission_id):
     submission = get_object_or_404(Submission.objects.select_related("work_item__project"), pk=submission_id)
     staff = request.user.is_active and request.user.is_staff and request.user.has_perm("workqueue.view_workitem")
     email = verified_email(request)
-    if not staff and (not email or normalize_email(submission.owner_email) != email or
+    if not staff and (submission.channel == 'staff_files' or not email or normalize_email(submission.owner_email) != email or
                      not authorized_work(email).filter(pk=submission.work_item_id).exists()):
         raise Http404
     from .notifications import site_url
@@ -355,6 +358,8 @@ def download(request, attachment_id):
     attachment = get_object_or_404(Attachment.objects.select_related("submission__work_item"), pk=attachment_id)
     staff = request.user.is_active and request.user.is_staff and request.user.has_perm("workqueue.view_workitem")
     if not staff:
+        if attachment.submission.channel == 'staff_files':
+            raise Http404
         if not getattr(settings, "WORK_INTAKE_ENABLED", False) or not authorized_work(verified_email(request)).filter(pk=attachment.submission.work_item_id).exists():
             raise Http404
     if not attachment.storage_key:

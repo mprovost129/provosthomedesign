@@ -160,7 +160,7 @@
           <label for="access-email-{{ item.pk }}">Client email</label><input type="email" id="access-email-{{ item.pk }}" name="access_email" required>
           <button name="action" value="access_grant">Allow project access</button><button name="action" value="access_revoke" class="secondary">Revoke project access</button></form></details>{% endif %}
           <details><summary>Submitted answers and attachment records</summary>
-            {% for submission in item.submissions.all %}<h3>{{ submission.get_channel_display|default:submission.channel }} · {{ submission.received_at|date:'M j, Y g:i A' }}</h3>
+            {% for submission in item.submissions.all %}<h3>{% if submission.channel == 'staff_files' %}Source files added by staff{% else %}{{ submission.get_channel_display|default:submission.channel }}{% endif %} · {{ submission.received_at|date:'M j, Y g:i A' }}</h3>
               <dl>{% for label,value in submission.answers.items %}<dt>{{ label }}</dt><dd class="preserve-lines">{{ value|default:'—' }}</dd>{% endfor %}</dl>
               {% for attachment in submission.attachments.all %}<p>{% if attachment.storage_key or attachment.legacy_drive_id %}<a href="{% url 'workqueue:download' attachment.pk %}">{{ attachment.original_name }}</a>{% else %}{{ attachment.original_name }}{% endif %}{% if attachment.storage_key %} · {{ attachment.size_bytes|filesizeformat }}{% elif attachment.legacy_drive_id %} · Original Google Drive file{% endif %}</p>{% endfor %}
               {% for notification in submission.notifications.all %}<p>{{ notification.get_recipient_kind_display }} notice: {{ notification.get_state_display }}{% if notification.last_error %} · {{ notification.last_error }}{% endif %}</p>

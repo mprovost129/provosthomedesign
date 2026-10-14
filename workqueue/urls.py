@@ -13,6 +13,7 @@ from . import crm_views
 from . import shared_contact_views
 from . import communication_views
 from . import pm_views
+from . import project_file_views
 from . import freshbooks_views
 from . import time_views
 from . import time_billing_views
@@ -73,6 +74,7 @@ urlpatterns = [
     path('work-projects/<uuid:project_id>/proposal/', pm_views.proposal_edit, name='proposal_new'),
     path('work-projects/<uuid:project_id>/proposal/<uuid:proposal_id>/', pm_views.proposal_edit, name='proposal_edit'),
     path('work-projects/<uuid:project_id>/', pm_views.project_detail, name='project_detail'),
+    path('work-projects/<uuid:project_id>/files/add/', project_file_views.add_files, name='project_add_files'),
     path('proposals/access/', pm_views.proposal_access, name='proposal_access'),
     path('proposals/<uuid:revision_id>/', pm_views.proposal_public, name='proposal_public'),
     path('proposals/<uuid:revision_id>/pdf/', pm_views.proposal_public_pdf, name='proposal_public_pdf'),

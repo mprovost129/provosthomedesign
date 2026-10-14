@@ -61,8 +61,12 @@ def validate_content(file, name):
             with warnings.catch_warnings():
                 warnings.simplefilter("error", Image.DecompressionBombWarning)
                 image = Image.open(file)
-                expected = {".jpg": "JPEG", ".jpeg": "JPEG", ".png": "PNG", ".webp": "WEBP"}[extension]
-                if image.format != expected:
+                # JPEG originals can contain an MPF directory (for example,
+                # phone depth images), which Pillow identifies as MPO. Accept
+                # that JPEG variant without rewriting the uploaded bytes.
+                expected = {".jpg": {"JPEG", "MPO"}, ".jpeg": {"JPEG", "MPO"},
+                            ".png": {"PNG"}, ".webp": {"WEBP"}}[extension]
+                if image.format not in expected:
                     raise ValidationError("The picture format does not match its filename.")
                 image.verify()
         else:
