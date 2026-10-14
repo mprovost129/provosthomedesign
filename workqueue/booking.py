@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from .access import authorized_projects, mint_email_token, normalize_email
 from .calendar_provider import EASTERN, CalendarUnavailable, calendar_provider, expected_events
-from .models import Appointment, BookingAccess, BookingAudit, BookingState, NotificationDelivery
+from .models import Appointment, BookingAccess, BookingAudit, BookingState, ClientContact, NotificationDelivery
 from .notifications import access_url, site_url
 
 
@@ -23,7 +23,20 @@ def lock_bookings():
 
 
 def eligible(email):
-    return bool(email and BookingAccess.objects.filter(email=normalize_email(email), allowed=True).exists())
+    """Verified-email callers may book through a grant or their current CRM contact.
+
+    Explicit allow/block records take precedence. CRM matching is checked live,
+    so an imported contact or corrected email works in an existing verified
+    session without creating a permanent grant or granting project access.
+    """
+    if not email:
+        return False
+    email = normalize_email(email)
+    override = BookingAccess.objects.filter(email=email).values_list('allowed', flat=True).first()
+    if override is not None:
+        return override
+    return ClientContact.objects.filter(email__iexact=email, archived_at__isnull=True,
+        client__merged_into__isnull=True).exists()
 
 
 def overlaps(start, end, intervals):
