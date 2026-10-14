@@ -275,7 +275,7 @@ def receipt_download(request, submission_id):
     submission = get_object_or_404(Submission.objects.select_related("work_item__project"), pk=submission_id)
     staff = request.user.is_active and request.user.is_staff and request.user.has_perm("workqueue.view_workitem")
     email = verified_email(request)
-    if not staff and (not email or normalize_email(submission.owner_email) != email or
+    if not staff and (submission.channel == 'staff_files' or not email or normalize_email(submission.owner_email) != email or
                      not authorized_work(email).filter(pk=submission.work_item_id).exists()):
         raise Http404
     from .notifications import site_url

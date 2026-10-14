@@ -20,7 +20,7 @@ from PIL import Image
 from .access import read_intake_token, session_digest
 from .models import Attachment, CompletedDelivery, NotificationDelivery, PendingUpload, ProjectAccess, QueueState, Submission, WorkItem
 from .pm_models import ProjectEvent
-from .portal_models import PortalDocument
+from .portal_models import PortalDocument, PortalDocumentVersion
 from .services import create_work
 from .test_client_intake import valid_pdf
 from .tests import work_data
@@ -204,18 +204,92 @@ class ProjectFilesTests(TestCase):
         csrf_client.force_login(self.owner)
         self.assertEqual(csrf_client.post(self.url, {}).status_code, 403)
 
-    def test_staff_files_are_not_exposed_to_client_tracking_downloads_or_receipts(self):
-        self.save([self.upload('staff-source.pdf')])
-        attachment = Attachment.objects.get()
-        client = Client()
-        session = client.session
-        session['queue_verified_email'] = 'collaborator@example.invalid'
+    def verified_browser(self, email):
+        browser = Client()
+        session = browser.session
+        session['queue_verified_email'] = email
         session['queue_email_verified_until'] = (timezone.now()+timedelta(hours=1)).timestamp()
         session.save()
+        return browser
+
+    def test_staff_sources_hidden_from_submitter_collaborator_and_portal_history(self):
+        from .portal_services import grant_member
+        self.save([self.upload('staff-source.pdf')])
+        attachment = Attachment.objects.get()
+        contact = self.item.client_contact
+        # An accidental owner-email backfill must never publish a staff batch.
+        Submission.objects.filter(pk=attachment.submission_id).update(owner_email=contact.email)
+        ordinary = Submission.objects.create(work_item=self.item, channel='web',
+            idempotency_key='ordinary-client-history', owner_email=contact.email,
+            answers={'Project description': 'Client submitted history'})
+        Attachment.objects.create(submission=ordinary, original_name='client-submitted.pdf')
+        grant_member(self.project, version=1, contact_id=contact.pk,
+            financial_access=True, review_access=True, actor=self.owner)
         ProjectAccess.objects.create(project=self.project, email='collaborator@example.invalid')
-        self.assertNotContains(client.get(reverse('workqueue:tracking')), 'staff-source.pdf')
-        self.assertEqual(client.get(reverse('workqueue:download', args=[attachment.pk])).status_code, 404)
-        self.assertEqual(client.get(reverse('workqueue:receipt_download', args=[attachment.submission_id])).status_code, 404)
+        for email in [contact.email, 'collaborator@example.invalid', 'unrelated@example.invalid', '']:
+            with self.subTest(email=email):
+                browser = self.verified_browser(email)
+                tracking = browser.get(reverse('workqueue:tracking'))
+                self.assertNotContains(tracking, attachment.original_name)
+                self.assertNotContains(tracking, str(attachment.pk))
+                self.assertNotContains(tracking, str(attachment.submission_id))
+                if email in [contact.email, 'collaborator@example.invalid']:
+                    self.assertContains(tracking, 'client-submitted.pdf')
+                    self.assertEqual(len(tracking.context['items']), 1)
+                self.assertNotContains(browser.get(reverse('workqueue:portal_home')), attachment.original_name)
+                portal = browser.get(reverse('workqueue:portal_project', args=[self.project.pk]))
+                self.assertEqual(portal.status_code, 200 if email == contact.email else (404 if email else 302))
+                if email == contact.email:
+                    self.assertEqual(portal.context['documents'], [])
+                    self.assertEqual(list(portal.context['plan_reviews']), [])
+                    self.assertNotContains(portal, attachment.original_name)
+                for route, args in [('download', [attachment.pk]),
+                                    ('receipt_download', [attachment.submission_id]),
+                                    ('completed_file', [attachment.pk]),
+                                    ('portal_document', [self.project.pk, attachment.pk])]:
+                    with self.subTest(route=route):
+                        self.assertEqual(browser.get(reverse('workqueue:'+route, args=args)).status_code, 404)
+                review = browser.get(reverse('workqueue:start_plan_review', args=[self.project.pk, attachment.pk]))
+                self.assertEqual(review.status_code, 404 if email else 302)
+                # The intake confirmation is accessible only from its original session.
+                session = browser.session
+                session['queue_recent_requests'] = [str(self.item.pk)]
+                session.save()
+                self.assertNotContains(browser.get(reverse('workqueue:submitted', args=[self.item.pk])), attachment.original_name)
+                for url in [self.project_url, self.url, reverse('workqueue:queue'),
+                            reverse('workqueue:client_detail', args=[contact.client_id])]:
+                    self.assertEqual(browser.get(url).status_code, 302)
+        self.assertFalse(PortalDocument.objects.exists())
+        self.assertFalse(PortalDocumentVersion.objects.exists())
+        self.assertFalse(CompletedDelivery.objects.exists())
+
+    def test_staff_source_download_and_receipt_require_active_staff_view_permission(self):
+        self.save([self.upload('staff-source.pdf')])
+        attachment = Attachment.objects.get()
+        permission = Permission.objects.get(codename='view_workitem')
+        for name, staff, active, permitted in [
+                ('reader', True, True, True), ('unprivileged', True, True, False),
+                ('ordinary-user', False, True, True), ('inactive', True, False, True)]:
+            with self.subTest(user=name):
+                user = get_user_model().objects.create_user(name, is_staff=staff, is_active=active)
+                if permitted:
+                    user.user_permissions.add(permission)
+                browser = self.verified_browser(self.item.contact_email)
+                browser.force_login(user)
+                allowed = staff and active and permitted
+                for route, pk in [('download', attachment.pk), ('receipt_download', attachment.submission_id)]:
+                    response = browser.get(reverse('workqueue:'+route, args=[pk]))
+                    self.assertEqual(response.status_code, 200 if allowed else 404)
+                    if allowed:
+                        if response.streaming:
+                            self.assertIn(b'%PDF-', b''.join(response.streaming_content))
+                        else:
+                            self.assertContains(response, 'staff-source.pdf')
+                if allowed:
+                    self.assertContains(browser.get(self.project_url), 'staff-source.pdf')
+                    self.assertContains(browser.get(reverse('workqueue:queue')), 'staff-source.pdf')
+                    self.assertContains(browser.get(reverse('workqueue:client_detail',
+                        args=[self.item.client_contact.client_id])), 'staff-source.pdf')
 
     def test_existing_content_validation_and_storage_error_are_not_successful_uploads(self):
         response = self.client.post(reverse('workqueue:start_upload'), {'intake_token': self.token,
