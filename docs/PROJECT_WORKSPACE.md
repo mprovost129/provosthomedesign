@@ -2,6 +2,18 @@
 
 Staff open **Projects** from the queue, or **Workspace** on a queue job. A project brings together the original submissions, private files, connected clients, tasks, planning notes, proposals, and recorded emails. The queue remains the source of job ordering and work status.
 
+## Add source files to an existing project
+
+In the project's **Plans and pictures** section, authorized staff can choose **Add files**, select an existing job in that project, upload documents, and choose **Add files to project**. The existing upload control accepts up to ten files of 100 MB each (PDF, JPG, PNG, WebP, DOCX, XLSX), validates their content, and stages them privately before saving. Resolve or remove failed uploads before saving.
+
+This creates a staff attachment batch on the selected existing job, not another work request. It leaves queue order, status, original submission answers, and completed deliveries unchanged. It does not publish documents or send any email. These source files are visible to authorized staff on reopening the project, and excluded from client tracking and client downloads. A project activity entry records who added them. Read-only staff and preview mode cannot add files.
+
+The entire batch is attached in one database transaction. Retrying the same form after a failure or lost response does not duplicate attachments; a changed batch after a successful save requires opening Add files again. Unattached staged objects retain the existing expiry/cleanup behavior.
+
+**Storage:** Add files uses the existing `intake_private` storage (private S3 in production), as approved by the owner. Historical Google Drive files retain their existing staff-only links and Google permissions. This feature does not introduce Drive writes or new credentials.
+
+**Deployment:** this feature adds no models or migrations. Run the repository CI checks before merging to `main`; the documented Render workflow auto-deploys `main` to `provosthomedesign` (`srv-d8cps8urnols739r24sg`). Verify the exact deployed commit and the authenticated Add files page after deployment. Do not upload real client files or create production test records for verification.
+
 ## Proposals
 
 1. Open a project and choose **New proposal** or **Estimate this work**.
