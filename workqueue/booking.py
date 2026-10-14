@@ -36,7 +36,7 @@ def eligible(email):
     if override is not None:
         return override
     return ClientContact.objects.filter(email__iexact=email, archived_at__isnull=True,
-        client__merged_into__isnull=True).exists()
+        client__merged_into__isnull=True, booking_requires_approval=False).exists()
 
 
 def overlaps(start, end, intervals):

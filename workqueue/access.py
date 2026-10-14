@@ -114,6 +114,9 @@ def consume_email_token(raw):
         raise ValidationError("That sign-in link is invalid or expired. Request a new link.")
     record.used_at = timezone.now()
     record.save(update_fields=["used_at"])
+    if record.destination == 'consult':
+        from .consultations import verify_consultation
+        verify_consultation(record.reference, record.email)
     # Only the original new-project claim can establish automatic project access.
     for claim in ProjectClaim.objects.select_related("submission__work_item").filter(email=record.email, verified_at__isnull=True):
         if claim.submission.work_item.deleted_at or claim.submission.work_item.project_id != claim.project_id:

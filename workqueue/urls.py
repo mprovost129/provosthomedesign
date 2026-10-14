@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from . import client_views
 from . import booking_views
+from . import consultation_views
 from . import delivery_views
 from . import health
 from . import portal_views
@@ -104,6 +105,8 @@ urlpatterns = [
     path("client-access/", client_views.confirm_access, name="confirm_access"),
     path("client-access/sign-out/", client_views.client_logout, name="client_logout"),
     path("work-files/<uuid:attachment_id>/", client_views.download, name="download"),
+    path('request-consultation/', consultation_views.consultation, name='consultation'),
+    path('request-consultation/resend/', consultation_views.resend, name='consultation_resend'),
     path("book-appointment/", booking_views.book, name="book"),
     path("book-appointment/<uuid:appointment_id>/cancel/", booking_views.cancel, name="cancel_appointment"),
 ]

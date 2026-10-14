@@ -312,6 +312,8 @@ def confirm_access(request):
             request.session.cycle_key()
             request.session["queue_verified_email"] = record.email
             request.session["queue_email_verified_until"] = (timezone.now() + timedelta(days=7)).timestamp()
+            if record.destination == 'consult':
+                return redirect('workqueue:consultation')
             if record.destination == 'portal':
                 project_id = request.session.pop('portal_return_project', '')
                 review_id = request.session.pop('portal_return_review', '')

@@ -98,6 +98,7 @@ class ClientContact(models.Model):
         related_name="linked_company_contacts", editable=False)
     archived_at = models.DateTimeField(null=True, blank=True, db_index=True, editable=False)
     archived_email = models.EmailField(blank=True, editable=False)
+    booking_requires_approval = models.BooleanField(default=False, db_default=False, editable=False)
     full_name = models.CharField(max_length=200, blank=True)
     phone = models.CharField(max_length=50, blank=True)
     role = models.CharField(max_length=20, choices=Role.choices, blank=True)
@@ -519,7 +520,7 @@ class EmailAccessToken(models.Model):
     email = models.EmailField()
     digest = models.CharField(max_length=64, unique=True)
     reference = models.CharField(max_length=32, blank=True)
-    destination = models.CharField(max_length=10, default="tracking", choices=[("tracking", "Tracking"), ("booking", "Booking"), ("portal", "Client portal")])
+    destination = models.CharField(max_length=10, default="tracking", choices=[("tracking", "Tracking"), ("booking", "Booking"), ("portal", "Client portal"), ("consult", "Consultation")])
     expires_at = models.DateTimeField()
     used_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
@@ -558,6 +559,38 @@ class PendingUpload(models.Model):
 class BookingState(models.Model):
     """Seeded singleton: reservations serialize independently of queue edits."""
     id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+
+
+class ConsultationRequest(models.Model):
+    class State(models.TextChoices):
+        UNVERIFIED = 'unverified', 'Email verification needed'
+        PENDING = 'pending', 'Awaiting approval'
+        APPROVED = 'approved', 'Approved'
+        DECLINED = 'declined', 'Declined'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    email = models.EmailField(db_index=True)
+    full_name = models.CharField(max_length=200)
+    phone = models.CharField(max_length=50)
+    description = models.TextField(max_length=3000)
+    state = models.CharField(max_length=12, choices=State.choices, default=State.UNVERIFIED)
+    idempotency_key = models.CharField(max_length=200, unique=True)
+    contact = models.ForeignKey(ClientContact, null=True, blank=True, on_delete=models.PROTECT, related_name='consultations')
+    created_at = models.DateTimeField(default=timezone.now)
+    verified_at = models.DateTimeField(null=True, blank=True)
+    decided_at = models.DateTimeField(null=True, blank=True)
+    decided_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    terms_url = models.CharField(max_length=500, blank=True)
+    terms_accepted_at = models.DateTimeField()
+    verification_delivery = models.ForeignKey(NotificationDelivery, null=True, blank=True, on_delete=models.PROTECT, related_name='+')
+    owner_delivery = models.OneToOneField(NotificationDelivery, null=True, blank=True, on_delete=models.PROTECT, related_name='+')
+    receipt_delivery = models.OneToOneField(NotificationDelivery, null=True, blank=True, on_delete=models.PROTECT, related_name='+')
+    decision_delivery = models.OneToOneField(NotificationDelivery, null=True, blank=True, on_delete=models.PROTECT, related_name='+')
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
+        constraints = [models.UniqueConstraint(fields=['email'], condition=Q(state__in=['unverified','pending']), name='wq_one_pending_consultation'),
+            models.CheckConstraint(condition=Q(state__in=['unverified','pending','approved','declined']), name='wq_consultation_state')]
 
 
 class BookingAccess(models.Model):

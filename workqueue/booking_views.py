@@ -184,10 +184,21 @@ def staff_action(request):
     """Called by the existing protected queue view; all writes stay on that page."""
     action = request.POST.get("action")
     permission = "workqueue.change_bookingaccess" if action in ("booking_grant", "booking_revoke") else "workqueue.change_appointment"
+    if action in ('consultation_approve','consultation_decline'):
+        permission = 'workqueue.change_bookingaccess'
     if not request.user.has_perm(permission):
         raise PermissionDenied
     try:
-        if action in ("booking_grant", "booking_revoke"):
+        if action in ('consultation_approve','consultation_decline'):
+            from .consultations import decide_consultation
+            from .models import ConsultationRequest
+            try:
+                request_id = uuid.UUID(request.POST.get('consultation_id',''))
+            except ValueError:
+                raise Http404
+            inquiry = get_object_or_404(ConsultationRequest, pk=request_id)
+            decide_consultation(inquiry.pk, action == 'consultation_approve', request.user)
+        elif action in ("booking_grant", "booking_revoke"):
             set_booking_access(request.POST.get("booking_email", ""), action == "booking_grant", request.user)
         else:
             try:
