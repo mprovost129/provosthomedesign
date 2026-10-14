@@ -6,6 +6,8 @@ Staff open **Projects** from the queue, or **Workspace** on a queue job. A proje
 
 In the project's **Plans and pictures** section, authorized staff can choose **Add files**, select an existing job in that project, upload documents, and choose **Add files to project**. The existing upload control accepts up to ten files of 100 MB each (PDF, JPG, PNG, WebP, DOCX, XLSX), validates their content, and stages them privately before saving. Resolve or remove failed uploads before saving.
 
+JPEG originals containing an MPF directory (identified by Pillow as MPO) are accepted with `.jpg` or `.jpeg` filenames. Uploaded bytes are preserved without re-encoding; image verification, decompression-bomb checks, format matching, and upload limits still apply.
+
 This creates a staff attachment batch on the selected existing job, not another work request. It leaves queue order, status, original submission answers, and completed deliveries unchanged. It does not publish documents or send any email. These source files are visible to authorized staff on reopening the project, and excluded from client tracking and client downloads. A project activity entry records who added them. Read-only staff and preview mode cannot add files.
 
 The entire batch is attached in one database transaction. Retrying the same form after a failure or lost response does not duplicate attachments; a changed batch after a successful save requires opening Add files again. Unattached staged objects retain the existing expiry/cleanup behavior.

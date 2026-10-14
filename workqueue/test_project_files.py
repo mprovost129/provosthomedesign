@@ -1,14 +1,21 @@
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
+from io import BytesIO
 from tempfile import TemporaryDirectory
+from threading import Barrier
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.core.cache import cache
-from django.test import Client, TestCase, override_settings
+from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import close_old_connections
+from django.test import Client, TestCase, TransactionTestCase, override_settings, skipUnlessDBFeature
 from django.urls import reverse
 from django.utils import timezone
+from PIL import Image
 
 from .access import read_intake_token, session_digest
 from .models import Attachment, CompletedDelivery, NotificationDelivery, PendingUpload, ProjectAccess, QueueState, Submission, WorkItem
@@ -17,6 +24,15 @@ from .portal_models import PortalDocument
 from .services import create_work
 from .test_client_intake import valid_pdf
 from .tests import work_data
+from .uploads import checked_name, validate_content
+
+
+def mpo_original():
+    """Synthetic two-frame JPEG/MPF fixture; never use a client document."""
+    output = BytesIO()
+    Image.new('RGB', (4, 4), 'red').save(output, format='MPO', save_all=True,
+        append_images=[Image.new('RGB', (4, 4), 'blue')])
+    return output.getvalue()
 
 
 @override_settings(DEBUG=True, WORK_QUEUE_ENABLED=True, WORK_INTAKE_ENABLED=True, INTAKE_LOCAL_DEVELOPMENT=True,
@@ -185,7 +201,6 @@ class ProjectFilesTests(TestCase):
         self.assertEqual(client.get(reverse('workqueue:receipt_download', args=[attachment.submission_id])).status_code, 404)
 
     def test_existing_content_validation_and_storage_error_are_not_successful_uploads(self):
-        from django.core.files.uploadedfile import SimpleUploadedFile
         response = self.client.post(reverse('workqueue:start_upload'), {'intake_token': self.token,
             'file': SimpleUploadedFile('fake.pdf', b'not a PDF')})
         self.assertEqual(response.status_code, 400)
@@ -194,3 +209,67 @@ class ProjectFilesTests(TestCase):
         self.assertEqual(response.status_code, 503)
         self.assertFalse(PendingUpload.objects.filter(state='ready').exists())
         self.assertFalse(Attachment.objects.exists())
+
+    def test_jpeg_mpo_original_upload_is_accepted_and_downloaded_byte_for_byte(self):
+        original = mpo_original()
+        self.assertEqual(Image.open(BytesIO(original)).format, 'MPO')
+        for suffix in ['jpg', 'jpeg']:
+            with self.subTest(suffix=suffix):
+                stream = BytesIO(original)
+                validate_content(stream, f'phone.{suffix}')
+                self.assertEqual(stream.tell(), 0)
+                self.assertEqual(stream.read(), original)
+        response = self.client.post(reverse('workqueue:start_upload'), {'intake_token': self.token,
+            'file': SimpleUploadedFile('phone.jpeg', original, content_type='image/jpeg')})
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(self.save([response.json()['id']]).status_code, 302)
+        attachment = Attachment.objects.get()
+        self.assertEqual(attachment.content_type, 'image/jpeg')
+        self.assertEqual(attachment.size_bytes, len(original))
+        download = self.client.get(reverse('workqueue:download', args=[attachment.pk]))
+        self.assertEqual(b''.join(download.streaming_content), original)
+
+    def test_mpo_support_keeps_image_format_corruption_and_bomb_checks(self):
+        original = mpo_original()
+        for name, content in [('wrong.png', original), ('wrong.webp', original),
+                              ('broken.jpeg', b'not a jpeg'), ('truncated.jpg', original[:32])]:
+            with self.subTest(name=name), self.assertRaises(ValidationError):
+                validate_content(BytesIO(content), name)
+        png = BytesIO()
+        Image.new('RGB', (4, 4)).save(png, format='PNG')
+        with self.assertRaises(ValidationError):
+            validate_content(png, 'disguised.jpeg')
+        with self.assertRaises(ValidationError):
+            checked_name('unsupported.mpo', len(original))
+        with patch('PIL.Image.MAX_IMAGE_PIXELS', 10), self.assertRaises(ValidationError):
+            validate_content(BytesIO(original), 'large.jpeg')
+
+
+class ProjectFileConcurrencyTests(TransactionTestCase):
+    @skipUnlessDBFeature('has_select_for_update')
+    def test_simultaneous_batch_retries_attach_once(self):
+        from .project_files import attach_project_files
+        from .uploads import reserve_upload
+        owner = get_user_model().objects.create_superuser('file-race-owner', 'owner@example.invalid', 'test-only')
+        item = create_work(data=work_data(), actor=owner)[0]
+        nonce, binding = uuid.uuid4(), 'test-session'
+        upload = reserve_upload(nonce=nonce, binding=binding, name='race.pdf', size=20)
+        PendingUpload.objects.filter(pk=upload.pk).update(state='ready')
+        start = Barrier(2)
+
+        def save_batch(_):
+            close_old_connections()
+            try:
+                start.wait(timeout=10)
+                saved, created = attach_project_files(project=item.project, item_id=item.pk,
+                    nonce=nonce, binding=binding, ids=str(upload.pk), actor=owner)
+                return saved.pk, created
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(save_batch, range(2)))
+        self.assertEqual(results[0][0], results[1][0])
+        self.assertEqual(sorted(created for _, created in results), [False, True])
+        self.assertEqual(Attachment.objects.count(), 1)
+        self.assertEqual(ProjectEvent.objects.filter(action='Source files added').count(), 1)
