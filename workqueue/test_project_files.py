@@ -267,6 +267,7 @@ class ProjectFileConcurrencyTests(TransactionTestCase):
     def test_simultaneous_batch_retries_attach_once(self):
         from .project_files import attach_project_files
         from .uploads import reserve_upload
+        QueueState.objects.get_or_create(pk=1)
         owner = get_user_model().objects.create_superuser('file-race-owner', 'owner@example.invalid', 'test-only')
         item = create_work(data=work_data(), actor=owner)[0]
         nonce, binding = uuid.uuid4(), 'test-session'
