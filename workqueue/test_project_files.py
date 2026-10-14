@@ -96,7 +96,9 @@ class ProjectFilesTests(TestCase):
         self.assertRedirects(self.save(ids), self.project_url + '#files')
         self.assertEqual(Attachment.objects.count(), 2)
         self.assertEqual(Submission.objects.filter(channel='staff_files').count(), 1)
+        counts = (Attachment.objects.count(), Submission.objects.count(), ProjectEvent.objects.count())
         self.assertEqual(self.save(ids[:1]).status_code, 400)
+        self.assertEqual((Attachment.objects.count(), Submission.objects.count(), ProjectEvent.objects.count()), counts)
 
     def test_failed_file_blocks_entire_batch_then_retry_attaches_once(self):
         first, second = self.upload(), self.upload('second.pdf')
@@ -108,6 +110,17 @@ class ProjectFilesTests(TestCase):
         PendingUpload.objects.filter(pk=second).update(state='ready')
         self.assertEqual(self.save([first, second]).status_code, 302)
         self.assertEqual(Attachment.objects.count(), 2)
+
+    def test_crm_and_queue_identify_files_as_staff_sources(self):
+        from .crm_overview import timeline
+        self.save([self.upload()])
+        client = self.item.client_contact.client
+        page = timeline(client, 1)
+        source_events = [entry for entry in page.object_list if entry['title'].startswith('Source files added by staff')]
+        self.assertEqual(len(source_events), 1)
+        self.assertEqual(source_events[0]['files'][0][0], 'survey.pdf')
+        self.assertContains(self.client.get(reverse('workqueue:client_detail', args=[client.pk])), 'Source files added by staff')
+        self.assertContains(self.client.get(reverse('workqueue:queue')), 'Source files added by staff')
 
     def test_database_failure_rolls_back_all_metadata_and_is_retryable(self):
         ids = [self.upload(), self.upload('second.pdf')]
@@ -121,8 +134,12 @@ class ProjectFilesTests(TestCase):
                 raise RuntimeError('simulated failure')
             return original_create(**kwargs)
 
-        with patch('workqueue.project_files.Attachment.objects.create', side_effect=failing_create):
+        with patch('workqueue.project_files.Attachment.objects.create', side_effect=failing_create), \
+                self.assertLogs('workqueue.project_file_views', level='ERROR') as captured:
             response = self.save(ids)
+        self.assertIn('RuntimeError', captured.output[0])
+        self.assertIn('attach_project_files', captured.output[0])
+        self.assertNotIn('RuntimeError: simulated failure', captured.output[0])
         self.assertContains(response, 'could not be confirmed', status_code=503)
         self.assertFalse(Attachment.objects.exists())
         self.assertFalse(Submission.objects.filter(channel='staff_files').exists())

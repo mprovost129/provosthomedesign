@@ -130,7 +130,8 @@ def timeline(client, page_number):
             if not body and obj.changes.get("title"):
                 body = obj.changes["title"]
         elif kind == "submission":
-            title = f"{'Work entered manually' if obj.channel == 'staff' else 'Work submitted'} · {obj.work_item.reference}"
+            label = {'staff': 'Work entered manually', 'staff_files': 'Source files added by staff'}.get(obj.channel, 'Work submitted')
+            title = f"{label} · {obj.work_item.reference}"
             body = obj.work_item.project_name
             files = [(file.original_name, reverse("workqueue:download", args=[file.pk])
                       if file.storage_key or file.legacy_drive_id else "") for file in obj.attachments.all()]

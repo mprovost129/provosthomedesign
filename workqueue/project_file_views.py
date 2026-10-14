@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 from django.conf import settings
 from django.contrib import messages
@@ -38,10 +39,13 @@ def add_files(request, project_id):
                     binding=session_digest(request), ids=form.cleaned_data['upload_ids'], actor=request.user)
             except ValidationError as exc:
                 form.add_error(None, error_text(exc))
-            except Exception:
+            except Exception as exc:
                 # The atomic service rolls back the entire batch. A retry uses the
                 # same nonce, so even an uncertain commit cannot add it twice.
-                logger.warning('Project source file save failed')
+                # Retain the failure type and call stack without logging an
+                # exception message that may contain SQL values or file data.
+                logger.error('Project source file save failed (%s)\n%s',
+                    type(exc).__name__, ''.join(traceback.format_tb(exc.__traceback__)))
                 form.add_error(None, 'The file save could not be confirmed. Retry this form; files already saved will not be added twice.')
                 status = 503
             else:
