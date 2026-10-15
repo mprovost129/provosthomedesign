@@ -81,7 +81,9 @@ def verify_consultation(reference,email):
             booking_requires_approval=False)
     item.contact=contact
     item.verified_at=timezone.now()
-    item.state=ConsultationRequest.State.READY
+    # Keep the existing persisted state for rolling-deploy compatibility and
+    # email deduplication. Booking permission comes from the verified session.
+    item.state=ConsultationRequest.State.PENDING
     ClientEvent.objects.create(client=contact.client,action='Consultation requested',changes={
         'consultation':str(item.pk),'description':item.description})
     item.owner_delivery=notice(item,'owner','Consultation request: '+item.full_name,

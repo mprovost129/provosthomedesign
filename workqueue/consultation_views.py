@@ -48,7 +48,7 @@ def consultation(request):
                 request.session['consultation_verification_sent']=True
                 request.session['consultation_recent_id']=str(item.pk)
                 request.session['consultation_recent_email']=target
-            messages.success(request,'Your consultation request was saved. Verify your email to choose a meeting time.' if item.state=='unverified' else 'Your email is verified. Choose an available meeting time.')
+            messages.success(request,'Your consultation request was saved. Verify your email to choose a meeting time.' if not email else 'Your email is verified. Choose an available meeting time.')
             return redirect('workqueue:consultation' if item.state=='unverified' else 'workqueue:book')
         except ValidationError as exc:
             form.add_error(None,exc)

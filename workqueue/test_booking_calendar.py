@@ -16,6 +16,8 @@ NOW=datetime(2026,10,12,9,tzinfo=EASTERN)
     DEBUG=True,INTAKE_LOCAL_DEVELOPMENT=True,RECAPTCHA_ENTERPRISE_API_KEY='',RECAPTCHA_SECRET_KEY='',RECAPTCHA_PRIVATE_KEY='')
 class BookingCalendarTests(TestCase):
     def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
         self.provider=CalendarDouble()
         clock=patch('django.utils.timezone.now',return_value=NOW);clock.start();self.addCleanup(clock.stop)
         adapter=patch('workqueue.booking.calendar_provider',return_value=self.provider);adapter.start();self.addCleanup(adapter.stop)
@@ -119,3 +121,31 @@ class BookingCalendarTests(TestCase):
         self.assertEqual(response.context['calendar_slots'],{})
         self.assertNotContains(response,'id="appointment-form"')
         self.assertIn('no-store',response['Cache-Control'])
+
+    def test_availability_limit_skips_provider_and_recovers_without_reverification(self):
+        from .access import rate_allowed
+        for _ in range(30):
+            self.assertTrue(rate_allowed('booking-availability-email','alex@example.invalid',30,60))
+        with patch.object(self.provider,'busy') as busy:
+            response=self.client.get(self.url,{'day':'2026-10-14'})
+            busy.assert_not_called()
+        self.assertContains(response,'Please wait one minute',status_code=429)
+        self.assertEqual(response['Retry-After'],'60')
+        self.assertTrue(response.context['permitted'])
+        self.assertNotContains(response,'id="appointment-form"',status_code=429)
+        self.assertFalse(Appointment.objects.exists())
+        with patch('django.utils.timezone.now',return_value=NOW+timedelta(minutes=1)):
+            response=self.client.get(self.url,{'day':'2026-10-14'})
+        self.assertEqual(response.status_code,200)
+        self.assertTrue(response.context['slots'])
+
+    def test_availability_ip_limit_also_covers_post_before_provider_or_reservation(self):
+        from .access import rate_allowed
+        for _ in range(60):
+            self.assertTrue(rate_allowed('booking-availability-ip','127.0.0.1',60,60))
+        with patch.object(self.provider,'busy') as busy:
+            response=self.client.post(self.url,{'day':'2026-10-14'})
+            busy.assert_not_called()
+        self.assertEqual(response.status_code,429)
+        self.assertFalse(Appointment.objects.exists())
+        self.assertFalse(NotificationDelivery.objects.exists())

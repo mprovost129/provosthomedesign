@@ -1,17 +1,19 @@
 import re
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.test import TestCase, Client as BrowserClient, override_settings
+from django.db import close_old_connections, IntegrityError, transaction
+from django.test import TestCase, TransactionTestCase, Client as BrowserClient, override_settings, skipUnlessDBFeature
 from django.urls import reverse
 from django.utils import timezone
 from .access import consume_email_token,mint_email_token
 from .booking import eligible,set_booking_access
 from .consultations import submit_consultation,verify_consultation,decide_consultation,resend_verification
 from .consultation_views import ConsultationForm
-from .models import Client,ClientContact,ConsultationRequest,NotificationDelivery,BookingAccess,WorkItem,ProjectAccess
+from .models import Client,ClientContact,ConsultationRequest,NotificationDelivery,BookingAccess,BookingState,QueueState,WorkItem,ProjectAccess
 
 
 @override_settings(DEBUG=True,INTAKE_LOCAL_DEVELOPMENT=True,RECAPTCHA_ENTERPRISE_API_KEY='',RECAPTCHA_SECRET_KEY='',
@@ -53,7 +55,7 @@ class ConsultationTests(TestCase):
         item=self.submit()
         consume_email_token(self.raw(item))
         item.refresh_from_db()
-        self.assertEqual(item.state,'ready')
+        self.assertEqual(item.state,'pending')
         self.assertEqual(item.contact.client.stage,'inquiry')
         self.assertFalse(item.contact.booking_requires_approval)
         self.assertTrue(eligible(item.email))
@@ -78,11 +80,11 @@ class ConsultationTests(TestCase):
         response=self.client.get(reverse('workqueue:consultation'))
         self.assertEqual(response.url,reverse('workqueue:book'))
         item.refresh_from_db()
-        self.assertEqual(item.state,'ready')
+        self.assertEqual(item.state,'pending')
 
     def test_existing_verified_session_can_submit_without_new_verification_mail(self):
         item=self.submit(verified=True)
-        self.assertEqual(item.state,'ready')
+        self.assertEqual(item.state,'pending')
         self.assertIsNone(item.verification_delivery)
         self.assertEqual(NotificationDelivery.objects.count(),2)
         self.assertTrue(eligible(item.email))
@@ -96,7 +98,7 @@ class ConsultationTests(TestCase):
         other=get_user_model().objects.create_user('other')
         with self.assertRaises(PermissionDenied):decide_consultation(item.pk,True,other)
         item.refresh_from_db()
-        self.assertEqual(item.state,'ready')
+        self.assertEqual(item.state,'pending')
         self.assertEqual(NotificationDelivery.objects.count(),before)
         self.assertFalse(BookingAccess.objects.exists())
 
@@ -108,13 +110,13 @@ class ConsultationTests(TestCase):
         self.assertEqual(item.contact_id,contact.pk)
         self.assertEqual(Client.objects.count(),1)
         self.assertEqual(contact.full_name,'Original')
-        self.assertEqual(item.state,'ready')
+        self.assertEqual(item.state,'pending')
         self.assertTrue(eligible(item.email))
 
     def test_legacy_denial_is_preserved_as_history_but_does_not_block_verification(self):
         set_booking_access('prospect@example.invalid',False,self.owner)
         item=self.submit(verified=True)
-        self.assertEqual(item.state,'ready')
+        self.assertEqual(item.state,'pending')
         self.assertTrue(eligible(item.email))
         self.assertFalse(BookingAccess.objects.get().allowed)
 
@@ -134,6 +136,37 @@ class ConsultationTests(TestCase):
         item=self.submit()
         with self.assertRaises(ValidationError):verify_consultation(item.pk.hex,'other@example.invalid')
         self.assertFalse(Client.objects.exists())
+
+    def test_verified_inquiry_reused_across_different_form_tokens_and_sessions(self):
+        first=self.submit(verified=True)
+        before=NotificationDelivery.objects.count()
+        for verified in (False, True):
+            repeated=self.submit(verified=verified,description='Different form contents')
+            self.assertEqual(repeated.pk,first.pk)
+        self.assertEqual(ConsultationRequest.objects.count(),1)
+        self.assertEqual(NotificationDelivery.objects.count(),before)
+        first.refresh_from_db()
+        self.assertEqual(first.description,'A new home design')
+        self.assertEqual(first.state,'pending')
+        self.assertEqual(first.get_state_display(),'Ready to book')
+
+    def test_repeated_unverified_form_does_not_grant_session_or_disclose_inquiry(self):
+        first=self.submit(verified=True,description='PRIVATE INQUIRY')
+        before=NotificationDelivery.objects.count()
+        token=self.client.get(reverse('workqueue:consultation')).context['form'].initial['token']
+        response=self.client.post(reverse('workqueue:consultation'),{'token':token,'full_name':'Different',
+            'email':first.email,'phone':'555','description':'Repeated form','terms_accepted':'on'},follow=True)
+        self.assertNotIn('queue_verified_email',self.client.session)
+        self.assertContains(response,'Verify your email to choose a time')
+        self.assertNotContains(response,'PRIVATE INQUIRY')
+        self.assertEqual(NotificationDelivery.objects.count(),before)
+        self.assertEqual(ConsultationRequest.objects.count(),1)
+
+    def test_database_prevents_a_second_open_inquiry_after_verification(self):
+        first=self.submit(verified=True)
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            ConsultationRequest.objects.create(email=first.email,full_name='Duplicate',phone='555',
+                description='Duplicate',idempotency_key='different-key',terms_accepted_at=timezone.now())
 
     def test_old_pending_request_with_approval_flag_can_use_existing_verified_session(self):
         item=self.submit(verified=True)
@@ -222,3 +255,26 @@ class ConsultationTests(TestCase):
             'phone':'555','description':'New house','terms_accepted':'on'})
         self.assertEqual(response.status_code,403)
         self.assertFalse(ConsultationRequest.objects.exists())
+
+
+@skipUnlessDBFeature('has_select_for_update')
+@override_settings(INTAKE_OWNER_EMAIL='owner@example.invalid',INTAKE_PUBLIC_BASE_URL='https://example.invalid')
+class ConsultationConcurrencyTests(TransactionTestCase):
+    def test_parallel_verified_submissions_share_one_inquiry_and_notice(self):
+        BookingState.objects.get_or_create(pk=1)
+        QueueState.objects.get_or_create(pk=1)
+
+        def submit(key):
+            close_old_connections()
+            try:
+                return submit_consultation(email='parallel@example.invalid',full_name='Prospect',phone='555',
+                    description='One inquiry',key=key,verified=True,terms_url='/terms/').pk
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results=list(pool.map(submit,['parallel-a','parallel-b']))
+        self.assertEqual(results[0],results[1])
+        self.assertEqual(ConsultationRequest.objects.count(),1)
+        self.assertEqual(NotificationDelivery.objects.filter(recipient_kind='owner').count(),1)
+        self.assertEqual(NotificationDelivery.objects.filter(recipient_kind='client').count(),1)
