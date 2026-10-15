@@ -1,4 +1,4 @@
-"""Email-verified prospect inquiries; first booking requires staff approval."""
+"""Email-verified prospect inquiries with immediate access to booking."""
 import uuid
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -6,9 +6,9 @@ from django.db import transaction
 from django.urls import reverse
 from django.utils import timezone
 from .access import mint_email_token, normalize_email
-from .booking import eligible, lock_bookings, set_booking_access
+from .booking import lock_bookings
 from .crm_identity import normalized_text, phone_key
-from .models import Client, ClientContact, ClientEvent, ConsultationRequest, NotificationDelivery, BookingAudit
+from .models import Client, ClientContact, ClientEvent, ConsultationRequest, NotificationDelivery
 from .notifications import access_url, site_url
 from .services import lock_queue
 
@@ -51,9 +51,9 @@ def submit_consultation(*, email, full_name, phone, description, key, verified=F
 def queue_verification(item):
     _,raw=mint_email_token(item.email,item.pk.hex,destination='consult')
     item.verification_delivery=notice(item,'client','Verify your consultation request',
-        f'Hello {item.full_name},\n\nVerify your email to send Mike your initial consultation request:\n{access_url(raw)}\n\n'
+        f'Hello {item.full_name},\n\nVerify your email to choose an initial consultation time:\n{access_url(raw)}\n\n'
         'This link expires in 24 hours and can be used once. No appointment time is reserved yet. '
-        'After verification, Mike will review your request before you choose a time.\n\n'
+        'After verification, you can choose an available time without waiting for approval.\n\n'
         f'Your project: {item.description}\n\nIf you did not request this, you can ignore this email.\n')
     item.save(update_fields=['verification_delivery'])
 
@@ -73,29 +73,26 @@ def verify_consultation(reference,email):
     lock_queue()
     contact=ClientContact.objects.filter(email__iexact=item.email,archived_at__isnull=True,
         client__merged_into__isnull=True).select_related('client').order_by('created_at','pk').first()
-    already_allowed=eligible(item.email)
     if contact is None:
         account=Client.objects.create(name=item.full_name,normalized_name=normalized_text(item.full_name),
             kind=Client.Kind.INDIVIDUAL,stage=Client.Stage.INQUIRY)
         contact=ClientContact.objects.create(client=account,email=item.email,full_name=item.full_name,phone=item.phone,
             submitted_company='Homeowner',normalized_name=normalized_text(item.full_name),normalized_phone=phone_key(item.phone),
-            booking_requires_approval=not already_allowed)
+            booking_requires_approval=False)
     item.contact=contact
     item.verified_at=timezone.now()
-    item.state='approved' if already_allowed else 'pending'
-    if already_allowed:
-        item.decided_at=timezone.now()
+    item.state=ConsultationRequest.State.READY
     ClientEvent.objects.create(client=contact.client,action='Consultation requested',changes={
         'consultation':str(item.pk),'description':item.description})
     item.owner_delivery=notice(item,'owner','Consultation request: '+item.full_name,
         f'Email-verified consultation request\nName: {item.full_name}\nEmail: {item.email}\nPhone: {item.phone}\n\n'
-        f'Project: {item.description}\n\n'+('Existing booking access is enabled.\n' if already_allowed else 'Approve or decline first-booking access:\n')+
+        f'Project: {item.description}\n\nThis visitor can choose a time now. No approval is needed.\n'+
         site_url(reverse('workqueue:queue'))+'#consultations\n')
     item.receipt_delivery=notice(item,'client','Consultation request received',
         f'Hello {item.full_name},\n\nYour email is verified and we received your consultation request.\n\n'
-        f'Project: {item.description}\n\n'+('You already have booking access. Choose a time:\n'+site_url(reverse('workqueue:book'))
-        if already_allowed else 'Mike will review your request. We will email you when you can choose a time. No time is reserved yet.')+'\n')
-    item.save(update_fields=['contact','verified_at','state','decided_at','owner_delivery','receipt_delivery'])
+        f'Project: {item.description}\n\nChoose an available appointment time:\n'+site_url(reverse('workqueue:book'))+
+        '\n\nNo approval is needed. A time is reserved only when you request an appointment.\n')
+    item.save(update_fields=['contact','verified_at','state','owner_delivery','receipt_delivery'])
     return item
 
 
@@ -107,34 +104,8 @@ def resend_verification(request_id,email):
     return item
 
 
-@transaction.atomic
 def decide_consultation(request_id,approve,actor):
+    """Reject stale approval actions without sending obsolete decision emails."""
     from .crm import require_staff
     require_staff(actor,'workqueue.change_bookingaccess')
-    lock_bookings()
-    lock_queue()
-    item=ConsultationRequest.objects.select_for_update(of=('self',)).select_related('contact__client').get(pk=request_id)
-    state='approved' if approve else 'declined'
-    if item.state==state:
-        return item
-    if item.state!='pending' or not item.verified_at:
-        raise ValidationError('This consultation request has already been reviewed or is not verified yet.')
-    if approve and (not item.contact or item.contact.archived_at or item.contact.client.merged_into_id or normalize_email(item.contact.email or '')!=item.email):
-        raise ValidationError('The client contact changed. Review the CRM record before approving this request.')
-    if approve:
-        set_booking_access(item.email,True,actor)
-        item.contact.booking_requires_approval=False
-        item.contact.save(update_fields=['booking_requires_approval'])
-        _,raw=mint_email_token(item.email,destination='booking')
-        body=f'Hello {item.full_name},\n\nYour initial consultation request is approved. Choose an available appointment time:\n{access_url(raw)}\n\n'
-        body+='This sign-in link expires in 24 hours and can be used once. Approval does not reserve a time.\n'
-    else:
-        body=f'Hello {item.full_name},\n\nWe are unable to offer an initial consultation for this request at this time. '
-        body+='Please contact Provost Home Design if you would like to discuss other options.\n'
-    item.decision_delivery=notice(item,'client','Consultation request '+state,body)
-    item.state=state;item.decided_at=timezone.now();item.decided_by=actor
-    item.save(update_fields=['state','decided_at','decided_by','decision_delivery'])
-    if item.contact:
-        ClientEvent.objects.create(client=item.contact.client,actor=actor,action='Consultation '+state,changes={'consultation':str(item.pk)})
-    BookingAudit.objects.create(actor=actor,action='consultation_'+state,details={'consultation':str(item.pk),'email':item.email})
-    return item
+    raise ValidationError('Booking approval is no longer required. Verified visitors can choose a time; manage cancellations under appointments.')

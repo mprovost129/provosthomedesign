@@ -17,7 +17,7 @@ from django.views.decorators.http import require_http_methods
 
 from .access import authorized_projects, authorized_work, new_intake_token, read_intake_token, session_digest, verified_email
 from .booking import (HOLD_STATES, available_days, available_times, eligible, lock_bookings, request_cancel,
-                      reserve_appointment, set_booking_access, sync_appointment)
+                      reserve_appointment, sync_appointment)
 from .calendar_provider import EASTERN, CalendarUnavailable
 from .client_views import limited
 from .client_security import verify_form
@@ -199,7 +199,7 @@ def staff_action(request):
             inquiry = get_object_or_404(ConsultationRequest, pk=request_id)
             decide_consultation(inquiry.pk, action == 'consultation_approve', request.user)
         elif action in ("booking_grant", "booking_revoke"):
-            set_booking_access(request.POST.get("booking_email", ""), action == "booking_grant", request.user)
+            raise ValidationError('Booking access now follows email verification. No manual enablement or approval is required.')
         else:
             try:
                 appointment_id = uuid.UUID(request.POST.get("appointment_id", ""))

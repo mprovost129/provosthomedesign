@@ -1,151 +1,159 @@
+"""End-to-end booking identity tests without pre-created grants or CRM records."""
+import re
 from datetime import timedelta
 from unittest.mock import patch
-
-from django.core.exceptions import ValidationError
-from django.test import TestCase, override_settings
+from django.contrib.auth import get_user_model
+from django.core.cache import cache
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-from django.utils import timezone
-
-from . import test_booking as baseline
-from .access import consume_email_token, mint_email_token
-from .booking import eligible, set_booking_access, sync_appointment, request_cancel
-from .models import Appointment, BookingAccess, Client as CRMClient, ClientContact, ProjectAccess
-from .test_booking import START, NOW
+from .access import mint_email_token
+from .booking import eligible, sync_appointment
+from .models import Appointment, BookingAccess, Client as CRMClient, ClientContact, ProjectAccess, WorkItem
+from .models import ConsultationRequest, NotificationDelivery
+from .test_booking import CalendarDouble, NOW, START
 
 
-@override_settings(DEBUG=True, INTAKE_LOCAL_DEVELOPMENT=True, RECAPTCHA_ENTERPRISE_API_KEY='',
-    RECAPTCHA_SECRET_KEY='', RECAPTCHA_PRIVATE_KEY='', BOOKING_ENABLED=True, WORK_INTAKE_ENABLED=True,
-    WORK_QUEUE_ENABLED=True, BOOKING_HORIZON_DAYS=60, GOOGLE_CALENDAR_ID='primary',
+@override_settings(DEBUG=True, INTAKE_LOCAL_DEVELOPMENT=True, BOOKING_CALENDAR_BACKEND='google',
+    RECAPTCHA_ENTERPRISE_API_KEY='', RECAPTCHA_SECRET_KEY='', RECAPTCHA_PRIVATE_KEY='',
+    BOOKING_ENABLED=True, WORK_INTAKE_ENABLED=True, WORK_QUEUE_ENABLED=True,
     INTAKE_PUBLIC_BASE_URL='https://www.provosthomedesign.com', INTAKE_OWNER_EMAIL='owner@example.invalid')
 class CRMBookingAccessTests(TestCase):
-    reserve = baseline.BookingTests.reserve
-    signin = baseline.BookingTests.signin
-
     def setUp(self):
-        baseline.BookingTests.setUp(self)
-        BookingAccess.objects.all().delete()
-        self.account = CRMClient.objects.create(name='Existing homeowner', normalized_name='existing homeowner')
-        self.contact = ClientContact.objects.create(client=self.account, email='alex@example.invalid', full_name='Alex Example')
+        cache.clear()
+        self.calendar=CalendarDouble()
+        for target,value in [('django.utils.timezone.now',NOW),('workqueue.booking.calendar_provider',self.calendar)]:
+            patcher=patch(target,return_value=value);patcher.start();self.addCleanup(patcher.stop)
 
-    def request_booking(self):
-        response = self.client.get(reverse('workqueue:book'), {'day':START.date().isoformat()})
-        return self.client.post(reverse('workqueue:book'), {
-            'token':response.context['form'].initial['token'], 'day':START.date().isoformat(),
-            'slot':START.isoformat(), 'full_name':'Alex Example', 'phone':'555', 'purpose':'Review the plan',
-            'meeting_method':'phone', 'terms_accepted':'on'})
+    def verify(self,email='new@example.invalid'):
+        # Requesting browser may differ from the browser opening the email.
+        response=self.client.post(reverse('workqueue:book'),{'email':email})
+        self.assertEqual(response.status_code,200)
+        notice=NotificationDelivery.objects.filter(recipient=email.strip().lower()).latest('pk')
+        raw=re.search(r'#token=([A-Za-z0-9_-]+)',notice.body)[1]
+        browser=Client()
+        self.assertEqual(browser.get(reverse('workqueue:confirm_access')).status_code,200)
+        response=browser.post(reverse('workqueue:confirm_access'),{'token':raw})
+        self.assertEqual(response.url,reverse('workqueue:book'))
+        self.assertEqual(browser.session['queue_verified_email'],email.strip().lower())
+        return browser,raw
 
-    def test_current_crm_email_is_eligible_without_any_work_or_manual_grant(self):
-        self.assertTrue(eligible('  ALEX@EXAMPLE.INVALID  '))
+    def form_data(self,browser,start=START):
+        page=browser.get(reverse('workqueue:book'),{'day':start.date().isoformat()})
+        self.assertTrue(page.context['permitted'])
+        self.assertContains(page,'calendar-grid')
+        return {'token':page.context['form'].initial['token'],'day':start.date().isoformat(),
+            'slot':start.isoformat(),'full_name':'New Visitor','phone':'555','purpose':'Discuss a new home',
+            'meeting_method':'phone','terms_accepted':'on'}
+
+    def test_truly_new_email_verifies_books_and_confirms_without_client_or_project_access(self):
+        browser,_=self.verify('  New@Example.Invalid  ')
+        data=self.form_data(browser)
+        self.assertEqual(browser.post(reverse('workqueue:book'),data).status_code,302)
+        item=Appointment.objects.get()
+        self.assertEqual(item.email,'new@example.invalid')
+        self.assertEqual(item.state,'pending')
+        self.assertEqual(NotificationDelivery.objects.filter(appointment=item).count(),0)
+        sync_appointment(item.pk,self.calendar)
+        item.refresh_from_db()
+        self.assertEqual(item.state,'confirmed')
+        self.assertEqual(NotificationDelivery.objects.filter(appointment=item).count(),2)
+        self.assertFalse(BookingAccess.objects.exists())
+        self.assertFalse(CRMClient.objects.exists())
+        self.assertFalse(ClientContact.objects.exists())
+        self.assertFalse(ProjectAccess.objects.exists())
+        self.assertFalse(WorkItem.objects.exists())
+        self.assertFalse(get_user_model().objects.exists())
+
+    def test_existing_crm_contact_verifies_and_books_without_manual_grant(self):
+        account=CRMClient.objects.create(name='Existing',normalized_name='existing')
+        ClientContact.objects.create(client=account,email='new@example.invalid')
+        browser,_=self.verify()
+        self.assertEqual(browser.post(reverse('workqueue:book'),self.form_data(browser)).status_code,302)
         self.assertFalse(BookingAccess.objects.exists())
         self.assertFalse(ProjectAccess.objects.exists())
 
-    def test_unknown_empty_and_alias_emails_stay_ineligible(self):
-        for email in ['', 'unknown@example.invalid', 'alex+other@example.invalid']:
-            self.assertFalse(eligible(email))
-
-    def test_no_calendar_or_booking_form_before_verification(self):
-        response = self.client.get(reverse('workqueue:book'))
-        self.assertContains(response, 'Email me a sign-in link')
-        self.assertNotContains(response, 'Choose a date')
-        self.assertFalse(BookingAccess.objects.exists())
-
-    def test_verified_existing_session_gets_calendar_immediately(self):
-        self.signin()
-        response = self.client.get(reverse('workqueue:book'))
-        self.assertTrue(response.context['permitted'])
-        self.assertContains(response, 'Choose a date')
-        self.assertFalse(BookingAccess.objects.exists())
-        self.assertFalse(ProjectAccess.objects.exists())
-
-    def test_verified_crm_client_can_book_without_persisting_manual_grant(self):
-        self.signin()
-        with patch('workqueue.booking.calendar_provider',return_value=self.calendar):
-            response = self.request_booking()
-        self.assertEqual(response.status_code,302)
-        self.assertEqual(Appointment.objects.get().email,'alex@example.invalid')
-        self.assertFalse(BookingAccess.objects.exists())
-        self.assertFalse(ProjectAccess.objects.exists())
-
-    def test_expired_verified_session_requires_email_verification_again(self):
-        self.signin()
-        session=self.client.session
-        session['queue_email_verified_until']=NOW.timestamp()-1
-        session.save()
-        response=self.client.get(reverse('workqueue:book'))
-        self.assertContains(response,'Email me a sign-in link')
-        self.assertNotContains(response,'Choose a date')
-
-    def test_explicit_booking_block_wins_over_crm_and_repeated_verification(self):
-        set_booking_access('alex@example.invalid',False,None)
-        _,raw=mint_email_token('alex@example.invalid',destination='booking')
-        consume_email_token(raw)
-        self.signin()
-        self.assertFalse(eligible('alex@example.invalid'))
+    def test_legacy_pending_inquiry_denial_and_archived_contact_do_not_block_verified_booking(self):
+        account=CRMClient.objects.create(name='Legacy',normalized_name='legacy')
+        contact=ClientContact.objects.create(client=account,email='new@example.invalid',
+            archived_at=NOW,booking_requires_approval=True)
+        BookingAccess.objects.create(email=contact.email,allowed=False)
+        inquiry=ConsultationRequest.objects.create(email=contact.email,full_name='Legacy inquiry',phone='555',
+            description='Previously waiting',state='pending',contact=contact,verified_at=NOW,
+            terms_accepted_at=NOW,idempotency_key='legacy-pending')
+        browser,_=self.verify()
+        self.assertEqual(browser.get(reverse('workqueue:consultation')).url,reverse('workqueue:book'))
+        self.assertEqual(browser.post(reverse('workqueue:book'),self.form_data(browser)).status_code,302)
+        inquiry.refresh_from_db()
+        self.assertEqual(inquiry.state,'pending')  # Historical state needs no production rewrite.
+        contact.refresh_from_db()
+        self.assertTrue(contact.booking_requires_approval)
         self.assertFalse(BookingAccess.objects.get().allowed)
-        response=self.client.get(reverse('workqueue:book'))
-        self.assertFalse(response.context['permitted'])
-        self.assertContains(response,'Booking is not enabled for this email')
+        self.assertFalse(ProjectAccess.objects.exists())
 
-    def test_block_at_reservation_time_rejects_a_previously_displayed_form(self):
-        self.signin()
-        response=self.client.get(reverse('workqueue:book'),{'day':START.date().isoformat()})
-        token=response.context['form'].initial['token']
-        set_booking_access('alex@example.invalid',False,None)
-        response=self.client.post(reverse('workqueue:book'),{'token':token,'day':START.date().isoformat(),
-            'slot':START.isoformat(),'full_name':'Alex','phone':'555','purpose':'Review','meeting_method':'phone','terms_accepted':'on'})
-        self.assertEqual(response.status_code,403)
+    def test_unverified_posted_email_cannot_view_calendar_or_create_appointment(self):
+        browser=Client()
+        with patch('workqueue.booking_views.available_days') as availability:
+            page=browser.get(reverse('workqueue:book'),{'email':'new@example.invalid'})
+            self.assertNotContains(page,'calendar-grid')
+            result=browser.post(reverse('workqueue:book'),{'email':'new@example.invalid','day':START.date().isoformat(),
+                'slot':START.isoformat(),'full_name':'Forged','phone':'555','purpose':'No verification'})
+        self.assertEqual(result.status_code,200)
+        availability.assert_not_called()
+        self.assertFalse(Appointment.objects.exists())
+        self.assertNotIn('queue_verified_email',browser.session)
+
+    def test_expired_session_cannot_submit_previously_displayed_booking_form(self):
+        browser,_=self.verify()
+        data=self.form_data(browser)
+        session=browser.session;session['queue_email_verified_until']=NOW.timestamp()-1;session.save()
+        result=browser.post(reverse('workqueue:book'),data)
+        self.assertEqual(result.status_code,400)
+        self.assertContains(browser.get(reverse('workqueue:book')),'Verify your email')
         self.assertFalse(Appointment.objects.exists())
 
-    def test_manual_allow_works_for_non_crm_email_and_can_be_revoked(self):
-        set_booking_access('other@example.invalid',True,None)
-        self.assertTrue(eligible('other@example.invalid'))
-        set_booking_access('other@example.invalid',False,None)
-        self.assertFalse(eligible('other@example.invalid'))
+    def test_expired_invalid_and_reused_verification_links_cannot_authenticate_new_browser(self):
+        record,expired=mint_email_token('new@example.invalid',destination='booking')
+        record.expires_at=NOW-timedelta(seconds=1);record.save(update_fields=['expires_at'])
+        _,used=self.verify()
+        for raw in ('incorrect-token',expired,used):
+            browser=Client()
+            self.assertEqual(browser.post(reverse('workqueue:confirm_access'),{'token':raw}).status_code,400)
+            self.assertNotIn('queue_verified_email',browser.session)
+        self.assertFalse(Appointment.objects.exists())
 
-    def test_archived_contact_and_merged_source_are_not_auto_eligible(self):
-        self.contact.archived_at=timezone.now()
-        self.contact.save(update_fields=['archived_at'])
-        self.assertFalse(eligible('alex@example.invalid'))
-        self.contact.archived_at=None
-        self.contact.save(update_fields=['archived_at'])
-        target=CRMClient.objects.create(name='Merged target',normalized_name='merged target')
-        self.account.merged_into=target
-        self.account.save(update_fields=['merged_into'])
-        self.assertFalse(eligible('alex@example.invalid'))
-        self.contact.client=target
-        self.contact.save(update_fields=['client'])
-        self.assertTrue(eligible('alex@example.invalid'))
+    def test_double_booking_click_creates_one_appointment(self):
+        browser,_=self.verify()
+        data=self.form_data(browser)
+        for _ in range(2):
+            self.assertEqual(browser.post(reverse('workqueue:book'),data).status_code,302)
+        self.assertEqual(Appointment.objects.count(),1)
 
-    def test_email_correction_removes_old_and_enables_new_email_without_grants(self):
-        self.contact.email='correct@example.invalid'
-        self.contact.save(update_fields=['email'])
-        self.assertFalse(eligible('alex@example.invalid'))
-        self.assertTrue(eligible('correct@example.invalid'))
-        self.assertFalse(BookingAccess.objects.exists())
+    def test_two_new_verified_emails_cannot_book_same_slot_from_stale_forms(self):
+        first,_=self.verify('first@example.invalid')
+        second,_=self.verify('second@example.invalid')
+        first_data=self.form_data(first);second_data=self.form_data(second)
+        self.assertEqual(first.post(reverse('workqueue:book'),first_data).status_code,302)
+        self.assertEqual(second.post(reverse('workqueue:book'),second_data).status_code,400)
+        self.assertEqual(Appointment.objects.count(),1)
 
-    def test_multiple_contacts_with_same_email_do_not_duplicate_access(self):
-        other=CRMClient.objects.create(name='Other company',normalized_name='other company',kind='company')
-        ClientContact.objects.create(client=other,email='alex@example.invalid')
-        self.assertTrue(eligible('alex@example.invalid'))
-        self.assertFalse(BookingAccess.objects.exists())
+    def test_calendar_conflict_after_selection_rejects_booking(self):
+        browser,_=self.verify()
+        data=self.form_data(browser)
+        self.calendar.external=[(START,START+timedelta(hours=1))]
+        self.assertEqual(browser.post(reverse('workqueue:book'),data).status_code,400)
+        self.assertFalse(Appointment.objects.exists())
 
-    def test_booking_does_not_grant_private_project_access(self):
-        _,raw=mint_email_token('alex@example.invalid',destination='booking')
-        consume_email_token(raw)
-        self.signin()
-        response=self.client.get(reverse('workqueue:book'),{'day':START.date().isoformat()})
-        self.assertEqual(response.context['form'].fields['project'].queryset.count(),0)
+    def test_posted_email_cannot_replace_verified_identity_or_attach_project(self):
+        browser,_=self.verify()
+        data=self.form_data(browser);data['email']='victim@example.invalid'
+        self.assertEqual(browser.post(reverse('workqueue:book'),data).status_code,302)
+        self.assertEqual(Appointment.objects.get().email,'new@example.invalid')
         self.assertFalse(ProjectAccess.objects.exists())
 
-    def test_disabled_client_can_still_cancel_existing_booking(self):
-        # Create through the same reservation service, then remove the test helper's explicit grant.
-        item=self.reserve()
-        BookingAccess.objects.all().delete()
-        sync_appointment(item.pk,self.calendar)
-        set_booking_access(item.email,False,None)
-        self.assertTrue(request_cancel(item.pk,email=item.email).cancel_requested)
-
-    def test_imported_contact_with_mixed_case_stored_email_matches(self):
-        self.contact.email='Alex@Example.Invalid'
-        self.contact.save(update_fields=['email'])
-        self.assertTrue(eligible('alex@example.invalid'))
+    def test_email_alias_requires_its_own_verification_but_not_a_crm_entry(self):
+        browser,_=self.verify('new+consult@example.invalid')
+        self.assertEqual(browser.post(reverse('workqueue:book'),self.form_data(browser)).status_code,302)
+        self.assertEqual(Appointment.objects.get().email,'new+consult@example.invalid')
+        self.assertTrue(eligible('new+consult@example.invalid'))
+        self.assertFalse(eligible(''))
+        self.assertFalse(eligible('invalid'))

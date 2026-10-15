@@ -103,12 +103,11 @@ class BookingCalendarTests(TestCase):
         self.assertContains(response,'Retain my notes',status_code=400)
         self.assertFalse(Appointment.objects.exists())
 
-    def test_anonymous_ineligible_and_existing_booking_do_not_load_provider(self):
+    def test_anonymous_and_expired_verified_sessions_do_not_load_provider(self):
         with patch.object(self.provider,'busy') as busy:
             self.client.logout();self.client.get(self.url);busy.assert_not_called()
         session=self.client.session;session['queue_verified_email']='alex@example.invalid'
-        session['queue_email_verified_until']=(NOW+timedelta(days=7)).timestamp();session.save()
-        BookingAccess.objects.filter(email='alex@example.invalid').update(allowed=False)
+        session['queue_email_verified_until']=(NOW-timedelta(seconds=1)).timestamp();session.save()
         with patch.object(self.provider,'busy') as busy:
             response=self.client.get(self.url);busy.assert_not_called();self.assertNotContains(response,'calendar-grid')
 

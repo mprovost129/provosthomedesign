@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from .access import authorized_projects, mint_email_token, normalize_email
 from .calendar_provider import EASTERN, CalendarUnavailable, calendar_provider, expected_events
-from .models import Appointment, BookingAccess, BookingAudit, BookingState, ClientContact, NotificationDelivery
+from .models import Appointment, BookingAccess, BookingAudit, BookingState, NotificationDelivery
 from .notifications import access_url, site_url
 
 
@@ -23,20 +23,19 @@ def lock_bookings():
 
 
 def eligible(email):
-    """Verified-email callers may book through a grant or their current CRM contact.
+    """Any verified visitor may book, without CRM membership or staff approval.
 
-    Explicit allow/block records take precedence. CRM matching is checked live,
-    so an imported contact or corrected email works in an existing verified
-    session without creating a permanent grant or granting project access.
+    Callers must obtain the identity from verified_email(request), never POST
+    data. This checks booking policy, not proof of ownership of an email address.
+    Legacy grants, denials and consultation approval flags are historical only.
+    Project and document authorization remain separate.
     """
-    if not email:
+    from django.core.validators import validate_email
+    try:
+        validate_email(normalize_email(email or ''))
+    except ValidationError:
         return False
-    email = normalize_email(email)
-    override = BookingAccess.objects.filter(email=email).values_list('allowed', flat=True).first()
-    if override is not None:
-        return override
-    return ClientContact.objects.filter(email__iexact=email, archived_at__isnull=True,
-        client__merged_into__isnull=True, booking_requires_approval=False).exists()
+    return True
 
 
 def overlaps(start, end, intervals):
@@ -157,6 +156,7 @@ def available_days(first, last, *, email, previous=None, provider=None, now=None
 
 
 def reserve_appointment(*, email, start, full_name, phone, purpose, key, project_id=None, previous_id=None, provider=None, terms_url="", meeting_method=None):
+    """Reserve for a trusted, already-verified identity supplied by the caller."""
     email = normalize_email(email)
     if (not full_name.strip() or not phone.strip() or not purpose.strip()
             or len(purpose) > 3000 or len(full_name) > 200 or len(phone) > 50 or timezone.is_naive(start)):

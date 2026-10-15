@@ -564,6 +564,7 @@ class BookingState(models.Model):
 class ConsultationRequest(models.Model):
     class State(models.TextChoices):
         UNVERIFIED = 'unverified', 'Email verification needed'
+        READY = 'ready', 'Ready to book'
         PENDING = 'pending', 'Awaiting approval'
         APPROVED = 'approved', 'Approved'
         DECLINED = 'declined', 'Declined'
@@ -590,7 +591,7 @@ class ConsultationRequest(models.Model):
     class Meta:
         ordering = ['-created_at', '-pk']
         constraints = [models.UniqueConstraint(fields=['email'], condition=Q(state__in=['unverified','pending']), name='wq_one_pending_consultation'),
-            models.CheckConstraint(condition=Q(state__in=['unverified','pending','approved','declined']), name='wq_consultation_state')]
+            models.CheckConstraint(condition=Q(state__in=['unverified','ready','pending','approved','declined']), name='wq_consultation_state')]
 
 
 class BookingAccess(models.Model):
