@@ -420,7 +420,7 @@ def queue(request):
         row["information_preview"] = information_preview if current else None
         row["information_signature"] = information_signature if current else ""
     params = urlencode({key: value for key, value in filters.items() if key != "page" and value})
-    from .models import Appointment, BookingAccess, ConsultationRequest
+    from .models import Appointment, ConsultationRequest
     from .health import health_snapshot
     appointments = Appointment.objects.select_related("project").prefetch_related("notifications", "replacements").exclude(state__in=["canceled", "completed"]).order_by("starts_at")
     from .time_views import timer_context
@@ -428,12 +428,10 @@ def queue(request):
     return render(request, "workqueue/queue.html", {**time_context, "rows": rows, "page": page, "filters": filters,
         "queue_health": health_snapshot(),
         "arrival_snapshot": arrival_snapshot,
-        "consultation_requests": ConsultationRequest.objects.filter(state='pending').select_related('contact__client').order_by('verified_at')[:100],
-        "consultation_history": ConsultationRequest.objects.filter(state__in=['approved','declined']).order_by('-decided_at')[:10],
-        "appointments": appointments, "booking_access": BookingAccess.objects.order_by("email")[:100],
+        "consultation_requests": ConsultationRequest.objects.filter(verified_at__isnull=False).select_related('contact__client').order_by('-verified_at')[:100],
+        "appointments": appointments,
         "closed_appointments": Appointment.objects.filter(state__in=["canceled", "completed"]).prefetch_related("notifications").order_by("-starts_at")[:25],
         "can_manage_bookings": not preview and request.user.has_perm("workqueue.change_appointment"),
-        "can_manage_booking_access": not preview and request.user.has_perm("workqueue.change_bookingaccess"),
         "page_query": params, "statuses": Status.choices, "priorities": Priority.choices,
         "create_form": create_form, "copy_source": copy_source,
         "create_open": bool(copy_source) or request.method == "POST" and request.POST.get("action") in ("create", "copy"),

@@ -285,7 +285,7 @@ class BookingTests(TestCase):
         item.refresh_from_db()
         self.assertFalse(item.cancel_requested)
 
-    def test_booking_access_required_and_revocation_does_not_prevent_cancellation(self):
+    def test_legacy_denial_does_not_bypass_upcoming_limit_or_prevent_cancellation(self):
         item = self.reserve()
         set_booking_access(item.email, False, None)
         with self.assertRaises(ValidationError):
@@ -354,7 +354,7 @@ class BookingTests(TestCase):
         session.save()
         self.assertContains(self.client.get(reverse("workqueue:book")), "Verify your email")
 
-    def test_staff_permissions_and_audit_on_same_queue_page(self):
+    def test_retired_booking_grants_preserve_staff_permissions_without_writing(self):
         staff = get_user_model().objects.create_user("staff", is_staff=True)
         staff.user_permissions.add(Permission.objects.get(codename="view_workitem", content_type__app_label="workqueue"))
         self.client.force_login(staff)
@@ -362,9 +362,8 @@ class BookingTests(TestCase):
         self.assertEqual(self.client.post(reverse("workqueue:queue"), data).status_code, 403)
         staff.user_permissions.add(Permission.objects.get(codename="change_bookingaccess", content_type__app_label="workqueue"))
         self.assertEqual(self.client.post(reverse("workqueue:queue"), data).status_code, 302)
-        self.assertTrue(BookingAccess.objects.get(email="existing@example.invalid").allowed)
-        self.assertTrue(BookingAudit.objects.filter(actor=staff).exists())
-        self.assertContains(self.client.get(reverse("workqueue:queue")), "existing@example.invalid")
+        self.assertFalse(BookingAccess.objects.filter(email="existing@example.invalid").exists())
+        self.assertFalse(BookingAudit.objects.filter(actor=staff).exists())
 
     @override_settings(BOOKING_ENABLED=False)
     def test_disabled_booking_is_hidden_and_routes_are_unavailable(self):
@@ -439,15 +438,13 @@ class BookingConcurrencyTests(TransactionTestCase):
             close_old_connections()
 
     def test_parallel_clients_cannot_reserve_same_slot(self):
-        for email in ["one@example.invalid", "two@example.invalid"]:
-            BookingAccess.objects.create(email=email)
+        self.assertFalse(BookingAccess.objects.exists())
         with patch("django.utils.timezone.now", return_value=NOW), ThreadPoolExecutor(max_workers=2) as pool:
             results = list(pool.map(lambda email: self.reserve_one(email, START), ["one@example.invalid", "two@example.invalid"]))
         self.assertEqual(sum(results), 1)
 
     def test_parallel_clients_cannot_exceed_daily_limit(self):
-        for email in ["one@example.invalid", "two@example.invalid", "three@example.invalid"]:
-            BookingAccess.objects.create(email=email)
+        self.assertFalse(BookingAccess.objects.exists())
         with patch("django.utils.timezone.now", return_value=NOW), ThreadPoolExecutor(max_workers=3) as pool:
             results = list(pool.map(lambda pair: self.reserve_one(*pair), [("one@example.invalid", START),
                 ("two@example.invalid", START+timedelta(hours=1)), ("three@example.invalid", START+timedelta(hours=2))]))

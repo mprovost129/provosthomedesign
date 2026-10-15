@@ -30,7 +30,6 @@ class ConsultationForm(forms.Form):
 @require_http_methods(['GET','POST'])
 def consultation(request):
     email=verified_email(request)
-    latest=ConsultationRequest.objects.filter(email=email).order_by('-created_at').first() if email else None
     if eligible(email):
         return redirect('workqueue:book')
     sent=request.session.pop('consultation_verification_sent',False)
@@ -49,14 +48,14 @@ def consultation(request):
                 request.session['consultation_verification_sent']=True
                 request.session['consultation_recent_id']=str(item.pk)
                 request.session['consultation_recent_email']=target
-            messages.success(request,'Your consultation request was saved. Verify your email before Mike reviews it.' if item.state=='unverified' else 'Your consultation request is ready for Mike to review.')
-            return redirect('workqueue:consultation')
+            messages.success(request,'Your consultation request was saved. Verify your email to choose a meeting time.' if not email else 'Your email is verified. Choose an available meeting time.')
+            return redirect('workqueue:consultation' if item.state=='unverified' else 'workqueue:book')
         except ValidationError as exc:
             form.add_error(None,exc)
     elif request.method=='POST':
         status=400
     if form.errors:status=400
-    return render(request,'workqueue/consultation.html',{'form':form,'client_email':email,'consultation':latest,'sent':sent,
+    return render(request,'workqueue/consultation.html',{'form':form,'client_email':email,'sent':sent,
         'resend_token':new_intake_token(request),'can_resend':ConsultationRequest.objects.filter(
             pk=request.session.get('consultation_recent_id'),email=request.session.get('consultation_recent_email',''),
             state='unverified').exists() if request.session.get('consultation_recent_id') else False},status=status)

@@ -1,5 +1,7 @@
 # Appointment booking — stage 3, October 7, 2026
 
+Booking policy updated October 15, 2026: any verified email can book without CRM membership, prior work, manual enablement or consultation approval. The original access rules below are historical; see [Verified-email booking and initial consultations](CONSULTATIONS.md) for current behavior and migration/deployment notes. Scheduling limits and project privacy rules still apply.
+
 The Django intake app now has verified client booking, rescheduling and cancellation, Google Calendar synchronization, appointment notifications and controls on the existing work queue page. The owner selected the **primary Google Calendar**. Production booking stays off by default; this stage changes no live Google events, booking-page settings, Render configuration or website links.
 
 ## Agreed rules implemented

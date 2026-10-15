@@ -564,7 +564,7 @@ class BookingState(models.Model):
 class ConsultationRequest(models.Model):
     class State(models.TextChoices):
         UNVERIFIED = 'unverified', 'Email verification needed'
-        PENDING = 'pending', 'Awaiting approval'
+        PENDING = 'pending', 'Ready to book'
         APPROVED = 'approved', 'Approved'
         DECLINED = 'declined', 'Declined'
 

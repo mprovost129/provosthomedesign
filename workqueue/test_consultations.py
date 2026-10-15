@@ -1,17 +1,19 @@
 import re
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.test import TestCase, Client as BrowserClient, override_settings
+from django.db import close_old_connections, IntegrityError, transaction
+from django.test import TestCase, TransactionTestCase, Client as BrowserClient, override_settings, skipUnlessDBFeature
 from django.urls import reverse
 from django.utils import timezone
 from .access import consume_email_token,mint_email_token
 from .booking import eligible,set_booking_access
 from .consultations import submit_consultation,verify_consultation,decide_consultation,resend_verification
 from .consultation_views import ConsultationForm
-from .models import Client,ClientContact,ConsultationRequest,NotificationDelivery,BookingAccess,WorkItem,ProjectAccess
+from .models import Client,ClientContact,ConsultationRequest,NotificationDelivery,BookingAccess,BookingState,QueueState,WorkItem,ProjectAccess
 
 
 @override_settings(DEBUG=True,INTAKE_LOCAL_DEVELOPMENT=True,RECAPTCHA_ENTERPRISE_API_KEY='',RECAPTCHA_SECRET_KEY='',
@@ -44,29 +46,30 @@ class ConsultationTests(TestCase):
         self.assertEqual(NotificationDelivery.objects.count(),1)
         self.assertFalse(Client.objects.exists())
         self.assertFalse(WorkItem.objects.exists())
-        self.assertFalse(eligible(item.email))
+        self.assertNotIn('queue_verified_email', self.client.session)
+        self.assertNotContains(self.client.get(reverse('workqueue:book')), 'calendar-grid')
         self.assertEqual(item.terms_url,'/terms/')
         self.assertIsNotNone(item.terms_accepted_at)
 
-    def test_verification_creates_inquiry_but_blocks_automatic_booking(self):
+    def test_verification_creates_inquiry_and_allows_booking_without_project_access(self):
         item=self.submit()
         consume_email_token(self.raw(item))
         item.refresh_from_db()
         self.assertEqual(item.state,'pending')
         self.assertEqual(item.contact.client.stage,'inquiry')
-        self.assertTrue(item.contact.booking_requires_approval)
-        self.assertFalse(eligible(item.email))
+        self.assertFalse(item.contact.booking_requires_approval)
+        self.assertTrue(eligible(item.email))
         self.assertFalse(BookingAccess.objects.exists())
         self.assertFalse(ProjectAccess.objects.exists())
         self.assertFalse(WorkItem.objects.exists())
         self.assertEqual(item.owner_delivery.recipient,'owner@example.invalid')
         self.assertIn('A new home design',item.owner_delivery.body)
 
-    def test_verification_callback_returns_to_consultation_pending_page(self):
+    def test_verification_callback_returns_directly_to_booking(self):
         item=self.submit()
         response=self.client.post(reverse('workqueue:confirm_access'),{'token':self.raw(item)})
-        self.assertRedirects(response,reverse('workqueue:consultation'))
-        self.assertContains(self.client.get(reverse('workqueue:consultation')),'awaiting Mike’s review')
+        self.assertEqual(response.url,reverse('workqueue:book'))
+        self.assertEqual(self.client.session['queue_verified_email'],item.email)
 
     def test_resend_is_not_offered_after_the_request_has_been_verified(self):
         item=self.submit()
@@ -74,53 +77,29 @@ class ConsultationTests(TestCase):
         session['consultation_recent_id']=str(item.pk);session['consultation_recent_email']=item.email
         session.save()
         self.client.post(reverse('workqueue:confirm_access'),{'token':self.raw(item)})
-        self.assertNotContains(self.client.get(reverse('workqueue:consultation')),'Resend verification email')
+        response=self.client.get(reverse('workqueue:consultation'))
+        self.assertEqual(response.url,reverse('workqueue:book'))
+        item.refresh_from_db()
+        self.assertEqual(item.state,'pending')
 
     def test_existing_verified_session_can_submit_without_new_verification_mail(self):
         item=self.submit(verified=True)
         self.assertEqual(item.state,'pending')
         self.assertIsNone(item.verification_delivery)
         self.assertEqual(NotificationDelivery.objects.count(),2)
-        self.assertFalse(eligible(item.email))
-
-    def test_approval_enables_booking_sends_single_client_invitation(self):
-        item=self.submit(verified=True)
-        decide_consultation(item.pk,True,self.owner)
-        item.refresh_from_db();item.contact.refresh_from_db()
-        self.assertEqual(item.state,'approved')
-        self.assertFalse(item.contact.booking_requires_approval)
         self.assertTrue(eligible(item.email))
-        self.assertIn('#token=',item.decision_delivery.body)
+
+    def test_retired_decisions_preserve_history_and_never_send_email(self):
+        item=self.submit(verified=True)
         before=NotificationDelivery.objects.count()
-        decide_consultation(item.pk,True,self.owner)
-        self.assertEqual(NotificationDelivery.objects.count(),before)
-        self.assertFalse(ProjectAccess.objects.exists())
-        self.assertFalse(WorkItem.objects.exists())
-
-    def test_approval_link_returns_to_booking(self):
-        item=self.submit(verified=True)
-        decide_consultation(item.pk,True,self.owner)
-        item.refresh_from_db()
-        raw=re.search(r'#token=([A-Za-z0-9_-]+)',item.decision_delivery.body)[1]
-        with patch('workqueue.booking.available_days',return_value={}):
-            response=self.client.post(reverse('workqueue:confirm_access'),{'token':raw})
-        self.assertEqual(response.url,reverse('workqueue:book'))
-
-    def test_decline_does_not_enable_booking(self):
-        item=self.submit(verified=True)
-        decide_consultation(item.pk,False,self.owner)
-        item.refresh_from_db()
-        self.assertEqual(item.state,'declined')
-        self.assertFalse(eligible(item.email))
-        self.assertIn('unable to offer',item.decision_delivery.body)
-        self.assertFalse(BookingAccess.objects.exists())
-        with self.assertRaises(ValidationError):decide_consultation(item.pk,True,self.owner)
-
-    def test_unverified_request_cannot_be_approved_and_non_staff_cannot_decide(self):
-        item=self.submit()
-        with self.assertRaises(ValidationError):decide_consultation(item.pk,True,self.owner)
+        for approve in (True,False):
+            with self.assertRaisesMessage(ValidationError,'no longer required'):
+                decide_consultation(item.pk,approve,self.owner)
         other=get_user_model().objects.create_user('other')
         with self.assertRaises(PermissionDenied):decide_consultation(item.pk,True,other)
+        item.refresh_from_db()
+        self.assertEqual(item.state,'pending')
+        self.assertEqual(NotificationDelivery.objects.count(),before)
         self.assertFalse(BookingAccess.objects.exists())
 
     def test_existing_crm_email_is_reused_without_overwriting_contact(self):
@@ -131,14 +110,14 @@ class ConsultationTests(TestCase):
         self.assertEqual(item.contact_id,contact.pk)
         self.assertEqual(Client.objects.count(),1)
         self.assertEqual(contact.full_name,'Original')
-        self.assertEqual(item.state,'approved')
+        self.assertEqual(item.state,'pending')
         self.assertTrue(eligible(item.email))
 
-    def test_explicit_block_is_not_undone_by_consultation_verification(self):
+    def test_legacy_denial_is_preserved_as_history_but_does_not_block_verification(self):
         set_booking_access('prospect@example.invalid',False,self.owner)
         item=self.submit(verified=True)
         self.assertEqual(item.state,'pending')
-        self.assertFalse(eligible(item.email))
+        self.assertTrue(eligible(item.email))
         self.assertFalse(BookingAccess.objects.get().allowed)
 
     def test_retries_and_multiple_requests_deduplicate_pending_email(self):
@@ -158,19 +137,51 @@ class ConsultationTests(TestCase):
         with self.assertRaises(ValidationError):verify_consultation(item.pk.hex,'other@example.invalid')
         self.assertFalse(Client.objects.exists())
 
-    def test_contact_email_change_requires_review_before_approval(self):
-        item=self.submit(verified=True)
-        item.contact.email='changed@example.invalid';item.contact.save()
-        with self.assertRaises(ValidationError):decide_consultation(item.pk,True,self.owner)
-        self.assertFalse(BookingAccess.objects.exists())
+    def test_verified_inquiry_reused_across_different_form_tokens_and_sessions(self):
+        first=self.submit(verified=True)
+        before=NotificationDelivery.objects.count()
+        for verified in (False, True):
+            repeated=self.submit(verified=verified,description='Different form contents')
+            self.assertEqual(repeated.pk,first.pk)
+        self.assertEqual(ConsultationRequest.objects.count(),1)
+        self.assertEqual(NotificationDelivery.objects.count(),before)
+        first.refresh_from_db()
+        self.assertEqual(first.description,'A new home design')
+        self.assertEqual(first.state,'pending')
+        self.assertEqual(first.get_state_display(),'Ready to book')
 
-    def test_archived_contact_can_be_declined_without_enabling_booking(self):
+    def test_repeated_unverified_form_does_not_grant_session_or_disclose_inquiry(self):
+        first=self.submit(verified=True,description='PRIVATE INQUIRY')
+        before=NotificationDelivery.objects.count()
+        token=self.client.get(reverse('workqueue:consultation')).context['form'].initial['token']
+        response=self.client.post(reverse('workqueue:consultation'),{'token':token,'full_name':'Different',
+            'email':first.email,'phone':'555','description':'Repeated form','terms_accepted':'on'},follow=True)
+        self.assertNotIn('queue_verified_email',self.client.session)
+        self.assertContains(response,'Verify your email to choose a time')
+        self.assertNotContains(response,'PRIVATE INQUIRY')
+        self.assertEqual(NotificationDelivery.objects.count(),before)
+        self.assertEqual(ConsultationRequest.objects.count(),1)
+
+    def test_database_prevents_a_second_open_inquiry_after_verification(self):
+        first=self.submit(verified=True)
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            ConsultationRequest.objects.create(email=first.email,full_name='Duplicate',phone='555',
+                description='Duplicate',idempotency_key='different-key',terms_accepted_at=timezone.now())
+
+    def test_old_pending_request_with_approval_flag_can_use_existing_verified_session(self):
         item=self.submit(verified=True)
-        item.contact.archived_at=timezone.now();item.contact.save()
-        decide_consultation(item.pk,False,self.owner)
+        item.state='pending';item.save(update_fields=['state'])
+        item.contact.booking_requires_approval=True;item.contact.save()
+        self.signin(item.email)
+        response=self.client.get(reverse('workqueue:consultation'))
+        self.assertEqual(response.url,reverse('workqueue:book'))
+        with patch('workqueue.booking_views.available_days',return_value={}):
+            page=self.client.get(reverse('workqueue:book'))
+        self.assertTrue(page.context['permitted'])
+        self.assertNotContains(page,'Booking is not enabled')
         item.refresh_from_db()
-        self.assertEqual(item.state,'declined')
-        self.assertFalse(eligible(item.email))
+        self.assertEqual(item.state,'pending')
+        self.assertFalse(ProjectAccess.objects.exists())
 
     def test_resend_mints_new_link_without_duplicate_owner_notice(self):
         item=self.submit()
@@ -204,15 +215,18 @@ class ConsultationTests(TestCase):
         self.assertNotContains(BrowserClient().get(reverse('workqueue:consultation')),'PRIVATE PROJECT DESCRIPTION')
         self.assertFalse(Client.objects.exists())
 
-    def test_staff_queue_approve_and_repeated_post_sends_once(self):
+    def test_staff_queue_shows_verified_requests_without_approval_controls(self):
         item=self.submit(verified=True)
         self.client.force_login(self.owner)
+        before=NotificationDelivery.objects.count()
         for _ in range(2):
             response=self.client.post(reverse('workqueue:queue'),{'action':'consultation_approve','consultation_id':str(item.pk)})
             self.assertEqual(response.status_code,302)
-        item.refresh_from_db()
-        self.assertTrue(eligible(item.email))
-        self.assertEqual(NotificationDelivery.objects.filter(subject='Consultation request approved').count(),1)
+        page=self.client.get(reverse('workqueue:queue'))
+        self.assertContains(page,item.full_name)
+        self.assertNotContains(page,'value="consultation_approve"')
+        self.assertNotContains(page,'value="booking_grant"')
+        self.assertEqual(NotificationDelivery.objects.count(),before)
 
     @override_settings(DEBUG=False,INTAKE_LOCAL_DEVELOPMENT=False,RECAPTCHA_SITE_KEY='test-key',RECAPTCHA_SECRET_KEY='test-secret')
     def test_production_form_rejects_missing_recaptcha_without_creating_inquiry(self):
@@ -241,3 +255,26 @@ class ConsultationTests(TestCase):
             'phone':'555','description':'New house','terms_accepted':'on'})
         self.assertEqual(response.status_code,403)
         self.assertFalse(ConsultationRequest.objects.exists())
+
+
+@skipUnlessDBFeature('has_select_for_update')
+@override_settings(INTAKE_OWNER_EMAIL='owner@example.invalid',INTAKE_PUBLIC_BASE_URL='https://example.invalid')
+class ConsultationConcurrencyTests(TransactionTestCase):
+    def test_parallel_verified_submissions_share_one_inquiry_and_notice(self):
+        BookingState.objects.get_or_create(pk=1)
+        QueueState.objects.get_or_create(pk=1)
+
+        def submit(key):
+            close_old_connections()
+            try:
+                return submit_consultation(email='parallel@example.invalid',full_name='Prospect',phone='555',
+                    description='One inquiry',key=key,verified=True,terms_url='/terms/').pk
+            finally:
+                close_old_connections()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results=list(pool.map(submit,['parallel-a','parallel-b']))
+        self.assertEqual(results[0],results[1])
+        self.assertEqual(ConsultationRequest.objects.count(),1)
+        self.assertEqual(NotificationDelivery.objects.filter(recipient_kind='owner').count(),1)
+        self.assertEqual(NotificationDelivery.objects.filter(recipient_kind='client').count(),1)

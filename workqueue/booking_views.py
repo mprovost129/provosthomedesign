@@ -17,7 +17,7 @@ from django.views.decorators.http import require_http_methods
 
 from .access import authorized_projects, authorized_work, new_intake_token, read_intake_token, session_digest, verified_email
 from .booking import (HOLD_STATES, available_days, available_times, eligible, lock_bookings, request_cancel,
-                      reserve_appointment, set_booking_access, sync_appointment)
+                      reserve_appointment, sync_appointment)
 from .calendar_provider import EASTERN, CalendarUnavailable
 from .client_views import limited
 from .client_security import verify_form
@@ -105,18 +105,26 @@ def book(request):
     if previous:
         initial.update(full_name=previous.full_name, phone=previous.phone, purpose=previous.purpose, project=previous.project_id, meeting_method=previous.meeting_method)
     slots, unavailable, availability = [], "", {}
+    availability_limited = False
     now = timezone.now()
     month = calendar_month(request.GET.get('month',''),day,now)
     has_upcoming = bool(email and Appointment.objects.filter(email=email, state__in=HOLD_STATES, reserved_until__gt=timezone.now()).exists())
     if permitted and not day_error and (previous or not has_upcoming):
         try:
+            # Bound provider reads as well as reservation writes. A verified
+            # email cannot evade this limit with a fresh browser session.
+            if (not limited(request, 'booking-availability-email', email, limit=30, window=60)
+                    or not limited(request, 'booking-availability-ip', limit=60, window=60)):
+                availability_limited = True
+                raise CalendarUnavailable
             last = (month.replace(day=28)+timedelta(days=4)).replace(day=1)-timedelta(days=1)
             availability = available_days(month,last,email=email,previous=previous)
             if day:
                 # Recheck the selected day; month display is not a reservation.
                 slots = available_times(day, email=email, previous=previous)
         except CalendarUnavailable:
-            unavailable = "We cannot check calendar availability right now. Please try again later."
+            unavailable = ("Please wait one minute before refreshing availability, then try again."
+                if availability_limited else "We cannot check calendar availability right now. Please try again later.")
     form = AppointmentForm(request.POST or None, initial=initial, slots=slots, email=email)
     status = 200
     if request.method == "POST":
@@ -149,7 +157,7 @@ def book(request):
     appointments = Appointment.objects.filter(email=email).select_related("project").prefetch_related("replacements").annotate(
         display_order=Case(When(state__in=HOLD_STATES, then=Value(0)), default=Value(1), output_field=IntegerField())).order_by("display_order", "-starts_at")[:20] if email else []
     records = list(appointments)
-    return render(request, "workqueue/booking.html", {"client_email": email, "permitted": permitted, "form": form,
+    response = render(request, "workqueue/booking.html", {"client_email": email, "permitted": permitted, "form": form,
         "booking_office_address": getattr(settings, "CONTACT_ADDRESS", "7 Park St. Unit 1, Rehoboth, MA 02769"),
         "day": day, "day_error": day_error, "unavailable": unavailable, "slots": slots, "previous": previous,
         "booking_calendar": month_context(month,availability,day,now,previous),
@@ -158,7 +166,10 @@ def book(request):
         "access_form": access_form, "sent": sent, "has_upcoming": has_upcoming,
         "appointments": [item for item in records if item.state in HOLD_STATES],
         "closed_appointments": [item for item in records if item.state not in HOLD_STATES],
-        "preview": settings.BOOKING_CALENDAR_BACKEND == "preview"}, status=status)
+        "preview": settings.BOOKING_CALENDAR_BACKEND == "preview"}, status=429 if availability_limited else status)
+    if availability_limited:
+        response['Retry-After'] = '60'
+    return response
 
 
 @booking_enabled
@@ -199,7 +210,7 @@ def staff_action(request):
             inquiry = get_object_or_404(ConsultationRequest, pk=request_id)
             decide_consultation(inquiry.pk, action == 'consultation_approve', request.user)
         elif action in ("booking_grant", "booking_revoke"):
-            set_booking_access(request.POST.get("booking_email", ""), action == "booking_grant", request.user)
+            raise ValidationError('Booking access now follows email verification. No manual enablement or approval is required.')
         else:
             try:
                 appointment_id = uuid.UUID(request.POST.get("appointment_id", ""))
