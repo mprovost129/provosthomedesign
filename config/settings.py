@@ -515,3 +515,8 @@ FRESHBOOKS_CLIENT_ID = config('FRESHBOOKS_CLIENT_ID', default='').strip()
 FRESHBOOKS_CLIENT_SECRET = config('FRESHBOOKS_CLIENT_SECRET', default='').strip()
 FRESHBOOKS_TOKEN_ENCRYPTION_KEY = config('FRESHBOOKS_TOKEN_ENCRYPTION_KEY', default='').strip()
 FRESHBOOKS_REDIRECT_URI = config('FRESHBOOKS_REDIRECT_URI', default='https://www.provosthomedesign.com/work-projects/billing/callback/').strip()
+
+# Dropbox filing is inactive until the owner explicitly connects an account.
+DROPBOX_APP_KEY = config('DROPBOX_APP_KEY', default='').strip()
+DROPBOX_APP_SECRET = config('DROPBOX_APP_SECRET', default='').strip()
+DROPBOX_TOKEN_ENCRYPTION_KEY = config('DROPBOX_TOKEN_ENCRYPTION_KEY', default='').strip()

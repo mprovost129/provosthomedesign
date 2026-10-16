@@ -1,4 +1,5 @@
 from django.urls import path
+from . import dropbox_views
 from . import views
 from . import client_views
 from . import booking_views
@@ -26,6 +27,9 @@ from . import invoice_history_views
 
 app_name = "workqueue"
 urlpatterns = [
+    path('work-queue/dropbox/', dropbox_views.connection, name='dropbox_connection'),
+    path('work-queue/dropbox/callback/', dropbox_views.callback, name='dropbox_callback'),
+    path('work-queue/<uuid:item_id>/filing/', dropbox_views.review, name='dropbox_review'),
     path('work-projects/<uuid:project_id>/invitations/', portal_notice_views.invitations, name='portal_invitations'),
     path('client-portal/projects/<uuid:project_id>/reviews/<uuid:review_id>/conversation/', portal_discussion_views.client_action, name='portal_review_discussion'),
     path('work-projects/<uuid:project_id>/reviews/<uuid:review_id>/conversation/', portal_discussion_views.staff_action, name='staff_review_discussion'),

@@ -354,7 +354,7 @@ def queue(request):
     deleted_scope = filters['scope'] == 'deleted' and not preview and request.user.has_perm('workqueue.delete_workitem')
     queryset = WorkItem.all_objects.filter(deleted_at__isnull=False) if deleted_scope else WorkItem.objects.all()
     items = with_email_attention(queryset.with_position()).select_related("project", "client_contact__client", "plan_review__document_version__document").prefetch_related(
-        "submissions__attachments", "submissions__notifications",
+        "submissions__attachments", "submissions__notifications", "submissions__dropbox_filing__destination",
         "information_requests__delivery", "information_requests__reminder_delivery",
         "milestones__delivery", "milestones__actor",
         "completed_deliveries__files", "completed_deliveries__notification",
@@ -411,6 +411,12 @@ def queue(request):
         current = bool(error_item and item.pk == error_item.pk)
         row["attention_flags"] = row_attention(item)
         row["files"] = [file for submission in item.submissions.all() for file in submission.attachments.all()]
+        row["filings"] = [submission.dropbox_filing for submission in item.submissions.all() if hasattr(submission,'dropbox_filing')]
+        row["unfiled"] = any(not hasattr(submission,'dropbox_filing') for submission in item.submissions.all())
+        row["filing_attention"] = any(job.state=='attention' for job in row["filings"])
+        row["filing_label"] = ('Needs attention' if row["filing_attention"] else 'Awaiting approval' if row["unfiled"] else
+            'Transferring' if any(job.state in {'queued','copying'} for job in row["filings"]) else 'Filed' if row["filings"] else 'Awaiting approval')
+        row["project_number"] = row["filings"][0].destination.number if row["filings"] else ''
         row["responses"] = [response for note in item.information_requests.all() for response in note.responses.all()]
         row["unreviewed_responses"] = [response for response in row["responses"] if not response.reviewed_at and not response.work_item.deleted_at]
         row["information_form"] = information_form if current and information_form else InformationRequestForm(
