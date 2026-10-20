@@ -9,6 +9,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 from . import dropbox_provider as provider
 from . import dropbox_filing as filing
+from . import freshbooks_projects
+from .freshbooks_project_models import FreshBooksProject
+from .freshbooks import BillingError
 from .dropbox_models import DropboxConnection, DropboxFolder, DropboxFiling, ProjectFolder
 from .models import WorkItem
 from .pm_views import staff_view, editable, error_text
@@ -20,6 +23,10 @@ class FilingForm(forms.Form):
     folder = forms.ModelChoiceField(label='Existing project folder',queryset=DropboxFolder.objects.none(),required=False)
     title = forms.CharField(label='Project name',max_length=100,required=False)
     address = forms.CharField(label='Project address',max_length=130,required=False)
+    freshbooks_action = forms.ChoiceField(label='FreshBooks project',required=False,choices=[('skip','Dropbox only for now'),('create','Create or reuse the connected FreshBooks project'),('link','Connect an existing FreshBooks project')])
+    freshbooks_pricing = forms.ChoiceField(label='Billing type',required=False,choices=[('fixed_price','Fixed price'),('hourly_rate','Hourly')],initial='fixed_price')
+    freshbooks_amount = forms.DecimalField(label='Fixed price or hourly rate',required=False,min_value=0.01,max_value=999999999.99,decimal_places=2,widget=forms.NumberInput(attrs={'step':'0.01','placeholder':'Enter actual price or hourly rate'}))
+    freshbooks_project_id = forms.IntegerField(label='Existing FreshBooks project ID',required=False,min_value=1)
 
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
@@ -41,6 +48,15 @@ def connection(request):
                 state,verifier=secrets.token_urlsafe(32),secrets.token_urlsafe(48)
                 authorization_url=provider.authorize(state,verifier)
                 request.session['dropbox_oauth']={'state':state,'verifier':verifier,'time':time.time(),'actor':request.user.pk}
+            elif action in {'freshbooks_check','freshbooks_retry','freshbooks_link'}:
+                if request.POST.get('confirm')!='yes':
+                    raise ValidationError('Confirm the FreshBooks recovery action after reviewing its current status.')
+                if not billing_job:
+                    raise ValidationError('This project has no approved FreshBooks request.')
+                freshbooks_projects.recover(billing_job.pk,request.user,action=action.split('_',1)[1],
+                    remote_id=forms.IntegerField(required=False,min_value=1).clean(request.POST.get('remote_id')))
+                messages.success(request,'FreshBooks project status updated. No invoice or client email was sent.')
+                return redirect('workqueue:dropbox_review',item.pk)
             elif action=='refresh':
                 filing.refresh_index()
                 messages.success(request,'Projects folder list refreshed. No folders or documents were changed.')
@@ -91,7 +107,8 @@ def review(request,item_id):
     editable(request)
     item=get_object_or_404(WorkItem.objects.select_related('project'),pk=item_id)
     binding=ProjectFolder.objects.filter(project_id=item.project_id).first() if item.project_id else None
-    initial={'mode':'existing' if binding or item.kind=='update' else 'new',
+    billing_job=FreshBooksProject.objects.filter(project_id=item.project_id).first() if item.project_id else None
+    initial={'freshbooks_action':'create' if freshbooks_projects.ready() else 'skip','freshbooks_pricing':'fixed_price','mode':'existing' if binding or item.kind=='update' else 'new',
              'folder':binding.folder_id if binding else None,
              'title':item.project.name if item.project_id else item.project_name,
              'address':', '.join(filter(None,[item.project_street,item.project_city,item.project_state]))}
@@ -106,7 +123,10 @@ def review(request,item_id):
                 if form.is_valid():
                     snapshot,signed=filing.preview(item=item,mode=form.cleaned_data['mode'],
                         folder_id=form.cleaned_data['folder'].pk if form.cleaned_data['folder'] else '',
-                        title=form.cleaned_data['title'],address=form.cleaned_data['address'],actor=request.user)
+                        title=form.cleaned_data['title'],address=form.cleaned_data['address'],actor=request.user,
+                        freshbooks={'action':form.cleaned_data['freshbooks_action'] or 'skip',
+                            'pricing':form.cleaned_data['freshbooks_pricing'] or 'fixed_price',
+                            'amount':form.cleaned_data['freshbooks_amount'], 'remote_id':form.cleaned_data['freshbooks_project_id']})
                 else:
                     status=400
             elif action=='approve':
@@ -114,6 +134,15 @@ def review(request,item_id):
                     raise ValidationError('Confirm the destination shown in the preview.')
                 filing.approve(item_id=item.pk,signed=request.POST.get('preview',''),actor=request.user)
                 messages.success(request,'Filing approved. Transfers run in the background; originals stay available in the portal.')
+                return redirect('workqueue:dropbox_review',item.pk)
+            elif action in {'freshbooks_check','freshbooks_retry','freshbooks_link'}:
+                if request.POST.get('confirm')!='yes':
+                    raise ValidationError('Confirm the FreshBooks recovery action after reviewing its current status.')
+                if not billing_job:
+                    raise ValidationError('This project has no approved FreshBooks request.')
+                freshbooks_projects.recover(billing_job.pk,request.user,action=action.split('_',1)[1],
+                    remote_id=forms.IntegerField(required=False,min_value=1).clean(request.POST.get('remote_id')))
+                messages.success(request,'FreshBooks project status updated. No invoice or client email was sent.')
                 return redirect('workqueue:dropbox_review',item.pk)
             elif action=='refresh':
                 filing.refresh_index()
@@ -130,7 +159,7 @@ def review(request,item_id):
                 return redirect('workqueue:dropbox_review',item.pk)
             else:
                 raise ValidationError('Choose a filing action.')
-        except (ValidationError,provider.DropboxError,EditConflict) as exc:
+        except (ValidationError,provider.DropboxError,EditConflict,BillingError) as exc:
             error=error_text(exc)
             status=409 if isinstance(exc,EditConflict) else 400
     jobs=DropboxFiling.objects.filter(submission__work_item=item).select_related('destination__folder').prefetch_related('files__attachment')
@@ -143,4 +172,5 @@ def review(request,item_id):
         folders=folders.filter(Q(name__icontains=q)|Q(number__icontains=q))
     return render(request,'workqueue/dropbox_review.html',{'item':item,'form':form,'snapshot':snapshot,'signed':signed,
         'jobs':jobs,'pending':pending,'connection':DropboxConnection.objects.filter(pk=1).first(),
-        'folders':folders[:50],'q':q,'binding':binding,'error':error},status=status)
+        'folders':folders[:50],'q':q,'binding':binding,'error':error,'billing_job':billing_job,
+        'freshbooks_ready':freshbooks_projects.ready(),'show_approval':bool(pending or (binding and not billing_job))},status=status)

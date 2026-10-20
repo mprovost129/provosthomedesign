@@ -13,6 +13,8 @@ class FreshBooksConnection(models.Model):
     expires_at = models.DateTimeField(null=True)
     account_id = models.CharField(max_length=50, blank=True)
     business_name = models.CharField(max_length=200, blank=True)
+    business_id = models.PositiveBigIntegerField(null=True, blank=True)
+    granted_scopes = models.JSONField(default=list)
     businesses = models.JSONField(default=list)
     needs_reconnect = models.BooleanField(default=False)
     connected_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)

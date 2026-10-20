@@ -38,3 +38,11 @@ class QueueJobRunnerTests(TransactionTestCase):
                 with self.assertRaises(CommandError):
                     call_command("run_queue_jobs", stdout=StringIO(), **options)
         dispatch.assert_not_called()
+
+    @override_settings(WORK_INTAKE_ENABLED=True,BOOKING_ENABLED=False,FRESHBOOKS_ENABLED=True)
+    def test_freshbooks_project_step_runs_after_dropbox(self):
+        with patch('workqueue.management.commands.run_queue_jobs.call_command') as dispatch:
+            call_command('run_queue_jobs',stdout=StringIO())
+        tasks=[call.args[0] for call in dispatch.call_args_list]
+        self.assertIn('sync_freshbooks_billing',tasks)
+        self.assertEqual(tasks[-2:],['process_dropbox_filings','process_freshbooks_projects'])

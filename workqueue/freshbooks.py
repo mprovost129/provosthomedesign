@@ -22,7 +22,7 @@ from .pm_services import current_client, event
 from .services import lock_queue, EditConflict
 
 API = 'https://api.freshbooks.com'
-SCOPES = 'user:profile:read user:clients:read user:invoices:read user:invoices:write user:online_payments:read user:online_payments:write'
+SCOPES = 'user:profile:read user:clients:read user:invoices:read user:invoices:write user:online_payments:read user:online_payments:write user:projects:read user:projects:write user:clients:write'
 
 
 class BillingError(Exception):
@@ -97,6 +97,8 @@ def store_tokens(connection, result):
             raise ValueError
         connection.encrypted_tokens = cipher().encrypt(json.dumps({'access':access, 'refresh':refresh}).encode()).decode()
         connection.expires_at = timezone.now()+timedelta(seconds=lifetime)
+        if isinstance(result.get('scope'), str):
+            connection.granted_scopes = result['scope'].split()
         connection.needs_reconnect = False
         connection.save()
     except (KeyError, TypeError, ValueError):
@@ -149,7 +151,10 @@ def connect(code, actor):
         connection.connected_by = actor
         connection.account_id, connection.business_name = '', ''
         try:
-            store_tokens(connection, token_exchange(grant_type='authorization_code', code=code))
+            result = token_exchange(grant_type='authorization_code', code=code)
+            # OAuth may omit scope when it is identical to the requested scope (RFC 6749).
+            result.setdefault('scope', SCOPES)
+            store_tokens(connection, result)
         except BillingError as exc:
             connection.needs_reconnect = True
             connection.save(update_fields=['needs_reconnect', 'updated_at'])
@@ -162,7 +167,8 @@ def connect(code, actor):
         business = membership.get('business', {})
         account = business.get('account_id', '')
         if membership.get('role') in {'owner', 'admin', 'business_partner', 'business_manager'} and re.fullmatch(r'[A-Za-z0-9_-]{1,50}', account):
-            businesses.append({'account_id':account, 'name':str(business.get('name', account))[:200]})
+            businesses.append({'account_id':account, 'name':str(business.get('name', account))[:200],
+                'business_id':business.get('id') if str(business.get('id', '')).isdigit() else None})
     FreshBooksConnection.objects.filter(pk=1).update(businesses=businesses)
     if not businesses:
         raise BillingError('This FreshBooks login has no accessible billing business.')
@@ -187,7 +193,11 @@ def choose_business(account, actor):
             raise ValidationError('Choose a business from the authorized FreshBooks account.')
         if FreshBooksInvoice.objects.filter(state__in=['queued', 'creating']).exclude(account_id=account).exists():
             raise ValidationError('Finish pending invoice drafts before changing the billing business.')
+        from .freshbooks_project_models import FreshBooksProject
+        if FreshBooksProject.objects.exclude(account_id=account).exclude(state='linked').exists():
+            raise ValidationError('Finish pending FreshBooks project requests before changing the billing business.')
         connection.account_id, connection.business_name = account, business['name']
+        connection.business_id = business.get('business_id')
         connection.save()
 
 

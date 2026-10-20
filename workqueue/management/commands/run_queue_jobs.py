@@ -30,6 +30,8 @@ class Command(BaseCommand):
                 ("process_plan_exports", {}),
                 ("process_dropbox_filings", {}),
             ])
+            if getattr(settings, 'FRESHBOOKS_ENABLED', False):
+                tasks.append(('process_freshbooks_projects', {}))
         if not tasks:
             self.stdout.write("Queue features are disabled; no background tasks ran.")
             return

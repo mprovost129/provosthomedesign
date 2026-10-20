@@ -45,7 +45,7 @@ def connection(request):
                 if not request.POST.get('confirm'):
                     raise ValidationError('Confirm disconnecting this website from FreshBooks.')
                 # Local disconnect immediately stops API access; invoices remain in FreshBooks.
-                FreshBooksConnection.objects.filter(pk=1).update(encrypted_tokens='', needs_reconnect=True, businesses=[])
+                FreshBooksConnection.objects.filter(pk=1).update(encrypted_tokens='', needs_reconnect=True, businesses=[], granted_scopes=[], business_id=None)
                 FreshBooksInvoice.objects.filter(state='queued').update(state='failed', last_error='Connection disconnected before draft creation.')
                 messages.success(request, 'Website disconnected. You can also revoke this app in FreshBooks settings.')
             else:

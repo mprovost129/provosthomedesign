@@ -91,13 +91,14 @@ def manifest(submissions):
         for submission in submissions]
 
 
-def preview(*, item, mode, folder_id='', title='', address='', actor):
+def preview(*, item, mode, folder_id='', title='', address='', actor, freshbooks=None):
     require_queue_staff(actor,'workqueue.change_workitem')
     if item.deleted_at:
         raise ValidationError('Restore this request before filing documents.')
     entries = refresh_index()
     submissions = pending_submissions(item)
-    if not submissions:
+    binding = ProjectFolder.objects.filter(project_id=item.project_id).first() if item.project_id else None
+    if not submissions and not (binding and freshbooks and freshbooks.get('action') != 'skip'):
         raise ValidationError('All submissions on this request already have filing approvals.')
     snapshot = manifest(submissions)
     if any(not file['key'] for row in snapshot for file in row['files']):
@@ -123,10 +124,12 @@ def preview(*, item, mode, folder_id='', title='', address='', actor):
         number = folder_number(label)
     else:
         raise ValidationError('Choose a new or existing project folder.')
+    from . import freshbooks_projects
+    billing_plan = freshbooks_projects.plan(item,label,**(freshbooks or {}))
     connection = DropboxConnection.objects.get(pk=1)
     payload = {'item':str(item.pk),'version':item.version,'project':str(item.project_id or ''), 'actor':actor.pk,
                'mode':mode,'folder':target,'label':label,'number':number,'period':period(),
-               'account':connection.account_id,'root':connection.root_id,'submissions':snapshot}
+               'account':connection.account_id,'root':connection.root_id,'submissions':snapshot,'freshbooks':billing_plan}
     return payload, signing.dumps(payload,salt=SALT,compress=True)
 
 
@@ -148,7 +151,7 @@ def approve(*, item_id, signed, actor):
         raise ValidationError('This preview belongs to a different request or staff member.')
     approved_ids = [row['id'] for row in data['submissions']]
     saved = list(DropboxFiling.objects.filter(submission_id__in=approved_ids))
-    if len(saved)==len(approved_ids) and all(str(job.submission.work_item_id)==data['item'] for job in saved):
+    if approved_ids and len(saved)==len(approved_ids) and all(str(job.submission.work_item_id)==data['item'] for job in saved):
         return saved
     if item.deleted_at or item.version!=data['version'] or str(item.project_id or '')!=data['project']:
         raise EditConflict('This request changed. Review the current project and files before approving.')
@@ -186,6 +189,8 @@ def approve(*, item_id, signed, actor):
             raise ValidationError('That project number is already reserved. Review the connected projects.')
         binding = ProjectFolder.objects.create(project=item.project,number=data['number'] or None,
             folder=folder,intended_name=data['label'])
+    from . import freshbooks_projects
+    freshbooks_projects.enqueue(item,binding,data.get('freshbooks',{'action':'skip'}),actor)
     jobs = []
     for submission in submissions:
         batch = f'{submission.received_at.astimezone(ZoneInfo("America/New_York")):%Y-%m-%d} {item.reference} {submission.pk.hex[:8]}'
