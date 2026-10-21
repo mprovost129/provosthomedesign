@@ -102,15 +102,33 @@ class StaffAuthenticationTests(TestCase):
         self.assertIn('/staff/login/',browser.get(self.dashboard).url)
 
     def test_rate_limit_does_not_authenticate_limited_request(self):
-        for _ in range(10):
-            self.client.post(self.login,{'username':'staff-owner','password':'wrong'})
-        with patch('django.contrib.auth.forms.authenticate') as authenticate:
-            response=self.sign_in()
+        # Keep the attempts in one rate-limit window, even on slower runners.
+        # Patch the limiter's module reference, not Python's global clock or
+        # the actual rate-limit decision. Cache expiry keeps using real time.
+        with patch('django_ratelimit.core.time') as rate_clock:
+            rate_clock.time.return_value = 1_800_000_100
+            for _ in range(10):
+                self.client.post(self.login,{'username':'staff-owner','password':'wrong'})
+            with patch('django.contrib.auth.forms.authenticate', return_value=None) as authenticate:
+                response=self.sign_in()
         self.assertEqual(response.status_code,429)
         authenticate.assert_not_called()
         self.assertEqual(response['Retry-After'],'300')
         self.assertContains(response,'wait five minutes',status_code=429)
         self.assertIn('no-store',response['Cache-Control'])
+
+    def test_rate_limit_allows_an_attempt_after_the_window_resets(self):
+        with patch('django_ratelimit.core.time') as rate_clock:
+            rate_clock.time.return_value = 1_800_000_100
+            for _ in range(11):
+                response=self.client.post(self.login,{'username':'staff-owner','password':'wrong'})
+            self.assertEqual(response.status_code,429)
+            rate_clock.time.return_value += 301
+            with patch('django.contrib.auth.forms.authenticate', return_value=None) as authenticate:
+                response=self.client.post(self.login,{'username':'staff-owner','password':'wrong'})
+            self.assertEqual(response.status_code,200)
+            authenticate.assert_called_once()
+            self.assertNotIn(SESSION_KEY,self.client.session)
 
     def test_staff_routes_use_new_login_with_original_destination(self):
         for target in ['/dashboard/','/dashboard/filing/','/clients/','/clients/import/',
