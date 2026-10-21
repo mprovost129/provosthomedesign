@@ -1,6 +1,7 @@
 {% extends 'workqueue/site_base.html' %}{% load static %}
 {% block title %}Dropbox project filing{% endblock %}
 {% block tool_styles %}<link rel="stylesheet" href="{% static 'css/work-queue.css' %}"><link rel="stylesheet" href="{% static 'css/dropbox-filing.css' %}">{% endblock %}
+{% block staff_navigation %}{% include 'workqueue/staff_navigation.html' %}{% endblock %}
 {% block workspace %}<main class="queue-work filing-work" id="content">
 <header class="site-header"><div><h1>Dropbox project filing</h1><p>Approve documents in your work queue, then file them into your Projects folder.</p></div><a href="{% url 'workqueue:queue' %}">Back to work queue</a></header>
 {% for message in messages %}<p class="notice {{ message.tags }}" role="status">{{ message }}</p>{% endfor %}

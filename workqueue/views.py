@@ -62,7 +62,7 @@ def queue_redirect(filters, item=None):
 
 
 @queue_enabled
-@staff_member_required(login_url="admin:login")
+@staff_member_required(login_url="workqueue:staff_login")
 @permission_required("workqueue.view_workitem", raise_exception=True)
 @never_cache
 @require_http_methods(["GET"])
@@ -79,7 +79,7 @@ def arrivals(request):
 
 
 @queue_enabled
-@staff_member_required(login_url="admin:login")
+@staff_member_required(login_url="workqueue:staff_login")
 @permission_required(("workqueue.view_workitem", "workqueue.change_workitem"), raise_exception=True)
 @never_cache
 @require_http_methods(["GET", "POST"])
@@ -109,7 +109,7 @@ def ordering(request):
 
 
 @queue_enabled
-@staff_member_required(login_url="admin:login")
+@staff_member_required(login_url="workqueue:staff_login")
 @permission_required("workqueue.view_workitem", raise_exception=True)
 @never_cache
 @require_http_methods(["GET", "POST"])

@@ -70,6 +70,7 @@
                 <li><a href="{% url 'pages:services' %}" class="text-decoration-none text-muted">Services</a></li>
                 <li><a href="{% url 'pages:privacy' %}" class="text-decoration-none text-muted">Privacy Policy</a></li>
                 <li><a href="{% url 'pages:terms' %}" class="text-decoration-none text-muted">Terms &amp; Conditions</a></li>
+                {% if work_queue_enabled and not request.user.is_staff %}<li><a href="{% url 'workqueue:staff_login' %}" class="text-decoration-none text-muted" rel="nofollow">Staff sign in</a></li>{% endif %}
                 {% if request.user.is_authenticated and request.user.is_staff %}
                   <li><a href="{% url 'admin:index' %}" class="text-decoration-none text-muted">Admin</a></li>
                   {% if work_queue_enabled and perms.workqueue.view_workitem %}<li><a href="{% url 'workqueue:dashboard' %}" class="text-decoration-none text-muted" rel="nofollow">Dashboard</a></li><li><a href="{% url 'workqueue:queue' %}" class="text-decoration-none text-muted" rel="nofollow">Work queue</a></li><li><a href="{% url 'workqueue:clients' %}" class="text-decoration-none text-muted" rel="nofollow">Clients</a></li>{% endif %}

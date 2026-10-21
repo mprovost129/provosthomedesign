@@ -20,7 +20,7 @@ from .views import queue_enabled, staff_preview
 
 
 @queue_enabled
-@staff_member_required(login_url='admin:login')
+@staff_member_required(login_url='workqueue:staff_login')
 @permission_required(('workqueue.view_workitem', 'workqueue.change_workitem'), raise_exception=True)
 @never_cache
 @require_http_methods(['GET', 'POST'])

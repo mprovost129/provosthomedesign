@@ -61,7 +61,7 @@ class DashboardTests(TestCase):
         self.client.logout()
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)
-        self.assertIn('/admin/login/', response.url)
+        self.assertIn('/staff/login/', response.url)
         self.assertNotIn(self.person.name, response.content.decode())
 
     def test_logged_in_client_cannot_read_business_data(self):

@@ -29,7 +29,7 @@ from .pm_pdf import proposal_pdf
 
 
 def staff_view(view):
-    return queue_enabled(staff_member_required(login_url='admin:login')(
+    return queue_enabled(staff_member_required(login_url='workqueue:staff_login')(
         permission_required('workqueue.view_workitem', raise_exception=True)(never_cache(view))))
 
 

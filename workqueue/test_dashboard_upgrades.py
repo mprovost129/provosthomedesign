@@ -252,4 +252,4 @@ class DashboardUpgradeTests(TestCase):
         for name in ('dashboard_filing','dashboard_billing_refresh'):
             response=self.client.get(reverse('workqueue:'+name))
             self.assertEqual(response.status_code,302)
-            self.assertIn('/admin/login/',response.url)
+            self.assertIn('/staff/login/',response.url)

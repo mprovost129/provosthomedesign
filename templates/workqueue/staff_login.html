@@ -1,0 +1,24 @@
+{% extends 'workqueue/site_base.html' %}{% load static %}
+{% block title %}Staff sign in{% endblock %}
+{% block workspace %}
+<main class="phd-staff-login" id="content" aria-labelledby="staff-login-title">
+  <section class="staff-login-card">
+    <span class="staff-eyebrow">Provost Home Design · Staff workspace</span>
+    <h1 id="staff-login-title">Welcome back</h1>
+    <p>Sign in to manage your projects, clients and work queue.</p>
+    <form method="post" action="{% url 'workqueue:staff_login' %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+      {% if sign_in_limited %}<p class="staff-login-errors" role="alert">Too many sign-in attempts. Please wait five minutes and try again.</p>{% endif %}
+      {% if form.errors %}<div class="staff-login-errors" role="alert">{{ form.non_field_errors }}{% for field in form %}{{ field.errors }}{% endfor %}</div>{% endif %}
+      <label for="id_username">Username</label>
+      <input id="id_username" name="username" type="text" value="{{ form.username.value|default:'' }}" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="150" required autofocus>
+      <label for="id_password">Password</label>
+      <input id="id_password" name="password" type="password" autocomplete="current-password" required>
+      <button type="submit">Sign in</button>
+    </form>
+    <p class="staff-login-help">Use the same username and password you use for website administration.</p>
+    <a href="{% url 'workqueue:portal_home' %}">Looking for your client projects?</a>
+  </section>
+</main>
+{% endblock %}

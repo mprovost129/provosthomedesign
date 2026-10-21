@@ -1,0 +1,19 @@
+{% if user.is_active and user.is_staff and perms.workqueue.view_workitem %}
+<div class="phd-staff-bar">
+  <div class="staff-bar-inner">
+    <nav aria-label="Staff workspace" class="staff-primary-nav">
+      {% with current=request.resolver_match.url_name %}
+      <a href="{% url 'workqueue:dashboard' %}"{% if current == 'dashboard' or current == 'dashboard_filing' %} aria-current="page"{% endif %}>Dashboard</a>
+      <a href="{% url 'workqueue:queue' %}"{% if current == 'queue' %} aria-current="page"{% endif %}>Work queue</a>
+      <a href="{% url 'workqueue:projects' %}"{% if current == 'projects' or current == 'project_detail' %} aria-current="page"{% endif %}>Projects</a>
+      <a href="{% url 'workqueue:clients' %}"{% if current == 'clients' or current == 'client_detail' %} aria-current="page"{% endif %}>Clients</a>
+      <a href="{% url 'workqueue:proposal_overview' %}"{% if current == 'proposal_overview' %} aria-current="page"{% endif %}>Proposals</a>
+      <a href="{% url 'workqueue:invoice_overview' %}"{% if current == 'invoice_overview' or current == 'invoice_history' %} aria-current="page"{% endif %}>Invoices</a>
+      <a href="{% url 'workqueue:task_list' %}"{% if current == 'task_list' %} aria-current="page"{% endif %}>Tasks</a>
+      <a href="{% url 'workqueue:project_reports' %}"{% if current == 'project_reports' %} aria-current="page"{% endif %}>Reports</a>
+      {% endwith %}
+    </nav>
+    <div class="staff-session"><span>Signed in as <strong>{{ user.get_username }}</strong></span><form method="post" action="{% url 'workqueue:staff_logout' %}">{% csrf_token %}<button type="submit">Sign out</button></form></div>
+  </div>
+</div>
+{% endif %}

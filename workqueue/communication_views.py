@@ -27,7 +27,7 @@ def editable(request):
 
 
 @queue_enabled
-@staff_member_required(login_url='admin:login')
+@staff_member_required(login_url='workqueue:staff_login')
 @permission_required(('workqueue.view_workitem', 'workqueue.change_workitem'), raise_exception=True)
 @never_cache
 @require_http_methods(['GET', 'POST'])
@@ -72,7 +72,7 @@ def compose(request, client_id):
 
 
 @queue_enabled
-@staff_member_required(login_url='admin:login')
+@staff_member_required(login_url='workqueue:staff_login')
 @permission_required('workqueue.view_workitem', raise_exception=True)
 @never_cache
 @require_http_methods(['GET'])
@@ -83,7 +83,7 @@ def email_detail(request, message_id):
 
 
 @queue_enabled
-@staff_member_required(login_url='admin:login')
+@staff_member_required(login_url='workqueue:staff_login')
 @permission_required(('workqueue.view_workitem', 'workqueue.change_workitem'), raise_exception=True)
 @never_cache
 @require_http_methods(['GET', 'POST'])
@@ -111,7 +111,7 @@ class ImportForm(forms.Form):
 
 
 @queue_enabled
-@staff_member_required(login_url='admin:login')
+@staff_member_required(login_url='workqueue:staff_login')
 @permission_required(('workqueue.view_workitem', 'workqueue.change_workitem'), raise_exception=True)
 @never_cache
 @require_http_methods(['GET', 'POST'])
@@ -134,7 +134,7 @@ def import_clients(request):
 
 
 @queue_enabled
-@staff_member_required(login_url='admin:login')
+@staff_member_required(login_url='workqueue:staff_login')
 @permission_required(('workqueue.view_workitem', 'workqueue.change_workitem'), raise_exception=True)
 @never_cache
 @require_http_methods(['GET', 'POST'])
@@ -161,7 +161,7 @@ def import_preview(request, batch_id):
 
 
 @queue_enabled
-@staff_member_required(login_url='admin:login')
+@staff_member_required(login_url='workqueue:staff_login')
 @permission_required(('workqueue.view_workitem', 'workqueue.change_workitem'), raise_exception=True)
 @never_cache
 @require_http_methods(['GET'])

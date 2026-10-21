@@ -1,6 +1,7 @@
 from django.urls import path
 from . import dropbox_views
 from . import views
+from . import staff_auth
 from . import dashboard_views
 from . import client_views
 from . import booking_views
@@ -28,6 +29,8 @@ from . import invoice_history_views
 
 app_name = "workqueue"
 urlpatterns = [
+    path('staff/login/', staff_auth.StaffLoginView.as_view(), name='staff_login'),
+    path('staff/logout/', staff_auth.StaffLogoutView.as_view(), name='staff_logout'),
     path('dashboard/', dashboard_views.dashboard, name='dashboard'),
     path('dashboard/filing/', dashboard_views.filing_inbox, name='dashboard_filing'),
     path('dashboard/billing/check/', dashboard_views.refresh_billing, name='dashboard_billing_refresh'),

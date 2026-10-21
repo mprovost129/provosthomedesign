@@ -1,6 +1,7 @@
 {% extends 'workqueue/site_base.html' %}{% load static %}
 {% block title %}File project documents · {{ item.reference }}{% endblock %}
 {% block tool_styles %}<link rel="stylesheet" href="{% static 'css/work-queue.css' %}"><link rel="stylesheet" href="{% static 'css/dropbox-filing.css' %}">{% endblock %}
+{% block staff_navigation %}{% include 'workqueue/staff_navigation.html' %}{% endblock %}
 {% block workspace %}<main class="queue-work filing-work" id="content">
 <header class="site-header"><div><h1>File project documents</h1><p>{{ item.reference }} · {{ item.contact_full_name }} · {{ item.project.name|default:item.project_name }}</p></div><a href="{% url 'workqueue:queue' %}#request-{{ item.pk }}">Back to work queue</a></header>
 {% for message in messages %}<p class="notice {{ message.tags }}" role="status">{{ message }}</p>{% endfor %}

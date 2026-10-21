@@ -1,0 +1,12 @@
+.phd-staff-login{padding:clamp(2rem,6vw,5rem) 1rem;background:#f3f6f8;color:#203f54;min-height:60vh}
+.staff-login-card{max-width:29rem;margin:auto;background:#fff;border:1px solid #d6e2e9;border-radius:16px;padding:clamp(1.5rem,5vw,2.5rem);box-shadow:0 10px 32px #203f5409}
+.staff-eyebrow{display:block;color:#0065a0;font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;font-weight:700;margin-bottom:1rem}
+.staff-login-card h1{font-size:2.2rem;margin-bottom:.65rem}.staff-login-card p{line-height:1.6}.staff-login-card form{display:grid;gap:.65rem;margin:1.6rem 0}
+.staff-login-card label{font-weight:600;margin-top:.4rem}.staff-login-card input:not([type=hidden]){width:100%;min-width:0;border:1px solid #9eb4c4;border-radius:7px;padding:.7rem .8rem;font-size:1rem;background:#fff;color:#203f54}
+.staff-login-card button{background:#005ea0;color:white;border:0;border-radius:7px;padding:.8rem;margin-top:.7rem;font-weight:600}.staff-login-help{font-size:.88rem;color:#536b7b}.staff-login-card a{color:#005ea0}
+.staff-login-errors{border-left:3px solid #bd3434;padding:.7rem;background:#fff1f0;color:#8e2222}.staff-login-errors ul{margin:0;padding-left:1.2rem}
+.phd-staff-bar{background:#fff;border-bottom:1px solid #d6e2e9;color:#203f54}.staff-bar-inner{max-width:1600px;margin:auto;padding:.85rem clamp(1rem,3vw,2.5rem);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.staff-primary-nav{display:flex;align-items:center;flex-wrap:wrap;gap:.35rem .45rem}.staff-primary-nav a{padding:.5rem .65rem;border-radius:6px;color:#31536b;text-decoration:none;font-size:.88rem;white-space:nowrap}.staff-primary-nav a:hover{background:#edf5fa}.staff-primary-nav a[aria-current=page]{background:#e6f1f8;color:#005ea0;font-weight:700}
+.staff-session{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem 1rem;font-size:.78rem;overflow-wrap:anywhere}.staff-session form{margin:0}.staff-session button{border:1px solid #b8cbd7;background:white;color:#31536b;border-radius:6px;padding:.45rem .65rem;font-size:.8rem}
+.staff-login-card :is(a,button,input):focus-visible,.phd-staff-bar :is(a,button):focus-visible{outline:3px solid #0082c9;outline-offset:3px}
+@media(max-width:600px){.staff-bar-inner{gap:.6rem}.staff-primary-nav{gap:.2rem}.staff-primary-nav a{padding:.4rem .5rem}.staff-session{width:100%;justify-content:space-between}.staff-login-card h1{font-size:1.9rem}}
