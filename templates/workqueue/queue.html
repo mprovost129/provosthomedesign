@@ -39,7 +39,7 @@
     <label>Received through<input type="date" name="received_to" value="{{ filters.received_to }}"></label>
     <button type="submit">Apply filters</button><a href="{% url 'workqueue:queue' %}">Reset</a>
   </form>
-  {% if can_add %}<details class="manual" {% if create_open %}open{% endif %}>
+  {% if can_add %}<details class="manual" id="add-work" {% if create_open or request.GET.add %}open{% endif %}>
     <summary>{% if copy_source %}Copy {{ copy_source.reference }} into a new request{% else %}Add work from a phone call or email{% endif %}</summary>
     {% if copy_source %}<p>Client: {{ copy_source.contact_full_name }} · {{ copy_source.company }} · {{ copy_source.contact_email }}</p><p class="muted">Review the name, address and requested work before saving. This creates a new request ID at the end of the queue. Files, emails, notes and scheduling are not copied.</p><a href="{% url 'workqueue:queue' %}">Cancel copy</a>{% endif %}
     <form method="post" class="edit-form">

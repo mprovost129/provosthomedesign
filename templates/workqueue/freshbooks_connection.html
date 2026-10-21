@@ -1,4 +1,5 @@
 {% extends 'workqueue/pm_base.html' %}{% block title %}FreshBooks connection{% endblock %}{% block pm_content %}
+<section class="pm-card"><h2>Dashboard payment totals</h2><p>To show payments received this month, the dashboard needs read-only access to invoice payment records. It does not create payments, charge clients or send invoices.</p><form method="post">{% csrf_token %}<button name="action" value="connect_payments" class="secondary">Connect read-only payment access</button></form></section>
 <header class="pm-heading"><div><span class="brand">Billing</span><h1>FreshBooks connection</h1><p>Keep invoices, payment settings, and balances in your existing billing account.</p></div></header>
 {% if authorization_url %}<section class="pm-card"><h2>Authorize on FreshBooks</h2><p>Continue to FreshBooks to review and approve the website's billing access.</p><a class="pm-button" href="{{ authorization_url }}" rel="noreferrer">Continue to FreshBooks</a></section>{% endif %}
 <div class="pm-layout"><section class="pm-card"><h2>{% if connection.encrypted_tokens and not connection.needs_reconnect %}Authorized{% else %}Connect your account{% endif %}</h2>

@@ -693,6 +693,7 @@ class BookingAudit(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
 
 from .pm_models import ProjectPlan, ProjectTask, ProposalTemplate, ProposalSequence, Proposal, ProposalRevision, ProposalInvitation, ProjectEvent
+from .dashboard_models import DashboardBillingSummary
 from .time_models import TimeEntry
 from .freshbooks_models import FreshBooksConnection, FreshBooksClientLink, FreshBooksInvoice
 from .freshbooks_project_models import FreshBooksProject, FreshBooksClientProvision

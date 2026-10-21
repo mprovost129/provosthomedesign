@@ -29,6 +29,8 @@ from . import invoice_history_views
 app_name = "workqueue"
 urlpatterns = [
     path('dashboard/', dashboard_views.dashboard, name='dashboard'),
+    path('dashboard/filing/', dashboard_views.filing_inbox, name='dashboard_filing'),
+    path('dashboard/billing/check/', dashboard_views.refresh_billing, name='dashboard_billing_refresh'),
     path('work-queue/dropbox/', dropbox_views.connection, name='dropbox_connection'),
     path('work-queue/dropbox/callback/', dropbox_views.callback, name='dropbox_callback'),
     path('work-queue/<uuid:item_id>/filing/', dropbox_views.review, name='dropbox_review'),

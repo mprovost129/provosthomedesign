@@ -3,9 +3,13 @@ from django.conf import settings
 from django.db.models import Count, Exists, Max, OuterRef, Q
 from django.db.models.functions import Coalesce, Greatest, Lower, Trim
 from django.shortcuts import render
+from django.shortcuts import redirect
+from django.contrib import messages
+from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
 from django.urls import reverse
 from django.utils import timezone
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_POST
 
 from .attention import attention_conditions, with_email_attention
 from .freshbooks_models import FreshBooksConnection, FreshBooksInvoice
@@ -15,8 +19,10 @@ from .invoice_history_sync import live_context
 from .invoice_overview import invoice_queryset, invoice_row
 from .models import Appointment, Client, ClientFollowUp, CLOSED_STATUSES, Status, WorkItem, WorkProject
 from .pm_models import ProjectTask
-from .pm_views import staff_view
+from .pm_views import staff_view, editable, error_text
 from .proposal_overview import overview_queryset, LABELS as PROPOSAL_LABELS
+from . import dashboard_filing, dashboard_billing
+from .views import staff_preview
 
 
 RECENT_LIMIT = 6
@@ -69,6 +75,8 @@ def recent_invoices(now):
 @require_GET
 def dashboard(request):
     now, today = timezone.now(), timezone.localdate()
+    filing_counts = dashboard_filing.filing_summary()
+    billing = dashboard_billing.summary_context()
     active = WorkItem.objects.active()
     counts = dict(active.order_by().values_list('status').annotate(total=Count('pk')))
     active_total = sum(counts.values())
@@ -132,6 +140,16 @@ def dashboard(request):
     appointments = Appointment.objects.filter(ends_at__gt=now, cancel_requested=False,
         state__in=['pending', 'syncing', 'confirmed', 'attention']).select_related('project').order_by('starts_at', 'pk')[:5]
     return render(request, 'workqueue/dashboard.html', {
+        'filing_counts': [{'key':key,'label':label,'count':count}
+            for key,label in dashboard_filing.FILING_LABELS.items()
+            for count in [filing_counts[key]]],
+        'filing_rows': [dashboard_filing.row(item) for item in dashboard_filing.unfinished(
+            dashboard_filing.filing_queryset()).order_by('-updated_at','-pk')[:5]],
+        'billing': billing,
+        'billing_parts': [{'label':'Invoice balances','data':billing['invoice']},
+                          {'label':'Monthly payments','data':billing['payment']}],
+        'can_add_work': request.user.has_perm('workqueue.add_workitem') and not staff_preview(request),
+        'can_change': request.user.has_perm('workqueue.change_workitem') and not staff_preview(request),
         'as_of': now, 'today': today, 'active_total': active_total,
         'project_total': projects.filter(active_count__gt=0).count(), 'client_total': clients.count(),
         'pending_proposals': pending_proposals, 'status_rows': status_rows, 'attention': attention,
@@ -146,3 +164,32 @@ def dashboard(request):
         'system_health': health_snapshot() if getattr(settings, 'WORK_INTAKE_ENABLED', False) else None,
         'can_add_client': request.user.has_perm('workqueue.add_client'),
     })
+
+
+@staff_view
+@require_GET
+def filing_inbox(request):
+    q=request.GET.get('q','').strip()[:200]
+    state=request.GET.get('state','all')
+    state=state if state in dashboard_filing.FILING_LABELS else 'all'
+    items=dashboard_filing.filing_queryset(q)
+    items=items.filter(**{state:True}) if state!='all' else dashboard_filing.unfinished(items)
+    page=Paginator(items.order_by('-updated_at','-pk'),25).get_page(request.GET.get('page'))
+    return render(request,'workqueue/dashboard_filing.html',{
+        'q':q,'state':state,'page':page,'rows':[dashboard_filing.row(item) for item in page],
+        'states':dashboard_filing.FILING_LABELS,
+    })
+
+
+@staff_view
+@require_POST
+def refresh_billing(request):
+    editable(request)
+    try:
+        started=dashboard_billing.request_checks(actor=request.user)
+    except ValidationError as exc:
+        messages.error(request,error_text(exc))
+    else:
+        messages.success(request,'FreshBooks summary check queued. Background checks run in steps; refresh this page in a few minutes.'
+            if started else 'A summary check is already running or was requested recently. Your saved totals remain available.')
+    return redirect(reverse('workqueue:dashboard')+'#billing-overview')

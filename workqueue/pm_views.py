@@ -70,7 +70,8 @@ def projects(request):
         queryset = queryset.filter(active_count__gt=0)
     if q:
         queryset = queryset.filter(Q(name__icontains=q) | Q(street__icontains=q) | Q(canonical_reference__icontains=q)
-            | Q(work_items__client_contact__client__name__icontains=q) | Q(proposals__number__icontains=q)).distinct()
+            | Q(work_items__client_contact__client__name__icontains=q) | Q(work_items__reference__icontains=q)
+            | Q(filing_folder__number__icontains=q) | Q(proposals__number__icontains=q)).distinct()
     return render(request, 'workqueue/projects.html', {'page': Paginator(queryset.order_by('name'), 30).get_page(request.GET.get('page')),
         'q':q, 'scope':scope})
 
