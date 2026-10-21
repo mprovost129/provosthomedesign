@@ -13,7 +13,7 @@
       <a href="{% url 'workqueue:project_reports' %}"{% if current == 'project_reports' %} aria-current="page"{% endif %}>Reports</a>
       {% endwith %}
     </nav>
-    <div class="staff-session"><span>Signed in as <strong>{{ user.get_username }}</strong></span><form method="post" action="{% url 'workqueue:staff_logout' %}">{% csrf_token %}<button type="submit">Sign out</button></form></div>
+    <div class="staff-session"><a href="{% url 'workqueue:staff_security' %}">Security</a><span>Signed in as <strong>{{ user.get_username }}</strong></span><form method="post" action="{% url 'workqueue:staff_logout' %}">{% csrf_token %}<button type="submit">Sign out</button></form></div>
   </div>
 </div>
 {% endif %}

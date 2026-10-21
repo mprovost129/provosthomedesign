@@ -59,6 +59,7 @@ CORS_ALLOW_CREDENTIALS = True
 
 # --- Apps ---
 INSTALLED_APPS = [
+    "django_otp",
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
     "django.contrib.humanize", "django.contrib.sitemaps",
@@ -117,6 +118,8 @@ MIDDLEWARE = [
     "workqueue.middleware.IntakeUploadLimitMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django_otp.middleware.OTPMiddleware",
+    "workqueue.staff_security.StaffMFAMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -521,3 +524,6 @@ FRESHBOOKS_REDIRECT_URI = config('FRESHBOOKS_REDIRECT_URI', default='https://www
 DROPBOX_APP_KEY = config('DROPBOX_APP_KEY', default='').strip()
 DROPBOX_APP_SECRET = config('DROPBOX_APP_SECRET', default='').strip()
 DROPBOX_TOKEN_ENCRYPTION_KEY = config('DROPBOX_TOKEN_ENCRYPTION_KEY', default='').strip()
+
+# Staff reset tokens are short lived; resetting a password does not remove MFA.
+PASSWORD_RESET_TIMEOUT = 3600

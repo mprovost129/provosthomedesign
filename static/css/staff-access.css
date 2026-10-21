@@ -10,3 +10,5 @@
 .staff-session{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem 1rem;font-size:.78rem;overflow-wrap:anywhere}.staff-session form{margin:0}.staff-session button{border:1px solid #b8cbd7;background:white;color:#31536b;border-radius:6px;padding:.45rem .65rem;font-size:.8rem}
 .staff-login-card :is(a,button,input):focus-visible,.phd-staff-bar :is(a,button):focus-visible{outline:3px solid #0082c9;outline-offset:3px}
 @media(max-width:600px){.staff-bar-inner{gap:.6rem}.staff-primary-nav{gap:.2rem}.staff-primary-nav a{padding:.4rem .5rem}.staff-session{width:100%;justify-content:space-between}.staff-login-card h1{font-size:1.9rem}}
+
+.staff-setup-qr{display:block;max-width:100%;height:auto;margin:1.25rem 0}.staff-session a{color:#31536b}

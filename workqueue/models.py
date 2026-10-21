@@ -694,6 +694,7 @@ class BookingAudit(models.Model):
 
 from .pm_models import ProjectPlan, ProjectTask, ProposalTemplate, ProposalSequence, Proposal, ProposalRevision, ProposalInvitation, ProjectEvent
 from .dashboard_models import DashboardBillingSummary
+from .staff_security_models import StaffOTPDevice, StaffRecoveryCode
 from .operations_models import OperationalIncident, OperationsSettings
 from .time_models import TimeEntry
 from .freshbooks_models import FreshBooksConnection, FreshBooksClientLink, FreshBooksInvoice

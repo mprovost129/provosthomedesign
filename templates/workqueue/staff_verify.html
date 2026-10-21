@@ -1,0 +1,3 @@
+{% extends 'workqueue/site_base.html' %}
+{% block title %}Verify staff sign-in{% endblock %}
+{% block workspace %}<main class="phd-staff-login" id="content"><section class="staff-login-card"><span class="staff-eyebrow">Provost Home Design · Staff security</span><h1>Verify your sign-in</h1><p>Enter the six-digit code from your authenticator app, or one unused recovery code.</p><form method="post">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}">{{ form.as_p }}<button>Verify and continue</button></form><p class="staff-login-help">Each code can be used once. If a code was just used, wait for the next one.</p><form method="post" action="{% url 'workqueue:staff_logout' %}">{% csrf_token %}<button>Sign out</button></form></section></main>{% endblock %}

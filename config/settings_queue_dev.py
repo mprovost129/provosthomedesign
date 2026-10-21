@@ -14,6 +14,7 @@ SECRET_KEY = "queue-local-development-only-do-not-use-in-production"
 DEBUG = True
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "testserver", "www.provosthomedesign.com", "web.provosthomedesign.com"]
 INSTALLED_APPS = [
+    "django_otp",
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
     "django.contrib.sessions", "django.contrib.messages", "django.contrib.staticfiles",
     "django.contrib.humanize", "django.contrib.sitemaps", "django_recaptcha", "corsheaders",
@@ -27,6 +28,8 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware", "django.middleware.common.CommonMiddleware",
     "workqueue.middleware.IntakeUploadLimitMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware", "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django_otp.middleware.OTPMiddleware",
+    "workqueue.staff_security.StaffMFAMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware", "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 ROOT_URLCONF = "config.urls"
@@ -70,3 +73,6 @@ RECAPTCHA_ENTERPRISE_API_KEY = ""
 SILENCED_SYSTEM_CHECKS = ["django_recaptcha.recaptcha_test_key_error"]
 STRIPE_SECRET_KEY = ""
 STRIPE_PUBLISHABLE_KEY = ""
+
+# Staff reset tokens are short lived; resetting a password does not remove MFA.
+PASSWORD_RESET_TIMEOUT = 3600

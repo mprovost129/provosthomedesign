@@ -17,6 +17,7 @@
       <input id="id_password" name="password" type="password" autocomplete="current-password" required>
       <button type="submit">Sign in</button>
     </form>
+    <p><a href="{% url 'workqueue:staff_password_reset' %}">Forgot your password?</a></p>
     <p class="staff-login-help">Use the same username and password you use for website administration.</p>
     <a href="{% url 'workqueue:portal_home' %}">Looking for your client projects?</a>
   </section>
