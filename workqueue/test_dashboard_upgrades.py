@@ -58,8 +58,8 @@ class DashboardUpgradeTests(TestCase):
         response=self.client.get(reverse('workqueue:dashboard'))
         self.assertContains(response,'Add work')
         self.assertContains(response,'Add client')
-        self.assertContains(response,'Find a project')
-        self.assertContains(response,'name="scope" value="all"')
+        self.assertContains(response,'Search workspace')
+        self.assertContains(response,'action="'+reverse('workqueue:staff_search')+'"')
         response=self.client.get(reverse('workqueue:queue')+'?add=1')
         self.assertContains(response,'id="add-work" open')
 

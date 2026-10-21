@@ -9,7 +9,7 @@
   </header>
   <section class="dash-quick-actions" aria-label="Quick actions">
     <div class="dash-inline-links">{% if can_add_work %}<a class="pm-button secondary" href="{% url 'workqueue:queue' %}?add=1#add-work"><i class="bi bi-plus-lg" aria-hidden="true"></i> Add work</a>{% endif %}{% if can_add_client %}<a class="pm-button secondary" href="{% url 'workqueue:add_client' %}"><i class="bi bi-person-plus" aria-hidden="true"></i> Add client</a>{% endif %}<a href="{% url 'workqueue:dashboard_filing' %}">Review project filing</a></div>
-    <form method="get" action="{% url 'workqueue:projects' %}" role="search" aria-label="Find a project"><input type="hidden" name="scope" value="all"><label for="dashboard-project-search" class="visually-hidden">Project, client, address or request ID</label><input type="search" id="dashboard-project-search" name="q" placeholder="Project, client, address or request ID"><button class="secondary">Find a project</button></form>
+    <form method="get" action="{% url 'workqueue:staff_search' %}" role="search" aria-label="Search the workspace"><label for="dashboard-project-search" class="visually-hidden">Client, project, request or invoice</label><input type="search" id="dashboard-project-search" name="q" placeholder="Client, project, request or invoice"><button class="secondary">Search workspace</button></form>
   </section>
   <section class="dash-stats" aria-label="Business overview">
     <a class="dash-stat" href="{% url 'workqueue:queue' %}?scope=active"><span class="dash-stat-label"><i class="bi bi-inboxes" aria-hidden="true"></i> Active requests</span><strong>{{ active_total|intcomma }}</strong><span>New submissions and updates</span></a>

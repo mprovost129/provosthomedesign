@@ -3,6 +3,15 @@
   "use strict";
   const queue = document.querySelector(".queue-work");
   if (!queue) return;
+  // Same forms and row IDs on phones and desktops; resizing never copies data.
+  const phoneLayout = window.matchMedia('(max-width:700px)');
+  function arrangeActions() {
+    queue.querySelectorAll('.queue-row-actions').forEach(function (details) {
+      details.open = !phoneLayout.matches;
+    });
+  }
+  arrangeActions();
+  phoneLayout.addEventListener('change', arrangeActions);
   const forms = Array.from(queue.querySelectorAll('form[method="post"]:not([data-time-action])'));
   const baseline = new Map();
   const dirty = new Set();

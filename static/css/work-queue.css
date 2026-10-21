@@ -129,3 +129,36 @@
 .delete-request label { display:flex; gap:.4rem; align-items:flex-start; white-space:normal; }
 .delete-request input[type=checkbox] { width:auto; margin-top:.3rem; }
 .queue-work button.danger { background:#a3262b; border-color:#a3262b; color:white; }
+.queue-work .queue-row-actions > summary { font-size:13px; color:var(--blue); }
+@media(min-width:701px){.queue-work .queue-row-actions > summary{display:none}}
+@media(max-width:700px){
+  .queue-work .table-scroll:has(.queue-list){overflow:visible;border:0;background:transparent}
+  .queue-work .queue-list{display:block;min-width:0;width:100%;border-collapse:separate}
+  .queue-work .queue-list > thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+  .queue-work .queue-list > tbody{display:block;margin:0 0 16px;border:1px solid var(--line);border-radius:10px;background:white;box-shadow:0 2px 8px #20314608}
+  .queue-work .queue-list > tbody:nth-of-type(even){background:#f5f8fb}
+  .queue-work .queue-list .request-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);padding:12px;gap:10px 14px}
+  .queue-work .queue-list .request-row > td{display:block;min-width:0;padding:0;overflow-wrap:anywhere}
+  .queue-work .queue-list .request-row > td::before{content:attr(data-label);display:block;color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;margin-bottom:3px}
+  .queue-work .queue-list .request-row > td[data-label="Position"]{order:1}
+  .queue-work .queue-list .request-row > td[data-label="Request"]{order:2}
+  .queue-work .queue-list .request-row > td[data-label="Project / work"]{order:3;grid-column:1/-1}
+  .queue-work .queue-list .request-row > td[data-label="Client"]{order:4;grid-column:1/-1}
+  .queue-work .queue-list .request-row > td[data-label="Status"]{order:5;grid-column:1/-1;border-top:1px solid var(--line);padding-top:10px}
+  .queue-work .queue-list .request-row > td[data-label="Due / follow-up"]{order:6}
+  .queue-work .queue-list .request-row > td[data-label="Priority"]{order:7}
+  .queue-work .queue-list .request-row > td[data-label="Received"]{order:8;grid-column:1/-1}
+  .queue-work .queue-list .quick-status{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:8px}
+  .queue-work .queue-list .quick-status select{width:100%;min-height:44px;min-width:0;font-size:14px}
+  .queue-work .queue-list .quick-status small{grid-column:1/-1;max-width:none}
+  .queue-work .queue-list .quick-status button{grid-column:1/-1;min-height:44px}
+  .queue-work .queue-list .detail-row,.queue-work .queue-list .detail-row > td{display:block;width:100%;min-width:0}
+  .queue-work .queue-list .detail-row > td{padding:0 12px 12px}
+  .queue-work .details-body{padding:12px}.queue-work .fields{grid-template-columns:minmax(0,1fr)}
+  .queue-work .queue-row-actions{margin-top:8px}.queue-work .queue-row-actions > summary{min-height:44px;border:1px solid var(--line);border-radius:5px;padding:9px}
+  .queue-work .request-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+  .queue-work .request-actions > a,.queue-work .request-actions > button{padding:9px 0;min-height:44px;text-align:left}
+  .queue-work .request-files{max-width:none}.queue-work .request-files summary{min-height:44px;padding:10px}
+  .queue-work .request-actions .delete-request[open]{min-width:0}
+  .queue-work .site-header{flex-wrap:wrap}.queue-work .filters label:first-child{min-width:0;flex-basis:100%}
+}

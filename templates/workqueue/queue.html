@@ -58,15 +58,15 @@
   {% include 'workqueue/ordering.html' %}
   <p class="muted">Positions reflect the full active queue, even when filtered. Priority does not change order. Closed work remains in All work.</p>
   <div class="table-scroll" tabindex="0" role="region" aria-label="Work requests">
-  <table>
+  <table class="queue-list" role="table">
     <caption class="sr-only">{{ page.paginator.count }} matching work requests</caption>
     <thead><tr><th scope="col">Position</th><th scope="col">Request</th><th scope="col">Client</th><th scope="col">Project / work</th><th scope="col">Status</th><th scope="col">Priority</th><th scope="col">Due / follow-up</th><th scope="col">Received</th></tr></thead>
     {% for row in rows %}{% with item=row.item %}
-    <tbody id="request-{{ item.pk }}">
-      <tr>
-        <td>{% if item.deleted_at %}<span class="muted">Deleted</span>{% elif item.position %}<strong>{{ item.position }}</strong>{% else %}<span class="muted">Closed</span>{% endif %}</td>
-        <td><strong>{{ item.reference }}</strong><small>{{ item.get_kind_display }}</small>
-          {% if not item.deleted_at %}<div class="request-actions">{% if item.project_id %}<a href="{% url 'workqueue:project_detail' item.project_id %}" target="_blank" rel="noopener">Workspace</a>{% endif %}{% if can_change and item.client_contact_id %}<button type="button" class="email-trigger" data-email-url="{% url 'workqueue:compose_email' item.client_contact.client_id %}?item={{ item.pk }}">Email</button>{% endif %}
+    <tbody role="rowgroup" id="request-{{ item.pk }}">
+      <tr class="request-row" role="row">
+        <td role="cell" data-label="Position">{% if item.deleted_at %}<span class="muted">Deleted</span>{% elif item.position %}<strong>{{ item.position }}</strong>{% else %}<span class="muted">Closed</span>{% endif %}</td>
+        <td role="cell" data-label="Request"><strong>{{ item.reference }}</strong><small>{{ item.get_kind_display }}</small>
+          {% if not item.deleted_at %}<details class="queue-row-actions" open><summary>Actions</summary><div class="request-actions">{% if item.project_id %}<a href="{% url 'workqueue:project_detail' item.project_id %}" target="_blank" rel="noopener">Workspace</a>{% endif %}{% if can_change and item.client_contact_id %}<button type="button" class="email-trigger" data-email-url="{% url 'workqueue:compose_email' item.client_contact.client_id %}?item={{ item.pk }}">Email</button>{% endif %}
             {% if can_change and item.project_id %}<button type="button" class="secondary" data-track-project="{{ item.project_id }}" data-track-item="{{ item.pk }}">Track time</button><a href="{% url 'workqueue:project_time' item.project_id %}" target="_blank" rel="noopener">Time entries</a>{% endif %}
             {% if can_change %}<a href="{% url 'workqueue:dropbox_review' item.pk %}" target="_blank" rel="noopener">File project documents · {{ row.filing_label }}{% if row.freshbooks_project %} · {{ row.freshbooks_project.get_state_display }}{% endif %}{% if row.project_number %} · {{ row.project_number }}{% endif %}</a><a href="#manage-{{ item.pk }}" data-edit-target="manage-{{ item.pk }}">Edit</a>{% endif %}
             {% if can_add %}<a href="?{{ page_query }}&amp;copy={{ item.pk }}">Copy</a>{% endif %}
@@ -75,12 +75,12 @@
               <p>Remove only {{ item.reference }} from the queue and client tracking? Other requests on this project stay unchanged. Recover mistakes under Show → Deleted work.</p>
               <label><input type="checkbox" name="confirmed" required>I want to delete {{ item.reference }}.</label><button type="submit" class="danger">Delete request</button>
             </form></details>{% endif %}
-          </div>{% elif can_restore %}<form method="post">{% csrf_token %}{% include 'workqueue/filter_context.html' %}
+          </div></details>{% elif can_restore %}<form method="post">{% csrf_token %}{% include 'workqueue/filter_context.html' %}
             <input type="hidden" name="action" value="restore"><input type="hidden" name="item_id" value="{{ item.pk }}"><input type="hidden" name="version" value="{{ item.version }}"><input type="hidden" name="confirmed" value="on">
             <small>Deleted {{ item.deleted_at|date:'M j, Y' }}. Active work restores at the end.</small><button type="submit" class="secondary">Restore request</button></form>{% endif %}
         </td>
-        <td>{% if item.client_contact_id %}{% if can_change and not item.deleted_at %}<button type="button" class="project-email-trigger" data-email-url="{% url 'workqueue:compose_email' item.client_contact.client_id %}?item={{ item.pk }}">{{ item.contact_full_name }}</button><small><a href="{% url 'workqueue:client_detail' item.client_contact.client_id %}" target="_blank" rel="noopener">Client record</a></small>{% else %}<a href="{% url 'workqueue:client_detail' item.client_contact.client_id %}" target="_blank" rel="noopener">{{ item.contact_full_name }}</a>{% endif %}{% else %}{{ item.contact_full_name }}{% endif %}<small>{{ item.company }}</small></td>
-        <td>{% if can_change and item.client_contact_id and not item.deleted_at %}<button type="button" class="project-email-trigger" data-email-url="{% url 'workqueue:compose_email' item.client_contact.client_id %}?item={{ item.pk }}">{{ item.project.name|default:item.project_name|default:item.project_context|default:item.project_street|default:'Untitled project' }}</button>{% else %}{{ item.project.name|default:item.project_name|default:item.project_context|default:item.project_street|default:'Untitled project' }}{% endif %}
+        <td role="cell" data-label="Client">{% if item.client_contact_id %}{% if can_change and not item.deleted_at %}<button type="button" class="project-email-trigger" data-email-url="{% url 'workqueue:compose_email' item.client_contact.client_id %}?item={{ item.pk }}">{{ item.contact_full_name }}</button><small><a href="{% url 'workqueue:client_detail' item.client_contact.client_id %}" target="_blank" rel="noopener">Client record</a></small>{% else %}<a href="{% url 'workqueue:client_detail' item.client_contact.client_id %}" target="_blank" rel="noopener">{{ item.contact_full_name }}</a>{% endif %}{% else %}{{ item.contact_full_name }}{% endif %}<small>{{ item.company }}</small></td>
+        <td role="cell" data-label="Project / work">{% if can_change and item.client_contact_id and not item.deleted_at %}<button type="button" class="project-email-trigger" data-email-url="{% url 'workqueue:compose_email' item.client_contact.client_id %}?item={{ item.pk }}">{{ item.project.name|default:item.project_name|default:item.project_context|default:item.project_street|default:'Untitled project' }}</button>{% else %}{{ item.project.name|default:item.project_name|default:item.project_context|default:item.project_street|default:'Untitled project' }}{% endif %}
           <small>{{ item.description|truncatechars:110 }}</small>{% if item.needs_project_link %}<span class="flag">Project link needs confirmation</span>{% endif %}
           {% if row.unreviewed_responses %}<strong class="response-flag">Response received—review needed ({{ row.unreviewed_responses|length }})</strong>
           <details class="response-review"><summary>Review client response{{ row.unreviewed_responses|length|pluralize }}</summary>
@@ -101,7 +101,7 @@
               {% if attachment.storage_key %}<small>{{ attachment.size_bytes|filesizeformat }}</small>{% elif attachment.legacy_drive_id %}<small>Original Google Drive file</small>{% endif %}
             </li>{% endfor %}</ul></details>{% else %}<small class="file-count">0 files{% if row.unreviewed_responses %} on the original request{% endif %}</small>{% endif %}
         </td>
-        <td>{% if can_change and not item.deleted_at %}<form method="post" class="quick-status" data-current-status="{{ item.status }}">
+        <td role="cell" data-label="Status">{% if can_change and not item.deleted_at %}<form method="post" class="quick-status" data-current-status="{{ item.status }}">
           {% csrf_token %}<input type="hidden" name="action" value="status"><input type="hidden" name="item_id" value="{{ item.pk }}"><input type="hidden" name="version" value="{{ item.version }}">
           {% include 'workqueue/filter_context.html' %}
           <label class="sr-only" for="status-{{ item.pk }}">Status for {{ item.reference }}</label>
@@ -112,11 +112,11 @@
           <small data-milestone-preview hidden></small>
           <button type="submit" class="secondary">Save status</button>
         </form>{% else %}{{ item.get_status_display }}{% endif %}</td>
-        <td>{{ item.get_priority_display }}</td>
-        <td>{{ item.committed_due_date|date:'M j, Y'|default:'—' }}{% if item.followup_date %}<small>Follow up {{ item.followup_date|date:'M j' }}</small>{% endif %}{% for flag in row.attention_flags %}<span class="flag">{{ flag }}</span>{% endfor %}{% if item.email_attention %}<span class="flag">Email needs attention</span>{% endif %}</td>
-        <td>{{ item.received_at|date:'M j, Y' }}<small>{{ item.received_at|date:'g:i A' }}</small></td>
+        <td role="cell" data-label="Priority">{{ item.get_priority_display }}</td>
+        <td role="cell" data-label="Due / follow-up">{{ item.committed_due_date|date:'M j, Y'|default:'—' }}{% if item.followup_date %}<small>Follow up {{ item.followup_date|date:'M j' }}</small>{% endif %}{% for flag in row.attention_flags %}<span class="flag">{{ flag }}</span>{% endfor %}{% if item.email_attention %}<span class="flag">Email needs attention</span>{% endif %}</td>
+        <td role="cell" data-label="Received">{{ item.received_at|date:'M j, Y' }}<small>{{ item.received_at|date:'g:i A' }}</small></td>
       </tr>
-      {% if not item.deleted_at %}<tr class="detail-row"><td colspan="8">
+      {% if not item.deleted_at %}<tr class="detail-row" role="row"><td role="cell" colspan="8">
       <details id="manage-{{ item.pk }}" {% if row.open %}open{% endif %}>
         <summary>Manage {{ item.reference }} · details, dates, notes and project history</summary>
         <div class="details-body">

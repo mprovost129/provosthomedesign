@@ -10,9 +10,11 @@
       <a href="{% url 'workqueue:proposal_overview' %}"{% if current == 'proposal_overview' %} aria-current="page"{% endif %}>Proposals</a>
       <a href="{% url 'workqueue:invoice_overview' %}"{% if current == 'invoice_overview' or current == 'invoice_history' %} aria-current="page"{% endif %}>Invoices</a>
       <a href="{% url 'workqueue:task_list' %}"{% if current == 'task_list' %} aria-current="page"{% endif %}>Tasks</a>
+      <a href="{% url 'workqueue:workload' %}"{% if current == 'workload' %} aria-current="page"{% endif %}>Workload</a>
       <a href="{% url 'workqueue:project_reports' %}"{% if current == 'project_reports' %} aria-current="page"{% endif %}>Reports</a>
       {% endwith %}
     </nav>
+    <form method="get" action="{% url 'workqueue:staff_search' %}" class="staff-workspace-search" role="search" aria-label="Search workspace"><label class="visually-hidden" for="staff-search">Search clients, projects and invoices</label><input type="search" name="q" id="staff-search" placeholder="Search workspace" maxlength="120" minlength="2" required><button>Search</button></form>
     <div class="staff-session"><a href="{% url 'workqueue:staff_security' %}">Security</a><span>Signed in as <strong>{{ user.get_username }}</strong></span><form method="post" action="{% url 'workqueue:staff_logout' %}">{% csrf_token %}<button type="submit">Sign out</button></form></div>
   </div>
 </div>
