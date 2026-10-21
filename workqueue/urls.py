@@ -1,6 +1,7 @@
 from django.urls import path
 from . import dropbox_views
 from . import views
+from . import dashboard_views
 from . import client_views
 from . import booking_views
 from . import consultation_views
@@ -27,6 +28,7 @@ from . import invoice_history_views
 
 app_name = "workqueue"
 urlpatterns = [
+    path('dashboard/', dashboard_views.dashboard, name='dashboard'),
     path('work-queue/dropbox/', dropbox_views.connection, name='dropbox_connection'),
     path('work-queue/dropbox/callback/', dropbox_views.callback, name='dropbox_callback'),
     path('work-queue/<uuid:item_id>/filing/', dropbox_views.review, name='dropbox_review'),

@@ -76,6 +76,7 @@
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="{% url 'pages:get_started' %}">General project inquiry</a></li>
                 {% if work_queue_enabled and request.user.is_staff and perms.workqueue.view_workitem %}
+                <li><a class="dropdown-item" href="{% url 'workqueue:dashboard' %}" rel="nofollow">Dashboard</a></li>
                 <li><a class="dropdown-item" href="{% url 'workqueue:queue' %}" rel="nofollow">Work queue</a></li>
                 {% endif %}
               </ul>
