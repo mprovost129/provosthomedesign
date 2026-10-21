@@ -8,7 +8,9 @@ The page is a read-only starting point for the existing tools:
 
 - Active request, active project, current CRM client, and awaiting-proposal counts.
 - Queue attention categories, due CRM follow-ups and project tasks, proposal
-  changes, and connected invoices requiring review. Counts overlap and are not
+  changes, connected invoices requiring review, and imported invoices with saved
+  balances due. Imported balances use the existing history filter and may require
+  a refresh; they are not claimed to be current debts. Counts overlap and are not
   added into a misleading combined total.
 - Active requests grouped by status, linking to the existing queue filters.
 - Next five website appointments, including meetings currently underway. Canceled

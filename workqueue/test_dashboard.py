@@ -203,6 +203,23 @@ class DashboardTests(TestCase):
         self.assertContains(response, 'Needs refresh or review')
         self.assertContains(response, 'Not checked with FreshBooks')
 
+    def test_imported_saved_balances_due_match_the_existing_history_filter(self):
+        due = self.historical('SAVED-DUE')
+        HistoricalInvoiceBalance.objects.create(invoice=due, status='overdue', outstanding=125,
+            verified_at=self.now-timedelta(days=2))
+        paid = self.historical('SAVED-PAID')
+        HistoricalInvoiceBalance.objects.create(invoice=paid, status='paid', outstanding=0)
+        draft = self.historical('SAVED-DRAFT')
+        HistoricalInvoiceBalance.objects.create(invoice=draft, status='draft', outstanding=500)
+        removed = self.historical('SAVED-REMOVED', removed_at=self.now)
+        HistoricalInvoiceBalance.objects.create(invoice=removed, status='overdue', outstanding=100)
+        cards = {row['label']: row for row in self.client.get(self.url).context['attention']}
+        card = cards['Imported invoices with saved balances due']
+        self.assertEqual(card['count'], 1)
+        response = self.client.get(card['url'])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['summary']['total'], 1)
+
     def test_recent_lists_are_bounded_and_empty_dashboard_renders(self):
         for index in range(8):
             self.historical(f'HIST-{index + 2}')

@@ -15,7 +15,7 @@
   </section>
   <section class="dash-panel dash-attention" aria-labelledby="attention-title">
     <header class="dash-panel-heading"><div><h2 id="attention-title"><i class="bi bi-flag" aria-hidden="true"></i> Needs your attention</h2><p>Open a category to review the matching records.</p></div></header>
-    <div class="dash-attention-grid">{% for item in attention %}<a href="{{ item.url }}"><strong>{{ item.count|intcomma }}</strong><span>{{ item.label }}</span><span aria-hidden="true">↗</span></a>{% empty %}<p class="dash-empty">No overdue work, due follow-ups, unread responses, or connected invoice issues to review.</p>{% endfor %}</div>
+    <div class="dash-attention-grid">{% for item in attention %}<a href="{{ item.url }}"><strong>{{ item.count|intcomma }}</strong><span>{{ item.label }}</span><span aria-hidden="true">↗</span></a>{% empty %}<p class="dash-empty">No overdue work, due follow-ups, unread responses, or saved invoice issues to review.</p>{% endfor %}</div>
   </section>
   <div class="dash-columns">
     <section class="dash-panel" aria-labelledby="queue-title"><header class="dash-panel-heading"><div><h2 id="queue-title">Work in progress</h2><p>Your active requests, grouped by status.</p></div><a href="{% url 'workqueue:queue' %}">View queue</a></header>

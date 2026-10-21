@@ -14,7 +14,7 @@ from .invoice_history_models import HistoricalInvoice
 from .invoice_history_sync import live_context
 from .invoice_overview import invoice_queryset, invoice_row
 from .models import Appointment, Client, ClientFollowUp, CLOSED_STATUSES, Status, WorkItem, WorkProject
-from .pm_models import ProjectTask, Proposal
+from .pm_models import ProjectTask
 from .pm_views import staff_view
 from .proposal_overview import overview_queryset, LABELS as PROPOSAL_LABELS
 
@@ -122,6 +122,12 @@ def dashboard(request):
     if invoice_summary['review']:
         attention.append({'label': 'Connected invoices to review', 'count': invoice_summary['review'],
                           'url': reverse('workqueue:invoice_overview') + '?state=attention'})
+    history = HistoricalInvoice.objects.filter(removed_at__isnull=True)
+    history_due = history.filter(live_balance__outstanding__gt=0,
+        live_balance__status__in=['sent', 'viewed', 'partial', 'overdue', 'deposit-paid', 'deposit-partial']).count()
+    if history_due:
+        attention.append({'label': 'Imported invoices with saved balances due', 'count': history_due,
+                          'url': reverse('workqueue:invoice_history') + '?live=due'})
     booking_enabled = getattr(settings, 'BOOKING_ENABLED', False)
     appointments = Appointment.objects.filter(ends_at__gt=now, cancel_requested=False,
         state__in=['pending', 'syncing', 'confirmed', 'attention']).select_related('project').order_by('starts_at', 'pk')[:5]
@@ -135,7 +141,7 @@ def dashboard(request):
         'recent_proposals': [{'proposal': p, 'label': PROPOSAL_LABELS[p.overview_state]}
                             for p in proposals.order_by('-updated_at', '-pk')[:5]],
         'recent_invoices': recent_invoices(now), 'invoice_summary': invoice_summary,
-        'history_count': HistoricalInvoice.objects.filter(removed_at__isnull=True).count(),
+        'history_count': history.count(),
         'appointments': appointments if booking_enabled else [], 'show_appointments': booking_enabled,
         'system_health': health_snapshot() if getattr(settings, 'WORK_INTAKE_ENABLED', False) else None,
         'can_add_client': request.user.has_perm('workqueue.add_client'),
