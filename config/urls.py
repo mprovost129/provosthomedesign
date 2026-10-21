@@ -25,6 +25,8 @@ sitemaps = {
     "case-studies": CaseStudySitemap,
 }
 
+handler500 = "workqueue.operations.server_error"
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("workqueue.urls")),

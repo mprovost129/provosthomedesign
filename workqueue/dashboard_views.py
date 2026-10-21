@@ -1,6 +1,6 @@
 """Staff landing page built from saved records; GET never contacts providers."""
 from django.conf import settings
-from django.db.models import Count, Exists, Max, OuterRef, Q
+from django.db.models import Count, Exists, Max, OuterRef, Q, F
 from django.db.models.functions import Coalesce, Greatest, Lower, Trim
 from django.shortcuts import render
 from django.shortcuts import redirect
@@ -75,6 +75,8 @@ def recent_invoices(now):
 @require_GET
 def dashboard(request):
     now, today = timezone.now(), timezone.localdate()
+    from .operations_models import OperationalIncident
+    unreviewed_errors=OperationalIncident.objects.filter(occurrences__gt=F('reviewed_count')).count()
     filing_counts = dashboard_filing.filing_summary()
     billing = dashboard_billing.summary_context()
     active = WorkItem.objects.active()
@@ -145,7 +147,7 @@ def dashboard(request):
             for count in [filing_counts[key]]],
         'filing_rows': [dashboard_filing.row(item) for item in dashboard_filing.unfinished(
             dashboard_filing.filing_queryset()).order_by('-updated_at','-pk')[:5]],
-        'billing': billing,
+        'billing': billing, 'unreviewed_errors': unreviewed_errors,
         'billing_parts': [{'label':'Invoice balances','data':billing['invoice']},
                           {'label':'Monthly payments','data':billing['payment']}],
         'can_add_work': request.user.has_perm('workqueue.add_workitem') and not staff_preview(request),

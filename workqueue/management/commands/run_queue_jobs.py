@@ -41,10 +41,15 @@ class Command(BaseCommand):
         for name, arguments in tasks:
             try:
                 call_command(name, stdout=self.stdout, stderr=self.stderr, **arguments)
-            except Exception:
+            except Exception as error:
                 # Do not leak database credentials or provider responses in job logs.
                 # Other tasks still run; the final nonzero exit makes failure visible.
                 failed.append(name)
+                try:
+                    from workqueue.operations import capture_failure
+                    capture_failure('background:'+name,exception=error)
+                except Exception:
+                    pass  # The independent monitor still detects a failed run.
                 self.stderr.write(f"Background task failed: {name}.")
             finally:
                 close_old_connections()

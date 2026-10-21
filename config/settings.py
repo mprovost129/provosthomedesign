@@ -106,6 +106,7 @@ else:
 
 # --- Middleware ---
 MIDDLEWARE = [
+    "workqueue.operations.OperationalErrorMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "core.middleware.SubdomainURLRoutingMiddleware",
     "core.middleware.ContentSecurityPolicyMiddleware",

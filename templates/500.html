@@ -9,6 +9,7 @@
       <p class="lead mb-4">
         Sorry, something went wrong while completing that request. Please try again, or contact us if the problem continues.
       </p>
+      {% if error_reference %}<p>Error reference: <strong>{{ error_reference }}</strong></p><p>If this happened while submitting or saving, check for confirmation before trying again. Give Mike this reference if you need help.</p>{% endif %}
       <a href="/" class="btn btn-primary">Go to Homepage</a>
     </div>
   </div>

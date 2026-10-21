@@ -75,6 +75,8 @@ def queue_signin(email, reference="", destination="tracking"):
 
 def deliver_pending(limit=100):
     from .reminders import queue_due_reminders, cancel_ineligible_reminder
+    from .operations import queue_error_alerts
+    queue_error_alerts()
     queue_due_reminders(limit)
     from .portal_notices import queue_review_reminders, cancel_ineligible_portal_notice
     queue_review_reminders(limit)
@@ -113,6 +115,12 @@ def deliver_pending(limit=100):
             if hasattr(record, 'morning_digest'):
                 from .models import CRMSettings
                 if not CRMSettings.objects.filter(pk=1, morning_reminders=True).exists():
+                    record.state, record.body = 'canceled', ''
+                    record.save(update_fields=['state', 'body'])
+                    continue
+            if record.provider_reference.startswith('operationserror-'):
+                from .operations_models import OperationsSettings
+                if OperationsSettings.objects.filter(pk=1, email_alerts=False).exists():
                     record.state, record.body = 'canceled', ''
                     record.save(update_fields=['state', 'body'])
                     continue

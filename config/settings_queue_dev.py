@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "storages", "easy_thumbnails", "workqueue",
 ]
 MIDDLEWARE = [
+    "workqueue.operations.OperationalErrorMiddleware",
     "django.middleware.security.SecurityMiddleware", "core.middleware.SubdomainURLRoutingMiddleware",
     "core.middleware.ContentSecurityPolicyMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware", "django.middleware.common.CommonMiddleware",
