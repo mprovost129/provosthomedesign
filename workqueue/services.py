@@ -103,7 +103,9 @@ def create_work(*, data, actor, idempotency_key=None, staff_contact=None, portal
 EDIT_FIELDS = {"status", "priority", "queue_order", "estimated_days", "requested_deadline",
                "committed_due_date", "scheduled_start", "estimated_completion", "followup_date",
                "internal_notes", "project", "project_name", "project_street", "project_city",
-               "project_state", "project_zip", "service_needed", "description"}
+               "project_state", "project_zip", "service_needed", "description", "kind", "project_context",
+               "contact_full_name", "company", "contact_email", "contact_phone", "billing_street", "billing_city",
+               "billing_state", "billing_zip", "source", "legacy_ref"}
 
 PROJECT_FIELDS = {'project_name': 'name', 'project_street': 'street', 'project_city': 'city',
                   'project_state': 'state', 'project_zip': 'zip_code'}
@@ -120,6 +122,8 @@ def edit_work(*, item_id, version, data, actor, notify_client=False):
     old_project_id = item.project_id
     old_project = item.project
     data = dict(data)
+    if 'contact_email' in data:
+        data['contact_email'] = data['contact_email'].strip().lower()
     target_project = data.get('project', old_project)
     project_changes = {}
     if target_project:
@@ -128,7 +132,7 @@ def edit_work(*, item_id, version, data, actor, notify_client=False):
             if name not in data:
                 continue
             value = data[name]
-            initial = getattr(old_project, attribute) if old_project else getattr(item, name)
+            initial = (getattr(old_project, attribute) or getattr(item, name)) if old_project else getattr(item, name)
             if target_project.pk != old_project_id and value == initial:
                 data[name] = getattr(target_project, attribute)
                 continue
@@ -140,8 +144,13 @@ def edit_work(*, item_id, version, data, actor, notify_client=False):
             target_project.save(update_fields=list(project_changes))
             # Shared project edits invalidate every linked row's previously opened form.
             for sibling in WorkItem.objects.select_for_update().filter(project=target_project).exclude(pk=item.pk):
+                corrected_fields = []
+                for field, attribute in PROJECT_FIELDS.items():
+                    if attribute in project_changes:
+                        setattr(sibling, field, getattr(target_project, attribute))
+                        corrected_fields.append(field)
                 sibling.version += 1
-                sibling.save(update_fields=['version', 'updated_at'])
+                sibling.save(update_fields=['version', 'updated_at', *corrected_fields])
                 AuditEvent.objects.create(work_item=sibling, actor=actor, action='project_details_edited',
                                           changes=project_changes)
         if 'project' in data:
@@ -168,9 +177,8 @@ def edit_work(*, item_id, version, data, actor, notify_client=False):
         update.save(update_fields=["previous_request", "version", "updated_at"])
         AuditEvent.objects.create(work_item=update, actor=actor, action="prior_link_cleared",
                                   changes={"previous_request": {"before": str(item.pk), "after": None}})
-    # The Sheet import intentionally retained missing intake details. Queue edits
-    # cannot change these fields, so preserve historical blanks while validating
-    # present values and every queue constraint. New work still uses full_clean().
+    # Preserve historical blanks while validating supplied contact values and
+    # every queue constraint. Original submissions and access grants stay intact.
     missing_intake_fields = {name for name in (
         "contact_full_name", "company", "contact_email", "contact_phone", "description"
     ) if not getattr(item, name)}

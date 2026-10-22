@@ -68,7 +68,7 @@
         <td role="cell" data-label="Request"><strong>{{ item.reference }}</strong><small>{{ item.get_kind_display }}</small>
           {% if not item.deleted_at %}<details class="queue-row-actions" open><summary>Actions</summary><div class="request-actions">{% if item.project_id %}<a href="{% url 'workqueue:project_detail' item.project_id %}" target="_blank" rel="noopener">Workspace</a>{% endif %}{% if can_change and item.client_contact_id %}<button type="button" class="email-trigger" data-email-url="{% url 'workqueue:compose_email' item.client_contact.client_id %}?item={{ item.pk }}">Email</button>{% endif %}
             {% if can_change and item.project_id %}<button type="button" class="secondary" data-track-project="{{ item.project_id }}" data-track-item="{{ item.pk }}">Track time</button><a href="{% url 'workqueue:project_time' item.project_id %}" target="_blank" rel="noopener">Time entries</a>{% endif %}
-            {% if can_change %}<a href="{% url 'workqueue:dropbox_review' item.pk %}" target="_blank" rel="noopener">File project documents · {{ row.filing_label }}{% if row.freshbooks_project %} · {{ row.freshbooks_project.get_state_display }}{% endif %}{% if row.project_number %} · {{ row.project_number }}{% endif %}</a><a href="#manage-{{ item.pk }}" data-edit-target="manage-{{ item.pk }}">Edit</a>{% endif %}
+            {% if can_change %}<a href="{% url 'workqueue:dropbox_review' item.pk %}" target="_blank" rel="noopener">File project documents · {{ row.filing_label }}{% if row.freshbooks_project %} · {{ row.freshbooks_project.get_state_display }}{% endif %}{% if row.project_number %} · {{ row.project_number }}{% endif %}</a><a href="#edit-{{ item.pk }}" data-edit-target="manage-{{ item.pk }}">Edit details</a>{% endif %}
             {% if can_add %}<a href="?{{ page_query }}&amp;copy={{ item.pk }}">Copy</a>{% endif %}
             {% if can_delete %}<details class="delete-request"><summary>Delete</summary><form method="post">{% csrf_token %}{% include 'workqueue/filter_context.html' %}
               <input type="hidden" name="action" value="delete"><input type="hidden" name="item_id" value="{{ item.pk }}"><input type="hidden" name="version" value="{{ item.version }}">
@@ -124,7 +124,7 @@
             <section><h2>Contact</h2><p>{{ item.contact_full_name }} · {{ item.company }}<br>{{ item.contact_email }}<br>{{ item.contact_phone }}</p>
               <h3>Billing address</h3><p>{% if item.billing_street %}{{ item.billing_street }}<br>{{ item.billing_city }} {{ item.billing_state }} {{ item.billing_zip }}{% else %}Not provided{% endif %}</p></section>
             <section><h2>Project</h2><p>{% if item.project %}{{ item.project }}{% else %}Not yet connected{% endif %}</p>
-              <h3>Submitted project address</h3><p>{% if item.project_street %}{{ item.project_street }}<br>{{ item.project_city }} {{ item.project_state }} {{ item.project_zip }}{% else %}Not provided{% endif %}</p>
+              <h3>Project address</h3><p>{% if item.project_street %}{{ item.project_street }}<br>{{ item.project_city }} {{ item.project_state }} {{ item.project_zip }}{% else %}Not provided{% endif %}</p>
               {% if item.project_context %}<p>Submitted reference: {{ item.project_context }}</p>{% endif %}
               <p>Service: {{ item.service_needed|default:'Not provided' }}</p></section>
           </div>
@@ -135,12 +135,14 @@
           {% for delivery in item.completed_deliveries.all %}<article class="client-message"><h3>{{ delivery.created_at|date:'M j, Y g:i A' }} · {{ delivery.notification.get_state_display }}</h3><p>To {{ delivery.recipient }}</p><div class="preserve-lines">{{ delivery.message }}</div><ul>{% for file in delivery.files.all %}<li><a href="{% url 'workqueue:completed_file' file.pk %}" target="_blank" rel="noopener">{{ file.original_name }}</a> · {{ file.size_bytes|filesizeformat }}</li>{% endfor %}</ul>
           {% if delivery.notification.last_error %}<p class="notice error">{{ delivery.notification.last_error }}</p>{% endif %}
           {% if can_change %}{% if delivery.notification.state == 'failed' or delivery.notification.state == 'unknown' %}<form method="post">{% csrf_token %}{% include 'workqueue/filter_context.html' %}<input type="hidden" name="action" value="retry_notice"><input type="hidden" name="item_id" value="{{ item.pk }}"><input type="hidden" name="notice_id" value="{{ delivery.notification_id }}">{% if delivery.notification.state == 'unknown' %}<label><input type="checkbox" name="not_sent_confirmed" value="yes" required>I checked the mail provider; this email was not delivered.</label>{% endif %}<button class="secondary">Retry delivery email</button></form>{% endif %}{% endif %}</article>{% empty %}<p>No completed files delivered yet.</p>{% endfor %}</details>{% endif %}
-          {% if can_change %}<form method="post" class="edit-form" data-current-status="{{ item.status }}" {% if row.form.errors %}data-unsaved="true"{% endif %}>
+          {% if can_change %}<form method="post" class="edit-form" id="edit-{{ item.pk }}" data-queue-editor data-current-status="{{ item.status }}" {% if row.form.errors %}data-unsaved="true"{% endif %}>
             {% csrf_token %}<input type="hidden" name="action" value="edit"><input type="hidden" name="item_id" value="{{ item.pk }}">
             {% include 'workqueue/filter_context.html' %}{{ row.form.version }}{{ row.form.non_field_errors }}
-            <div class="fields">{% for field in row.form.visible_fields %}<div class="field">
+            <h2>Edit request details</h2>
+            <p>Project name and address changes apply to all requests connected to the project. Contact and billing changes apply to this request; use the client record to update their saved profile. Original submissions, files and access permissions are preserved.</p>
+            {% for group in row.form.grouped_fields %}<fieldset class="queue-edit-group"><legend>{{ group.title }}</legend><div class="fields">{% for field in group.fields %}<div class="field">
               {{ field.label_tag }}{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{{ field.errors }}
-            </div>{% endfor %}</div>
+            </div>{% endfor %}</div></fieldset>{% endfor %}
             <button type="submit">Save request</button>
             <p data-milestone-preview class="muted" hidden></p>
           </form>{% else %}<p>Internal notes: {{ item.internal_notes|default:'None' }}</p>{% endif %}

@@ -28,8 +28,10 @@
       const details = document.getElementById(link.dataset.editTarget);
       if (details) {
         details.open = true;
+        const field = details.querySelector('[data-queue-editor] input[name$="-project_name"]');
         const summary = details.querySelector('summary');
-        if (summary) summary.focus();
+        if (field) field.focus();
+        else if (summary) summary.focus();
       }
     });
   });
