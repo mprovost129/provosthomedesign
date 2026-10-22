@@ -125,7 +125,7 @@ class ManualCRMTests(TestCase):
     def test_client_and_work_forms_save_and_survive_validation_retry(self):
         url = reverse("workqueue:add_client")
         token = self.client.get(url).context["form"].initial["intake_token"]
-        post = {**client_data(name="Manual UI client"), "intake_token": token}
+        post = {**client_data(name="Manual UI client", pricing_category="homeowner"), "intake_token": token}
         invalid = self.client.post(url, {**post, "name": ""})
         self.assertEqual(invalid.status_code, 400)
         self.assertContains(invalid, 'Manual UI client', status_code=400, count=0)

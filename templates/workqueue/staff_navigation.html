@@ -7,6 +7,7 @@
       <a href="{% url 'workqueue:queue' %}"{% if current == 'queue' %} aria-current="page"{% endif %}>Work queue</a>
       <a href="{% url 'workqueue:projects' %}"{% if current == 'projects' or current == 'project_detail' %} aria-current="page"{% endif %}>Projects</a>
       <a href="{% url 'workqueue:clients' %}"{% if current == 'clients' or current == 'client_detail' %} aria-current="page"{% endif %}>Clients</a>
+      <a href="{% url 'workqueue:pricing_estimates' %}"{% if current == 'pricing_estimates' or current == 'pricing_new' or current == 'pricing_detail' or current == 'pricing_edit' %} aria-current="page"{% endif %}>Pricing</a>
       <a href="{% url 'workqueue:proposal_overview' %}"{% if current == 'proposal_overview' %} aria-current="page"{% endif %}>Proposals</a>
       <a href="{% url 'workqueue:invoice_overview' %}"{% if current == 'invoice_overview' or current == 'invoice_history' %} aria-current="page"{% endif %}>Invoices</a>
       <a href="{% url 'workqueue:task_list' %}"{% if current == 'task_list' %} aria-current="page"{% endif %}>Tasks</a>

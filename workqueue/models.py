@@ -34,6 +34,11 @@ class Priority(models.TextChoices):
 
 
 class Client(models.Model):
+    class PricingCategory(models.TextChoices):
+        HOMEOWNER = 'homeowner', 'Homeowner'
+        CONTRACTOR = 'contractor', 'Contractor'
+        OTHER = 'other', 'Other'
+
     class Stage(models.TextChoices):
         INQUIRY = "inquiry", "Inquiry"
         ESTIMATE = "estimate", "Estimate sent"
@@ -41,13 +46,15 @@ class Client(models.Model):
         PAST = "past", "Past client"
 
     class Kind(models.TextChoices):
-        INDIVIDUAL = "individual", "Individual / homeowner"
+        INDIVIDUAL = "individual", "Individual"
         COMPANY = "company", "Company"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200)
     normalized_name = models.CharField(max_length=200, db_index=True, editable=False)
     kind = models.CharField(max_length=20, choices=Kind.choices, default=Kind.INDIVIDUAL)
+    pricing_category = models.CharField(max_length=20, choices=PricingCategory.choices,
+        blank=True, default='', db_default='', help_text='Select the pricing used for new estimates. Existing estimates keep their saved rates.')
     billing_street = models.CharField(max_length=250, blank=True)
     billing_city = models.CharField(max_length=100, blank=True)
     billing_state = models.CharField(max_length=50, blank=True)
@@ -65,7 +72,8 @@ class Client(models.Model):
 
     class Meta:
         ordering = ["name", "id"]
-        constraints = [models.CheckConstraint(condition=Q(kind__in=["individual", "company"]), name="wq_client_kind")]
+        constraints = [models.CheckConstraint(condition=Q(kind__in=["individual", "company"]), name="wq_client_kind"),
+            models.CheckConstraint(condition=Q(pricing_category__in=['','homeowner','contractor','other']), name='wq_client_pricing_category')]
 
     def __str__(self):
         return self.name
@@ -713,3 +721,5 @@ from .portal_discussion_models import ReviewDiscussion, ReviewNoteState, ReviewM
 from .portal_notice_models import PortalInvitationBatch, PortalInvitation, PortalReviewReminder
 
 from .dropbox_models import DropboxConnection, DropboxFolder, ProjectFolder, ProjectMonthSequence, DropboxFiling, DropboxFiledFile
+
+from .pricing_models import PricingRateVersion, PricingSequence, PricingEstimate, PricingEstimateRevision

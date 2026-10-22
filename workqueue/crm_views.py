@@ -375,7 +375,7 @@ def client_detail(request, client_id):
     return render(request, "workqueue/client_detail.html", {"crm_client": client, "contacts": contacts,
         "page": page, "request_count": request_count, "active_count": active_count,
         "projects": projects, "project_filter": project_filter, "page_query": urlencode({"project": project_filter}),
-        "unlinked_count": unlinked_count,
+        "unlinked_count": unlinked_count, "pricing_calculations":client.pricing_estimates.select_related("current_revision")[:6],
         "can_add_work": not staff_preview(request) and request.user.has_perm("workqueue.add_workitem") and not client.merged_into_id,
         "appointments": client_appointments(client).select_related("project").order_by("-starts_at")[:30],
         "events": events, "reversible": reversible, "can_change": can_change, "edit_form": edit_form,

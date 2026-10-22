@@ -121,7 +121,7 @@ def project_detail(request, project_id):
     from .time_services import time_summary
     return render(request, 'workqueue/project_detail.html', {**timer_context(request.user, project), 'time_totals':time_summary(project), 'project':project, 'plan':plan, 'plan_form':plan_form,
         'task_form':task_form, 'tasks':project.tasks.filter(canceled_at__isnull=True), 'items':items, 'files':files,
-        'clients':clients, 'proposals':proposals, 'accepted':accepted, 'correspondence':correspondence,
+        'pricing_calculations':project.pricing_estimates.select_related('current_revision')[:6], 'clients':clients, 'proposals':proposals, 'accepted':accepted, 'correspondence':correspondence,
         'events':project.planning_events.all()[:30], 'can_change':not staff_preview(request) and request.user.has_perm('workqueue.change_workitem')}, status=status)
 
 

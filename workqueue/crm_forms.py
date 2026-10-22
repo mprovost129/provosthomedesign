@@ -5,6 +5,7 @@ from .client_forms import SERVICE_CHOICES
 
 
 class NewClientForm(forms.ModelForm):
+    pricing_category = forms.ChoiceField(choices=[('', 'Choose Homeowner, Contractor or Other'), *Client.PricingCategory.choices], label='Pricing category')
     intake_token = forms.CharField(widget=forms.HiddenInput)
     full_name = forms.CharField(max_length=200, required=False, label="Contact full name")
     email = forms.EmailField(required=False, label="Email address")
@@ -12,7 +13,7 @@ class NewClientForm(forms.ModelForm):
 
     class Meta:
         model = Client
-        fields = ["name", "kind", "full_name", "email", "phone", "billing_street", "billing_city", "billing_state", "billing_zip", "internal_notes"]
+        fields = ["name", "kind", "pricing_category", "full_name", "email", "phone", "billing_street", "billing_city", "billing_state", "billing_zip", "internal_notes"]
         labels = {"name": "Client / company name", "kind": "Client type", "internal_notes": "Private client notes"}
         widgets = {"internal_notes": forms.Textarea(attrs={"rows": 3})}
 
@@ -60,7 +61,7 @@ class ClientForm(forms.ModelForm):
 
     class Meta:
         model = Client
-        fields = ["name", "kind", "stage", "billing_street", "billing_city", "billing_state", "billing_zip", "internal_notes"]
+        fields = ["name", "kind", "pricing_category", "stage", "billing_street", "billing_city", "billing_state", "billing_zip", "internal_notes"]
         labels = {"name": "Client / company name", "kind": "Client type", "internal_notes": "Private client notes"}
         widgets = {"internal_notes": forms.Textarea(attrs={"rows": 4})}
 
@@ -68,6 +69,10 @@ class ClientForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["stage"].choices = [("", "Automatic from work history"), *Client.Stage.choices]
         self.fields["stage"].label = "Client stage"
+        self.fields['pricing_category'].choices = [('', 'Not classified'), *Client.PricingCategory.choices]
+        self.fields['pricing_category'].label = 'Pricing category'
+        if self.is_bound and self.add_prefix('pricing_category') not in self.data:
+            self.fields['pricing_category'].disabled = True
 
 
 class ContactForm(forms.Form):

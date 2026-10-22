@@ -31,6 +31,7 @@ def create_client(*, data, nonce, actor):
         return contact.client, False
     client = Client(id=nonce, **{name: data[name] for name in (
         "name", "kind", "billing_street", "billing_city", "billing_state", "billing_zip", "internal_notes")})
+    client.pricing_category = data.get('pricing_category', '')
     client.normalized_name = normalized_text(client.name)
     client.full_clean()
     client.save()
@@ -155,7 +156,7 @@ def edit_client(*, client_id, version, data, actor):
     require_staff(actor, "workqueue.change_workitem")
     lock_queue()
     client = checked_client(client_id, version)
-    allowed = {"name", "kind", "stage", "billing_street", "billing_city", "billing_state", "billing_zip", "internal_notes"}
+    allowed = {"name", "kind", "pricing_category", "stage", "billing_street", "billing_city", "billing_state", "billing_zip", "internal_notes"}
     if set(data) - allowed:
         raise ValidationError("Unsupported client field.")
     changes = {}
