@@ -1,6 +1,6 @@
 {% extends 'workqueue/client_base.html' %}{% load static %}
 {% block title %}Confirm Your Email{% endblock %}
 {% block content %}<div class="intro"><p class="eyebrow">Secure access</p><h1>Confirm your email</h1><p>Confirm below to continue securely with Provost Home Design.</p></div>
-<section class="card"><form method="post" id="confirm-access">{% csrf_token %}{{ form.token }}{{ form.non_field_errors }}{{ form.token.errors }}<button id="confirm-button" {% if not form.is_bound %}disabled{% endif %}>Confirm and continue</button></form>
+<section class="card"><form method="post" id="confirm-access">{% csrf_token %}{{ form.token }}{{ form.non_field_errors }}{{ form.token.errors }}<label class="checkline">{{ form.remember_intake }} {{ form.remember_intake.label }}</label><p class="muted">Optional. Skip this on a shared computer. This remembers contact and billing details for the intake form; access to projects and documents still expires normally.</p><button id="confirm-button" {% if not form.is_bound %}disabled{% endif %}>Confirm and continue</button></form>
 <p id="access-help" class="muted">Open this page from the sign-in link in your email.</p><a href="{% url 'workqueue:tracking' %}">Request a new sign-in link</a></section>{% endblock %}
 {% block scripts %}<script src="{% static 'js/client-access.js' %}" defer></script>{% endblock %}

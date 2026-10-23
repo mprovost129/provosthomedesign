@@ -4,6 +4,14 @@
 <div class="intro"><p class="eyebrow">Start here. We’ll take it from there.</p><h1>Send us your project</h1>
 <p>Tell us about new work or send an update. Your request goes straight into our work queue, and you’ll receive an ID to track it.</p></div>
 {% if client_email %}<p class="signed-in">Signed in as {{ client_email }}. You can choose from your connected projects below.</p>{% endif %}
+<section class="card returning-client" aria-labelledby="returning-title" id="returning-details" data-can-restore="{{ can_restore_details|yesno:'true,false' }}" data-profile-email="{{ profile_email }}">
+<h2 id="returning-title">Less typing for returning clients</h2>
+{% if profile_email %}<p>Contact details recognized for {{ profile_email }}. Review the information before submitting.</p>{% else %}<p>Already worked with us? <a href="{% url 'workqueue:returning_client' %}" target="_blank" rel="noopener">Use my saved details</a> with one email confirmation. This opens a new tab so your unfinished form stays here.</p>{% endif %}
+{% if intake_profiles %}<label for="intake-profile">Contact / company to use</label><select id="intake-profile" class="input"><option value="">Choose your contact / company</option>{% for profile in intake_profiles %}<option value="{{ profile.id }}" {% if single_profile and can_restore_details %}selected{% endif %}>{{ profile.label }}</option>{% endfor %}</select><button type="button" id="apply-intake-profile" class="text-button">Fill in contact and billing details</button><p class="muted">This replaces only the contact and billing fields. Your project answers and documents stay as entered.</p>{% elif profile_email %}<p class="muted">No current contact details are saved for this email. You can fill out the form normally, or <a href="{% url 'workqueue:returning_client' %}" target="_blank" rel="noopener">use a different email</a>.</p>{% endif %}
+<label class="checkline"><input id="remember-intake-details" type="checkbox">Remember the contact and billing details I enter on this device for 90 days</label><p class="muted">Optional. Leave unchecked on a shared device. Project details, documents and agreement checkboxes are not remembered by this option.</p>
+<p id="remember-details-status" role="status" aria-live="polite"></p><form method="post" action="{% url 'workqueue:forget_intake' %}" id="forget-intake-details">{% csrf_token %}<button class="text-button">Forget this device and sign out</button><small>Also discards unfinished forms in this browser. Submitted work is unchanged.</small></form>
+</section>
+{{ intake_profiles|json_script:'intake-profile-data' }}
 {% if saved_drafts and not draft %}<section class="notice"><h2>Continue an unfinished form</h2><p>These forms were saved in this browser. They have not been submitted.</p><ul>{% for saved in saved_drafts %}<li><a href="?resume={{ saved.pk }}">Resume saved form — {{ saved.updated_at|date:'M j, g:i A' }}</a></li>{% endfor %}</ul></section>{% endif %}
 {% if expired_files %}<div class="error-summary" role="alert"><h2>Some uploads need to be added again</h2><p>These unsubmitted files expired. Your answers were recovered, but these files will not be included unless you upload them again:</p><ul>{% for name in expired_files %}<li>{{ name }}</li>{% endfor %}</ul></div>{% endif %}
 <noscript><p class="notice">Please enable JavaScript to verify and submit your request and upload files. Contact Provost Home Design if you need help submitting your project.</p></noscript>
@@ -42,4 +50,4 @@
 {% if expired_files %}<label class="checkline"><input type="checkbox" name="expired_uploads_reviewed" required>I have re-uploaded the expired files, or I intend to submit without them.</label>{% endif %}
 </form>
 {% endblock %}
-{% block scripts %}<script src="{% static 'js/client-intake.js' %}" defer></script><script src="{% static 'js/client-drafts.js' %}" defer></script>{% endblock %}
+{% block scripts %}<script src="{% static 'js/client-intake.js' %}" defer></script><script src="{% static 'js/client-drafts.js' %}" defer></script><script src="{% static 'js/client-intake-memory.js' %}" defer></script>{% endblock %}

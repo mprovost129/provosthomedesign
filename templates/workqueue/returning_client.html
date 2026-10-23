@@ -1,0 +1,7 @@
+{% extends 'workqueue/client_base.html' %}
+{% block title %}Use My Saved Details{% endblock %}
+{% block content %}
+<div class="intro"><p class="eyebrow">Less typing next time</p><h1>Use my saved details</h1><p>Enter the email you use with Provost Home Design. We’ll send a link so you can fill in your own contact and billing information.</p></div>
+{% if sent %}<section class="notice" role="status"><h2>Check your email</h2><p>If your email can receive mail, a link will arrive shortly. After confirming, you can choose to remember this device for 90 days. You can still fill out the form yourself.</p></section>{% endif %}
+<section class="card"><form method="post" data-recaptcha-action="work_intake_signin">{% csrf_token %}{{ form.website }}{{ form.non_field_errors }}{% with field=form.email %}{% include 'workqueue/client_field.html' %}{% endwith %}{% include 'workqueue/recaptcha_fields.html' %}<button>Send my link</button></form><p class="muted">No password needed. Only your own contact records are available after verification. Use a device you trust if you choose to remember it.</p><a href="{% url 'workqueue:submit' %}">Back to the intake form</a></section>
+{% endblock %}

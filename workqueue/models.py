@@ -528,7 +528,7 @@ class EmailAccessToken(models.Model):
     email = models.EmailField()
     digest = models.CharField(max_length=64, unique=True)
     reference = models.CharField(max_length=32, blank=True)
-    destination = models.CharField(max_length=10, default="tracking", choices=[("tracking", "Tracking"), ("booking", "Booking"), ("portal", "Client portal"), ("consult", "Consultation")])
+    destination = models.CharField(max_length=10, default="tracking", choices=[("tracking", "Tracking"), ("booking", "Booking"), ("portal", "Client portal"), ("consult", "Consultation"), ("intake", "Intake details")])
     expires_at = models.DateTimeField()
     used_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
@@ -723,3 +723,4 @@ from .portal_notice_models import PortalInvitationBatch, PortalInvitation, Porta
 from .dropbox_models import DropboxConnection, DropboxFolder, ProjectFolder, ProjectMonthSequence, DropboxFiling, DropboxFiledFile
 
 from .pricing_models import PricingRateVersion, PricingSequence, PricingEstimate, PricingEstimateRevision
+from .intake_profile_models import IntakeDevice

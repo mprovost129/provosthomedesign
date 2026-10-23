@@ -8,6 +8,7 @@ from . import staff_security_views
 from . import staff_auth
 from . import dashboard_views
 from . import client_views
+from . import intake_profile_views
 from . import booking_views
 from . import consultation_views
 from . import delivery_views
@@ -125,6 +126,8 @@ urlpatterns = [
     path("work-queue/deliver/<uuid:item_id>/", delivery_views.deliver_files, name="deliver_files"),
     path("completed-files/<uuid:file_id>/", delivery_views.completed_file, name="completed_file"),
     path("submit-work/", client_views.submit_work, name="submit"),
+    path("submit-work/returning/", intake_profile_views.returning_client, name="returning_client"),
+    path("submit-work/forget/", intake_profile_views.forget_intake, name="forget_intake"),
     path("submit-work/draft/", client_views.draft_action, name="draft"),
     path("submit-work/uploads/", client_views.start_upload, name="start_upload"),
     path("submit-work/uploads/<uuid:upload_id>/", client_views.upload_action, name="upload_action"),

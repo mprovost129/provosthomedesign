@@ -67,9 +67,10 @@ def queue_receipts(submission):
 @transaction.atomic
 def queue_signin(email, reference="", destination="tracking"):
     record, raw = mint_email_token(email, reference, destination)
+    introduction = "Fill in your contact and billing details" if destination == 'intake' else "Continue to your projects"
     return NotificationDelivery.objects.create(recipient_kind="signin", recipient=record.email,
         subject="Your Provost Home Design sign-in link",
-        body=f"Continue to your projects:\n{access_url(raw)}\n\nThis link expires in 24 hours and can be used once.\n"
+        body=f"{introduction}:\n{access_url(raw)}\n\nThis link expires in 24 hours and can be used once.\n"
              "If you did not request it, you can ignore this email.\n", provider_reference=f"queue-{uuid.uuid4().hex}")
 
 

@@ -48,6 +48,9 @@ def limited(request, scope, identity=None, limit=20, window=3600):
 @require_http_methods(["GET", "POST"])
 def submit_work(request):
     email = verified_email(request)
+    from .intake_profiles import intake_identity, profiles_for
+    profile_email = intake_identity(request)
+    intake_profiles = profiles_for(profile_email)
     initial = {"kind": "update" if request.GET.get("kind") == "update" else "new", "intake_token": new_intake_token(request)}
     if initial["kind"] == "update":
         # A convenience hint only: never look up or disclose a project from a public ID.
@@ -56,6 +59,9 @@ def submit_work(request):
             initial["project_reference"] = reference
     if email:
         initial["contact_email"] = email
+    # Defaults are never authoritative: POST and recovered drafts take precedence.
+    if len(intake_profiles) == 1:
+        initial.update(intake_profiles[0]['values'])
     from .drafts import restore_draft, saved_drafts
     draft, expired_files = None, []
     if request.method == "GET" and request.GET.get("resume"):
@@ -111,7 +117,10 @@ def submit_work(request):
     return render(request, "workqueue/submit.html", {"form": form, "groups": groups, "ready_uploads": ready,
         "is_update": form.data.get("kind") == "update" if form.is_bound else initial["kind"] == "update",
         "direct_uploads": settings.INTAKE_DIRECT_UPLOADS, "client_email": email,
-        "draft": draft, "saved_drafts": saved_drafts(request)[:5], "expired_files": expired_files}, status=status)
+        "draft": draft, "saved_drafts": saved_drafts(request)[:5], "expired_files": expired_files,
+        "intake_profiles": intake_profiles, "profile_email": profile_email,
+        "can_restore_details": request.method == 'GET' and draft is None,
+        "single_profile": len(intake_profiles) == 1}, status=status)
 
 
 @intake_enabled
@@ -312,8 +321,18 @@ def confirm_access(request):
             request.session.cycle_key()
             request.session["queue_verified_email"] = record.email
             request.session["queue_email_verified_until"] = (timezone.now() + timedelta(days=7)).timestamp()
+            # Remembering intake is independent of the seven-day portal session.
+            # It grants no project/file/booking permissions and is opt-in here.
+            from .intake_profiles import forget_cookie, remember_device, revoke_device
+            def confirmed_response(response):
+                if form.cleaned_data.get('remember_intake'):
+                    return remember_device(request, response, record.email)
+                revoke_device(request)
+                return forget_cookie(response)
+            if record.destination == 'intake':
+                return confirmed_response(redirect('workqueue:submit'))
             if record.destination == 'consult':
-                return redirect('workqueue:book' if getattr(settings, 'BOOKING_ENABLED', False) else 'workqueue:tracking')
+                return confirmed_response(redirect('workqueue:book' if getattr(settings, 'BOOKING_ENABLED', False) else 'workqueue:tracking'))
             if record.destination == 'portal':
                 project_id = request.session.pop('portal_return_project', '')
                 review_id = request.session.pop('portal_return_review', '')
@@ -332,13 +351,13 @@ def confirm_access(request):
                     except (ValueError, TypeError):
                         review = None
                     if review:
-                        return redirect(reverse('workqueue:portal_review', args=[member.project_id, review.pk])+'#discussion')
-                return redirect('workqueue:portal_project', member.project_id) if member else redirect('workqueue:portal_home')
+                        return confirmed_response(redirect(reverse('workqueue:portal_review', args=[member.project_id, review.pk])+'#discussion'))
+                return confirmed_response(redirect('workqueue:portal_project', member.project_id) if member else redirect('workqueue:portal_home'))
             target = reverse("workqueue:book" if record.destination == "booking" and getattr(settings, "BOOKING_ENABLED", False) else "workqueue:tracking")
             if record.reference:
                 from urllib.parse import urlencode
                 target += "?" + urlencode({"reference": record.reference})
-            return redirect(target)
+            return confirmed_response(redirect(target))
     return render(request, "workqueue/access_confirm.html", {"form": form}, status=400 if form.errors else 200)
 
 
@@ -346,10 +365,12 @@ def confirm_access(request):
 @never_cache
 @require_http_methods(["POST"])
 def client_logout(request):
+    from .intake_profiles import forget_cookie, revoke_device
+    revoke_device(request)
     request.session.pop("queue_verified_email", None)
     request.session.pop("queue_email_verified_until", None)
     request.session.cycle_key()
-    return redirect("workqueue:tracking")
+    return forget_cookie(redirect("workqueue:tracking"))
 
 
 @never_cache

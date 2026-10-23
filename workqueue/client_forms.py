@@ -83,6 +83,9 @@ class ClientIntakeForm(forms.Form):
         inactive = UPDATE_FIELDS if kind == "new" else NEW_FIELDS + ["project_name", "same_address", "approximate_size", "timeframe", "referral_detail", "home_preferences", "plan_changes", "framing_scope", "site_constraints", "project_contacts"]
         for name in inactive:
             self.fields[name].disabled = True
+            # Disabled fields use initial values during Django validation. CRM
+            # defaults must not become answers to questions an update never asks.
+            self.initial.pop(name, None)
         if kind == "new":
             for name in NEW_FIELDS:
                 self.fields[name].required = True
@@ -122,3 +125,5 @@ class TrackingAccessForm(forms.Form):
 
 class ConfirmAccessForm(forms.Form):
     token = forms.CharField(max_length=200, widget=forms.HiddenInput)
+    remember_intake = forms.BooleanField(required=False,
+        label='Remember my intake details on this device for 90 days')
