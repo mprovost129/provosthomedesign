@@ -1,5 +1,5 @@
 {% extends 'workqueue/client_base.html' %}{% load static %}
-{% block tool_styles %}<link rel="stylesheet" href="{% static 'css/client-intake.css' %}"><link rel="stylesheet" href="{% static 'css/project-workspace.css' %}"><link rel="stylesheet" href="{% static 'css/client-portal.css' %}">{% endblock %}
+{% block tool_styles %}<link rel="stylesheet" href="{% static 'css/client-intake.css' %}"><link rel="stylesheet" href="{% static 'css/project-workspace.css' %}"><link rel="stylesheet" href="{% static 'css/document-editor.css' %}"><link rel="stylesheet" href="{% static 'css/client-portal.css' %}">{% endblock %}
 {% block content %}
 <div class="portal-shell">
 {% if client_email %}<div class="portal-session"><span>{{ client_email }}</span><form method="post" action="{% url 'workqueue:portal_logout' %}">{% csrf_token %}<button class="text-button">Sign out</button></form></div>{% endif %}

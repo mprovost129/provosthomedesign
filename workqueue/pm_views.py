@@ -139,10 +139,14 @@ def proposal_edit(request, project_id, proposal_id=None):
     initial = dict(proposal.draft) if proposal else {'title':project.name, 'pricing':'fixed',
         'valid_until': timezone.localdate()+timedelta(days=30), 'scope': source.description if source else getattr(getattr(project, 'plan', None), 'scope', ''),
         'deliverables':'', 'revisions':'', 'exclusions':'', 'terms':''}
+    if not proposal:
+        initial.update(document_kind='estimate' if request.GET.get('kind') == 'estimate' else 'proposal',issue_date=timezone.localdate())
     if not proposal and request.GET.get('template'):
         template = get_object_or_404(ProposalTemplate, pk=query_uuid(request.GET['template']), archived=False)
         initial.update({name:getattr(template, name) for name in ['scope', 'deliverables', 'revisions', 'exclusions', 'terms']})
     initial.update(client=client_initial(project, proposal), token=proposal.pk if proposal else uuid.uuid4(), version=proposal.version if proposal else 0)
+    if not proposal and request.GET.get('client'):
+        initial['client'] = query_uuid(request.GET['client'])
     form = ProposalForm(request.POST or None, project=project, proposal=proposal, initial=initial)
     lines = LineFormSet(request.POST or None, prefix='lines', initial=initial.get('lines') or [{'description':source.service_needed if source else '', 'quantity':'1', 'rate':''}])
     status = 200
@@ -161,15 +165,16 @@ def proposal_edit(request, project_id, proposal_id=None):
             else:
                 messages.success(request, 'Draft saved. Preview it before sending.')
                 return redirect('workqueue:proposal_detail', saved.pk)
-    return render(request, 'workqueue/proposal_edit.html', {'project':project, 'proposal':proposal, 'form':form,
-        'lines':lines, 'templates':ProposalTemplate.objects.filter(archived=False)}, status=status)
+    from .document_views import editor_context
+    return render(request, 'workqueue/document_editor.html', {'project':project, 'proposal':proposal, 'form':form,
+        'lines':lines, 'templates':ProposalTemplate.objects.filter(archived=False), **editor_context(form,project)}, status=status)
 
 
 @staff_view
 @require_http_methods(['GET', 'POST'])
 def proposal_detail(request, proposal_id):
     proposal = get_object_or_404(Proposal.objects.select_related('client', 'project', 'current_revision'), pk=proposal_id)
-    form = SendForm(client=current_client(proposal.client), initial={'token':uuid.uuid4(), 'version':proposal.version})
+    form = SendForm(client=current_client(proposal.client), document_kind=proposal.document_label.lower(), initial={'token':uuid.uuid4(), 'version':proposal.version})
     status = 200
     if request.method == 'POST':
         editable(request)
@@ -177,7 +182,7 @@ def proposal_detail(request, proposal_id):
         try:
             action = request.POST.get('action')
             if action == 'send':
-                form = SendForm(request.POST, client=current_client(proposal.client))
+                form = SendForm(request.POST, client=current_client(proposal.client), document_kind=proposal.document_label.lower())
                 if not form.is_valid():
                     raise ValidationError('Review the recipient and confirmation checkbox.')
                 send_proposal(proposal.pk, form.cleaned_data['version'], form.cleaned_data['contact'].pk, form.cleaned_data['token'], request.user)
@@ -293,7 +298,7 @@ def proposal_public(request, revision_id):
     revision = invite.revision
     proposal = revision.proposal
     available = proposal.current_revision_id == revision.pk and not proposal.has_draft and revision.state in {'sent', 'viewed'}
-    form = ResponseForm(request.POST or None, initial={'action':'accept'})
+    form = ResponseForm(request.POST or None, initial={'action':'accept'}, document_kind=revision.snapshot.get('document_kind','proposal'))
     error, status = '', 200
     if request.method == 'POST':
         status = 400

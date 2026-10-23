@@ -80,6 +80,11 @@ class Proposal(models.Model):
     def status_label(self):
         return 'Draft revision' if self.has_draft and self.current_revision_id else 'Draft' if self.has_draft else self.current_revision.get_state_display()
 
+    @property
+    def document_label(self):
+        data = self.draft if self.has_draft else self.current_revision.snapshot if self.current_revision_id else {}
+        return 'Estimate' if data.get('document_kind') == 'estimate' else 'Proposal'
+
 
 class ProposalRevision(models.Model):
     class State(models.TextChoices):

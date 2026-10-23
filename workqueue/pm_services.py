@@ -49,7 +49,10 @@ def checked_proposal(proposal_id, version):
 
 def checked_draft(data):
     result = copy.deepcopy(data)
-    if not result.get('scope', '').strip() or not result.get('deliverables', '').strip() or not result.get('title', '').strip():
+    kind = result.get('document_kind', 'proposal')
+    if kind not in {'estimate', 'proposal'}:
+        raise ValidationError('Choose an estimate or proposal.')
+    if not result.get('title', '').strip() or (kind == 'proposal' and (not result.get('scope', '').strip() or not result.get('deliverables', '').strip())):
         raise ValidationError('Provide a title, scope, and deliverables.')
     if result.get('pricing') not in {'fixed', 'hourly'} or not 1 <= len(result.get('lines', [])) <= 20:
         raise ValidationError('Review the pricing and service lines.')
@@ -65,6 +68,8 @@ def checked_draft(data):
     if total > Decimal('999999999.99'):
         raise ValidationError('The proposal total is too large.')
     result['total'] = str(total.quantize(Decimal('.01')))
+    from .document_content import checked_rich
+    result['rich_sections'] = checked_rich(result)
     return result
 
 
@@ -158,6 +163,9 @@ def snapshot_for(proposal):
         billing_address='\n'.join(filter(None, [client.billing_street, ' '.join(filter(None, [client.billing_city, client.billing_state, client.billing_zip]))])),
         project_name=project.name, project_reference=project.canonical_reference or '',
         project_address='\n'.join(filter(None, [project.street, ' '.join(filter(None, [project.city, project.state, project.zip_code]))])))
+    if data.get('document_style') == 'phd-studio-v1':
+        from .document_content import issuer
+        data['issuer'] = issuer()
     return data
 
 
@@ -165,7 +173,7 @@ def proposal_text(snapshot):
     lines = [f"{snapshot['number']} · {snapshot['title']}", f"Project: {snapshot['project_name']}",
              f"Client: {snapshot['client_name']}", f"Pricing: {'Hourly estimate' if snapshot['pricing']=='hourly' else 'Fixed price'}",
              f"Total: ${snapshot['total']} USD", f"Valid through: {snapshot['valid_until']}"]
-    for key, label in [('scope', 'Scope'), ('deliverables', 'Deliverables'), ('revisions', 'Included revisions'),
+    for key, label in [('scope', 'Scope'), ('deliverables', 'Deliverables'), ('revisions', 'Included revisions'), ('notes', 'Notes'),
                        ('exclusions', 'Exclusions'), ('timeline', 'Expected timing'), ('terms', 'Payment and other terms')]:
         if snapshot.get(key):
             lines.append(f"\n{label}\n{snapshot[key]}")
@@ -204,7 +212,7 @@ def send_proposal(proposal_id, version, contact_id, token, actor):
     link = site_url(reverse('workqueue:proposal_access')) + '#' + urlencode({'token':raw})
     notice = NotificationDelivery.objects.create(recipient_kind='client', recipient=contact.email,
         subject=f"{proposal.number}: {data['title']}",
-        body=f"Hello {contact.full_name or client.name},\n\nPlease review your project proposal:\n{link}\n\n"
+        body=f"Hello {contact.full_name or client.name},\n\nPlease review your project {data.get('document_kind', 'proposal')}:\n{link}\n\n"
              f"This private link expires {expiry.astimezone(ZoneInfo('America/New_York')):%B %d, %Y}. Do not share it.\n\n"
              + proposal_text(data) + '\n\nProvost Home Design\n', provider_reference='queue-'+uuid.uuid4().hex)
     ProposalInvitation.objects.create(revision=revision, digest=hashlib.sha256(raw.encode()).hexdigest(), expires_at=expiry, notification=notice)
@@ -224,6 +232,9 @@ def revise_proposal(proposal_id, version, actor):
         raise ValidationError('There is already a draft to edit.')
     proposal.draft = {key:copy.deepcopy(proposal.current_revision.snapshot[key]) for key in
         ['title', 'pricing', 'scope', 'deliverables', 'revisions', 'exclusions', 'timeline', 'terms', 'valid_until', 'lines', 'total']}
+    for key in ('document_kind','document_style','issue_date','document_reference','notes','rich_sections'):
+        if key in proposal.current_revision.snapshot:
+            proposal.draft[key] = copy.deepcopy(proposal.current_revision.snapshot[key])
     proposal.has_draft = True
     proposal.version += 1
     proposal.save()

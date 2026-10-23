@@ -8,6 +8,9 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 
 
 def proposal_pdf(snapshot, revision=None):
+    if snapshot.get('document_style') == 'phd-studio-v1':
+        from .document_pdf import document_pdf
+        return document_pdf(snapshot, revision)
     buffer = BytesIO()
     styles = getSampleStyleSheet()
     styles.add(ParagraphStyle(name='Brand', fontName='Helvetica-Bold', fontSize=12, textColor=colors.HexColor('#24526b'), spaceAfter=12))
