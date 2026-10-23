@@ -50,9 +50,9 @@ def checked_proposal(proposal_id, version):
 def checked_draft(data):
     result = copy.deepcopy(data)
     kind = result.get('document_kind', 'proposal')
-    if kind not in {'estimate', 'proposal'}:
+    if kind not in {'estimate', 'proposal', 'change_order'}:
         raise ValidationError('Choose an estimate or proposal.')
-    if not result.get('title', '').strip() or (kind == 'proposal' and (not result.get('scope', '').strip() or not result.get('deliverables', '').strip())):
+    if not result.get('title', '').strip() or (kind in {'proposal','change_order'} and (not result.get('scope', '').strip() or not result.get('deliverables', '').strip())):
         raise ValidationError('Provide a title, scope, and deliverables.')
     if result.get('pricing') not in {'fixed', 'hourly'} or not 1 <= len(result.get('lines', [])) <= 20:
         raise ValidationError('Review the pricing and service lines.')
@@ -130,6 +130,8 @@ def save_proposal(project_id, client_id, data, token, version, actor, proposal_i
     require_staff(actor, 'workqueue.change_workitem')
     lock_queue()
     proposal = checked_proposal(proposal_id, version) if proposal_id else Proposal.objects.filter(pk=token).first()
+    if data.get('document_kind')=='change_order' or (proposal and proposal.base_revision_id):
+        raise ValidationError('Use the change order editor linked to the accepted agreement.')
     if proposal and not proposal_id:
         if proposal.created_by_id != actor.pk or proposal.project_id != project_id:
             raise ValidationError('This draft belongs to another project.')
@@ -166,6 +168,9 @@ def snapshot_for(proposal):
     if data.get('document_style') == 'phd-studio-v1':
         from .document_content import issuer
         data['issuer'] = issuer()
+    if proposal.base_revision_id:
+        from .change_orders import snapshot_details
+        data=snapshot_details(proposal,data)
     return data
 
 
@@ -179,6 +184,14 @@ def proposal_text(snapshot):
             lines.append(f"\n{label}\n{snapshot[key]}")
     lines.append('\nServices')
     lines += [f"{line['description']} — {line['quantity']} × ${line['rate']} = ${line['amount']}" for line in snapshot['lines']]
+    if snapshot.get('change_order'):
+        change=snapshot['change_order']
+        lines += ['\nAgreement pricing',f"Original: {change['base_number']} version {change['base_sequence']} — ${change['original_total']}",
+            f"Previously approved changes: ${change['approved_changes']}",f"This additional price: ${change['change_total']}",
+            f"Revised agreement total{' (estimated)' if change['estimated'] else ''}: ${change['revised_total']} USD",
+            f"Schedule change: {'Yes' if snapshot.get('schedule_affected')=='yes' else 'No'}"]
+        if snapshot.get('additional_days') is not None:lines.append(f"Additional calendar days (estimate): {snapshot['additional_days']}")
+        if snapshot.get('proposed_completion_date'):lines.append('Proposed completion date: '+snapshot['proposed_completion_date'])
     if snapshot['pricing'] == 'hourly':
         lines.append('\nThe total is an estimate based on the listed hours; review the scope and terms for how additional time is handled.')
     return '\n'.join(lines)
@@ -196,6 +209,8 @@ def send_proposal(proposal_id, version, contact_id, token, actor):
     proposal = checked_proposal(proposal_id, version)
     if not proposal.has_draft:
         raise ValidationError('This version has already been sent.')
+    from .change_orders import check_send
+    check_send(proposal)
     client = current_client(proposal.client)
     contact = ClientContact.objects.filter(pk=contact_id, client=client, archived_at__isnull=True).exclude(email__isnull=True).exclude(email='').first()
     if not contact:
@@ -212,7 +227,7 @@ def send_proposal(proposal_id, version, contact_id, token, actor):
     link = site_url(reverse('workqueue:proposal_access')) + '#' + urlencode({'token':raw})
     notice = NotificationDelivery.objects.create(recipient_kind='client', recipient=contact.email,
         subject=f"{proposal.number}: {data['title']}",
-        body=f"Hello {contact.full_name or client.name},\n\nPlease review your project {data.get('document_kind', 'proposal')}:\n{link}\n\n"
+        body=f"Hello {contact.full_name or client.name},\n\nPlease review your project {data.get('document_kind', 'proposal').replace('_',' ')}:\n{link}\n\n"
              f"This private link expires {expiry.astimezone(ZoneInfo('America/New_York')):%B %d, %Y}. Do not share it.\n\n"
              + proposal_text(data) + '\n\nProvost Home Design\n', provider_reference='queue-'+uuid.uuid4().hex)
     ProposalInvitation.objects.create(revision=revision, digest=hashlib.sha256(raw.encode()).hexdigest(), expires_at=expiry, notification=notice)
@@ -228,11 +243,15 @@ def revise_proposal(proposal_id, version, actor):
     require_staff(actor, 'workqueue.change_workitem')
     lock_queue()
     proposal = checked_proposal(proposal_id, version)
+    if proposal.base_revision_id and proposal.current_revision and proposal.current_revision.state=='accepted':
+        raise ValidationError('An accepted change order stays fixed. Create another change order for further work.')
+    if Proposal.objects.filter(base_revision__proposal=proposal,current_revision__state__in=['sent','viewed','changes','accepted']).exists():
+        raise ValidationError('This agreement has pending or accepted change orders. Use a change order for additional work.')
     if proposal.has_draft:
         raise ValidationError('There is already a draft to edit.')
     proposal.draft = {key:copy.deepcopy(proposal.current_revision.snapshot[key]) for key in
         ['title', 'pricing', 'scope', 'deliverables', 'revisions', 'exclusions', 'timeline', 'terms', 'valid_until', 'lines', 'total']}
-    for key in ('document_kind','document_style','issue_date','document_reference','notes','rich_sections'):
+    for key in ('document_kind','document_style','issue_date','document_reference','notes','rich_sections','schedule_affected','additional_days','proposed_completion_date'):
         if key in proposal.current_revision.snapshot:
             proposal.draft[key] = copy.deepcopy(proposal.current_revision.snapshot[key])
     proposal.has_draft = True
@@ -275,6 +294,9 @@ def respond(invitation_id, data):
         raise ValidationError('This version is no longer available for acceptance. Please contact us about the latest proposal.')
     if revision.state == 'accepted':
         return revision
+    if proposal.base_revision_id:
+        from .change_orders import check_response
+        check_response(proposal,revision)
     if revision.state == 'changes':
         raise ValidationError('Your change request is recorded. Please wait for a revised proposal.')
     action = data['action']
@@ -298,5 +320,5 @@ def respond(invitation_id, data):
         if email:
             NotificationDelivery.objects.create(recipient_kind=kind, recipient=email,
                 subject=f'{proposal.number}: {label}', body=body, provider_reference='queue-'+uuid.uuid4().hex)
-    event(proposal.project, None, 'Proposal '+label, number=proposal.number, revision=revision.sequence, email=revision.recipient)
+    event(proposal.project, None, ('Change order ' if proposal.base_revision_id else 'Proposal ')+label, number=proposal.number, revision=revision.sequence, email=revision.recipient)
     return revision

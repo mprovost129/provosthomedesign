@@ -18,7 +18,9 @@
   const parse=id=>JSON.parse(document.getElementById(id).textContent);
   const clients=parse('document-client-data'), project=parse('document-project-data'), issuer=parse('document-issuer-data'), rich=parse('document-rich-data');
   const list=form.querySelector('[data-doc-lines]'), template=form.querySelector('[data-doc-empty]');
+  const change=parse('document-change-data');
   const sectionLabels={scope:'Scope of work',deliverables:'Deliverables',revisions:'Included revisions',exclusions:'Exclusions',timeline:'Expected timing',notes:'Notes',terms:'Payment and other terms'};
+  if(change)sectionLabels.timeline='Schedule impact';
   const editors=new Map();let saving=false;
   const status=form.querySelector('[data-doc-save-status]');
   function text(selector,value){form.querySelector(selector).textContent=value||'—';}
@@ -72,7 +74,7 @@
   function render(){
     const kind=field('document_kind').value||'proposal', invoice=kind==='invoice';
     const client=clients.find(c=>c.id===field('client').value);
-    text('[data-preview-kind]',invoice?'Invoice draft':kind==='estimate'?'Estimate':'Proposal');
+    text('[data-preview-kind]',change?'Change order':invoice?'Invoice draft':kind==='estimate'?'Estimate':'Proposal');
     text('[data-preview-title]',field('title').value||'Your project');text('[data-preview-client]',client?.name||'Choose a client');text('[data-preview-address]',client?.address||'Billing address not recorded');
     const clientLink=form.querySelector('[data-client-record]');if(client)clientLink.href=client.url;
     text('[data-preview-project]',project.name);text('[data-preview-project-address]',project.address);
@@ -92,12 +94,21 @@
     }
     if(!count||total>99999999999n)valid=false;
     const totalText=valid?money(total):'Review service quantities and rates';text('[data-doc-total]',totalText);text('[data-preview-total]',totalText);
+    if(change){
+      text('[data-change-price]',totalText);
+      text('[data-change-revised]',valid?money(hundredths(change.approved_total,12)+total):'Review service quantities and rates');
+      text('[data-change-total-label]',change.estimated||field('pricing').value==='hourly'?'Revised estimated agreement total':'Revised agreement total');
+      const affected=field('schedule_affected').value==='yes',days=field('additional_days').value,date=field('proposed_completion_date').value;
+      field('additional_days').disabled=!affected;field('proposed_completion_date').disabled=!affected;
+      text('[data-change-schedule]',affected?'Schedule changes'+(days?' · '+days+' additional calendar day(s), estimated':'')+(date?' · Proposed completion '+date:''):'No change to the current schedule.');
+      sectionLabels.timeline='Schedule impact';
+    }
     const head=form.querySelector('[data-preview-scope]'),tail=form.querySelector('[data-preview-tail]');head.replaceChildren();tail.replaceChildren();
     for(const [name,config] of editors){
       const value=config.original.value,content=document.createElement('section');content.className='doc-prose';
-      const required=kind==='proposal'&&['scope','deliverables'].includes(name);
+      const required=['proposal','change_order'].includes(kind)&&['scope','deliverables'].includes(name);
       config.editor.setAttribute('aria-required',String(required));
-      if(!value.trim())continue;
+      if(!value.trim()||(change&&name==='timeline'&&field('schedule_affected').value!=='yes'))continue;
       const heading=document.createElement('h3');heading.textContent=sectionLabels[name];content.append(heading,sanitizeFragment(config.editor.innerHTML));
       (['terms','notes'].includes(name)?tail:head).append(content);
     }
@@ -105,7 +116,7 @@
   form.addEventListener('input',render);form.addEventListener('change',render);render();
   const baseline=()=>new URLSearchParams(new FormData(form)).toString();const original=baseline();
   form.addEventListener('submit',event=>{
-    for(const [name,config] of editors){config.sync();if(field('document_kind').value==='proposal'&&['scope','deliverables'].includes(name)&&!config.original.value.trim()){event.preventDefault();status.textContent='Add scope and deliverables before saving a proposal.';config.editor.focus();return;}}
+    for(const [name,config] of editors){config.sync();if(['proposal','change_order'].includes(field('document_kind').value)&&['scope','deliverables'].includes(name)&&!config.original.value.trim()){event.preventDefault();status.textContent='Add scope and deliverables before saving a proposal.';config.editor.focus();return;}}
     saving=true;
   });
   window.addEventListener('pageshow',()=>{saving=false;});

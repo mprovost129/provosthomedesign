@@ -64,6 +64,7 @@ class Proposal(models.Model):
     project = models.ForeignKey(WorkProject, on_delete=models.PROTECT, related_name='proposals')
     client = models.ForeignKey(Client, on_delete=models.PROTECT, related_name='proposals')
     source_item = models.ForeignKey(WorkItem, null=True, blank=True, on_delete=models.PROTECT)
+    base_revision = models.ForeignKey('ProposalRevision', null=True, blank=True, on_delete=models.PROTECT, related_name='change_orders')
     title = models.CharField(max_length=200)
     draft = models.JSONField(default=dict)
     has_draft = models.BooleanField(default=True)
@@ -82,6 +83,8 @@ class Proposal(models.Model):
 
     @property
     def document_label(self):
+        if self.base_revision_id:
+            return 'Change order'
         data = self.draft if self.has_draft else self.current_revision.snapshot if self.current_revision_id else {}
         return 'Estimate' if data.get('document_kind') == 'estimate' else 'Proposal'
 

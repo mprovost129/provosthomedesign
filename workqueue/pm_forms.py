@@ -118,6 +118,8 @@ class SendForm(forms.Form):
         super().__init__(*args, **kwargs)
         if document_kind == 'estimate':
             self.fields['confirm'].label = 'I reviewed the estimate and want to email this version to the selected contact.'
+        elif document_kind == 'change order':
+            self.fields['confirm'].label = 'I reviewed the additional price and schedule and want to email this change order to the selected contact.'
         self.fields['contact'].queryset = client.contacts.filter(archived_at__isnull=True).exclude(email__isnull=True).exclude(email='')
         self.fields['contact'].label_from_instance = lambda obj: f'{obj.full_name or client.name} — {obj.email}'
 
@@ -131,6 +133,8 @@ class ResponseForm(forms.Form):
         super().__init__(*args, **kwargs)
         if document_kind == 'estimate':
             self.fields['agreement'].label = 'I have reviewed and accept this estimate’s pricing and terms.'
+        elif document_kind == 'change_order':
+            self.fields['agreement'].label = 'I have reviewed and accept this change order’s additional work, price, and schedule impact.'
     def clean(self):
         data = super().clean()
         if data.get('action') == 'accept' and not data.get('agreement'):

@@ -65,5 +65,5 @@ def project_projection(project):
 def section_rows(snapshot):
     # Re-sanitize even saved content before rendering. Old documents remain plain.
     rich = checked_rich(snapshot)
-    return [{'key': key, 'label': label, 'text': snapshot[key], 'html': rich.get(key, '')}
+    return [{'key': key, 'label': 'Schedule impact' if key=='timeline' and snapshot.get('change_order') else label, 'text': snapshot[key], 'html': rich.get(key, '')}
             for key, label in SECTIONS if snapshot.get(key)]

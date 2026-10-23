@@ -243,6 +243,10 @@ class TimeBillingTests(TestCase):
 
 @override_settings(WORK_QUEUE_ENABLED=True,WORK_INTAKE_ENABLED=True,BOOKING_ENABLED=False)
 class TimeBillingConcurrencyTests(TransactionTestCase):
+    def setUp(self):
+        from .models import QueueState
+        QueueState.objects.get_or_create(pk=1)
+
     @skipUnlessDBFeature('has_select_for_update')
     def test_two_invoice_confirmations_reserve_a_time_entry_only_once(self):
         from concurrent.futures import ThreadPoolExecutor

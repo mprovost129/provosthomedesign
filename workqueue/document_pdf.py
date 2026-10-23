@@ -65,7 +65,7 @@ def document_pdf(snapshot, revision=None, *, invoice_draft=False):
         else:
             value=escape(value).replace('\n','<br/>')
         return Paragraph(value,styles[style])
-    kind='Invoice working draft' if invoice_draft else 'Estimate' if snapshot.get('document_kind')=='estimate' else 'Proposal'
+    kind='Change order' if snapshot.get('change_order') else 'Invoice working draft' if invoice_draft else 'Estimate' if snapshot.get('document_kind')=='estimate' else 'Proposal'
     seller=snapshot.get('issuer') or {'name':'Provost Home Design','website':'www.provosthomedesign.com'}
     logo=Path(__file__).resolve().parent.parent/'static/images/phd-document-logo.png'
     brand=[Image(str(logo),width=108 if compact else 135,height=59.6 if compact else 74.5,hAlign='LEFT'),Spacer(1,6),p('\n'.join(filter(None,[seller.get('address'),seller.get('email'),seller.get('phone')])),'small')]
@@ -86,6 +86,17 @@ def document_pdf(snapshot, revision=None, *, invoice_draft=False):
     dates=Table([[p('PREPARED\n'+(snapshot.get('issue_date') or 'See document history'),'small'),p(expiry,'small'),p('PRICING\n'+('Hourly estimate' if snapshot.get('pricing')=='hourly' else 'Fixed price'),'small')]],colWidths=[168]*3)
     dates.setStyle(TableStyle([('LINEABOVE',(0,0),(-1,0),.6,line),('LINEBELOW',(0,0),(-1,0),.6,line),('TOPPADDING',(0,0),(-1,-1),11),('BOTTOMPADDING',(0,0),(-1,-1),7),('LEFTPADDING',(0,0),(-1,-1),0)]))
     story += [parties,Spacer(1,10),dates]
+    if snapshot.get('change_order'):
+        change=snapshot['change_order']
+        story += [p('AGREEMENT PRICING','heading'),p(f"{change['base_number']} · accepted version {change['base_sequence']}",'small')]
+        summary=Table([[p(label),p(f"${Decimal(change[key]):,.2f}",'right')] for label,key in [
+            ('Original agreement','original_total'),('Previously approved changes','approved_changes'),('This additional price','change_total'),
+            ('Revised '+('estimated ' if change['estimated'] else '')+'agreement total (USD)','revised_total')]],colWidths=[354,150])
+        summary.setStyle(TableStyle([('BACKGROUND',(0,-1),(-1,-1),wash),('TOPPADDING',(0,0),(-1,-1),5),('BOTTOMPADDING',(0,0),(-1,-1),5),('LINEBELOW',(0,0),(-1,-1),.4,line)]))
+        schedule='Schedule change: '+('Yes' if snapshot.get('schedule_affected')=='yes' else 'No')
+        if snapshot.get('additional_days') is not None:schedule+=f" · {snapshot['additional_days']} additional calendar days, estimated"
+        if snapshot.get('proposed_completion_date'):schedule+=' · Proposed completion '+snapshot['proposed_completion_date']
+        story += [summary,Spacer(1,7),p(schedule,'small'),p('This adds to the referenced agreement. It does not replace its original services and terms or request payment.','small')]
     sections=section_rows(snapshot)
     def section(row):return [p(row['label'].upper(),'heading'),p(row['html'] or row['text'],rich=bool(row['html']))]
     for row in sections:
@@ -96,7 +107,7 @@ def document_pdf(snapshot, revision=None, *, invoice_draft=False):
         rows.append([p(service['description']),p(service['quantity'],'right'),p(f"${Decimal(service['rate']):,.2f}",'right'),p(f"${Decimal(service['amount']):,.2f}",'right')])
     table=Table(rows,colWidths=[270,64,80,90],repeatRows=1,hAlign='LEFT')
     table.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP'),('BACKGROUND',(0,0),(-1,0),wash),('LINEBELOW',(0,0),(-1,-1),.4,line),('TOPPADDING',(0,0),(-1,-1),9),('BOTTOMPADDING',(0,0),(-1,-1),8)]))
-    total=Table([[p('TOTAL (USD)','right'),p(f"${Decimal(snapshot['total']):,.2f}",'money')]],colWidths=[324,180])
+    total=Table([[p('THIS ADDITIONAL PRICE (USD)' if snapshot.get('change_order') else 'TOTAL (USD)','right'),p(f"${Decimal(snapshot['total']):,.2f}",'money')]],colWidths=[324,180])
     total.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,-1),wash),('VALIGN',(0,0),(-1,-1),'MIDDLE'),('TOPPADDING',(0,0),(-1,-1),12),('BOTTOMPADDING',(0,0),(-1,-1),12)]))
     story += [table,total]
     if snapshot.get('pricing')=='hourly':story += [Spacer(1,10),p('Estimated from the listed hours. Review scope and terms for how additional time is handled.','small')]

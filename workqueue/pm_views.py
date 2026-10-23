@@ -133,6 +133,8 @@ def proposal_edit(request, project_id, proposal_id=None):
     proposal = get_object_or_404(Proposal, pk=proposal_id, project=project) if proposal_id else None
     if proposal and not proposal.has_draft:
         return redirect('workqueue:proposal_detail', proposal.pk)
+    if proposal and proposal.base_revision_id:
+        return redirect('workqueue:change_order_edit',proposal.base_revision_id,proposal.pk)
     source = None
     if not proposal and request.GET.get('item'):
         source = get_object_or_404(WorkItem, pk=query_uuid(request.GET['item']), project=project)
@@ -201,8 +203,14 @@ def proposal_detail(request, proposal_id):
         else:
             return redirect('workqueue:proposal_detail', proposal.pk)
     snapshot = snapshot_for(proposal) if proposal.has_draft else proposal.current_revision.snapshot
+    from .change_orders import amounts
+    change_orders=Proposal.objects.filter(base_revision__proposal=proposal).select_related('current_revision','base_revision').order_by('number')
+    agreement_summary=amounts(proposal.current_revision) if not proposal.base_revision_id and proposal.current_revision and proposal.current_revision.state=='accepted' else None
+    revision_locked=bool((proposal.base_revision_id and proposal.current_revision and proposal.current_revision.state=='accepted') or change_orders.filter(current_revision__state__in=['sent','viewed','changes','accepted']).exists())
     return render(request, 'workqueue/proposal_detail.html', {'proposal':proposal, 'snapshot':snapshot, 'send_form':form,
         'history':proposal.revisions.all(), 'billing_client':current_client(proposal.client),
+        'change_orders':change_orders,'agreement_summary':agreement_summary,
+        'revision_locked':revision_locked,
         'invoice':getattr(proposal, 'billing_invoice', None), 'can_change':not staff_preview(request) and request.user.has_perm('workqueue.change_workitem')}, status=status)
 
 
@@ -298,6 +306,10 @@ def proposal_public(request, revision_id):
     revision = invite.revision
     proposal = revision.proposal
     available = proposal.current_revision_id == revision.pk and not proposal.has_draft and revision.state in {'sent', 'viewed'}
+    if available and proposal.base_revision_id:
+        from .change_orders import check_send
+        try:check_send(proposal)
+        except ValidationError:available=False
     form = ResponseForm(request.POST or None, initial={'action':'accept'}, document_kind=revision.snapshot.get('document_kind','proposal'))
     error, status = '', 200
     if request.method == 'POST':

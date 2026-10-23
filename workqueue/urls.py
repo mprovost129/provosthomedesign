@@ -2,7 +2,7 @@ from django.urls import path
 from . import dropbox_views
 from . import views
 from . import pricing_views
-from . import document_views
+from . import document_views, change_order_views
 from . import staff_search, workload
 from . import operations_views
 from . import staff_security_views
@@ -35,6 +35,8 @@ from . import invoice_history_views
 
 app_name = "workqueue"
 urlpatterns = [
+    path('work-projects/change-orders/<uuid:base_id>/new/', change_order_views.editor, name='change_order_new'),
+    path('work-projects/change-orders/<uuid:base_id>/<uuid:proposal_id>/', change_order_views.editor, name='change_order_edit'),
     path('work-projects/documents/', document_views.documents, name='documents'),
     path('work-projects/<uuid:project_id>/invoice-document/', document_views.invoice_editor, name='invoice_document_new'),
     path('work-projects/<uuid:project_id>/invoice-document/<uuid:document_id>/', document_views.invoice_editor, name='invoice_document_edit'),
