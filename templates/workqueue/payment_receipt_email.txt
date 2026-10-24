@@ -1,0 +1,19 @@
+{% autoescape off %}TEST ONLY — NO REAL MONEY RECEIVED
+Provost Home Design
+
+Receipt {{ receipt.number }}
+Invoice {{ receipt.invoice_number }}
+Client: {{ receipt.client_name }}
+Project: {{ receipt.project_name }}
+Original verified test payment: ${{ receipt.amount }} {{ receipt.currency }}
+Method: {{ receipt.method }}
+Payment date: {{ receipt.payment_date }}
+
+Your branded test receipt PDF is attached for your records.
+This owner-only copy goes to {{ recipient }}. No client was emailed.
+It records the original fictional payment. Later refunds, bank returns or credits do not rewrite the receipt or mean the current balance is paid.
+No real money was received. FreshBooks remains responsible for real billing.
+
+Questions? {{ receipt.issuer.email }}
+Provost Home Design
+{% endautoescape %}

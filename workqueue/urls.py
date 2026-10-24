@@ -39,7 +39,11 @@ from . import invoice_history_views
 app_name = "workqueue"
 from . import client_payment_views
 
+from . import billing_mail_views
+
 urlpatterns = [
+    path('work-projects/billing-test/emails/', billing_mail_views.center, name='billing_mail'),
+    path('work-projects/billing-test/receipts/<uuid:receipt_id>/email/', billing_mail_views.receipt_email, name='billing_receipt_email'),
     path('invoice-tests/<uuid:delivery_id>/pay/',client_payment_views.start,name='invoice_test_checkout'),
     path('invoice-tests/<uuid:delivery_id>/payments/<uuid:attempt_id>/',client_payment_views.status,name='invoice_test_payment'),
     path('invoice-tests/<uuid:delivery_id>/payments/<uuid:attempt_id>/state/',client_payment_views.state,name='invoice_test_payment_state'),

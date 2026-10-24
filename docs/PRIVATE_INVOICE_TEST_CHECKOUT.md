@@ -26,7 +26,7 @@ A numbered **TEST-RC** record is created once, in the same transaction as a veri
 
 Receipts freeze the invoice number, billed client/address, project, original amount, payment method label, payment date and issuer details. Public/PDF output uses an explicit allow-list. It excludes provider/account references, staff identities, internal notes and other client projects. The branded PDF clearly says no real money was received. A receipt records the original verified payment; subsequent refunds, returns or credits do not rewrite it. The private invoice displays current aggregate balances and recorded adjustment status separately. Staff can download receipts from invoice/payment history. New reviewed copies of the same invoice can access its earlier receipts without gaining control of older delivery-origin attempts.
 
-No automatic receipt email is sent in this phase. The owner-only invoice email link provides the receipt download after success. Customer delivery, automatic client receipts, production numbering, tax policy, provider fees/payout reconciliation and billing cutover remain separate work.
+The owner-only invoice email link provides the receipt download after success. The Billing emails workspace now also supports reviewed owner test receipt emails and future-only automatic receipt emails, off by default; see BILLING_RECEIPT_EMAILS.md. Customer delivery, automatic client receipts, production numbering, tax policy, provider fees/payout reconciliation and billing cutover remain separate work.
 
 ## Verification
 

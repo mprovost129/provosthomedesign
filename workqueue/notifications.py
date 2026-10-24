@@ -78,6 +78,8 @@ def deliver_pending(limit=100):
     from .reminders import queue_due_reminders, cancel_ineligible_reminder
     from .operations import queue_error_alerts
     queue_error_alerts()
+    from .billing_mail import queue_due_receipts, cancel_ineligible_receipt_notice, receipt_attachment, ReceiptDocumentError
+    queue_due_receipts(limit)
     queue_due_reminders(limit)
     from .portal_notices import queue_review_reminders, cancel_ineligible_portal_notice
     queue_review_reminders(limit)
@@ -128,6 +130,8 @@ def deliver_pending(limit=100):
             from .invoice_delivery import cancel_ineligible_invoice_notice
             if cancel_ineligible_invoice_notice(record):
                 continue
+            if cancel_ineligible_receipt_notice(record):
+                continue
             # Long-delayed or explicitly retried mail must contain a usable sign-in link.
             if record.recipient_kind in {"client", "signin"}:
                 match = re.search(r"#token=([A-Za-z0-9_-]+)", record.body)
@@ -146,7 +150,12 @@ def deliver_pending(limit=100):
                 headers={"Message-ID": f"<{record.provider_reference}@provosthomedesign.com>"})
             if record.html_body:
                 message.attach_alternative(record.html_body, 'text/html')
+            attachment = receipt_attachment(record)
+            if attachment:
+                message.attach(*attachment)
             result = message.send(fail_silently=False)
+        except ReceiptDocumentError:
+            state, error = 'failed', 'The receipt PDF could not be prepared; no email was sent.'
         except (BadHeaderError, smtplib.SMTPRecipientsRefused):
             state, error = "failed", "The message was rejected before delivery. Check the recipient and mail setup."
         except Exception:
