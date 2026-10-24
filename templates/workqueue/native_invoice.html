@@ -1,6 +1,6 @@
 {% extends 'workqueue/native_billing_base.html' %}{% block title %}{{ invoice.number }} · Test invoice{% endblock %}{% block pm_content %}
 <header class="pm-heading"><div><span class="brand">Test invoice / {{ invoice.get_stage_display }}</span><h1>{{ invoice.number }}</h1><p>{{ snapshot.client_name }} · {{ snapshot.project_name }}</p></div><a href="{% url 'workqueue:native_plan' plan.pk %}">Back to billing plan</a></header>
-{% include 'workqueue/native_billing_notice.html' %}
+{% include 'workqueue/native_billing_notice.html' %}<p><a href="{% url 'workqueue:customer_statement' plan.document.client_id %}">View this client's test statement</a></p>
 {% include 'workqueue/invoice_delivery_history.html' %}
 {% for key, form in forms.items %}{% if form.errors %}<div class="notice error" role="alert"><strong>Review the {{ key }} action</strong>{{ form.errors }}</div>{% endif %}{% endfor %}
 <div class="native-summary"><section class="pm-card"><span>Test invoice (USD)</span><strong>${{ invoice.amount|floatformat:'2g' }}</strong></section><section class="pm-card"><span>Recorded payments / credits</span><strong>${{ amounts.paid|floatformat:'2g' }} / ${{ amounts.credited|floatformat:'2g' }}</strong></section><section class="pm-card"><span>{{ amounts.status }} · still due (test)</span><strong>${{ amounts.due|floatformat:'2g' }}</strong></section></div>

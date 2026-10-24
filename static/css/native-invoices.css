@@ -6,3 +6,6 @@
 .native-summary strong { display:block; margin-top:.65rem; font-size:clamp(1.25rem,2vw,1.8rem); overflow-wrap:anywhere; }
 .pm-field input[type=checkbox] { width:auto; min-height:1.2rem; display:block; margin:.5rem 0; }
 @media(max-width:650px) { .native-summary { grid-template-columns:1fr; } }
+
+.statement-aging { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:1rem; }
+@media(max-width:650px) { .statement-aging { grid-template-columns:repeat(2,minmax(0,1fr)); } }
