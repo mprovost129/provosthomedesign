@@ -71,8 +71,13 @@ def cancel_ineligible_invoice_notice(record):
 
 
 @transaction.atomic
-def queue_invoice_test(*,invoice_id,version,contact_id,contact_email,contact_name,subject,message,owner_email,token,actor):
+def queue_invoice_test(*,invoice_id,version,contact_id,contact_email,contact_name,subject,message,owner_email,token,actor,allow_test_checkout=False):
     require_staff(actor,'workqueue.change_workitem');lock_queue()
+    if type(allow_test_checkout) is not bool:raise ValidationError('Choose whether this test copy permits sandbox checkout.')
+    if allow_test_checkout:
+        from .client_payments import require_checkout_enabled
+        require_checkout_enabled()
+        if not actor.is_superuser:raise ValidationError('Only the owner may enable sandbox checkout on a private test copy.')
     subject=text(subject,180,'the subject');message=text(message,10000,'the message',required=False)
     if '\r' in subject or '\n' in subject:
         raise ValidationError('Use a single-line email subject.')
@@ -84,7 +89,7 @@ def queue_invoice_test(*,invoice_id,version,contact_id,contact_email,contact_nam
     if existing:
         if (existing.invoice_id!=invoice_id or existing.actor_id!=actor.pk or existing.invoice_version!=version
             or existing.intended_contact_id!=contact_id or existing.intended_email!=contact_email or existing.intended_name!=contact_name or existing.subject!=subject
-            or existing.message!=message or existing.owner_recipient!=target):
+            or existing.message!=message or existing.owner_recipient!=target or existing.allow_test_checkout!=allow_test_checkout):
             raise ValidationError('This send reference was already used for different details. Start a new review.')
         return existing
     invoice=checked_invoice(invoice_id,version)
@@ -98,7 +103,7 @@ def queue_invoice_test(*,invoice_id,version,contact_id,contact_email,contact_nam
         old.revoked_at=timezone.now();old.revoked_reason='Replaced by a newer test copy.'
         old.save(update_fields=['revoked_at','revoked_reason'])
     raw=secrets.token_urlsafe(32)
-    delivery=NativeInvoiceDelivery(id=token,invoice=invoice,invoice_version=version,snapshot=test_invoice_snapshot(invoice),
+    delivery=NativeInvoiceDelivery(id=token,invoice=invoice,invoice_version=version,allow_test_checkout=allow_test_checkout,snapshot=test_invoice_snapshot(invoice),
         intended_contact=contact,intended_name=contact.full_name or invoice.plan.document.client.name,intended_email=contact.email,
         owner_recipient=target,subject=subject,message=message,digest=hashlib.sha256(raw.encode()).hexdigest(),
         expires_at=timezone.now()+timedelta(days=7),actor=actor)

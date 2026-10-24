@@ -1,0 +1,3 @@
+{% extends 'workqueue/proposal_public_base.html' %}{% block title %}Continue to Stripe test checkout{% endblock %}{% block content %}
+<section class="pm-card"><h1>Your test checkout is ready</h1><p>{{ delivery.invoice.number }} · ${{ attempt.amount|floatformat:'2g' }} USD · {{ attempt.get_method_display }}</p><p><strong>Use fictional test details only. No real money moves.</strong></p><a class="pm-button" href="{{ attempt.checkout_url }}" rel="noreferrer">Continue to Stripe test checkout</a><p><a href="{% url 'workqueue:invoice_test_payment' delivery.pk attempt.pk %}">Back to payment status</a></p><p>Returning from Stripe is not proof of payment. We check Stripe's result before confirming it or creating a receipt.</p></section>
+{% endblock %}

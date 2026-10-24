@@ -28,6 +28,7 @@ class ComposeForm(forms.Form):
     version=forms.IntegerField(min_value=1,widget=forms.HiddenInput)
     contact=forms.ModelChoiceField(queryset=ClientContact.objects.none(),label='Intended client contact (review only)')
     subject=forms.CharField(max_length=180,label='Subject',help_text='TEST ONLY and the invoice number are added automatically.')
+    allow_test_checkout=forms.BooleanField(required=False,label='Allow Stripe sandbox checkout on this private test copy',help_text='Owner test inbox only. No real payment is collected.')
     message=forms.CharField(required=False,max_length=10000,widget=forms.Textarea(attrs={'rows':6}),label='Client-facing message',help_text='Only the reviewed message and invoice details are included. Internal accounting notes stay private.')
 
     def __init__(self,*args,invoice,**kwargs):
@@ -51,7 +52,7 @@ def review_payload(request,invoice,form):
     return {'actor':str(request.user.pk),'invoice':str(invoice.pk),'version':data['version'],
         'token':str(data['token']),'contact':str(contact.pk),'contact_email':contact.email,
         'contact_name':contact.full_name or invoice.plan.document.client.name,
-        'subject':data['subject'],'message':data['message'],'owner_email':owner_test_address()}
+        'subject':data['subject'],'message':data['message'],'owner_email':owner_test_address(),'allow_test_checkout':data['allow_test_checkout']}
 
 
 @staff_view
@@ -62,6 +63,9 @@ def compose(request,invoice_id):
     form=ComposeForm(request.POST if request.method=='POST' and request.POST.get('action')=='review' else None,
         invoice=invoice,initial={'token':uuid.uuid4(),'version':invoice.version,'subject':invoice.snapshot['title'][:180],
             'message':'Please review the enclosed project invoice. This is a test copy for checking the delivery experience; no payment is due.'})
+    from .test_payment_gateway import configuration
+    if not configuration()['client_checkout_enabled'] or not request.user.is_superuser:
+        form.fields['allow_test_checkout'].disabled=True
     confirm=ConfirmForm(request.POST if request.method=='POST' and request.POST.get('action')=='send' else None)
     error='';status=200;review=None;preview=None
     try:target=owner_test_address()
@@ -78,7 +82,7 @@ def compose(request,invoice_id):
                 review=signing.dumps(payload,salt=SALT,compress=True)
                 confirm=ConfirmForm(initial={'review':review})
                 preview={'subject':f"[TEST ONLY] {invoice.number} - {payload['subject']}",'message':payload['message'],
-                    'intended_name':payload['contact_name'],'intended_email':payload['contact_email'],'owner_recipient':target}
+                    'intended_name':payload['contact_name'],'intended_email':payload['contact_email'],'owner_recipient':target,'allow_test_checkout':payload['allow_test_checkout']}
                 status=200
         elif action=='send' and not error:
             try:
@@ -86,12 +90,12 @@ def compose(request,invoice_id):
                 if not isinstance(payload,dict) or payload.get('actor')!=str(request.user.pk) or payload.get('invoice')!=str(invoice.pk):
                     raise ValidationError('This review belongs to another staff session or invoice.')
                 preview={'subject':f"[TEST ONLY] {invoice.number} - {payload['subject']}",'message':payload['message'],
-                    'intended_name':payload['contact_name'],'intended_email':payload['contact_email'],'owner_recipient':payload['owner_email']}
+                    'intended_name':payload['contact_name'],'intended_email':payload['contact_email'],'owner_recipient':payload['owner_email'],'allow_test_checkout':payload.get('allow_test_checkout',False)}
                 review=request.POST['review']
                 if confirm.is_valid():
                     delivery=queue_invoice_test(invoice_id=invoice.pk,version=payload['version'],contact_id=uuid.UUID(payload['contact']),
                         contact_email=payload['contact_email'],contact_name=payload['contact_name'],subject=payload['subject'],message=payload['message'],
-                        owner_email=payload['owner_email'],token=uuid.UUID(payload['token']),actor=request.user)
+                        owner_email=payload['owner_email'],token=uuid.UUID(payload['token']),actor=request.user,allow_test_checkout=payload.get('allow_test_checkout',False))
                 else:
                     delivery=None
             except (signing.BadSignature,KeyError,TypeError,ValueError):
@@ -146,8 +150,9 @@ def public(request,delivery_id):
     delivery=session_delivery(request,delivery_id)
     if not delivery:
         return private_response(render(request,'workqueue/invoice_test_access.html',{'error':'Open the complete private link from your invoice test email.'},status=403),has_form=True)
+    from .client_payments import invoice_payment_context
     return private_response(render(request,'workqueue/invoice_test_public.html',{'delivery':delivery,'snapshot':delivery.snapshot,
-        'amounts':balance(delivery.invoice)}))
+        'amounts':balance(delivery.invoice),**invoice_payment_context(delivery)}))
 
 
 @queue_enabled

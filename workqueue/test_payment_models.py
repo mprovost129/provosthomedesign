@@ -20,6 +20,7 @@ class NativePaymentAttempt(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     invoice = models.ForeignKey('NativeInvoice', on_delete=models.PROTECT, related_name='payment_attempts')
+    delivery = models.ForeignKey('NativeInvoiceDelivery',null=True,blank=True,on_delete=models.PROTECT,related_name='payment_attempts')
     invoice_version = models.PositiveIntegerField()
     amount = models.DecimalField(max_digits=14, decimal_places=2)
     method = models.CharField(max_length=10, choices=[('card', 'Credit / debit card'), ('bank', 'ACH bank payment')])

@@ -17,6 +17,7 @@ def configuration():
     webhook = isinstance(secret,str) and bool(re.fullmatch(r'whsec_[A-Za-z0-9]{12,}', secret))
     return {'enabled': enabled, 'test_key_present': test_key, 'webhook_secret_present': webhook,
             'ready': enabled and test_key and webhook,
+            'client_checkout_enabled': enabled and test_key and webhook and getattr(settings,'NATIVE_STRIPE_TEST_CLIENT_CHECKOUT_ENABLED',False) is True,
             'refunds_enabled': enabled and test_key and webhook and getattr(settings,'NATIVE_STRIPE_TEST_REFUNDS_ENABLED',False) is True}
 
 
@@ -61,7 +62,7 @@ class TestStripeGateway:
     def create(self, attempt):
         from django.urls import reverse
         metadata = {'phd_test_attempt': str(attempt.pk), 'purpose': 'phd_native_invoice_sandbox'}
-        back = public_base()+reverse('workqueue:test_payment_detail', args=[attempt.pk])
+        back = public_base()+(reverse('workqueue:invoice_test_payment',args=[attempt.delivery_id,attempt.pk]) if attempt.delivery_id else reverse('workqueue:test_payment_detail', args=[attempt.pk]))
         params = {'mode': 'payment', 'payment_method_types': ['card' if attempt.method == 'card' else 'us_bank_account'],
             'line_items': [{'quantity': 1, 'price_data': {'currency': 'usd', 'unit_amount': int(attempt.amount*100),
                 'product_data': {'name': 'TEST ONLY - '+attempt.invoice.number}}}],

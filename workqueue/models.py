@@ -729,3 +729,5 @@ from .native_invoice_models import NativeInvoiceSequence, NativeBillingPlan, Nat
 from .invoice_delivery_models import NativeInvoiceDelivery
 from .test_payment_models import NativePaymentAttempt, NativeStripeEvent
 from .test_refund_models import NativeRefundRequest, NativePaymentAdjustment
+
+from .client_payment_models import NativeTestPaymentReceipt

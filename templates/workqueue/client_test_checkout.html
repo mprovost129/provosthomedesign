@@ -1,0 +1,6 @@
+{% extends 'workqueue/proposal_public_base.html' %}{% block title %}Pay test invoice{% endblock %}{% block content %}
+<header class="pm-heading"><div><h1>Pay test invoice</h1><p>{{ delivery.invoice.number }} · {{ delivery.snapshot.project_name }}</p></div><a href="{% url 'workqueue:invoice_test_public' delivery.pk %}">Back to invoice</a></header>
+<section class="pm-card"><h2>Test balance: ${{ amounts.due|floatformat:'2g' }} USD</h2><p><strong>Sandbox only. No real payment is due.</strong> You will enter fictional card or bank details securely on Stripe. This website does not collect them.</p><p>Bank payments may remain pending after checkout. Only a verified successful payment produces a receipt.</p>
+{% if error %}<p class="notice error" role="alert">{{ error }}</p>{% endif %}
+{% if config.client_checkout_enabled and amounts.due > 0 %}<form method="post">{% csrf_token %}{% include 'workqueue/native_form_fields.html' %}<button>Continue to Stripe test checkout</button></form>{% else %}<p>Test checkout is paused or this invoice has no remaining test balance.</p>{% endif %}</section>
+{% endblock %}

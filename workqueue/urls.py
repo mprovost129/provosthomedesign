@@ -37,7 +37,14 @@ from . import invoice_overview_views
 from . import invoice_history_views
 
 app_name = "workqueue"
+from . import client_payment_views
+
 urlpatterns = [
+    path('invoice-tests/<uuid:delivery_id>/pay/',client_payment_views.start,name='invoice_test_checkout'),
+    path('invoice-tests/<uuid:delivery_id>/payments/<uuid:attempt_id>/',client_payment_views.status,name='invoice_test_payment'),
+    path('invoice-tests/<uuid:delivery_id>/payments/<uuid:attempt_id>/state/',client_payment_views.state,name='invoice_test_payment_state'),
+    path('invoice-tests/<uuid:delivery_id>/receipts/<uuid:receipt_id>/',client_payment_views.receipt,name='invoice_test_receipt'),
+    path('work-projects/billing-test/receipts/<uuid:receipt_id>/',client_payment_views.staff_receipt,name='test_payment_receipt'),
     path('work-projects/billing-test/payments/', test_payment_views.overview, name='test_payments'),
     path('work-projects/billing-test/payments/<uuid:attempt_id>/refund/', test_refund_views.prepare, name='test_refund_prepare'),
     path('work-projects/billing-test/refunds/<uuid:refund_id>/', test_refund_views.detail, name='test_refund_detail'),

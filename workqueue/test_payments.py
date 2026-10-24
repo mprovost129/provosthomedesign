@@ -25,11 +25,16 @@ def assert_not_reserved(invoice):
 @transaction.atomic
 def reserve(*, invoice_id, version, method, token, actor, account_id):
     require_staff(actor, 'workqueue.change_workitem');lock_queue()
+    return _reserve(invoice_id=invoice_id,version=version,method=method,token=token,actor=actor,account_id=account_id)
+
+
+def _reserve(*,invoice_id,version,method,token,account_id,actor=None,delivery=None):
+    # Internal: callers must authorize and hold QueueState before entering.
     if method not in {'card', 'bank'}:
         raise ValidationError('Choose a card or ACH test payment.')
     existing = NativePaymentAttempt.objects.filter(pk=token).first()
     if existing:
-        if (existing.invoice_id != invoice_id or existing.actor_id != actor.pk or existing.method != method
+        if (existing.invoice_id != invoice_id or existing.actor_id != (actor.pk if actor else None) or existing.delivery_id != (delivery.pk if delivery else None) or existing.method != method
                 or existing.invoice_version != version or existing.account_id != account_id):
             raise ValidationError('This checkout reference belongs to a different request. Reload the invoice.')
         return existing
@@ -43,8 +48,8 @@ def reserve(*, invoice_id, version, method, token, actor, account_id):
     if amount < Decimal('.50') or amount > Decimal('999999.99'):
         raise ValidationError('Test the full remaining invoice balance between $0.50 and $999,999.99. Use installment invoices for deposits.')
     attempt = NativePaymentAttempt(id=token, invoice=invoice, invoice_version=version, amount=amount,
-        method=method, account_id=account_id, expires_at=timezone.now()+timedelta(hours=1), actor=actor)
-    attempt.full_clean();attempt.save()
+        method=method, account_id=account_id, expires_at=timezone.now()+timedelta(hours=1), actor=actor, delivery=delivery)
+    attempt.full_clean(exclude=['actor'] if actor is None else None);attempt.save()
     invoice.version += 1;invoice.save(update_fields=['version'])
     NativeInvoiceEvent.objects.create(invoice=invoice, actor=actor, action='Test checkout reserved',
         details={'attempt':str(attempt.pk), 'amount':str(amount), 'method':method})
@@ -179,6 +184,9 @@ def apply_session(attempt_id, session, *, account_id, event_id='', event_kind=''
     attempt.issue_code = code
     attempt.last_checked_at = timezone.now()
     attempt.save()
+    if attempt.state=='paid' and attempt.ledger_entry_id and not attempt.issue_code and attempt.delivery_id:
+        from .client_payments import ensure_receipt
+        ensure_receipt(attempt)
     if previous != attempt.state:
         NativeInvoiceEvent.objects.create(invoice=invoice, action='Test payment status changed',
             details={'attempt':str(attempt.pk),'status':attempt.state,'issue':code})

@@ -10,6 +10,7 @@ class NativeInvoiceSequence(models.Model):
     id = models.PositiveSmallIntegerField(primary_key=True, default=1)
     last_invoice = models.PositiveIntegerField(default=0)
     last_credit = models.PositiveIntegerField(default=0)
+    last_receipt = models.PositiveIntegerField(default=0)
 
     class Meta:
         constraints = [models.CheckConstraint(condition=Q(id=1), name='wq_native_sequence_singleton')]

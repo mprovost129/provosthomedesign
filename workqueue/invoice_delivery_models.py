@@ -8,6 +8,7 @@ from django.utils import timezone
 class NativeInvoiceDelivery(models.Model):
     id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
     invoice = models.ForeignKey('NativeInvoice',on_delete=models.PROTECT,related_name='deliveries')
+    allow_test_checkout = models.BooleanField(default=False)
     invoice_version = models.PositiveIntegerField()
     snapshot = models.JSONField()
     intended_contact = models.ForeignKey('ClientContact',null=True,blank=True,on_delete=models.PROTECT)

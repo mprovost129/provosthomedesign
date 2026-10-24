@@ -13,7 +13,8 @@ Client: {{ snapshot.client_name }}
 Amount: ${{ snapshot.total }} USD
 Due date (test): {{ snapshot.due_date }}
 
-View the private test invoice and download its PDF:
+{% if delivery.allow_test_checkout %}This owner-only copy also lets you test card or ACH checkout using fictional Stripe test details. No real money moves. A receipt is available only after Stripe confirms success.
+{% endif %}View the private test invoice and download its PDF:
 {{ link }}
 
 This private link expires {{ expiry|date:'M j, Y, g:i A T' }}. Do not forward it.
