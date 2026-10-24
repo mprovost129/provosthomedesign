@@ -1,0 +1,5 @@
+{% extends 'workqueue/native_billing_base.html' %}{% block title %}Continue to Stripe test checkout{% endblock %}{% block pm_content %}
+<header class="pm-heading"><div><span class="brand">Stripe sandbox</span><h1>Continue to test checkout</h1><p>{{ attempt.invoice.number }} · ${{ attempt.amount|floatformat:'2g' }} USD · {{ attempt.get_method_display }}</p></div></header>
+{% include 'workqueue/test_payment_notice.html' %}
+<section class="pm-card"><h2>Your test checkout is ready</h2><p>Continue to Stripe to enter fictional test payment details. This opens the same checkout; it does not create another payment attempt.</p><a class="pm-button" href="{{ attempt.checkout_url }}" rel="noreferrer">Continue to Stripe test checkout</a><p><a href="{% url 'workqueue:test_payment_detail' attempt.pk %}">Back to payment status</a></p><p>Returning here or closing the checkout does not prove payment succeeded. Only verified Stripe results update the test invoice.</p></section>
+{% endblock %}

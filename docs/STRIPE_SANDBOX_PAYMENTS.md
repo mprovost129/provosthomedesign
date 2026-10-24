@@ -4,7 +4,7 @@ This is a staff-only trial integration, not a live billing cutover. FreshBooks s
 
 ## Staff workflow
 
-Open **Billing test area > Online payment testing** to review the connection and attempts. On an unpaid test invoice, choose **Try Stripe test payment**, select card or ACH, confirm the full remaining test balance, and continue to Stripe's hosted page. Only Stripe test payment details and fictional payer details should be entered. Card/bank details never pass through this app.
+Open **Billing test area > Online payment testing** to review the connection and attempts. On an unpaid test invoice, choose **Try Stripe test payment**, select card or ACH, confirm the full remaining test balance, then choose **Continue to Stripe test checkout** on the handoff page. This normal link preserves the site's strict same-origin form protection. Only Stripe test payment details and fictional payer details should be entered. This app never collects full card or bank credentials.
 
 The server calculates the amount. A deposit should use its own installment invoice. Checkout accepts balances from $0.50 through $999,999.99 USD. No tips, coupons, taxes, optional items or browser-supplied amounts can alter this checkout total; tax/discount allocations remain part of the previously frozen invoice.
 

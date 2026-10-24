@@ -294,7 +294,14 @@ class OnlinePaymentTests(PaymentFixtures,TestCase):
         self.assertEqual(NativePaymentAttempt.objects.count(),0)
         data['confirm']='on'
         with patch('workqueue.test_payments.TestStripeGateway',return_value=self.gateway):response=self.client.post(url,data)
-        self.assertEqual(response.status_code,302);self.assertTrue(response.url.startswith('https://checkout.stripe.com/'))
+        self.assertEqual(response.status_code,200)
+        attempt=NativePaymentAttempt.objects.get()
+        self.assertContains(response,'href="'+attempt.checkout_url+'"')
+        self.assertIn("form-action 'self'",response['Content-Security-Policy'])
+        with patch('workqueue.test_payments.TestStripeGateway',return_value=self.gateway):
+            continued=self.client.post(reverse('workqueue:test_payment_detail',args=[attempt.pk]),{'action':'continue'})
+        self.assertContains(continued,'Continue to Stripe test checkout')
+        self.assertEqual(NativePaymentAttempt.objects.count(),1)
         self.assertEqual(NativePaymentAttempt.objects.get().amount,Decimal('100'))
 
     def test_disabled_ui_is_reviewable_without_exposing_secrets(self):

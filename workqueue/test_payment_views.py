@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
@@ -29,6 +29,12 @@ def private(response):
     response['Referrer-Policy']='same-origin'
     response['X-Robots-Tag']='noindex, nofollow, noarchive'
     return response
+
+
+def hosted_checkout(request, attempt):
+    # A normal link preserves the site's strict form-action CSP. Browsers can
+    # otherwise block a POST redirect to Stripe even when its address is valid.
+    return private(render(request, 'workqueue/test_payment_handoff.html', {'attempt': attempt}))
 
 
 @staff_view
@@ -68,7 +74,7 @@ def checkout(request,invoice_id):
                 status=409 if isinstance(error,EditConflict) else 400
             else:
                 if attempt.state=='open' and safe_checkout_url(attempt.checkout_url):
-                    return private(HttpResponseRedirect(attempt.checkout_url))
+                    return hosted_checkout(request, attempt)
                 return redirect('workqueue:test_payment_detail',attempt.pk)
     return private(render(request,'workqueue/test_payment_start.html',{'invoice':invoice,'amounts':balance(invoice),
         'form':form,'config':configuration()},status=status))
@@ -91,7 +97,7 @@ def detail(request,attempt_id):
                 # Recheck Stripe before redirecting to a stored hosted page.
                 attempt=refresh(attempt)
                 if attempt.state=='open' and safe_checkout_url(attempt.checkout_url):
-                    return private(HttpResponseRedirect(attempt.checkout_url))
+                    return hosted_checkout(request, attempt)
             else:raise ValidationError('Choose a payment action and confirm closing an unused checkout.')
         except (ValidationError,GatewayUnavailable) as exc:
             error=error_text(exc) if isinstance(exc,ValidationError) else str(exc);status=400
