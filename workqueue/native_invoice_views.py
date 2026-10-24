@@ -128,6 +128,8 @@ def invoice_detail(request,invoice_id):
                 return redirect('workqueue:native_invoice',invoice.pk)
     return render(request,'workqueue/native_invoice.html',{'invoice':invoice,'plan':invoice.plan,'amounts':amounts,'entries':entries,
         'active_entries':active,'forms':forms,'snapshot':invoice.snapshot,'events':invoice.events.select_related('actor')[:100],
+        'payment_attempts':invoice.payment_attempts.all()[:10],
+        'payment_hold':invoice.payment_attempts.filter(state__in=['creating','open','processing','review']).exists(),
         'deliveries':invoice.deliveries.select_related('notification')[:20]},status=status)
 
 

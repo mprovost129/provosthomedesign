@@ -2,6 +2,7 @@ from django.urls import path
 from . import dropbox_views
 from . import views
 from . import pricing_views
+from . import test_payment_views
 from . import customer_statement_views
 from . import document_views, change_order_views, native_invoice_views, invoice_delivery_views
 from . import staff_search, workload
@@ -36,6 +37,10 @@ from . import invoice_history_views
 
 app_name = "workqueue"
 urlpatterns = [
+    path('work-projects/billing-test/payments/', test_payment_views.overview, name='test_payments'),
+    path('work-projects/billing-test/invoices/<uuid:invoice_id>/checkout/', test_payment_views.checkout, name='test_payment_start'),
+    path('work-projects/billing-test/payments/<uuid:attempt_id>/', test_payment_views.detail, name='test_payment_detail'),
+    path('billing-test/stripe/webhook/', test_payment_views.webhook, name='test_payment_webhook'),
     path('work-projects/billing-test/statements/', customer_statement_views.overview, name='customer_statements'),
     path('work-projects/billing-test/statements/<uuid:client_id>/', customer_statement_views.detail, name='customer_statement'),
     path('work-projects/billing-test/statements/<uuid:client_id>/pdf/', customer_statement_views.pdf, name='customer_statement_pdf'),

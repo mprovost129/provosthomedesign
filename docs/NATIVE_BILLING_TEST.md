@@ -6,6 +6,8 @@ FreshBooks replacement. It is deliberately incapable of sending real invoices,
 processing payments/refunds, or updating real receivables. There is no live-mode
 switch. FreshBooks continues issuing real invoices and collecting payments.
 Reviewed test copies can now be sent only to the owner inbox; see INVOICE_DELIVERY_TEST.md.
+Staff-only Stripe sandbox card/ACH testing is separately gated and cannot collect
+real money; see STRIPE_SANDBOX_PAYMENTS.md. FreshBooks remains live billing.
 
 ## Owner workflow
 

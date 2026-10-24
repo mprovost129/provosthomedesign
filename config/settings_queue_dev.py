@@ -76,3 +76,7 @@ STRIPE_PUBLISHABLE_KEY = ""
 
 # Staff reset tokens are short lived; resetting a password does not remove MFA.
 PASSWORD_RESET_TIMEOUT = 3600
+
+NATIVE_STRIPE_TEST_ENABLED = False
+NATIVE_STRIPE_TEST_SECRET_KEY = ''
+NATIVE_STRIPE_TEST_WEBHOOK_SECRET = ''

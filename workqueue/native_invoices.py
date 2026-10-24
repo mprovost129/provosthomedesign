@@ -187,6 +187,8 @@ def checked_invoice(invoice_id,version):
         raise EditConflict('This invoice changed. Reload before recording another action.')
     if invoice.voided_at:
         raise ValidationError('A voided invoice cannot receive payments or credits.')
+    from .test_payments import assert_not_reserved
+    assert_not_reserved(invoice)
     return invoice
 
 
@@ -226,6 +228,8 @@ def reverse_entry(*, invoice_id, entry_id, version, note, token, actor):
     entry = NativeInvoiceEntry.objects.filter(pk=entry_id,invoice=invoice,kind__in=['payment','credit']).first()
     if not entry or NativeInvoiceEntry.objects.filter(reverses=entry).exists():
         raise ValidationError('Choose an unreversed payment or credit from this invoice.')
+    if hasattr(entry, 'stripe_test_attempt'):
+        raise ValidationError('This payment was confirmed by Stripe. A manual reversal is not a refund; review its sandbox payment status instead.')
     reversal = NativeInvoiceEntry(id=token,invoice=invoice,kind='reversal',amount=entry.amount,date=timezone.localdate(),
         reverses=entry,note=note,actor=actor)
     reversal.full_clean();reversal.save()

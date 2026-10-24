@@ -727,3 +727,4 @@ from .intake_profile_models import IntakeDevice
 from .document_models import InvoiceDocument, InvoiceDocumentRevision
 from .native_invoice_models import NativeInvoiceSequence, NativeBillingPlan, NativeInvoice, NativeInvoiceEntry, NativeInvoiceEvent
 from .invoice_delivery_models import NativeInvoiceDelivery
+from .test_payment_models import NativePaymentAttempt, NativeStripeEvent

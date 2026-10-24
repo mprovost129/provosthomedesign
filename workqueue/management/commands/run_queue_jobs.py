@@ -32,6 +32,8 @@ class Command(BaseCommand):
             ])
             if getattr(settings, 'FRESHBOOKS_ENABLED', False):
                 tasks.append(('process_freshbooks_projects', {}))
+        if intake and getattr(settings, 'NATIVE_STRIPE_TEST_ENABLED', False):
+            tasks.append(('reconcile_test_payments', {'limit': 10}))
         if not tasks:
             self.stdout.write("Queue features are disabled; no background tasks ran.")
             return

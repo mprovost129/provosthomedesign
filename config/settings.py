@@ -527,3 +527,6 @@ DROPBOX_TOKEN_ENCRYPTION_KEY = config('DROPBOX_TOKEN_ENCRYPTION_KEY', default=''
 
 # Staff reset tokens are short lived; resetting a password does not remove MFA.
 PASSWORD_RESET_TIMEOUT = 3600
+
+# Dedicated native-invoice sandbox; never inherits the website's live Stripe key.
+from .native_payments_settings import *  # noqa: F403
