@@ -100,6 +100,9 @@ def invoice_editor(request,project_id,document_id=None):
             has_draft=False,current_revision__state='accepted')
         initial.update({key:proposal.current_revision.snapshot.get(key,'') for key in ('title','lines','terms','notes','rich_sections')})
         initial['client']=current_client(proposal.client)
+        initial['source_revision']=proposal.current_revision_id
+    if document:
+        initial['source_revision']=document.source_revision_id
     initial.update(client=current_client(document.client) if document else initial.get('client') or (query_uuid(request.GET['client']) if request.GET.get('client') else client_initial(project)),
         token=document.pk if document else uuid.uuid4(),version=document.version if document else 0)
     form=InvoiceDocumentForm(request.POST or None,project=project,proposal=document,initial=initial)

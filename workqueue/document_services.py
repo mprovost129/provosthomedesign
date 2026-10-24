@@ -24,6 +24,19 @@ def save_invoice_document(*, project_id, client_id, data, token, version, actor,
         raise EditConflict('This invoice draft changed. Reload before saving again.')
     project = WorkProject.objects.get(pk=project_id)
     client = client_for_project(project, client_id, document)
+    source = document.source_revision if document else None
+    if not document and data.get('source_revision'):
+        from .pm_models import ProposalRevision
+        source = ProposalRevision.objects.select_related('proposal__client').filter(pk=data['source_revision'],proposal__project=project,state='accepted').first()
+        from .pm_services import current_client
+        if not source or current_client(source.proposal.client).pk != client.pk:
+            raise ValidationError('Choose an accepted agreement for this client and project.')
+    if source:
+        from .pm_services import current_client
+        if current_client(source.proposal.client).pk != client.pk:
+            raise ValidationError('The client must match the source agreement.')
+    if document and str(data.get('source_revision') or '') != str(document.source_revision_id or ''):
+        raise ValidationError('The source agreement cannot be changed on a saved invoice draft.')
     try:
         prepared=date.fromisoformat(data['issue_date']);due=date.fromisoformat(data['due_date'])
     except (KeyError,TypeError,ValueError):
@@ -39,7 +52,7 @@ def save_invoice_document(*, project_id, client_id, data, token, version, actor,
         project_address=project_projection(project)['address'])
     checked['rich_sections'] = checked_rich(checked)
     if not document:
-        document = InvoiceDocument(id=token, project=project, client=client, created_by=actor, version=0)
+        document = InvoiceDocument(id=token, project=project, client=client, source_revision=source, created_by=actor, version=0)
     document.client, document.title, document.draft = client, checked['title'], checked
     document.version += 1
     document.full_clean()

@@ -9,6 +9,7 @@ class InvoiceDocument(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     project = models.ForeignKey('WorkProject', on_delete=models.PROTECT, related_name='invoice_documents')
     client = models.ForeignKey('Client', on_delete=models.PROTECT, related_name='invoice_documents')
+    source_revision = models.ForeignKey('ProposalRevision', null=True, blank=True, on_delete=models.PROTECT, related_name='invoice_working_drafts')
     title = models.CharField(max_length=200)
     draft = models.JSONField(default=dict)
     version = models.PositiveIntegerField(default=1)

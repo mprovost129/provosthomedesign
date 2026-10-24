@@ -1,0 +1,7 @@
+.native-test-notice { border-left:4px solid #a77524; background:#fbf5e8; color:#58421e; }
+.native-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; margin:1.5rem 0; }
+.native-summary .pm-card { margin:0; }
+.native-summary span { display:block; font-size:.85rem; color:#506773; }
+.native-summary strong { display:block; margin-top:.65rem; font-size:clamp(1.25rem,2vw,1.8rem); overflow-wrap:anywhere; }
+.pm-field input[type=checkbox] { width:auto; min-height:1.2rem; display:block; margin:.5rem 0; }
+@media(max-width:650px) { .native-summary { grid-template-columns:1fr; } }

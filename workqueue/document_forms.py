@@ -9,6 +9,7 @@ class InvoiceDocumentForm(ProposalForm):
     document_reference = forms.CharField(label='Client / project reference', max_length=100, required=False)
     notes = forms.CharField(label='Client notes', max_length=10000, required=False, widget=forms.Textarea(attrs={'rows': 3}))
     valid_until = forms.DateField(required=False, widget=forms.HiddenInput)
+    source_revision = forms.UUIDField(required=False, widget=forms.HiddenInput)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -30,5 +31,6 @@ def invoice_form_data(form, lines):
     data = draft_data(form, lines)
     data.update(document_kind='invoice', document_style='phd-studio-v1', pricing='fixed',
         issue_date=form.cleaned_data['issue_date'].isoformat(), due_date=form.cleaned_data['due_date'].isoformat(),
-        document_reference=form.cleaned_data.get('document_reference', ''), notes=form.cleaned_data.get('notes', ''))
+        document_reference=form.cleaned_data.get('document_reference', ''), notes=form.cleaned_data.get('notes', ''),
+        source_revision=str(form.cleaned_data['source_revision']) if form.cleaned_data.get('source_revision') else '')
     return data

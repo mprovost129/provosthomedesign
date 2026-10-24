@@ -725,3 +725,4 @@ from .dropbox_models import DropboxConnection, DropboxFolder, ProjectFolder, Pro
 from .pricing_models import PricingRateVersion, PricingSequence, PricingEstimate, PricingEstimateRevision
 from .intake_profile_models import IntakeDevice
 from .document_models import InvoiceDocument, InvoiceDocumentRevision
+from .native_invoice_models import NativeInvoiceSequence, NativeBillingPlan, NativeInvoice, NativeInvoiceEntry, NativeInvoiceEvent
