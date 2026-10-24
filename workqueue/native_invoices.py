@@ -53,11 +53,14 @@ def balance(invoice):
     entries = list(invoice.entries.all())
     reversed_ids = {entry.reverses_id for entry in entries if entry.kind == 'reversal'}
     paid = sum((entry.amount for entry in entries if entry.kind == 'payment' and entry.pk not in reversed_ids), Decimal('0.00'))
+    returned = sum((entry.amount for entry in entries if entry.kind in {'refund','return'}), Decimal('0.00'))
+    recovered = sum((entry.amount for entry in entries if entry.kind == 'recovery'), Decimal('0.00'))
+    paid += recovered-returned
     credited = sum((entry.amount for entry in entries if entry.kind == 'credit' and entry.pk not in reversed_ids), Decimal('0.00'))
-    due = invoice.amount-paid-credited if not invoice.voided_at else Decimal('0.00')
-    status = ('Voided' if invoice.voided_at else 'Credited' if credited == invoice.amount else 'Paid' if paid == invoice.amount else 'Settled' if due == 0
+    due = (Decimal('0.00') if invoice.voided_at else invoice.amount)-paid-credited
+    status = ('Credit balance' if due < 0 else 'Voided' if invoice.voided_at else 'Credited' if credited == invoice.amount else 'Paid' if paid == invoice.amount else 'Settled' if due == 0
         else 'Overdue' if invoice.due_date < timezone.localdate() else 'Partially paid' if paid or credited else 'Open')
-    return {'paid':paid, 'credited':credited, 'due':due, 'status':status, 'reversed_ids':reversed_ids}
+    return {'paid':paid, 'credited':credited, 'due':due, 'status':status, 'reversed_ids':reversed_ids, 'returned':returned,'recovered':recovered}
 
 
 @transaction.atomic
@@ -228,7 +231,7 @@ def reverse_entry(*, invoice_id, entry_id, version, note, token, actor):
     entry = NativeInvoiceEntry.objects.filter(pk=entry_id,invoice=invoice,kind__in=['payment','credit']).first()
     if not entry or NativeInvoiceEntry.objects.filter(reverses=entry).exists():
         raise ValidationError('Choose an unreversed payment or credit from this invoice.')
-    if hasattr(entry, 'stripe_test_attempt'):
+    if hasattr(entry, 'stripe_test_attempt') or entry.adjustment_id:
         raise ValidationError('This payment was confirmed by Stripe. A manual reversal is not a refund; review its sandbox payment status instead.')
     reversal = NativeInvoiceEntry(id=token,invoice=invoice,kind='reversal',amount=entry.amount,date=timezone.localdate(),
         reverses=entry,note=note,actor=actor)

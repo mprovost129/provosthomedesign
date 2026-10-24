@@ -42,6 +42,8 @@ def statement_pdf(statement):
                         [p('Net recorded payments'), money(statement['paid'])],
                         [p('Net credits'), money(statement['credited'])],
                         [p('CURRENT TEST BALANCE (USD)'), money(statement['due'])]], [350,154], False))
+    if statement.get('review_required'):
+        story += [p('PROVIDER ADJUSTMENT NEEDS REVIEW',heading),p('Previously recorded activity is preserved. A provider refund or dispute has not yet been fully reconciled. Do not treat this balance as final.')]
     story += [p('Balance by due date (USD)',heading), table([[p(label) for label,amount in statement['aging']],
                 [money(amount) for label,amount in statement['aging']]], [100.8]*5)]
     story.append(p('Open test invoices',heading))
@@ -49,7 +51,7 @@ def statement_pdf(statement):
     rows += [[p(row['number']+'\n'+row['project']+'\nOriginally billed to '+row['billed_to']),
               p(row['due_date'].isoformat()),money(row['due'])] for row in statement['open_invoices']]
     story.append(table(rows,[294,90,120]) if len(rows)>1 else p('No open test invoices.'))
-    story += [p('All test account activity',heading), p('Opening balance: $0.00. Payments and credits reduce the balance; reversals restore it. '
+    story += [p('All test account activity',heading), p('Opening balance: $0.00. Payments, credits and payment recoveries reduce the balance. Refunds, bank returns and credit reversals restore it. '
                   'Voided invoices remain visible. A running balance can temporarily be negative when corrections were recorded later.'),Spacer(1,8)]
     rows = [[p('DATE'),p('ACTIVITY / PROJECT'),p('CHANGE (USD)',right),p('BALANCE (USD)',right)]]
     rows += [[p(row['date'].isoformat()),p(row['kind']+' - '+row['number']+'\n'+row['project']),

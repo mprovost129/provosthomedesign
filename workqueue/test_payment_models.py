@@ -31,6 +31,7 @@ class NativePaymentAttempt(models.Model):
     expires_at = models.DateTimeField()
     ledger_entry = models.OneToOneField('NativeInvoiceEntry', null=True, blank=True, on_delete=models.PROTECT, related_name='stripe_test_attempt')
     issue_code = models.CharField(max_length=60, blank=True)
+    adjustment_generation = models.PositiveBigIntegerField(default=0)
     last_checked_at = models.DateTimeField(null=True, blank=True, db_index=True)
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
     created_at = models.DateTimeField(default=timezone.now)

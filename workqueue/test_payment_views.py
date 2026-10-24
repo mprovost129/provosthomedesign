@@ -105,7 +105,9 @@ def detail(request,attempt_id):
             messages.success(request,'Stripe test status checked. No real payment or refund was processed by this action.')
             return redirect('workqueue:test_payment_detail',attempt.pk)
     return private(render(request,'workqueue/test_payment_detail.html',{'attempt':attempt,'error':error,
-        'config':configuration(),'reserved':attempt.state in RESERVED_STATES,'amounts':balance(attempt.invoice)},status=status))
+        'config':configuration(),'reserved':attempt.state in RESERVED_STATES,'amounts':balance(attempt.invoice),
+        'adjustments':attempt.adjustments.select_related('credit_entry').all(),
+        'refund_requests':attempt.refund_requests.all()},status=status))
 
 
 @csrf_exempt  # Stripe supplies a verified raw-body signature, not a browser CSRF token.

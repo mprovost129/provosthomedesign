@@ -63,6 +63,9 @@ class NativeInvoiceEntry(models.Model):
         PAYMENT = 'payment', 'Payment'
         CREDIT = 'credit', 'Credit'
         REVERSAL = 'reversal', 'Reversal'
+        REFUND = 'refund', 'Refund'
+        RETURN = 'return', 'Dispute / bank return'
+        RECOVERY = 'recovery', 'Payment recovery'
 
     class Method(models.TextChoices):
         CHECK = 'check', 'Check'
@@ -84,14 +87,16 @@ class NativeInvoiceEntry(models.Model):
     note = models.TextField(max_length=2000)
     date = models.DateField()
     reverses = models.OneToOneField('self', null=True, blank=True, on_delete=models.PROTECT, related_name='reversal')
+    adjustment = models.ForeignKey('NativePaymentAdjustment', null=True, blank=True, on_delete=models.PROTECT, related_name='ledger_entries')
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         ordering = ['-created_at', '-id']
         constraints = [models.CheckConstraint(condition=Q(amount__gt=0), name='wq_native_entry_positive'),
-            models.CheckConstraint(condition=Q(kind__in=['payment','credit','reversal']), name='wq_native_entry_kind'),
-            models.CheckConstraint(condition=(Q(kind='reversal', reverses__isnull=False) | Q(kind__in=['payment','credit'], reverses__isnull=True)), name='wq_native_entry_reversal'),
+            models.CheckConstraint(condition=Q(kind__in=['payment','credit','reversal','refund','return','recovery']), name='wq_native_entry_kind'),
+            models.CheckConstraint(condition=(Q(kind='reversal', reverses__isnull=False) | Q(kind__in=['payment','credit','refund','return','recovery'], reverses__isnull=True)), name='wq_native_entry_reversal'),
+            models.CheckConstraint(condition=(Q(kind__in=['refund','return','recovery'],adjustment__isnull=False) | Q(kind__in=['payment','credit','reversal'])), name='wq_native_adjustment_link'),
             models.CheckConstraint(condition=(Q(kind='credit',credit_number__isnull=False) | (~Q(kind='credit') & Q(credit_number__isnull=True))), name='wq_native_credit_reference')]
 
 

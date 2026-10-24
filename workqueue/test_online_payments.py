@@ -57,6 +57,7 @@ class FakeGateway:
         session=session_for(attempt);self.sessions.setdefault(session['id'],session)
         return copy.deepcopy(self.sessions[session['id']])
     def retrieve(self,session_id):return copy.deepcopy(self.sessions[session_id])
+    def adjustments(self,intent_id,charge_id,**kwargs):return [],[]
     def expire(self,session_id):
         if self.sessions[session_id]['status']=='open':self.sessions[session_id]['status']='expired'
         return self.retrieve(session_id)
@@ -205,19 +206,21 @@ class OnlinePaymentTests(PaymentFixtures,TestCase):
     def test_balance_changed_outside_supported_workflow_is_held_for_review(self):
         attempt=self.opened()
         NativeInvoiceEntry.objects.create(invoice=self.bill,kind='payment',amount=Decimal('25'),method='cash',date=timezone.localdate(),note='Simulated outside correction')
-        result=self.paid(attempt)
-        self.assertEqual(result.state,'review');self.assertFalse(result.ledger_entry_id)
+        with self.assertRaises(ValidationError):self.paid(attempt)
+        attempt.refresh_from_db()
+        self.assertEqual(attempt.state,'review');self.assertFalse(attempt.ledger_entry_id)
         self.assertEqual(balance(self.bill)['due'],Decimal('75'))
 
     def test_refund_or_dispute_is_visible_and_cannot_be_cleared_by_transient_error(self):
         attempt=self.opened();self.paid(attempt)
         self.gateway.sessions[attempt.session_id]['payment_intent']['latest_charge']['amount_refunded']=1000
-        result=refresh(attempt,gateway=self.gateway)
-        self.assertEqual((result.state,result.issue_code),('review','provider_adjustment'))
+        with self.assertRaises(ValidationError):refresh(attempt,gateway=self.gateway)
+        result=NativePaymentAttempt.objects.get(pk=attempt.pk)
+        self.assertEqual((result.state,result.issue_code),('review','adjustment_unconfirmed'))
         with patch.object(self.gateway,'retrieve',side_effect=GatewayUnavailable('down')):
             with self.assertRaises(GatewayUnavailable):refresh(attempt,gateway=self.gateway)
-        result.refresh_from_db();self.assertEqual(result.issue_code,'provider_adjustment')
-        self.assertEqual(refresh(attempt,gateway=self.gateway).state,'review')
+        result.refresh_from_db();self.assertEqual(result.issue_code,'adjustment_unconfirmed')
+        with self.assertRaises(ValidationError):refresh(attempt,gateway=self.gateway)
 
     def test_gateway_payload_uses_exact_server_amount_idempotency_and_no_crm_data(self):
         attempt=self.reservation(method='bank')

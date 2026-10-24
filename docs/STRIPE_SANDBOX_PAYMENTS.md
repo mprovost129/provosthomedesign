@@ -12,7 +12,7 @@ Returning from Stripe is not proof of payment. Verified results from Stripe upda
 
 ## Connection
 
-Create a dedicated restricted key in the intended Stripe **test environment**, with account identity read, Checkout Sessions write/read, PaymentIntents read and Charges read permissions. Never reuse a live key. If Stripe requires additional permissions for a Checkout dependency, review and approve that precise addition. The application never requests refunds, transfers, payouts, subscription changes or saved payment-method reuse.
+Create a dedicated restricted key in the intended Stripe **test environment**, with account identity read, Checkout Sessions write/read, PaymentIntents read and Charges read permissions. Never reuse a live key. If Stripe requires additional permissions for a Checkout dependency, review and approve that precise addition. The original payment integration does not request refunds. The owner-only refund extension is separately gated; see SANDBOX_REFUND_ACCOUNTING.md. Transfers, payouts, subscription changes and saved payment-method reuse remain unsupported.
 
 Configure both the existing Render web service and scheduled job privately:
 
@@ -38,7 +38,7 @@ Each attempt freezes the Stripe account ID and rejects a different account after
 
 Known sessions are rechecked by `reconcile_test_payments` (default limit 10) as part of `run_queue_jobs`, only when the sandbox is explicitly enabled. It never opens new checkouts or submits payment details. Paid attempts are also revisited so missed adjustment events can be detected. Provider errors preserve reservations and use safe messages without credentials, financial details or raw provider responses.
 
-Refunds/disputes are **flagged for review, not automatically posted to balances** in this release. The original gross payment record stays intact; the payment page warns that its balance is not reconciled after an adjustment. Manual ledger reversal of a gateway-confirmed payment is blocked because a bookkeeping reversal is not a refund. Do not treat this sandbox as complete refund or dispute accounting. Automatic refund/return accounting, fees/payout reconciliation, client payment receipts and live payment access remain required before real billing cutover.
+Refund and dispute accounting now has a separately documented extension: [Sandbox refunds and adjustments](SANDBOX_REFUND_ACCOUNTING.md). Verified returned principal is posted through append-only entries. Issuing sandbox refunds requires a separate explicit setting and approved test-key permission; it defaults to off. Unconfirmed or overlapping provider history stays held for review. Fees/payout reconciliation, customer receipts and live payment access remain future work.
 
 ## Validation
 

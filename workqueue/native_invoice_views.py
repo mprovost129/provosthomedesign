@@ -14,6 +14,7 @@ from .native_invoice_forms import PlanForm, ClosePlanForm, IssueForm, EntryForm,
 from .native_invoices import create_plan, close_plan, issue_test_invoice, record_entry, reverse_entry, void_invoice, plan_summary, balance
 from .pm_views import staff_view, editable, error_text, query_uuid
 from .services import EditConflict
+from .test_refunds import refund_hold
 
 
 @staff_view
@@ -98,7 +99,8 @@ def invoice_detail(request,invoice_id):
     invoice=get_object_or_404(NativeInvoice.objects.select_related('plan__document__client','plan__document__project').prefetch_related('entries__reverses'),pk=invoice_id)
     amounts=balance(invoice)
     entries=list(invoice.entries.all())
-    active=[entry for entry in entries if entry.kind!='reversal' and entry.pk not in amounts['reversed_ids']]
+    active=[entry for entry in entries if entry.kind in {'payment','credit'} and not entry.adjustment_id
+        and not hasattr(entry,'stripe_test_attempt') and entry.pk not in amounts['reversed_ids']]
     initial={'token':uuid.uuid4(),'version':invoice.version,'entry_date':timezone.localdate(),'kind':'payment'}
     action=request.POST.get('action') if request.method=='POST' else None
     forms={
@@ -129,7 +131,7 @@ def invoice_detail(request,invoice_id):
     return render(request,'workqueue/native_invoice.html',{'invoice':invoice,'plan':invoice.plan,'amounts':amounts,'entries':entries,
         'active_entries':active,'forms':forms,'snapshot':invoice.snapshot,'events':invoice.events.select_related('actor')[:100],
         'payment_attempts':invoice.payment_attempts.all()[:10],
-        'payment_hold':invoice.payment_attempts.filter(state__in=['creating','open','processing','review']).exists(),
+        'payment_hold':refund_hold(invoice) or invoice.payment_attempts.filter(state__in=['creating','open','processing','review']).exists(),
         'deliveries':invoice.deliveries.select_related('notification')[:20]},status=status)
 
 

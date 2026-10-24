@@ -17,7 +17,8 @@ PURPOSE = 'phd_native_invoice_sandbox'
 
 
 def assert_not_reserved(invoice):
-    if NativePaymentAttempt.objects.filter(invoice=invoice, state__in=RESERVED_STATES).exists():
+    from .test_refunds import refund_hold
+    if refund_hold(invoice) or NativePaymentAttempt.objects.filter(invoice=invoice, state__in=RESERVED_STATES).exists():
         raise ValidationError('A Stripe test checkout is open, pending or needs review. Open its payment status before editing this invoice.')
 
 
@@ -59,7 +60,7 @@ def account_matches(gateway, attempt):
 def mark_issue(attempt_id, code):
     lock_queue()
     attempt = NativePaymentAttempt.objects.get(pk=attempt_id)
-    if attempt.issue_code != 'provider_adjustment':attempt.issue_code = code
+    if attempt.issue_code not in {'provider_adjustment','adjustment_pending','adjustment_unconfirmed'}:attempt.issue_code = code
     attempt.last_checked_at = timezone.now()
     attempt.save(update_fields=['issue_code','last_checked_at','updated_at'])
 
@@ -98,7 +99,7 @@ def valid_session(attempt, session):
 
 
 @transaction.atomic
-def apply_session(attempt_id, session, *, account_id, event_id='', event_kind=''):
+def apply_session(attempt_id, session, *, account_id, event_id='', event_kind='', adjustments_verified=False):
     lock_queue()
     attempt = NativePaymentAttempt.objects.select_related('invoice').get(pk=attempt_id)
     if event_id and NativeStripeEvent.objects.filter(event_id=event_id).exists():
@@ -124,9 +125,9 @@ def apply_session(attempt_id, session, *, account_id, event_id='', event_kind=''
                 else:
                     attempt.payment_intent_id = intent_id
             charge = intent.get('latest_charge') if isinstance(intent,dict) else None
-            if isinstance(charge,dict) and (charge.get('amount_refunded',0) or charge.get('disputed')):
+            if not adjustments_verified and isinstance(charge,dict) and (charge.get('amount_refunded',0) or charge.get('disputed')):
                 code = 'provider_adjustment'
-            elif attempt.issue_code == 'provider_adjustment':
+            elif not adjustments_verified and attempt.issue_code in {'provider_adjustment','adjustment_pending','adjustment_unconfirmed'}:
                 # Refund/dispute accounting is intentionally not silently cleared.
                 code = 'provider_adjustment'
             elif not code:
@@ -186,9 +187,11 @@ def apply_session(attempt_id, session, *, account_id, event_id='', event_kind=''
     return attempt
 
 
-def refresh(attempt, *, gateway=None, expire=False, recovery_session=''):
+def refresh(attempt, *, gateway=None, expire=False, recovery_session='',event_id='',event_kind=''):
     gateway = gateway or TestStripeGateway()
     account_matches(gateway, attempt)
+    from .test_refunds import begin_read,reconcile
+    generation=begin_read(attempt.pk)
     session_id = recovery_session or attempt.session_id
     if not session_id or not re.fullmatch(r'cs_test_[A-Za-z0-9]+', session_id):
         raise ValidationError('Retry the same checkout, or recover its exact cs_test reference from Stripe. Do not start a second attempt.')
@@ -197,7 +200,22 @@ def refresh(attempt, *, gateway=None, expire=False, recovery_session=''):
     except GatewayUnavailable:
         mark_issue(attempt.pk, 'confirmation_unavailable')
         raise
-    return apply_session(attempt.pk, session, account_id=gateway.account_id())
+    intent=session.get('payment_intent') if isinstance(session,dict) else None
+    charge=intent.get('latest_charge') if isinstance(intent,dict) else None
+    if isinstance(charge,dict) and (attempt.ledger_entry_id or session.get('payment_status')=='paid'):
+        try:
+            refunds,disputes=gateway.adjustments(intent.get('id'),charge.get('id'),
+                disputes=bool(charge.get('disputed') or attempt.adjustments.filter(kind='dispute').exists()))
+            return reconcile(attempt.pk,session,refunds,disputes,account_id=gateway.account_id(),generation=generation,event_id=event_id,event_kind=event_kind)
+        except (GatewayUnavailable,ValidationError):
+            with transaction.atomic():
+                lock_queue()
+                current=NativePaymentAttempt.objects.get(pk=attempt.pk)
+                if current.adjustment_generation==generation:
+                    current.state='review';current.issue_code='adjustment_unconfirmed';current.checkout_url='';current.last_checked_at=timezone.now()
+                    current.save(update_fields=['state','issue_code','checkout_url','last_checked_at','updated_at'])
+            raise
+    return apply_session(attempt.pk, session, account_id=gateway.account_id(),event_id=event_id,event_kind=event_kind)
 
 
 def start(*, invoice_id, version, method, token, actor):
@@ -246,18 +264,9 @@ def handle_event(event):
             attempt = NativePaymentAttempt.objects.filter(pk=token,session_id__isnull=True).first()
         if attempt is None:return
         gateway = TestStripeGateway();account_matches(gateway,attempt)
-        session = gateway.retrieve(session_id)
-        apply_session(attempt.pk,session,account_id=gateway.account_id(),event_id=event_id,event_kind=kind)
-    elif kind in {'charge.refunded','charge.dispute.created','charge.dispute.closed'}:
+        refresh(attempt,gateway=gateway,recovery_session=session_id,event_id=event_id,event_kind=kind)
+    elif kind in {'charge.refunded','refund.created','refund.updated','refund.failed','charge.dispute.created','charge.dispute.updated','charge.dispute.closed','charge.dispute.funds_withdrawn','charge.dispute.funds_reinstated'}:
         intent_id = obj.get('payment_intent')
         if not isinstance(intent_id,str):return
-        with transaction.atomic():
-            lock_queue()
-            if NativeStripeEvent.objects.filter(event_id=event_id).exists():return
-            attempt = NativePaymentAttempt.objects.filter(payment_intent_id=intent_id).first()
-            if attempt is None:return
-            attempt.state='review';attempt.issue_code='provider_adjustment';attempt.checkout_url=''
-            attempt.save(update_fields=['state','issue_code','checkout_url','updated_at'])
-            NativeStripeEvent.objects.create(event_id=event_id,attempt=attempt,kind=kind)
-            NativeInvoiceEvent.objects.create(invoice=attempt.invoice,action='Test payment needs review',
-                details={'attempt':str(attempt.pk),'reason':'Provider refund or dispute; ledger is unchanged.'})
+        attempt=NativePaymentAttempt.objects.filter(payment_intent_id=intent_id).first()
+        if attempt is not None:refresh(attempt,event_id=event_id,event_kind=kind)

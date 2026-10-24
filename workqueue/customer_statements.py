@@ -6,6 +6,7 @@ from .crm import require_staff
 from .document_content import client_projection, issuer
 from .models import Client
 from .native_invoice_models import NativeInvoice
+from .test_payment_models import NativePaymentAttempt
 from .native_invoices import balance
 from .pm_services import current_client
 from .services import lock_queue
@@ -57,7 +58,7 @@ def statement_for(client, *, actor):
             if entry.kind == 'reversal':
                 original = by_id[entry.reverses_id]
                 kind = 'Payment reversal' if original.kind == 'payment' else 'Credit reversal'
-            add(entry.date, entry.created_at, 1, kind, entry.amount if entry.kind == 'reversal' else -entry.amount, str(entry.pk))
+            add(entry.date, entry.created_at, 1, kind, entry.amount if entry.kind in {'reversal','refund','return'} else -entry.amount, str(entry.pk))
         if invoice.voided_at:
             voided += invoice.amount
             add(timezone.localdate(invoice.voided_at), invoice.voided_at, 2, 'Invoice void', -invoice.amount)
@@ -68,10 +69,12 @@ def statement_for(client, *, actor):
         row['running_balance'] = running
         del row['_sort']
     due = sum((row['due'] for row in rows), ZERO)
+    review_required=NativePaymentAttempt.objects.filter(invoice_id__in=[row.pk for row in invoices],
+        issue_code__in=['provider_adjustment','adjustment_unconfirmed']).exists()
     if running != due or total - voided - paid - credited != due:
         raise ValueError('The statement does not reconcile with the trial ledger.')
     return {'client_id': client.pk, 'client': client_projection(client), 'issuer': issuer(), 'generated_at': now,
-            'invoices': rows, 'activity': activity,
+            'invoices': rows, 'activity': activity, 'review_required':review_required,
             'total': total, 'net_invoiced': total-voided, 'paid': paid, 'credited': credited, 'voided': voided, 'due': due,
             'open_invoices': [row for row in rows if row['due'] > 0],
             'aging': list(zip(['Not overdue', '1-30 days', '31-60 days', '61-90 days', 'Over 90 days'], aging))}
