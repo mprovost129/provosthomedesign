@@ -43,7 +43,7 @@ def session_for(attempt, *, state='open'):
         session['payment_intent']={'id':'pi_'+attempt.pk.hex,'livemode':False,'currency':'usd',
             'status':{'paid':'succeeded','pending':'processing','failed':'requires_payment_method'}[state],
             'amount_received':int(attempt.amount*100) if state=='paid' else 0,'metadata':metadata,
-            'latest_charge':{'id':'ch_'+attempt.pk.hex,'amount_refunded':0,'disputed':False,
+            'latest_charge':{'id':('py_' if attempt.method=='bank' else 'ch_')+attempt.pk.hex,'amount_refunded':0,'disputed':False,
                 'livemode':False,'paid':state=='paid','status':'succeeded' if state=='paid' else 'pending',
                 'currency':'usd','amount':int(attempt.amount*100)}}
     return session

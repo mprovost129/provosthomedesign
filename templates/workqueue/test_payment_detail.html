@@ -1,4 +1,4 @@
-{% extends 'workqueue/native_billing_base.html' %}{% block title %}{{ attempt.invoice.number }} · Test payment{% include 'workqueue/test_adjustment_history.html' %}{% endblock %}{% block pm_content %}
+{% extends 'workqueue/native_billing_base.html' %}{% block title %}{{ attempt.invoice.number }} · Test payment{% endblock %}{% block pm_content %}
 <header class="pm-heading"><div><span class="brand">Stripe sandbox payment</span><h1>{{ attempt.get_state_display }}</h1><p>{{ attempt.invoice.number }} · {{ attempt.invoice.snapshot.client_name }}</p></div><a href="{% url 'workqueue:test_payments' %}">All test payments</a></header>
 {% include 'workqueue/test_payment_notice.html' %}
 {% if error %}<p class="notice error" role="alert">{{ error }}</p>{% endif %}

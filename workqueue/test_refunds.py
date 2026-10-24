@@ -41,8 +41,11 @@ def begin_read(attempt_id):
     return attempt.adjustment_generation
 
 
-def provider_id(value,prefix):
-    if not isinstance(value,str) or not re.fullmatch(prefix+r'_[A-Za-z0-9]{1,220}',value):
+def provider_id(value,prefix=None):
+    # Non-card charges use py_ rather than ch_. Refund/dispute IDs are opaque;
+    # their verified object type, account and exact payment binding establish identity.
+    pattern=(prefix if prefix else r'[A-Za-z][A-Za-z0-9]{0,15}')+r'_[A-Za-z0-9]{1,220}'
+    if not isinstance(value,str) or not re.fullmatch(pattern,value):
         raise ValidationError('The provider adjustment reference could not be verified.')
     return value
 
@@ -53,7 +56,7 @@ def parsed_adjustments(attempt, session, refunds, disputes):
     charge=intent.get('latest_charge') if isinstance(intent,dict) else None
     if not valid_session(attempt,session) or not isinstance(charge,dict):
         raise ValidationError('The adjusted payment could not be verified.')
-    charge_id=provider_id(charge.get('id'),'ch')
+    charge_id=provider_id(charge.get('id'),'(?:ch|py)')
     intent_id=provider_id(intent.get('id'),'pi')
     if attempt.payment_intent_id and intent_id!=attempt.payment_intent_id:
         raise ValidationError('The adjustment belongs to a different payment.')
@@ -64,7 +67,7 @@ def parsed_adjustments(attempt, session, refunds, disputes):
     for kind,objects in [('refund',refunds),('dispute',disputes)]:
         for obj in objects:
             if not isinstance(obj,dict):raise ValidationError('Invalid provider history.')
-            pid=provider_id(obj.get('id'),'re' if kind=='refund' else 'du')
+            pid=provider_id(obj.get('id'))
             cents=obj.get('amount');status=obj.get('status')
             if (pid in seen or obj.get('object')!=kind or obj.get('currency')!='usd' or obj.get('charge')!=charge_id
                 or (obj.get('payment_intent') is not None and obj.get('payment_intent')!=intent_id)
@@ -214,7 +217,7 @@ def submit_refund(request,*,actor,gateway=None):
     try:
         obj=gateway.create_refund(request)
         # Never settle from the create response. Retrieve complete current history.
-        provider_id(obj.get('id'),'re')
+        provider_id(obj.get('id'))
         refresh(request.attempt,gateway=gateway)
     except (GatewayUnavailable,ValidationError):
         NativeRefundRequest.objects.filter(pk=request.pk,state='creating').update(issue_code='confirmation_uncertain')

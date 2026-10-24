@@ -21,6 +21,7 @@ from .customer_statements import statement_for
 from .test_payment_gateway import GatewayUnavailable,TestStripeGateway,configuration
 from .test_payments import refresh,handle_event
 from .test_refunds import reserve_refund,submit_refund,begin_read,reconcile
+from .services import EditConflict
 
 
 class RefundGateway(FakeGateway):
@@ -67,6 +68,18 @@ class RefundAccountingTests(RefundFixtures,TestCase):
         self.assertEqual(self.bill.entries.filter(kind='payment').count(),1)
         self.assertEqual(self.bill.entries.filter(kind='refund').count(),1)
         self.assertEqual(statement_for(self.account,actor=self.actor)['due'],30)
+
+    def test_non_card_payment_reference_reconciles_without_duplicate_payment(self):
+        charge=self.gateway.sessions[self.attempt.session_id]['payment_intent']['latest_charge']
+        charge['id']='py_NonCardCharge'
+        self.gateway.refunds=[self.refund(pid='provider_OpaqueRefund')]
+        self.sync();self.sync()
+        self.assertEqual(balance(self.bill)['paid'],70)
+        self.assertEqual(self.bill.entries.filter(kind='payment').count(),1)
+        self.assertEqual(self.bill.entries.filter(kind='refund').count(),1)
+        self.gateway.refunds[0]['object']='payment_intent'
+        with self.assertRaises(ValidationError):self.sync()
+        self.assertEqual(self.bill.entries.filter(kind='refund').count(),1)
 
     def test_full_refund_then_failed_refund_recovers_payment(self):
         self.gateway.refunds=[self.refund(10000)];self.sync()
@@ -207,6 +220,9 @@ class RefundAccountingTests(RefundFixtures,TestCase):
         self.gateway.refunds=[self.refund()];self.sync()
         response=self.client.get(reverse('workqueue:test_payment_detail',args=[self.attempt.pk]))
         self.assertContains(response,'Refunds, bank returns');self.assertContains(response,'re_External')
+        title=response.content.decode().split('<title>',1)[1].split('</title>',1)[0]
+        self.assertNotIn('<',title)
+        self.assertIn(self.bill.number,title)
         self.assertIn('no-store',response['Cache-Control'])
         statement=statement_for(self.account,actor=self.actor)
         self.assertIn('Refund',[row['kind'] for row in statement['activity']])
@@ -256,10 +272,7 @@ class RefundConcurrencyTests(RefundFixtures,TransactionTestCase):
             try:
                 reserve_refund(attempt_id=self.attempt.pk,version=version,amount='80',credit_work=False,note='Concurrency test',token=uuid.uuid4(),actor=self.actor)
                 return 'reserved'
-            except Exception as exc:
-                from .services import EditConflict
-                if isinstance(exc,(ValidationError,EditConflict)):return 'blocked'
-                raise
+            except (ValidationError,EditConflict):return 'blocked'
             finally:close_old_connections()
         with ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(reserve,range(2)))
         self.assertCountEqual(results,['reserved','blocked']);self.assertEqual(NativeRefundRequest.objects.count(),1)
