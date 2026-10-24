@@ -2,9 +2,10 @@
 
 Staff can open **Invoices → Billing test area**, or an invoice working draft's
 **Try test billing** action. This is the accounting foundation for a later
-FreshBooks replacement. It is deliberately incapable of sending invoices,
+FreshBooks replacement. It is deliberately incapable of sending real invoices,
 processing payments/refunds, or updating real receivables. There is no live-mode
 switch. FreshBooks continues issuing real invoices and collecting payments.
+Reviewed test copies can now be sent only to the owner inbox; see INVOICE_DELIVERY_TEST.md.
 
 ## Owner workflow
 

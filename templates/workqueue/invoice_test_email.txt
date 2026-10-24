@@ -1,0 +1,26 @@
+{% autoescape off %}PROVOST HOME DESIGN — TEST INVOICE COPY
+NOT A REQUEST FOR PAYMENT
+
+This copy was sent only to the owner test inbox: {{ delivery.owner_recipient }}.
+Intended client, for review only: {{ delivery.intended_name }} ({{ delivery.intended_email }}).
+The intended client has NOT been emailed.
+
+{{ delivery.message }}
+
+Invoice: {{ snapshot.number }}
+Project: {{ snapshot.project_name }}
+Client: {{ snapshot.client_name }}
+Amount: ${{ snapshot.total }} USD
+Due date (test): {{ snapshot.due_date }}
+
+View the private test invoice and download its PDF:
+{{ link }}
+
+This private link expires {{ expiry|date:'M j, Y, g:i A T' }}. Do not forward it.
+No payment is due. No card or bank payment has been processed.
+
+Provost Home Design
+{{ issuer.address }}
+{{ issuer.email }}
+{{ issuer.phone }}
+{% endautoescape %}

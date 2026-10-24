@@ -127,7 +127,8 @@ def invoice_detail(request,invoice_id):
                 messages.success(request,'Test accounting record saved. No payment, refund or email was processed.')
                 return redirect('workqueue:native_invoice',invoice.pk)
     return render(request,'workqueue/native_invoice.html',{'invoice':invoice,'plan':invoice.plan,'amounts':amounts,'entries':entries,
-        'active_entries':active,'forms':forms,'snapshot':invoice.snapshot,'events':invoice.events.select_related('actor')[:100]},status=status)
+        'active_entries':active,'forms':forms,'snapshot':invoice.snapshot,'events':invoice.events.select_related('actor')[:100],
+        'deliveries':invoice.deliveries.select_related('notification')[:20]},status=status)
 
 
 @staff_view
@@ -135,15 +136,8 @@ def invoice_detail(request,invoice_id):
 def invoice_pdf(request,invoice_id):
     invoice=get_object_or_404(NativeInvoice,pk=invoice_id)
     from .document_pdf import document_pdf
-    snapshot=dict(invoice.snapshot)
-    # The immutable document shows the amount created, not today's changing ledger.
-    snapshot['notes']='\n'.join(filter(None,[
-        'TEST ONLY. Not a request for payment. No money has been charged.',
-        f"{invoice.get_stage_display()} billing against {snapshot['document_number']} version {snapshot['draft_version']}.",
-        f"Full plan: ${snapshot['plan_total']} (service subtotal ${snapshot['plan_subtotal']}, discount ${snapshot['plan_discount']}, tax {snapshot['tax_percent']}% = ${snapshot['plan_tax']}).",
-        'This installment includes its share of the plan discount and tax. See the full plan for the service breakdown.',
-        'TEST INVOICE VOIDED.' if invoice.voided_at else '',snapshot.get('notes','')]))
-    snapshot['rich_sections']={key:value for key,value in snapshot.get('rich_sections',{}).items() if key!='notes'}
+    from .native_invoice_document import test_invoice_snapshot
+    snapshot=test_invoice_snapshot(invoice)
     response=HttpResponse(document_pdf(snapshot,invoice_draft=True,test_invoice=True),content_type='application/pdf')
     response['Content-Disposition']=f'attachment; filename="{invoice.number}-test-only.pdf"'
     return response

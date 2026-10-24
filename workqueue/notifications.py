@@ -125,6 +125,9 @@ def deliver_pending(limit=100):
                     record.state, record.body = 'canceled', ''
                     record.save(update_fields=['state', 'body'])
                     continue
+            from .invoice_delivery import cancel_ineligible_invoice_notice
+            if cancel_ineligible_invoice_notice(record):
+                continue
             # Long-delayed or explicitly retried mail must contain a usable sign-in link.
             if record.recipient_kind in {"client", "signin"}:
                 match = re.search(r"#token=([A-Za-z0-9_-]+)", record.body)

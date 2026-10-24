@@ -726,3 +726,4 @@ from .pricing_models import PricingRateVersion, PricingSequence, PricingEstimate
 from .intake_profile_models import IntakeDevice
 from .document_models import InvoiceDocument, InvoiceDocumentRevision
 from .native_invoice_models import NativeInvoiceSequence, NativeBillingPlan, NativeInvoice, NativeInvoiceEntry, NativeInvoiceEvent
+from .invoice_delivery_models import NativeInvoiceDelivery

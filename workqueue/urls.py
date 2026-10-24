@@ -2,7 +2,7 @@ from django.urls import path
 from . import dropbox_views
 from . import views
 from . import pricing_views
-from . import document_views, change_order_views, native_invoice_views
+from . import document_views, change_order_views, native_invoice_views, invoice_delivery_views
 from . import staff_search, workload
 from . import operations_views
 from . import staff_security_views
@@ -35,6 +35,11 @@ from . import invoice_history_views
 
 app_name = "workqueue"
 urlpatterns = [
+    path('work-projects/billing-test/invoices/<uuid:invoice_id>/email/', invoice_delivery_views.compose, name='invoice_delivery_compose'),
+    path('work-projects/billing-test/deliveries/<uuid:delivery_id>/', invoice_delivery_views.detail, name='invoice_delivery_detail'),
+    path('invoice-test/access/', invoice_delivery_views.access, name='invoice_test_access'),
+    path('invoice-test/<uuid:delivery_id>/', invoice_delivery_views.public, name='invoice_test_public'),
+    path('invoice-test/<uuid:delivery_id>/pdf/', invoice_delivery_views.public_pdf, name='invoice_test_public_pdf'),
     path('work-projects/billing-test/', native_invoice_views.overview, name='native_billing'),
     path('work-projects/billing-test/drafts/<uuid:document_id>/', native_invoice_views.start_plan, name='native_plan_start'),
     path('work-projects/billing-test/plans/<uuid:plan_id>/', native_invoice_views.plan_detail, name='native_plan'),

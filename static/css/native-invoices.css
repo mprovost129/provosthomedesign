@@ -1,4 +1,5 @@
 .native-test-notice { border-left:4px solid #a77524; background:#fbf5e8; color:#58421e; }
+.invoice-email-preview { font-family:Arial,sans-serif; color:#203b4a; }
 .native-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; margin:1.5rem 0; }
 .native-summary .pm-card { margin:0; }
 .native-summary span { display:block; font-size:.85rem; color:#506773; }
