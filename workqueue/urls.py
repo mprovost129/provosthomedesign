@@ -1,3 +1,4 @@
+from . import billing_reminder_views
 from django.urls import path
 from . import dropbox_views
 from . import views
@@ -42,6 +43,8 @@ from . import client_payment_views
 from . import billing_mail_views
 
 urlpatterns = [
+    path('work-projects/billing-test/follow-ups/', billing_reminder_views.center, name='billing_followups'),
+    path('work-projects/billing-test/invoices/<uuid:invoice_id>/follow-up/', billing_reminder_views.invoice_followup, name='invoice_followup'),
     path('work-projects/billing-test/emails/', billing_mail_views.center, name='billing_mail'),
     path('work-projects/billing-test/receipts/<uuid:receipt_id>/email/', billing_mail_views.receipt_email, name='billing_receipt_email'),
     path('invoice-tests/<uuid:delivery_id>/pay/',client_payment_views.start,name='invoice_test_checkout'),

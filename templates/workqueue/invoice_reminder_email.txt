@@ -1,0 +1,21 @@
+{% autoescape off %}TEST ONLY — NOT A REQUEST FOR PAYMENT
+
+Hello {{ reminder.client_name }},
+
+This is a test follow-up for invoice {{ reminder.number }}.
+Project: {{ reminder.project_name }}
+Original invoice: ${{ reminder.invoice_amount }} USD
+Due date: {{ reminder.due_date }}
+Outstanding test balance when prepared: ${{ reminder.due }} USD
+
+The original test invoice PDF is attached. This reminder lists its outstanding test balance after recorded payments and work credits.
+If you have already arranged payment or have a question, please contact Mike.
+
+Owner review (staff sign-in required): {{ staff_link }}
+This does not create or renew a public payment link.
+
+This owner-only copy goes to {{ target }}. No client was emailed. No real payment is requested. FreshBooks still handles all real billing.
+
+Provost Home Design
+mike@provosthomedesign.com
+{% endautoescape %}

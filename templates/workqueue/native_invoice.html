@@ -1,6 +1,6 @@
 {% extends 'workqueue/native_billing_base.html' %}{% block title %}{{ invoice.number }} · Test invoice{% endblock %}{% block pm_content %}
 <header class="pm-heading"><div><span class="brand">Test invoice / {{ invoice.get_stage_display }}</span><h1>{{ invoice.number }}</h1><p>{{ snapshot.client_name }} · {{ snapshot.project_name }}</p></div><a href="{% url 'workqueue:native_plan' plan.pk %}">Back to billing plan</a></header>
-{% include 'workqueue/native_billing_notice.html' %}<p><a href="{% url 'workqueue:customer_statement' plan.document.client_id %}">View this client's test statement</a></p>
+{% include 'workqueue/native_billing_notice.html' %}<p><a class="pm-button secondary" href="{% url 'workqueue:invoice_followup' invoice.pk %}">Invoice follow-up / reminder controls</a></p><p><a href="{% url 'workqueue:customer_statement' plan.document.client_id %}">View this client's test statement</a></p>
 {% include 'workqueue/test_payment_history.html' %}{% if payment_hold %}<p class="notice">A checkout, refund or provider adjustment is on hold. Open its payment status before editing this invoice.</p>{% endif %}{% if amounts.due < 0 %}<p class="notice">This negative test balance represents an overpayment / credit balance. Review the restored payment; no automatic refund is created.</p>{% endif %}
 {% include 'workqueue/invoice_delivery_history.html' %}
 {% for key, form in forms.items %}{% if form.errors %}<div class="notice error" role="alert"><strong>Review the {{ key }} action</strong>{{ form.errors }}</div>{% endif %}{% endfor %}
