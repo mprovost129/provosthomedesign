@@ -115,3 +115,12 @@ class TestStripeGateway:
                 options={'idempotency_key':'phd-test-refund-'+str(request.pk)})
         except self.stripe.StripeError:
             raise GatewayUnavailable('Refund creation is uncertain. Retry this same request; do not submit another refund.') from None
+
+    def balance_transaction(self, transaction_id):
+        """Read actual settled costs, never estimate them from a price schedule."""
+        if not re.fullmatch(r'txn_[A-Za-z0-9]{1,220}',transaction_id):
+            raise ValidationError('Invalid Stripe balance transaction reference.')
+        try:
+            return self.client.v1.balance_transactions.retrieve(transaction_id)
+        except self.stripe.StripeError:
+            raise GatewayUnavailable('Stripe could not confirm actual fees. Check sandbox Balance read permission.') from None
