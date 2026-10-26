@@ -98,6 +98,37 @@ class PayoutReconciliationTests(PayoutFixtures,TestCase):
         self.set_payout_amount(9580);row=self.payout_sync();self.assertTrue(stripe_balanced(row))
         self.assertEqual(sum(t.net for t in row.transactions.all()),9580)
 
+    def test_standalone_stripe_service_charge_and_tax_are_explicit_in_all_costs(self):
+        self.member('txn_ServiceCharge',None,'stripe_fee',-150,9)
+        self.gateway.members[self.pid][-1]['source']=None;self.set_payout_amount(9521)
+        self.payout_sync();response=self.client.get(reverse('workqueue:payout_detail',args=[self.row.pk]))
+        self.assertEqual(response.context['payment_gross'],100)
+        self.assertEqual(response.context['standalone_movements'],Decimal('-1.50'))
+        self.assertEqual(response.context['transaction_fees'],Decimal('3.29'))
+        self.assertEqual(response.context['all_payout_costs'],Decimal('4.79'))
+        self.assertEqual(response.context['transaction_net'],Decimal('95.21'))
+        self.assertContains(response,'Total Stripe costs in this payout: $4.79')
+
+    def test_other_balance_adjustments_are_not_mislabeled_as_stripe_fees(self):
+        self.member('txn_OtherAdjustment',None,'adjustment',-150,0)
+        self.gateway.members[self.pid][-1]['source']=None;self.set_payout_amount(9530);self.payout_sync()
+        response=self.client.get(reverse('workqueue:payout_detail',args=[self.row.pk]))
+        self.assertEqual(response.context['all_payout_costs'],Decimal('3.20'))
+        self.assertEqual(response.context['other_movements'],Decimal('-1.50'))
+
+    def test_positive_standalone_fee_credit_reduces_costs_without_another_sale(self):
+        self.member('txn_FeeCredit',None,'stripe_fee',80,0)
+        self.gateway.members[self.pid][-1]['source']=None;self.set_payout_amount(9760);self.payout_sync()
+        response=self.client.get(reverse('workqueue:payout_detail',args=[self.row.pk]))
+        self.assertEqual(response.context['all_payout_costs'],Decimal('2.40'));self.assertEqual(response.context['payment_gross'],100)
+
+    def test_all_cost_breakdown_includes_payout_fee_exactly_once(self):
+        self.member('txn_ServiceCharge',None,'stripe_fee',-150,9)
+        self.gateway.members[self.pid][-1]['source']=None;self.set_payout_amount(9511,fee=10);self.payout_sync()
+        response=self.client.get(reverse('workqueue:payout_detail',args=[self.row.pk]))
+        self.assertEqual(response.context['all_payout_costs'],Decimal('4.89'))
+        self.assertEqual(response.context['transaction_net']-response.context['payout_fee'],Decimal('95.11'))
+
     def test_repeated_reads_do_not_duplicate_transactions_or_balanced_events(self):
         self.payout_sync();self.payout_sync();self.payout_sync()
         self.assertEqual(NativePayoutTransaction.objects.count(),1)

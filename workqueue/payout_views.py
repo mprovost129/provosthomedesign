@@ -116,11 +116,17 @@ def detail(request,payout_id):
         else:return redirect('workqueue:payout_detail',row.pk)
     row.refresh_from_db();links=local_links(row);balanced=stripe_balanced(row);bank=active_confirmation(row)
     raw=sum(item.amount for item in links['entries']);fees=sum(item.fee for item in links['entries']);net=sum(item.net for item in links['entries'])
+    standalone=sum(item.amount for item in links['entries'] if item.kind in {'stripe_fee','stripe_fx_fee','tax_fee'})
+    payments=sum(item.amount for item in links['entries'] if item.kind in {'charge','payment'})
+    refunds=sum(item.amount for item in links['entries'] if item.kind in {'refund','payment_refund','refund_failure','payment_failure_refund'})
+    other=raw-standalone-payments-refunds
     if bank:bank.amount_display=cents(bank.amount)
     confirmations=list(row.bank_confirmations.select_related('actor','revoked_by').all())
     for item in confirmations:item.amount_display=cents(item.amount)
     return private(render(request,'workqueue/payout_detail.html',{'payout':row,'config':settings_record(),'error':error,'balanced':balanced,
       'confirmations':confirmations,'bank':bank,'bank_state':bank_state(row),'bank_form':bank_form,'undo_form':undo_form,'links':links,'issue':MESSAGES.get(row.issue,''),
       'amount':cents(row.amount) if row.currency=='usd' else None,'transaction_gross':cents(raw),'transaction_fees':cents(fees),
+      'payment_gross':cents(payments),'refund_movements':cents(refunds),'standalone_movements':cents(standalone),
+      'other_movements':cents(other),'all_payout_costs':cents(fees-standalone+(row.debit_fee or 0)),
       'transaction_net':cents(net),'payout_fee':cents(row.debit_fee) if row.debit_fee is not None else None,
       'can_confirm':balanced and not links['local_issues'] and row.checked_at and timezone.now()-row.checked_at<=timedelta(hours=1)},status=status))

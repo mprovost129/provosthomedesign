@@ -8,7 +8,7 @@ This release extends the existing private billing test area. FreshBooks remains 
 2. The payout amount balances with its full set of provider balance transactions.
 3. The owner records that a matching statement deposit was checked. In this sandbox, that bank confirmation is explicitly fictional.
 
-A payout transfers existing money and is never counted as another sale, receipt against a client invoice or new revenue. Processing fees already included in a transaction net are not deducted twice. A separate payout fee, if supplied by Stripe, is deducted once.
+A payout transfers existing money and is never counted as another sale, receipt against a client invoice or new revenue. Processing fees already included in a transaction net are not deducted twice. Standalone stripe_fee/stripe_fx_fee/tax_fee transaction amounts are shown separately, including any fees or tax attached to those transactions. The payout cost total combines these actual signed costs once; other balance adjustments are not relabeled as fees. A separate payout fee, if supplied by Stripe, is deducted once.
 
 ## Financial contract
 
