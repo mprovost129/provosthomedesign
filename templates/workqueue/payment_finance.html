@@ -1,6 +1,6 @@
 {% extends 'workqueue/native_billing_base.html' %}{% block title %}Payments, fees and net{% endblock %}{% block pm_content %}
 <header class="pm-heading"><div><span class="brand">Billing test area · USD</span><h1>Payments, fees &amp; net</h1><p>Actual Stripe transactions, with fees kept separate from the invoice amount paid.</p></div><a href="{% url 'workqueue:test_payments' %}">Test online payments</a></header>
-{% include 'workqueue/test_payment_notice.html' %}
+{% include 'workqueue/test_payment_notice.html' %}<p><a href="{% url 'workqueue:payouts' %}">Payouts &amp; bank reconciliation</a></p>
 {% if error %}<p class="notice error" role="alert">{{ error }}</p>{% endif %}
 
 <section class="pm-card"><h2>Review a period</h2><form method="get" class="doc-search finance-filter">{{ form.as_p }}<button>Show figures</button><a href="{% url 'workqueue:payment_finance' %}">This month</a></form></section>

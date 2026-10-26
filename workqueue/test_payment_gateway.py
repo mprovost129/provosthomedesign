@@ -124,3 +124,30 @@ class TestStripeGateway:
             return self.client.v1.balance_transactions.retrieve(transaction_id)
         except self.stripe.StripeError:
             raise GatewayUnavailable('Stripe could not confirm actual fees. Check sandbox Balance read permission.') from None
+
+    def payout(self, payout_id):
+        if not re.fullmatch(r'po_[A-Za-z0-9]{1,220}',payout_id):raise ValidationError('Enter an exact Stripe payout reference.')
+        try:return self.client.v1.payouts.retrieve(payout_id)
+        except self.stripe.StripeError:
+            raise GatewayUnavailable('Stripe could not read this sandbox payout. Check Payouts read permission.') from None
+
+    def recent_payouts(self, since):
+        try:
+            rows=[]
+            for obj in self.client.v1.payouts.list({'created':{'gte':int(since.timestamp())},'limit':100}).auto_paging_iter():
+                rows.append(obj)
+                if len(rows)>250:raise GatewayUnavailable('The recent payout history exceeds the safe batch limit. No partial discovery was accepted.')
+            return rows
+        except self.stripe.StripeError:
+            raise GatewayUnavailable('Stripe could not read complete recent payout history. Check Payouts read permission.') from None
+
+    def payout_transactions(self, payout_id):
+        if not re.fullmatch(r'po_[A-Za-z0-9]{1,220}',payout_id):raise ValidationError('Invalid payout reference.')
+        try:
+            rows=[]
+            for obj in self.client.v1.balance_transactions.list({'payout':payout_id,'limit':100}).auto_paging_iter():
+                rows.append(obj)
+                if len(rows)>1000:raise GatewayUnavailable('This payout exceeds the safe transaction batch limit. It remains unreconciled.')
+            return rows
+        except self.stripe.StripeError:
+            raise GatewayUnavailable('Stripe could not read the full payout transaction history.') from None

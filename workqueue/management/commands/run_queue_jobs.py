@@ -35,6 +35,7 @@ class Command(BaseCommand):
         if intake and getattr(settings, 'NATIVE_STRIPE_TEST_ENABLED', False):
             tasks.append(('reconcile_test_payments', {'limit': 10}))
             tasks.append(('reconcile_payment_fees', {'limit': 2}))
+            tasks.append(('reconcile_test_payouts', {'limit': 2}))
         if not tasks:
             self.stdout.write("Queue features are disabled; no background tasks ran.")
             return

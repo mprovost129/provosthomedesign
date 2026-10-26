@@ -1,3 +1,4 @@
+from . import payout_views
 from . import payment_finance_views
 from . import billing_reminder_views
 from django.urls import path
@@ -44,6 +45,8 @@ from . import client_payment_views
 from . import billing_mail_views
 
 urlpatterns = [
+    path('work-projects/billing-test/payouts/', payout_views.center, name='payouts'),
+    path('work-projects/billing-test/payouts/<uuid:payout_id>/', payout_views.detail, name='payout_detail'),
     path('work-projects/billing-test/finance/', payment_finance_views.center, name='payment_finance'),
     path('work-projects/billing-test/finance/<uuid:attempt_id>/', payment_finance_views.detail, name='payment_finance_detail'),
     path('work-projects/billing-test/follow-ups/', billing_reminder_views.center, name='billing_followups'),
