@@ -5,6 +5,8 @@ const round = value => Math.round(value * 10000) / 10000;
 const clamp = value => Math.max(0, Math.min(1, value));
 
 export function validMark(mark) {
+  if (mark.type === 'box') return [0, 1].every(axis =>
+    Math.abs(mark.points[1][axis] - mark.points[0][axis]) >= .001);
   return !mark.points || Math.max(...mark.points.map(point =>
     Math.abs(point[0] - mark.x) + Math.abs(point[1] - mark.y))) >= .001;
 }

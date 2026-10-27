@@ -68,9 +68,10 @@ class DrawingAndExportTests(TestCase):
             {key:value for key,value in shape().items() if key not in {'type','points'}}]
         record=save_review(record.pk,member,reviews_fixture.payload(record,annotations=marks))
         adjusted=deepcopy(marks)
+        positions=[[[.35,.45],[.75,.8]],[[.15,.3],[.65,.7]],[[.4,.2],[.55,.35],[.8,.6]],[[.6,.6]]]
         for index,mark in enumerate(adjusted):
-            mark.update(x=.35,y=.45,text=f'Edited comment {index+1}')
-            if 'points' in mark: mark['points']=[[.35,.45],[.75,.8]]
+            mark.update(x=positions[index][0][0],y=positions[index][0][1],text=f'Edited comment {index+1}')
+            if 'points' in mark: mark['points']=positions[index]
         record=save_review(record.pk,member,reviews_fixture.payload(record,annotations=adjusted))
         record.refresh_from_db()
         self.assertEqual(record.annotations,adjusted)
@@ -82,6 +83,28 @@ class DrawingAndExportTests(TestCase):
         self.assertEqual(export.state,'ready',export.error)
         marked=PdfReader(BytesIO(private_storage().open(export.storage_key,'rb').read()))
         self.assertIn('Edited comment 4',marked.pages[-1].extract_text())
+        # Inspect the actual exported content stream, not a mocked drawing call.
+        # Normalized viewer coordinates must map to PDF points (origin at bottom left).
+        operations=[(operator,tuple(round(float(value),4) for value in operands))
+            for operands,operator in marked.pages[0].get_contents().operations if operator in {b'm',b'l',b're'}]
+        def point(value):return (round(value[0]*612,4),round((1-value[1])*792,4))
+        self.assertIn((b'm',point(positions[0][0])),operations)
+        self.assertIn((b'l',point(positions[0][1])),operations)
+        a,b=map(point,positions[1])
+        self.assertIn((b're',(a[0],b[1],round(b[0]-a[0],4),round(a[1]-b[1],4))),operations)
+        self.assertIn((b'm',point(positions[2][0])),operations)
+        for vertex in positions[2][1:]:self.assertIn((b'l',point(vertex)),operations)
+        # Number text is centered at each pin, including the moved legacy pin.
+        numbers=[]
+        marked.pages[0].extract_text(visitor_text=lambda text,cm,tm,font,size:
+            numbers.append((text.strip(),float(tm[5]),float(size))) if text.strip() in {'1','2','3','4'} else None)
+        for index,vertices in enumerate(positions,1):
+            number=next(entry for entry in numbers if entry[0]==str(index))
+            self.assertAlmostEqual(number[1],point(vertices[0])[1]-number[2]*.35,places=3)
+            x,y=point(vertices[0])
+            self.assertTrue(any(operator==b'm' and abs(values[0]-x-number[2])<.001 and abs(values[1]-y)<.001
+                for operator,values in operations),'Moved pin circle must be centered at its adjusted x/y')
+        self.assertNotIn((b'm',point([.25,.25])),operations,'Old shape anchors must not survive in the overlay')
         self.assertIn('Edited comment 1',record.work_item.description)
         record.refresh_from_db();self.assertEqual(record.annotations,frozen)
         self.assertEqual(private_storage().open(revision.storage_key,'rb').read(),original)

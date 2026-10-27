@@ -4,9 +4,9 @@ const vm = require('node:vm');
 const test = require('node:test');
 const {pathToFileURL} = require('node:url');
 const model = import(pathToFileURL(require('node:path').resolve('static/js/plan-review-model.mjs')));
-const source = fs.readFileSync('static/js/plan-review.js','utf8').replace('await import(app.dataset.editorModel)','modelHelpers').replace('await import(app.dataset.library)','pdfLibrary');
+const source = fs.readFileSync('static/js/plan-review.js','utf8').replace('await import(app.dataset.editorModel)','await loadModel()').replace('await import(app.dataset.library)','pdfLibrary');
 
-async function setup(fetchImpl, initial={}) {
+async function setup(fetchImpl, initial={}, failures={}) {
   let doc;
   class Element {
     constructor(tag='div'){this.tagName=tag.toUpperCase();this.children=[];this.dataset={};this.style={};this.attributes={};this.events={};this.value='';this.disabled=false;this.textContent='';this.classList={toggle:()=>{}};}
@@ -32,7 +32,7 @@ async function setup(fetchImpl, initial={}) {
   }
   const ids={};const make=(id,tag='div')=>{const node=new Element(tag);node.id=id;ids[id]=node;return node;};
   const app=make('plan-review-app');const list=make('review-note-list','ol');
-  for(const id of ['plan-review-data','review-form','review-summary','save-status','pdf-status','review-page-canvas','review-page','review-zoom','undo-mark','redo-mark','mark-mode','comment-mark','save-review','submit-review','review-version','previous-page','next-page','page-total'])app.append(make(id,id==='review-summary'?'textarea':id==='review-page'||id==='review-zoom'?'select':'div'));
+  for(const id of ['plan-review-data','review-form','review-summary','save-status','pdf-status','retry-plan','review-page-canvas','review-page','review-zoom','undo-mark','redo-mark','mark-mode','comment-mark','save-review','submit-review','review-version','previous-page','next-page','page-total'])app.append(make(id,id==='review-summary'?'textarea':id==='review-page'||id==='review-zoom'?'select':/mark$|review$|page$|retry-plan/.test(id)?'button':'div'));
   app.append(list);const surface=ids['review-page-canvas'];surface.parentElement.clientWidth=1028;
   for(const id of ['plan-pins','plan-shapes','plan-handles','plan-canvas'])surface.append(make(id));
   const csrf=new Element('input');csrf.name='csrfmiddlewaretoken';csrf.value='csrf';ids['review-form'].append(csrf);
@@ -42,9 +42,9 @@ async function setup(fetchImpl, initial={}) {
   doc={activeElement:null,getElementById:id=>ids[id]||find(app,id),createElement:tag=>new Element(tag),createElementNS:(_,tag)=>new Element(tag)};
   function find(node,id){if(node.id===id)return node;for(const child of node.children){const found=find(child,id);if(found)return found;}}
   const timers=new Map();let nextTimer=0;const requests=[];
-  const drawing={getViewport:()=>({width:612,height:792,rotation:0}),render:()=>({promise:Promise.resolve(),cancel(){}}),cleanup(){}};
-  const library={GlobalWorkerOptions:{},getDocument:()=>({promise:Promise.resolve({numPages:2,getPage:async()=>drawing})})};
-  const context={modelHelpers:await model,document:doc,pdfLibrary:library,structuredClone,crypto:require('node:crypto').webcrypto,AbortController,ResizeObserver:class{observe(){}},setTimeout:(fn,delay)=>{timers.set(++nextTimer,{fn,delay});return nextTimer;},clearTimeout:id=>timers.delete(id),window:{devicePixelRatio:1,addEventListener(){},location:{assign(url){context.redirect=url;}}},fetch:async(url,options)=>{const data=JSON.parse(options.body);requests.push({url,data});return fetchImpl?fetchImpl(url,data):{ok:true,json:async()=>({version:requests.length+1,redirect:'/done'})};}};
+  const drawing={getViewport:()=>({width:612,height:792,rotation:0}),render:()=>({promise:failures.render?failures.render():Promise.resolve(),cancel(){}}),cleanup(){}};
+  const library={GlobalWorkerOptions:{},getDocument:()=>({promise:Promise.resolve({numPages:2,getPage:async page=>failures.getPage?failures.getPage(page,drawing):drawing})})};
+  const context={loadModel:()=>failures.model?Promise.reject(new Error('Module unavailable')):model,document:doc,pdfLibrary:library,structuredClone,crypto:require('node:crypto').webcrypto,AbortController,ResizeObserver:class{observe(){}},setTimeout:(fn,delay)=>{timers.set(++nextTimer,{fn,delay});return nextTimer;},clearTimeout:id=>timers.delete(id),window:{devicePixelRatio:1,addEventListener(){},location:{assign(url){context.redirect=url;},reload(){context.reloaded=true;}}},fetch:async(url,options)=>{const data=JSON.parse(options.body);requests.push({url,data});return fetchImpl?fetchImpl(url,data):{ok:true,json:async()=>({version:requests.length+1,redirect:'/done'})};}};
   await vm.runInNewContext(`(async()=>{${source}\n})()`,context);
   const settle=async()=>{for(let i=0;i<15;i++)await Promise.resolve();};
   return {ids,doc,app,surface,requests,context,settle,
@@ -63,8 +63,12 @@ test('persistent drawing, canceled pointers, secondary pointers and page switche
   await ui.point('pointerdown',200,200);await ui.point('pointerup',500,500);
   assert.equal((await ui.save()).annotations.length,2);
   await ui.point('pointerdown',200,200);await ui.point('pointermove',800,800,{pointerId:2});await ui.point('pointercancel',800,800);
+  await ui.point('pointerup',800,800);
+  await ui.point('pointerdown',100,300);await ui.point('pointerup',400,600);
+  const afterCancel=await ui.save();assert.equal(afterCancel.annotations.length,3);
+  assert.deepEqual(afterCancel.annotations[2].points,[[.1,.3],[.4,.6]]);
   await ui.point('pointerdown',300,300);await ui.ids['next-page'].emit('click');await ui.settle();await ui.point('pointerup',600,600);
-  assert.equal((await ui.save()).annotations.length,2);
+  assert.equal((await ui.save()).annotations.length,3);
   assert.equal(ui.doc.activeElement,ui.surface);
 });
 
@@ -121,6 +125,7 @@ test('simulated touch freehand moves as one shape and keyboard focus selects the
   const original=(await ui.save()).annotations[0];assert.equal(original.type,'freehand');
   await ui.mode('select');await ui.point('pointerdown',100,100,{target:ui.ids['plan-pins'].children[0],pointerType:'touch'});await ui.point('pointerup',200,200,{pointerType:'touch'});
   const moved=(await ui.save()).annotations[0];assert.equal(moved.x,.2);assert.equal(moved.y,.2);assert.equal(moved.points.length,original.points.length);
+  assert.deepEqual(moved.points,original.points.map(point=>point.map(value=>Math.round((value+.1)*10000)/10000)));
   await ui.mode('pin');await ui.key('Enter');await ui.mode('select');
   ui.ids['plan-pins'].children[0].focus();await ui.key('ArrowRight');const saved=await ui.save();
   assert.equal(saved.annotations[0].x,.201);assert.equal(saved.annotations[1].x,.5);
@@ -131,4 +136,78 @@ test('reloading a draft retains marks but starts fresh history; read-only review
   const ui=await setup(undefined,{annotations:[box]});assert.equal(ui.ids['undo-mark'].disabled,true);assert.equal(ui.ids['redo-mark'].disabled,true);
   const readonly=await setup(undefined,{annotations:[box],editable:false});await readonly.mode('pin');await readonly.point('pointerdown',100,100);await readonly.point('pointerup',200,200);await readonly.key('Delete');
   assert.equal(readonly.requests.length,0);assert.equal(readonly.ids['plan-pins'].children.length,1);
+});
+
+test('Escape leaves drawing mode from notes without consuming native text undo',async()=>{
+  const ui=await setup(undefined,{annotations:[box]});
+  for(const input of [ui.doc.getElementById('note-box'),ui.ids['review-summary']]) {
+    await ui.mode('box');input.focus();input.value='Keep this edit';await input.emit('input');
+    assert.equal((await ui.key('z',input,{ctrlKey:true})).defaultPrevented,undefined);
+    assert.equal((await ui.key('Escape',input)).defaultPrevented,true);
+    assert.equal(ui.app.querySelectorAll('[data-mark-tool]')[0].attributes['aria-pressed'],'true');
+    assert.equal(input.value,'Keep this edit');assert.equal(ui.doc.activeElement,input);
+    input.value='Continued after Escape';await input.emit('input');await input.emit('blur');
+    await ui.ids['undo-mark'].emit('click');
+    const savedAfterEscape=await ui.save();
+    assert.equal(input===ui.ids['review-summary']?savedAfterEscape.summary:savedAfterEscape.annotations[0].text,'Keep this edit');
+    await ui.point('pointerdown',700,700);await ui.point('pointerup',900,900);
+    assert.equal((await ui.save()).annotations.length,1);
+  }
+});
+
+test('collapsed box drags and resizes never enter saved geometry or history',async()=>{
+  const ui=await setup(undefined,{annotations:[box]});await ui.mode('box');
+  await ui.point('pointerdown',100,100);await ui.point('pointerup',100,500);
+  assert.equal(ui.ids['plan-pins'].children.length,1);assert.equal(ui.ids['undo-mark'].disabled,true);
+  await ui.mode('select');await ui.point('pointerdown',200,200,{target:ui.ids['plan-pins'].children[0]});await ui.point('pointerup',200,200);
+  await ui.point('pointerdown',500,500,{target:ui.ids['plan-handles'].children[1]});await ui.point('pointerup',200,700);
+  await ui.ids['review-summary'].emit('input');assert.deepEqual((await ui.save()).annotations[0],box);
+  assert.equal(ui.ids['undo-mark'].disabled,true);
+});
+
+test('page fetch and render failures allow retry or navigation without edits on a stale canvas',async()=>{
+  for(const stage of ['getPage','render']) {
+    let broken=true;const failures=stage==='getPage'?{getPage:async(page,drawing)=>{if(broken)throw new Error('fetch');return drawing;}}:{render:()=>broken?Promise.reject(new Error('render')):Promise.resolve()};
+    const ui=await setup(undefined,{annotations:[box]},failures);
+    assert.equal(ui.ids['retry-plan'].hidden,false);assert.match(ui.ids['pdf-status'].textContent,/Retry/);
+    assert.equal(ui.ids['plan-canvas'].hidden,true);assert.equal(ui.ids['next-page'].disabled,false);
+    await ui.mode('pin');await ui.point('pointerdown',100,100);await ui.point('pointerup',100,100);
+    await ui.ids['review-summary'].emit('input');assert.deepEqual((await ui.save()).annotations,[box]);
+    broken=false;await ui.ids['retry-plan'].emit('click');await ui.settle();
+    assert.equal(ui.ids['retry-plan'].hidden,true);assert.equal(ui.ids['plan-canvas'].hidden,false);
+    assert.equal(ui.app.querySelectorAll('[data-mark-tool]')[1].disabled,false);
+    await ui.point('pointerdown',100,100);await ui.point('pointerup',100,100);assert.equal((await ui.save()).annotations.length,2);
+  }
+});
+
+test('obsolete page errors cannot replace a newer successful render',async()=>{
+  let rejectOld;let delayed=false;const failures={getPage:async(page,drawing)=>delayed&&page===1?new Promise((resolve,reject)=>rejectOld=reject):drawing};
+  const ui=await setup(undefined,{annotations:[box]},failures);delayed=true;
+  const oldRender=ui.ids['review-zoom'].emit('change');await ui.settle();
+  await ui.ids['next-page'].emit('click');await ui.settle();
+  rejectOld(new Error('old page failed'));await oldRender;await ui.settle();
+  assert.match(ui.ids['pdf-status'].textContent,/Page 2 of 2/);assert.equal(ui.ids['retry-plan'].hidden,true);
+  assert.equal(ui.app.querySelectorAll('[data-mark-tool]')[1].disabled,false);
+});
+
+test('obsolete render failure cannot unlock or clear a newer pending page',async()=>{
+  let rejectOld,finishNew,renderCount=0;const failures={};
+  const ui=await setup(undefined,{annotations:[box]},failures);
+  failures.render=()=>++renderCount===1?new Promise((resolve,reject)=>rejectOld=reject):new Promise(resolve=>finishNew=resolve);
+  const oldRender=ui.ids['review-zoom'].emit('change');await ui.settle();
+  await ui.ids['next-page'].emit('click');await ui.settle();rejectOld(new Error('old canvas failed'));await oldRender;await ui.settle();
+  assert.equal(ui.app.querySelectorAll('[data-mark-tool]')[1].disabled,true);assert.equal(ui.ids['retry-plan'].hidden,true);
+  assert.equal(ui.ids['plan-canvas'].hidden,true);
+  finishNew();await ui.settle();assert.match(ui.ids['pdf-status'].textContent,/Page 2 of 2/);
+  assert.equal(ui.app.querySelectorAll('[data-mark-tool]')[1].disabled,false);
+});
+
+test('helper import failure is explicit, preserves notes, blocks writes, and offers deliberate reload',async()=>{
+  const ui=await setup(undefined,{annotations:[box],summary:'Saved general notes'},{model:true});
+  assert.match(ui.ids['pdf-status'].textContent,/editor could not load/i);
+  assert.equal(ui.ids['review-summary'].value,'Saved general notes');assert.equal(ui.ids['review-summary'].readOnly,true);
+  assert.equal(ui.ids['submit-review'].disabled,true);assert.equal(ui.ids['save-review'].disabled,true);
+  assert.equal((await ui.ids['review-form'].emit('submit')).defaultPrevented,true);
+  assert.equal(ui.requests.length,0);assert.equal(ui.ids['retry-plan'].hidden,false);
+  await ui.ids['retry-plan'].emit('click');assert.equal(ui.context.reloaded,true);
 });
