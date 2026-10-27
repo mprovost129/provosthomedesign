@@ -4,3 +4,21 @@
 #plan-shapes{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}#review-page-canvas.drawing{touch-action:none;user-select:none}.review-export{margin-top:18px;padding-top:16px;border-top:1px solid #dce4ed}.review-export p{margin:8px 0}
 
 .review-discussion{margin-top:2rem}.review-topic{display:flex;justify-content:space-between;gap:1rem;padding:1rem 0;border-bottom:1px solid #d7e1e7;align-items:start}.review-topic>div{flex:1;min-width:0}.review-topic h4,.review-message h4{font-size:1rem}.review-state{display:inline-block;padding:.2rem .5rem;border-radius:5px;background:#fff3d8;font-size:.8rem}.review-state.is-addressed{background:#e3f3e9;color:#21533a}.review-message{padding:1.25rem;margin:1rem 0;background:#f5f8fa;border-radius:8px;border-left:3px solid #acbcc5}.review-message.staff-message{border-color:#005ea0;background:#eef5fa}.review-message h4 small{display:block;margin-top:.3rem;font-weight:400;color:#526570}.review-reply{max-width:720px;margin-top:2rem}.review-reply label:not(.review-notify){display:block;font-weight:600;margin:.75rem 0 .3rem}.review-notify{display:flex;align-items:center;gap:.5rem;margin:1rem 0}.review-notify input{width:auto}.review-topic form{margin:0}.review-discussion .preserve-lines{overflow-wrap:anywhere}@media(max-width:600px){.review-topic{flex-direction:column}.review-topic form{width:100%}}
+
+/* Labeled tools and comfortable touch targets. Empty plan space still scrolls in Select. */
+.review-mark-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+.review-mark-toolbar button{min-height:44px;margin:0;padding:10px 14px;border:2px solid #567185;background:#fff;color:#174f73;font-weight:600}
+.review-mark-toolbar button[aria-pressed="true"]{background:#174f73;color:#fff;border-color:#174f73;box-shadow:0 0 0 2px #fff,0 0 0 4px #277eae}
+.review-mark-toolbar button:disabled{opacity:.5;cursor:default}
+.review-mark-toolbar button:focus-visible,.plan-pin:focus-visible,.plan-handle:focus-visible{outline:3px solid #111;outline-offset:3px}
+#mark-mode{font-weight:600;color:#174f73;min-height:3em}
+#pin-help{font-size:.9rem}
+#plan-handles{position:absolute;inset:0;pointer-events:none}
+.plan-shape-hit{pointer-events:stroke;cursor:move;touch-action:none}
+.plan-pin{touch-action:none}
+.client-work button.plan-handle,.plan-handle{position:absolute;transform:translate(-50%,-50%);width:44px;height:44px;min-width:44px;min-height:44px;padding:0;margin:0;border:0;border-radius:0;background:transparent;pointer-events:auto;touch-action:none;cursor:crosshair;box-shadow:none}
+.plan-handle::after{content:"";display:block;width:14px;height:14px;margin:auto;background:#fff;border:3px solid #174f73;border-radius:3px;box-shadow:0 1px 4px #0005}
+.client-work button.plan-pin,.plan-pin{min-width:44px;min-height:44px;width:44px;height:44px}
+.plan-pin.has-handles{transform:translate(-110%,-110%)}
+.review-shortcuts{margin:10px 0 16px}.review-shortcuts summary{cursor:pointer;color:#174f73}.review-shortcuts p{margin-top:8px}
+@media(max-width:600px){.review-mark-toolbar{display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}.review-mark-toolbar button{grid-column:span 2;font-size:14px;padding:10px 8px}.review-mark-toolbar [data-mark-tool="box"],.review-mark-toolbar [data-mark-tool="freehand"],.review-mark-toolbar #undo-mark,.review-mark-toolbar #redo-mark{grid-column:span 3}.review-mark-toolbar #comment-mark{grid-column:span 6}}
