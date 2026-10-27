@@ -15,7 +15,7 @@ from reportlab.pdfgen.canvas import Canvas
 from . import test_portal as fixtures
 from . import test_portal_reviews as reviews_fixture
 from .portal_models import PortalDocument,PortalMember
-from .portal_reviews import clean_payload,start_review,submit_review
+from .portal_reviews import clean_payload,save_review,start_review,submit_review
 from .portal_services import grant_member,publish_document
 from .portal_export_models import PlanReviewExport
 from .portal_export_worker import request_export,process_exports,run_parser,FAILURE_MESSAGE
@@ -56,6 +56,35 @@ class DrawingAndExportTests(TestCase):
     def test_old_pin_and_new_shapes_are_backwards_compatible(self):
         for mark in [shape(),shape('box'),shape('freehand'),{key:value for key,value in shape().items() if key not in {'type','points'}}]:
             clean_payload(reviews_fixture.payload(type('Draft',(),{'version':1})(),annotations=[mark]))
+
+    def test_adjusted_marks_round_trip_freeze_and_export_without_changing_source(self):
+        from copy import deepcopy
+        from pypdf import PdfReader
+        member=grant_member(self.project,version=self.version(),contact_id=self.contact.pk,
+            financial_access=False,review_access=True,actor=self.owner)
+        revision=self.valid_revision()
+        record=start_review(member,revision,uuid.uuid4())
+        marks=[shape('arrow'),shape('box'),shape('freehand'),
+            {key:value for key,value in shape().items() if key not in {'type','points'}}]
+        record=save_review(record.pk,member,reviews_fixture.payload(record,annotations=marks))
+        adjusted=deepcopy(marks)
+        for index,mark in enumerate(adjusted):
+            mark.update(x=.35,y=.45,text=f'Edited comment {index+1}')
+            if 'points' in mark: mark['points']=[[.35,.45],[.75,.8]]
+        record=save_review(record.pk,member,reviews_fixture.payload(record,annotations=adjusted))
+        record.refresh_from_db()
+        self.assertEqual(record.annotations,adjusted)
+        record,_=submit_review(record.pk,member,reviews_fixture.payload(record,annotations=adjusted))
+        frozen=deepcopy(record.annotations)
+        original=private_storage().open(revision.storage_key,'rb').read()
+        request_export(record.pk);self.assertEqual(process_exports(),1)
+        export=PlanReviewExport.objects.get(pk=record.pk)
+        self.assertEqual(export.state,'ready',export.error)
+        marked=PdfReader(BytesIO(private_storage().open(export.storage_key,'rb').read()))
+        self.assertIn('Edited comment 4',marked.pages[-1].extract_text())
+        self.assertIn('Edited comment 1',record.work_item.description)
+        record.refresh_from_db();self.assertEqual(record.annotations,frozen)
+        self.assertEqual(private_storage().open(revision.storage_key,'rb').read(),original)
 
     def test_invalid_shapes_are_rejected_before_saving(self):
         for mark in [shape('script'),shape(points=[]),shape(points=[[.3,.25],[.5,.5]]),shape(points=[[.25,.25],[1.1,.5]]),
