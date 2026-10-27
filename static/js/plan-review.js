@@ -1,7 +1,24 @@
 /* Version-bound pins, bounded page rendering, serialized autosave. No document data leaves this origin. */
 const app = document.getElementById('plan-review-app');
-if (app) {
-  const {adjustMark, validMark, EditHistory} = await import(app.dataset.editorModel);
+if (app) await initializeEditor(app);
+async function initializeEditor(app) {
+  const startupControls = [...app.querySelectorAll('button,input,textarea,select')].map(node => [node, node.disabled]);
+  startupControls.forEach(([node]) => { node.disabled = true; });
+  let helpers;
+  try {
+    helpers = await import(app.dataset.editorModel);
+  } catch {
+    document.getElementById('review-form').addEventListener('submit', event => event.preventDefault());
+    document.getElementById('pdf-status').textContent = 'The plan editor could not load. Your saved notes are shown below. Open the original PDF, or reload the editor to try again.';
+    document.getElementById('save-status').textContent = 'Editing and submission are unavailable. Copy any unsaved text before reloading; no changes have been sent.';
+    for (const node of app.querySelectorAll('textarea')) { node.disabled = false; node.readOnly = true; }
+    const retry = document.getElementById('retry-plan');
+    retry.hidden = false; retry.disabled = false; retry.textContent = 'Reload editor';
+    retry.addEventListener('click', () => window.location.reload());
+    return;
+  }
+  startupControls.forEach(([node, disabled]) => { node.disabled = disabled; });
+  const {adjustMark, validMark, EditHistory} = helpers;
   const state = JSON.parse(document.getElementById('plan-review-data').textContent);
   const form = document.getElementById('review-form');
   const summary = document.getElementById('review-summary');
@@ -21,7 +38,8 @@ if (app) {
   const redo = document.getElementById('redo-mark');
   const handles = document.getElementById('plan-handles');
   const history = new EditHistory();
-  let stroke = null, gesture = null, textEdit = null, rendering = true;
+  let stroke = null, gesture = null, textEdit = null, rendering = true, pageReady = false;
+  const retryPlan = document.getElementById('retry-plan');
   let mode = 'select';
   const saveButton = document.getElementById('save-review');
   const submitButton = document.getElementById('submit-review');
@@ -84,7 +102,7 @@ if (app) {
   }
   const draft = () => ({annotations: structuredClone(state.annotations), summary: summary.value});
   const editable = () => state.editable && !submitting;
-  const interactive = () => editable() && pdf && !rendering;
+  const interactive = () => editable() && pdf && !rendering && pageReady;
   function updateControls() {
     const pendingText = textEdit && JSON.stringify(textEdit) !== JSON.stringify(draft());
     if (undo) undo.disabled = !editable() || (!history.undo.length && !pendingText);
@@ -138,7 +156,7 @@ if (app) {
     const focus = active?.closest('[data-mark]');
     const focusKey = focus && surface.contains(focus) ? {id: focus.dataset.mark, handle: focus.dataset.handle} : null;
     pins.replaceChildren(); shapes.replaceChildren(); handles.replaceChildren();
-    if (rendering) return;
+    if (rendering || !pageReady) return;
     const visible = state.annotations.map(mark => gesture?.preview?.id === mark.id ? gesture.preview : mark);
     visible.forEach(mark => { if (mark.page === page && mark.points) drawShape(mark); });
     if (stroke?.points) drawShape(stroke, true);
@@ -325,12 +343,17 @@ if (app) {
   surface.addEventListener('pointercancel', event => { if (gesture?.pointerId === event.pointerId) cancelGesture(); });
   surface.addEventListener('lostpointercapture', event => { if (gesture?.pointerId === event.pointerId) cancelGesture(); });
   app.addEventListener('keydown', event => {
-    if (!editable() || event.defaultPrevented || event.isComposing || event.target.closest('input,textarea,select,[contenteditable="true"]')) return;
+    if (!editable() || event.defaultPrevented || event.isComposing) return;
+    if (event.key === 'Escape') {
+      event.preventDefault(); setMode('select');
+      if (event.target.closest('textarea')) textEdit = draft();
+      return;
+    }
+    if (event.target.closest('input,textarea,select,[contenteditable="true"]')) return;
     const key = event.key.toLowerCase();
     if ((event.ctrlKey || event.metaKey) && !event.altKey && (key === 'z' || key === 'y')) {
       event.preventDefault(); travelHistory(key === 'y' || event.shiftKey ? 'redo' : 'undo'); return;
     }
-    if (event.key === 'Escape') { event.preventDefault(); setMode('select'); return; }
     if (!surface.contains(event.target) || !interactive()) return;
     if (event.key === 'Enter' && mode === 'pin' && event.target === surface) {
       event.preventDefault(); addMark({id: crypto.randomUUID(), page, x: .5, y: .5, text: ''}); return;
@@ -348,7 +371,8 @@ if (app) {
   });
   async function renderPage() {
     if (!pdf) return;
-    cancelGesture(); rendering = true; updateControls(); drawPins();
+    cancelGesture(); rendering = true; pageReady = false; canvas.hidden = true;
+    retryPlan.hidden = true; updateControls(); drawPins();
     const current = ++renderGeneration;
     renderTask?.cancel();
     try {
@@ -370,14 +394,21 @@ if (app) {
         state.geometry.push({page, width: base.width, height: base.height, rotation: base.rotation});
         if (state.editable) markDirty();
       }
-      rendering = false; updateControls(); drawPins();
+      pageReady = true; canvas.hidden = false;
       pdfStatus.textContent = `Page ${page} of ${pdf.numPages}. ${state.editable ? 'Add a numbered note where you want a change.' : 'Select a numbered pin to read its note.'}`;
-      document.getElementById('previous-page').disabled = page <= 1;
-      document.getElementById('next-page').disabled = page >= pdf.numPages;
     } catch (error) {
-      if (error.name !== 'RenderingCancelledException') pdfStatus.textContent = 'This page could not be displayed. Open the original PDF; your saved notes are still available.';
+      if (current !== renderGeneration) return;
+      pdfStatus.textContent = 'This page could not be displayed. Retry this page, choose another page, or open the original PDF. Your notes are still available.';
+      retryPlan.hidden = false;
+    } finally {
+      if (current === renderGeneration) {
+        rendering = false; updateControls(); drawPins();
+        document.getElementById('previous-page').disabled = page <= 1;
+        document.getElementById('next-page').disabled = page >= pdf.numPages;
+      }
     }
   }
+  retryPlan.addEventListener('click', () => renderPage());
   pageSelect.addEventListener('change', () => { page = Number(pageSelect.value); renderPage(); });
   document.getElementById('previous-page').addEventListener('click', () => { if (page > 1) { page--; pageSelect.value = page; renderPage(); } });
   document.getElementById('next-page').addEventListener('click', () => { if (page < pdf.numPages) { page++; pageSelect.value = page; renderPage(); } });

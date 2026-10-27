@@ -21,6 +21,11 @@ test('endpoint and box corner edits keep the other endpoint fixed and reject col
   assert.deepEqual(adjustMark(shape,.1,.1,'0').points, [[.3,.4],[.8,.7]]);
   assert.deepEqual(adjustMark(shape,.3,-.1,'1').points, [[.2,.3],[1,.6]]);
   assert.equal(validMark(adjustMark(shape,.6,.4,'0')),false);
+  for (const points of [[[.2,.3],[.2,.7]],[[.2,.3],[.8,.3]],[[.2,.3],[.2009,.7]],[[.2,.3],[.8,.3009]]]) {
+    assert.equal(validMark({...shape,points}),false,'each box dimension must exceed the collapse threshold');
+  }
+  assert.equal(validMark({...shape,points:[[.2,.3],[.202,.302]]}),true);
+  assert.equal(validMark({...shape,type:'arrow',points:[[.2,.3],[.2,.7]]}),true,'vertical arrows remain valid');
   assert.equal(validMark(pin),true);
 });
 test('history reverses and replays adds, moves, resizes, removals, comments and summary without version rollback', async()=>{
