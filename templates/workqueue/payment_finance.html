@@ -1,4 +1,4 @@
-{% extends 'workqueue/native_billing_base.html' %}{% block title %}Payments, fees and net{% endblock %}{% block pm_content %}
+{% extends 'workqueue/native_billing_base.html' %}{% block title %}Payments, fees and net{% endblock %}{% block pm_content %}<p><a href="{% url 'workqueue:monthly_finance' %}">Monthly financial review</a></p>
 <header class="pm-heading"><div><span class="brand">Billing test area · USD</span><h1>Payments, fees &amp; net</h1><p>Actual Stripe transactions, with fees kept separate from the invoice amount paid.</p></div><a href="{% url 'workqueue:test_payments' %}">Test online payments</a></header>
 {% include 'workqueue/test_payment_notice.html' %}<p><a href="{% url 'workqueue:payouts' %}">Payouts &amp; bank reconciliation</a> includes separate Stripe account service charges and their fees or tax. The totals here cover fees on app invoice payments only.</p>
 {% if error %}<p class="notice error" role="alert">{{ error }}</p>{% endif %}

@@ -1,3 +1,4 @@
+from . import monthly_finance_views
 from . import payout_views
 from . import payment_finance_views
 from . import billing_reminder_views
@@ -45,6 +46,8 @@ from . import client_payment_views
 from . import billing_mail_views
 
 urlpatterns = [
+    path('work-projects/billing-test/monthly-review/', monthly_finance_views.center, name='monthly_finance'),
+    path('work-projects/billing-test/monthly-review/<uuid:review_id>/', monthly_finance_views.detail, name='monthly_finance_detail'),
     path('work-projects/billing-test/payouts/', payout_views.center, name='payouts'),
     path('work-projects/billing-test/payouts/<uuid:payout_id>/', payout_views.detail, name='payout_detail'),
     path('work-projects/billing-test/finance/', payment_finance_views.center, name='payment_finance'),

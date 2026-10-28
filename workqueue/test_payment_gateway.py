@@ -151,3 +151,18 @@ class TestStripeGateway:
             return rows
         except self.stripe.StripeError:
             raise GatewayUnavailable('Stripe could not read the full payout transaction history.') from None
+
+    def month_activity(self, first, last):
+        """Complete monthly test balance history; never return truncated totals."""
+        if not 0 < (last-first).total_seconds() <= 32*86400:
+            raise ValidationError('Choose one calendar month for Stripe activity.')
+        try:
+            rows=[]
+            for obj in self.client.v1.balance_transactions.list({'created':{
+                    'gte':int(first.timestamp()),'lt':int(last.timestamp())},'limit':100}).auto_paging_iter():
+                rows.append(obj)
+                if len(rows)>2000:
+                    raise GatewayUnavailable('The monthly activity exceeds the safe limit. No partial totals were accepted.')
+            return rows
+        except self.stripe.StripeError:
+            raise GatewayUnavailable('Stripe could not read the complete monthly balance history.') from None
