@@ -2,7 +2,7 @@
 {% block title %}Clients{% endblock %}
 {% block tool_styles %}<link rel="stylesheet" href="{% static 'css/work-queue.css' %}"><link rel="stylesheet" href="{% static 'css/crm.css' %}"><link rel="stylesheet" href="{% static 'css/crm-communication.css' %}">{% endblock %}
 {% block staff_navigation %}{% include 'workqueue/staff_navigation.html' %}{% endblock %}
-{% block workspace %}<div class="queue-work crm-work" id="content" tabindex="-1">
+{% block workspace %}<p><a href="{% url 'workqueue:freshbooks_mirror' %}?kind=clients">FreshBooks client mirror and sync status</a></p><div class="queue-work crm-work" id="content" tabindex="-1">
 <header class="site-header"><div><span class="brand">Provost Home Design</span><h1>Clients</h1><p>{{ client_count }} client record{{ client_count|pluralize }} · built from your work intake</p></div><nav aria-label="Page actions">{% if can_add_client %}<a href="{% url 'workqueue:import_clients' %}">Import</a> · <a href="{% url 'workqueue:export_clients' %}">Export</a> · <a href="{% url 'workqueue:communication_settings' %}">Email settings</a> · <a href="{% url 'workqueue:add_client' %}">Add client</a> · {% endif %}<a href="{% url 'admin:index' %}">Administration</a></nav></header>
 <main>
 {% for message in messages %}<p class="notice {% if message.tags == 'error' %}error{% endif %}" role="status">{{ message }}</p>{% endfor %}

@@ -54,11 +54,11 @@ def redirect_uri():
     return uri
 
 
-def authorization_url(state, with_payments=False):
+def authorization_url(state, with_payments=False, with_estimates=False):
     cipher()
     return 'https://auth.freshbooks.com/oauth/authorize/?' + urlencode(dict(
         response_type='code', client_id=settings.FRESHBOOKS_CLIENT_ID, redirect_uri=redirect_uri(),
-        state=state, scope=SCOPES + (' user:payments:read' if with_payments else '')))
+        state=state, scope=SCOPES + (' user:payments:read' if with_payments else '') + (' user:estimates:read' if with_estimates else '')))
 
 
 def wire(method, path, *, token=None, data=None, params=None):
@@ -140,7 +140,7 @@ def api(method, path, **kwargs):
         raise
 
 
-def connect(code, actor, with_payments=False):
+def connect(code, actor, with_payments=False, with_estimates=False):
     require_staff(actor, 'workqueue.change_workitem')
     cipher()
     # Persist the new token pair before fetching profile; a later error must not lose it.
@@ -153,7 +153,7 @@ def connect(code, actor, with_payments=False):
         try:
             result = token_exchange(grant_type='authorization_code', code=code)
             # OAuth may omit scope when it is identical to the requested scope (RFC 6749).
-            result.setdefault('scope', SCOPES + (' user:payments:read' if with_payments else ''))
+            result.setdefault('scope', SCOPES + (' user:payments:read' if with_payments else '') + (' user:estimates:read' if with_estimates else ''))
             store_tokens(connection, result)
         except BillingError as exc:
             connection.needs_reconnect = True

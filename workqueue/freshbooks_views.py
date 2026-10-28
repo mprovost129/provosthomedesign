@@ -29,12 +29,14 @@ def connection(request):
     if request.method == 'POST':
         try:
             action = request.POST.get('action')
-            if action in ('connect', 'connect_payments'):
+            if action in ('connect', 'connect_payments', 'connect_estimates'):
                 state = secrets.token_urlsafe(32)
                 with_payments = action == 'connect_payments' or bool(record and 'user:payments:read' in record.granted_scopes)
-                url = billing.authorization_url(state, with_payments=True) if with_payments else billing.authorization_url(state)
+                with_estimates = action == 'connect_estimates' or bool(record and 'user:estimates:read' in record.granted_scopes)
+                url = billing.authorization_url(state, with_payments=with_payments, with_estimates=True) if with_estimates else (
+                    billing.authorization_url(state, with_payments=True) if with_payments else billing.authorization_url(state))
                 request.session['freshbooks_oauth'] = {'state':state, 'time':time.time(), 'actor':request.user.pk,
-                                                     'payments':with_payments}
+                                                     'payments':with_payments,'estimates':with_estimates}
                 # Keep form submissions on this site. A normal link starts OAuth without
                 # weakening the site's form-action CSP for cross-origin POST redirects.
                 return private_response(render(request, 'workqueue/freshbooks_connection.html',
@@ -72,7 +74,9 @@ def callback(request):
         messages.error(request, 'FreshBooks authorization was not completed.')
     else:
         try:
-            if stored.get('payments'):
+            if stored.get('estimates'):
+                billing.connect(request.GET['code'],request.user,with_payments=bool(stored.get('payments')),with_estimates=True)
+            elif stored.get('payments'):
                 billing.connect(request.GET['code'], request.user, with_payments=True)
             else:
                 billing.connect(request.GET['code'], request.user)

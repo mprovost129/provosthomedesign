@@ -739,3 +739,4 @@ from .payment_finance_models import NativeFinanceSettings, NativePaymentFinance,
 
 from .payout_models import NativePayoutSettings, NativePayout, NativePayoutTransaction, NativeBankConfirmation, NativePayoutEvent
 from .monthly_finance_models import NativeMonthState, NativeMonthSnapshot, NativeFinancialReview
+from .freshbooks_mirror_models import FreshBooksMirrorSettings,FreshBooksMirrorJob,FreshBooksMirrorRecord,FreshBooksMirrorRevision,FreshBooksMirrorEvent

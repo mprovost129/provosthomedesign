@@ -26,6 +26,7 @@ from .services import EditConflict, lock_queue
 from .views import queue_enabled, staff_preview
 from .crm import require_staff
 from .pm_pdf import proposal_pdf
+from .freshbooks_mirror import context_records as mirror_context_records
 
 
 def staff_view(view):
@@ -120,6 +121,7 @@ def project_detail(request, project_id):
     from .time_views import timer_context
     from .time_services import time_summary
     return render(request, 'workqueue/project_detail.html', {**timer_context(request.user, project), 'time_totals':time_summary(project), 'project':project, 'plan':plan, 'plan_form':plan_form,
+        'mirror_records':mirror_context_records(project=project).only('id','title','kind','verified_at','missing','issues')[:12],
         'task_form':task_form, 'tasks':project.tasks.filter(canceled_at__isnull=True), 'items':items, 'files':files,
         'pricing_calculations':project.pricing_estimates.select_related('current_revision')[:6], 'clients':clients, 'proposals':proposals, 'accepted':accepted, 'correspondence':correspondence,
         'events':project.planning_events.all()[:30], 'can_change':not staff_preview(request) and request.user.has_perm('workqueue.change_workitem')}, status=status)

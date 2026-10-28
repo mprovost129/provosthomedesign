@@ -25,6 +25,7 @@ from .models import Client, ClientContact, ClientEvent, CLOSED_STATUSES, Pending
 from .access import new_intake_token, read_intake_token, session_digest
 from .services import EditConflict
 from .views import queue_enabled, staff_preview
+from .freshbooks_mirror import context_records as mirror_context_records
 
 
 def client_counts(queryset):
@@ -373,6 +374,7 @@ def client_detail(request, client_id):
     reversible = next((event for event in events if event.action == "Client records merged"
                       and event.changes.get("target_version") == client.version), None)
     return render(request, "workqueue/client_detail.html", {"crm_client": client, "contacts": contacts,
+        "mirror_records":mirror_context_records(client=client).only('id','title','kind','verified_at','missing','issues')[:12],
         "page": page, "request_count": request_count, "active_count": active_count,
         "projects": projects, "project_filter": project_filter, "page_query": urlencode({"project": project_filter}),
         "unlinked_count": unlinked_count, "pricing_calculations":client.pricing_estimates.select_related("current_revision")[:6],

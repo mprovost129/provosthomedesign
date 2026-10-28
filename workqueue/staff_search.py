@@ -13,6 +13,7 @@ from .pm_models import Proposal
 from .freshbooks_models import FreshBooksInvoice
 from .invoice_history_models import HistoricalInvoice
 from .pm_views import staff_view
+from .freshbooks_mirror import context_records as mirror_context_records
 
 
 def matching(queryset, tokens, fields):
@@ -41,15 +42,26 @@ def saved_records(tokens):
     history = HistoricalInvoice.objects.filter(removed_at__isnull=True).annotate(number_key=Lower(Trim('number'))).alias(
         connected=Exists(linked)).filter(connected=False).select_related('client','project').defer('lines')
     history = matching(history, tokens, ['number','exported_client','client__name','project__name','project__street'])
-    return [('clients','Clients',clients.order_by('name','pk')),
+    groups=[('clients','Clients',clients.order_by('name','pk')),
         ('projects','Projects',projects.order_by('name','pk')),
         ('requests','Work requests',requests.order_by('-received_at','pk')),
         ('proposals','Proposals',proposals.order_by('-updated_at','pk')),
         ('invoices','Connected invoices',invoices.order_by('-created_at','pk')),
         ('history','Imported invoices',history.order_by('-issued','pk'))]
+    mirror=mirror_context_records().exclude(kind='clients',client__isnull=False).exclude(kind='projects',project__isnull=False)
+    if mirror.exists():
+        source_link=FreshBooksInvoice.objects.filter(account_id=OuterRef('account_id'),invoice_id=OuterRef('provider_id'))
+        source_history=HistoricalInvoice.objects.filter(account_id=OuterRef('account_id'),live_balance__provider_invoice_id=OuterRef('provider_id'),removed_at__isnull=True)
+        mirror=mirror.alias(connected=Exists(source_link),imported=Exists(source_history)).exclude(kind='invoices',connected=True).exclude(kind='invoices',imported=True)
+        mirror=matching(mirror.select_related('client').defer('source','applied_fields'),tokens,['title','client__name'])
+        groups.append(('mirror','FreshBooks source records',mirror.order_by('title','pk')))
+    return groups
 
 
 def result_row(kind, record):
+    if kind=='mirror':
+        return {'title':record.title,'detail':record.get_kind_display()+' · FreshBooks managed',
+            'url':reverse('workqueue:freshbooks_mirror_detail',args=[record.pk])}
     if kind == 'clients':
         return {'title':record.name,'detail':record.get_kind_display(),'url':reverse('workqueue:client_detail',args=[record.pk])}
     if kind == 'projects':
@@ -78,7 +90,7 @@ def result_row(kind, record):
 def search(request):
     query = ' '.join(request.GET.get('q','').split())[:120]
     kind = request.GET.get('type','all')
-    allowed = {'all','clients','projects','requests','proposals','invoices','history'}
+    allowed = {'all','clients','projects','requests','proposals','invoices','history','mirror'}
     if kind not in allowed:kind='all'
     groups=[]
     if len(query)>=2:
