@@ -43,6 +43,7 @@
 <p class="muted">Uploads finish before your request is submitted. For another format, use a secure file or folder link.</p>
 </section>
 <section class="card"><h2>Anything else?</h2><div class="fields">{% for field in groups.shared %}{% include 'workqueue/client_field.html' %}{% endfor %}</div></section>
+{% if booking_enabled %}<section class="card" aria-labelledby="intake-appointment-title"><h2 id="intake-appointment-title">Would you like to meet?</h2><label class="checkline">{{ form.request_appointment }} {{ form.request_appointment.label }} <span class="muted">(optional)</span></label>{{ form.request_appointment.errors }}<p>{{ form.request_appointment.help_text }}</p><p class="muted">New and existing clients are welcome. Booking requires email verification. An appointment is reserved only after you choose an available time and request it.</p></section>{% endif %}
 <p class="muted">Submitting adds your work to our queue. It does not confirm a price or start date. We’ll contact you if more information is needed.</p>
 {% include 'workqueue/terms_consent.html' %}
 {% include 'workqueue/recaptcha_fields.html' %}

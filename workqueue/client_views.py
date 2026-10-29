@@ -89,6 +89,9 @@ def submit_work(request):
         else:
             allowed = request.session.get("queue_recent_requests", [])
             request.session["queue_recent_requests"] = (allowed + [str(item.pk)])[-20:]
+            from .intake_booking import begin_booking
+            if getattr(settings, 'BOOKING_ENABLED', False) and begin_booking(request, item, nonce):
+                return redirect('workqueue:book')
             return redirect("workqueue:submitted", item_id=item.pk)
     elif request.method == "POST":
         status = 400

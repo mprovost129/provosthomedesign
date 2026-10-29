@@ -47,6 +47,9 @@ def queue_receipts(submission):
             "We will contact you if more information is needed.\n")
     if item.project_id:
         body += f"Connected project: {item.project.name} ({item.project.canonical_reference or item.reference})\n"
+    if getattr(settings, 'BOOKING_ENABLED', False) and submission.answers.get('Request an appointment') == 'Yes':
+        body += ("\nYou chose Request an appointment. Your work is saved; no meeting is reserved yet.\n"
+                 "Choose a time after verifying your email:\n" + site_url(reverse('workqueue:book')) + "\n")
     body += "\n" + submission_record(submission, site_url) + "\n\nProvost Home Design\n"
     NotificationDelivery.objects.get_or_create(submission=submission, recipient_kind="client", defaults={
         "recipient": item.contact_email, "subject": f"We received request {item.reference}", "body": body,

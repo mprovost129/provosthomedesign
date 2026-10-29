@@ -58,8 +58,17 @@ class AppointmentForm(forms.Form):
 @never_cache
 @require_http_methods(["GET", "POST"])
 def book(request):
+    from .intake_booking import SESSION_KEY, booking_submission
+    if request.method == 'POST' and request.POST.get('action') == 'clear_submission':
+        request.session.pop(SESSION_KEY, None)
+        return redirect('workqueue:book')
+    upload = booking_submission(request)
     email = verified_email(request)
-    access_form = forms.Form()
+    identity_mismatch = bool(upload and email and upload.contact_email != email)
+    if identity_mismatch:
+        # Submission possession does not verify its email or switch identities.
+        email = ''
+    access_form = forms.Form(initial={'email': upload.contact_email} if upload else None)
     access_form.fields["email"] = forms.EmailField(label="Email address", widget=forms.EmailInput(attrs={"autocomplete": "email"}))
     sent = False
     if not email and request.method == "POST":
@@ -102,6 +111,11 @@ def book(request):
     recent = authorized_work(email).filter(submissions__owner_email=email).order_by("-received_at").first() if email else None
     if recent:
         initial.update(full_name=recent.contact_full_name, phone=recent.contact_phone)
+    if upload and upload.contact_email == email:
+        initial.update(full_name=upload.contact_full_name, phone=upload.contact_phone,
+            purpose=f'Discuss request {upload.reference}: {upload.project_name or upload.project_context or "submitted project"}')
+        if upload.project_id and authorized_projects(email).filter(pk=upload.project_id).exists():
+            initial['project'] = upload.project_id
     if previous:
         initial.update(full_name=previous.full_name, phone=previous.phone, purpose=previous.purpose, project=previous.project_id, meeting_method=previous.meeting_method)
     slots, unavailable, availability = [], "", {}
@@ -130,7 +144,8 @@ def book(request):
     if request.method == "POST":
         if not email:
             return render(request, "workqueue/booking.html", {"access_form": access_form, "sent": sent,
-                "preview": settings.BOOKING_CALENDAR_BACKEND == "preview"}, status=200 if sent else 400)
+                "preview": settings.BOOKING_CALENDAR_BACKEND == "preview", "booking_upload": upload,
+                "booking_identity_mismatch": identity_mismatch}, status=200 if sent else 400)
         if not permitted:
             raise PermissionDenied
         if day_error or unavailable:
@@ -148,6 +163,7 @@ def book(request):
             except (ValidationError, CalendarUnavailable) as exc:
                 form.add_error(None, " ".join(exc.messages) if isinstance(exc, ValidationError) else "Calendar unavailable. Please try again later.")
             else:
+                request.session.pop(SESSION_KEY, None)
                 # Fictitious local preview is immediate. Production is a durable worker job.
                 if settings.BOOKING_CALENDAR_BACKEND == "preview" and settings.INTAKE_LOCAL_DEVELOPMENT:
                     sync_appointment(item.pk)
@@ -166,7 +182,8 @@ def book(request):
         "access_form": access_form, "sent": sent, "has_upcoming": has_upcoming,
         "appointments": [item for item in records if item.state in HOLD_STATES],
         "closed_appointments": [item for item in records if item.state not in HOLD_STATES],
-        "preview": settings.BOOKING_CALENDAR_BACKEND == "preview"}, status=429 if availability_limited else status)
+        "preview": settings.BOOKING_CALENDAR_BACKEND == "preview", "booking_upload": upload,
+        "booking_identity_mismatch": identity_mismatch}, status=429 if availability_limited else status)
     if availability_limited:
         response['Retry-After'] = '60'
     return response

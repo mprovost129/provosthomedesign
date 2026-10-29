@@ -55,7 +55,8 @@ def submit_intake(*, data, nonce, binding, verified_email="", labels=None):
         if name not in excluded and value not in (None, "", [], False):
             # Store the selected project's readable label as it was submitted;
             # receipts must not change when staff later rename or relink it.
-            answers[(labels or {}).get(name, name)] = value if isinstance(value, list) else str(value)
+            answers[(labels or {}).get(name, name)] = "Yes" if name == "request_appointment" else (
+                value if isinstance(value, list) else str(value))
     submission.answers = answers
     if data.get("terms_accepted"):
         submission.answers.update({"Terms URL": reverse("pages:terms"), "Terms accepted at": timezone.now().isoformat()})

@@ -61,6 +61,8 @@ class ClientIntakeForm(forms.Form):
     plan_number = forms.CharField(label="Plan number, if you are asking about a particular plan", max_length=100, required=False)
     preferred_contact = forms.ChoiceField(label="How would you prefer us to contact you?", required=False,
         choices=[("", "No preference"), ("Email", "Email"), ("Phone", "Phone")])
+    request_appointment = forms.BooleanField(label="Request an appointment", required=False,
+        help_text="After your work is submitted, continue to booking to choose a time. Your upload is saved even if you book later.")
     referral_detail = forms.CharField(label="How did you hear about us?", max_length=300, required=False)
     notes = forms.CharField(label="Anything else we should know?", max_length=10000, required=False,
                             widget=forms.Textarea(attrs={"rows": 3}))
