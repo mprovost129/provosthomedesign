@@ -8,5 +8,5 @@
   </div>
   <div class="dash-billing-checks">{% for part in billing_parts %}<p><strong>{{ part.label }}:</strong> {% if part.data.snapshot.checked_at %}Checked {{ part.data.snapshot.checked_at|date:'M j, Y, g:i A' }}{% if part.data.stale %} · Previous totals need a fresh check{% endif %}{% else %}No completed check{% endif %}{% if part.data.pending %} · Check in progress{% endif %}{% if part.data.snapshot.error %}<br>{{ part.data.snapshot.error }}{% endif %}</p>{% endfor %}</div>
   <p class="dash-footnote">Each currency is shown separately. These totals come from complete FreshBooks checks, so imported invoice history and connected records are never counted twice. Your last completed totals remain visible while a new check runs. Checks run automatically each day; opening this page does not contact FreshBooks.</p>
-{% if user.is_superuser %}<p><a href="{% url 'workqueue:live_reconciliation' %}">Reconcile payment fees and net collections</a></p>{% endif %}
+{% if user.is_superuser %}<p><a href="{% url 'workqueue:live_reconciliation' %}">Reconcile payment fees and net collections</a> · <a href="{% url 'workqueue:bank_reconciliation' %}">Review bank deposits</a></p>{% endif %}
 </section>

@@ -1,3 +1,4 @@
+from . import bank_evidence_views
 from . import freshbooks_mirror_views, live_reconciliation_views
 from . import monthly_finance_views
 from . import payout_views
@@ -47,6 +48,10 @@ from . import client_payment_views
 from . import billing_mail_views
 
 urlpatterns = [
+    path('work-projects/billing/reconciliation/bank/', bank_evidence_views.center, name='bank_reconciliation'),
+    path('work-projects/billing/reconciliation/bank/mapping/', bank_evidence_views.mapping, name='bank_statement_mapping'),
+    path('work-projects/billing/reconciliation/bank/save/', bank_evidence_views.save, name='bank_statement_save'),
+    path('work-projects/billing/reconciliation/bank/payouts/<uuid:payout_id>/', bank_evidence_views.detail, name='bank_payout_detail'),
     path('work-projects/billing/reconciliation/', live_reconciliation_views.center, name='live_reconciliation'),
     path('work-projects/billing/reconciliation/<uuid:evidence_id>/', live_reconciliation_views.detail, name='live_reconciliation_detail'),
     path('work-projects/billing/mirror/', freshbooks_mirror_views.center, name='freshbooks_mirror'),

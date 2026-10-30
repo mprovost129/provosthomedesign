@@ -1,0 +1,1 @@
+{% extends 'workqueue/pm_base.html' %}{% block title %}Review statement preview{% endblock %}{% block pm_content %}<section class="pm-card"><h1>Review the statement preview</h1><p class="notice error" role="alert">{{ error }}</p><p>No bank match was recorded.</p><a href="{% url 'workqueue:bank_reconciliation' %}">Start the CSV preview again</a></section>{% endblock %}
