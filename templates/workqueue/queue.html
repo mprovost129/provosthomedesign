@@ -43,15 +43,19 @@
   {% if can_add %}<details class="manual" id="add-work" {% if create_open or request.GET.add %}open{% endif %}>
     <summary>{% if copy_source %}Copy {{ copy_source.reference }} into a new request{% else %}Add work from a phone call or email{% endif %}</summary>
     {% if copy_source %}<p>Client: {{ copy_source.contact_full_name }} · {{ copy_source.company }} · {{ copy_source.contact_email }}</p><p class="muted">Review the name, address and requested work before saving. This creates a new request ID at the end of the queue. Files, emails, notes and scheduling are not copied.</p><a href="{% url 'workqueue:queue' %}">Cancel copy</a>{% endif %}
-    <form method="post" class="edit-form">
+    <form method="post" class="edit-form" {% if not copy_source %}data-project-update data-defaults-url="{% url 'workqueue:queue_project_defaults' '00000000-0000-0000-0000-000000000000' %}" data-bound="{{ create_form.is_bound|yesno:'1,0' }}"{% endif %}>
       {% csrf_token %}<input type="hidden" name="action" value="{% if copy_source %}copy{% else %}create{% endif %}">
       {% include 'workqueue/filter_context.html' %}
       {% for hidden in create_form.hidden_fields %}{{ hidden }}{{ hidden.errors }}{% endfor %}{{ create_form.non_field_errors }}
-      <div class="fields">{% for field in create_form.visible_fields %}<div class="field">
+      {% if not copy_source %}<div class="field"><label for="project-update-search">Find an existing project</label><input type="search" id="project-update-search" class="form-control" data-project-search placeholder="Project number, name or address" autocomplete="off"></div>
+      <p data-project-status role="status" aria-live="polite"></p>
+      <div class="notice" data-project-replace hidden><p>Loading another project replaces the details in this draft.</p><button type="button" data-project-accept>Load selected details</button> <button type="button" class="secondary" data-project-keep>Keep current draft</button></div>{% endif %}
+      <div class="fields">{% for field in create_form.visible_fields %}<div class="field{% if field.name == 'project' or field.name == 'description' %} project-update-wide{% endif %}">
         {{ field.label_tag }}{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{{ field.errors }}
       </div>{% endfor %}</div>
-      <button type="submit">Add to queue</button>
-      <p class="muted">Internal capture only. Client receipt delivery will be connected with the public intake form.</p>
+      {% if not copy_source %}<button type="submit" name="load_project" value="1" formnovalidate class="secondary" data-project-load>Load project details</button>{% endif %}
+      <button type="submit" data-project-save>Add to queue</button>
+      <p class="muted">Internal entry does not send a client email. An update gets its own request ID and place in line; the original job and its files stay unchanged.</p>
     </form>
   </details>{% endif %}
   {% if booking_enabled %}<p><a href="#appointments">Client appointments and booking access</a></p>{% endif %}
@@ -69,7 +73,7 @@
           {% if not item.deleted_at %}<details class="queue-row-actions" open><summary>Actions</summary><div class="request-actions">{% if item.project_id %}<a href="{% url 'workqueue:project_detail' item.project_id %}" target="_blank" rel="noopener">Workspace</a>{% endif %}{% if can_change and item.client_contact_id %}<button type="button" class="email-trigger" data-email-url="{% url 'workqueue:compose_email' item.client_contact.client_id %}?item={{ item.pk }}">Email</button>{% endif %}
             {% if can_change and item.project_id %}<button type="button" class="secondary" data-track-project="{{ item.project_id }}" data-track-item="{{ item.pk }}">Track time</button><a href="{% url 'workqueue:project_time' item.project_id %}" target="_blank" rel="noopener">Time entries</a>{% endif %}
             {% if can_change %}<a href="{% url 'workqueue:dropbox_review' item.pk %}" target="_blank" rel="noopener">File project documents · {{ row.filing_label }}{% if row.freshbooks_project %} · {{ row.freshbooks_project.get_state_display }}{% endif %}{% if row.project_number %} · {{ row.project_number }}{% endif %}</a><a href="#edit-{{ item.pk }}" data-edit-target="manage-{{ item.pk }}">Edit details</a>{% endif %}
-            {% if can_add %}<a href="?{{ page_query }}&amp;copy={{ item.pk }}">Copy</a>{% endif %}
+            {% if can_add %}{% if item.project_id %}<a href="?add=1&amp;update_project={{ item.project_id }}&amp;source_request={{ item.pk }}#add-work">Add update</a>{% endif %}<a href="?{{ page_query }}&amp;copy={{ item.pk }}">Copy</a>{% endif %}
             {% if can_delete %}<details class="delete-request"><summary>Delete</summary><form method="post">{% csrf_token %}{% include 'workqueue/filter_context.html' %}
               <input type="hidden" name="action" value="delete"><input type="hidden" name="item_id" value="{{ item.pk }}"><input type="hidden" name="version" value="{{ item.version }}">
               <p>Remove only {{ item.reference }} from the queue and client tracking? Other requests on this project stay unchanged. Recover mistakes under Show → Deleted work.</p>
@@ -187,4 +191,5 @@
 {{ information_templates|json_script:'information-templates' }}
 <script src="{% static 'js/work-queue.js' %}" defer></script>
 <script src="{% static 'js/queue-ordering.js' %}" defer></script>
+<script src="{% static 'js/queue-project-updates.js' %}" defer></script>
 {% endblock %}

@@ -1,4 +1,5 @@
 from django import forms
+from django.core.exceptions import ValidationError
 
 from .models import Priority, Status, WorkItem, WorkProject
 
@@ -104,8 +105,21 @@ class InformationRequestForm(StyledForm, forms.Form):
         self.style_fields()
 
 
+class UpdateProjectChoice(forms.ModelChoiceField):
+    def label_from_instance(self, project):
+        from .queue_project_updates import project_label
+        return project_label(project)
+
+
 class ManualWorkForm(StyledForm, forms.ModelForm):
     submission_token = forms.UUIDField(widget=forms.HiddenInput)
+    update_source = forms.UUIDField(required=False,widget=forms.HiddenInput)
+    project = UpdateProjectChoice(queryset=WorkProject.objects.none(),required=False,
+        empty_label='New project / enter manually',label='Update an existing project',
+        help_text='Includes completed projects. Choosing one loads its details and marks this request as an update.')
+    field_order = ['project','kind','project_context','contact_full_name','company','contact_email','contact_phone',
+        'project_name','service_needed','description','billing_street','billing_city','billing_state','billing_zip',
+        'project_street','project_city','project_state','project_zip','requested_deadline','submission_token','update_source']
 
     class Meta:
         model = WorkItem
@@ -115,17 +129,53 @@ class ManualWorkForm(StyledForm, forms.ModelForm):
                   "project_street", "project_city", "project_state", "project_zip", "requested_deadline"]
         widgets = {"description": forms.Textarea(attrs={"rows": 3}),
                    "requested_deadline": forms.DateInput(attrs={"type": "date"})}
-        labels = {"contact_full_name": "Full name", "contact_email": "Email address",
+        labels = {"kind": "Request type", "contact_full_name": "Full name", "contact_email": "Email address",
                   "contact_phone": "Phone number", "project": "Connected project"}
         help_texts = {"company": "Enter Homeowner if there is no company.",
                       "project_context": "Project ID, name or address, if an update is not connected yet."}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['project'].queryset=WorkProject.objects.select_related('filing_folder').all()
+        if self.is_bound and self.data.get(self.add_prefix('project')):
+            from .queue_project_updates import project_defaults
+            try:
+                project_id=forms.UUIDField().clean(self.data[self.add_prefix('project')])
+                source_id=forms.UUIDField(required=False).clean(self.data.get(self.add_prefix('update_source')))
+                project=self.fields['project'].queryset.filter(pk=project_id).first()
+                defaults=project_defaults(project,source_id) if project else None
+            except ValidationError:defaults=None
+            if defaults:
+                self.data=self.data.copy()
+                for name,value in defaults['fields'].items():
+                    if self.add_prefix(name) not in self.data:self.data[self.add_prefix(name)]=value
+                self.data[self.add_prefix('kind')]=WorkItem.Kind.UPDATE
+                if defaults['contact']:
+                    self.fields['contact_email'].required=False
+                    self.fields['contact_phone'].required=False
+        else:
+            # Existing project defaults may intentionally have unknown contact
+            # email/phone. Keep staff-only entry usable, as in the CRM form.
+            if self.initial.get('project'):
+                from .queue_project_updates import project_defaults
+                try:
+                    project=self.fields['project'].queryset.get(pk=self.initial['project'])
+                    defaults=project_defaults(project,self.initial.get('update_source'))
+                    if defaults['contact']:
+                        self.fields['contact_email'].required=False;self.fields['contact_phone'].required=False
+                except (WorkProject.DoesNotExist,ValidationError):pass
         self.style_fields()
 
     def clean(self):
         data = super().clean()
+        if data.get('project'):
+            data['kind']=WorkItem.Kind.UPDATE
+            if data.get('update_source'):
+                from .queue_project_updates import project_defaults
+                try:project_defaults(data['project'],data['update_source'])
+                except ValidationError as exc:self.add_error('project',exc)
+        elif data.get('update_source'):
+            self.add_error('project','Select the loaded project or start a new manual entry.')
         if data.get("kind") == WorkItem.Kind.UPDATE and not (data.get("project") or data.get("project_context")):
             self.add_error("project_context", "Select a project or enter its ID, name or address.")
         return data

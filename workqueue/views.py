@@ -23,6 +23,8 @@ from .attention import attention_conditions, attention_summary, row_attention, w
 from .information_requests import INFORMATION_TEMPLATES, TEMPLATE_CHOICES, information_email, request_information
 from .information_responses import review_information_response
 from .models import AuditEvent, CLOSED_STATUSES, InformationResponse, NotificationDelivery, Priority, QueueState, Status, WorkItem
+from .queue_project_updates import create_manual_work, initial_for_update
+from .models import WorkProject
 from .services import EDIT_FIELDS, EditConflict, change_project_access, copy_work, delete_work, restore_work, create_work, edit_work
 
 
@@ -140,6 +142,17 @@ def queue(request):
                        kind=WorkItem.Kind.NEW, project=None, requested_deadline=None,
                        project_name=(copy_source.project.name if copy_source.project else copy_source.project_name) + ' (copy)')
         create_form = CopyWorkForm(initial=initial, prefix='new')
+    if request.method == 'GET' and request.GET.get('update_project') and not copy_source:
+        if preview or not request.user.has_perm('workqueue.add_workitem'):
+            raise PermissionDenied
+        try:
+            project_id = uuid.UUID(request.GET['update_project'])
+            source_id = uuid.UUID(request.GET['source_request']) if request.GET.get('source_request') else None
+            project = get_object_or_404(WorkProject.objects.select_related('filing_folder'), pk=project_id)
+            initial = initial_for_update(project, source_id)
+        except (ValueError, TypeError, ValidationError):
+            raise Http404
+        create_form = ManualWorkForm(initial={**initial, 'submission_token': uuid.uuid4()}, prefix='new')
     response_status = 200
     if request.method == "POST":
         action = request.POST.get("action")
@@ -159,14 +172,26 @@ def queue(request):
                 copy_source = get_object_or_404(WorkItem, pk=source_id)
             form_class = CopyWorkForm if copy_source else ManualWorkForm
             create_form = form_class(request.POST, prefix="new")
-            if create_form.is_valid():
+            loading = action == 'create' and request.POST.get('load_project') == '1'
+            if loading:
+                try:
+                    project_id = uuid.UUID(request.POST.get('new-project', ''))
+                    project = WorkProject.objects.select_related('filing_folder').get(pk=project_id)
+                    token = forms.UUIDField().clean(request.POST.get('new-submission_token'))
+                    create_form = ManualWorkForm(initial={**initial_for_update(project), 'submission_token': token}, prefix='new')
+                except (ValueError, TypeError, WorkProject.DoesNotExist, ValidationError):
+                    create_form.is_valid()
+                    create_form.add_error('project', 'Choose an existing project to load its details.')
+                    response_status = 400
+            if not loading and create_form.is_valid():
                 data = {name: create_form.cleaned_data[name] for name in form_class.Meta.fields}
                 try:
                     if copy_source:
                         item, created = copy_work(item_id=copy_source.pk, version=create_form.cleaned_data['source_version'],
                             data=data, token=create_form.cleaned_data['submission_token'], actor=request.user)
                     else:
-                        item, created = create_work(data=data, actor=request.user,
+                        item, created = create_manual_work(data=data, actor=request.user,
+                            source_id=create_form.cleaned_data.get("update_source"),
                             idempotency_key=f"staff:{request.user.pk}:{create_form.cleaned_data['submission_token']}")
                 except (ValidationError, EditConflict) as exc:
                     create_form.add_error(None, ValidationError(exc.messages) if isinstance(exc, ValidationError) else str(exc))
@@ -174,7 +199,7 @@ def queue(request):
                 else:
                     messages.success(request, f"{item.reference} {'added to the queue' if created else 'was already saved'}.")
                     return queue_redirect(filters, item)
-            if response_status == 200:
+            if not loading and response_status == 200:
                 response_status = 400
         elif action in ('delete', 'restore'):
             if not request.user.has_perm('workqueue.delete_workitem'):
@@ -349,7 +374,7 @@ def queue(request):
         else:
             raise Http404
 
-    if not copy_source and (request.method == "GET" or request.POST.get("action") not in ("create", "copy")):
+    if not copy_source and not request.GET.get("update_project") and (request.method == "GET" or request.POST.get("action") not in ("create", "copy")):
         create_form = ManualWorkForm(initial={"submission_token": uuid.uuid4()}, prefix="new")
     deleted_scope = filters['scope'] == 'deleted' and not preview and request.user.has_perm('workqueue.delete_workitem')
     queryset = WorkItem.all_objects.filter(deleted_at__isnull=False) if deleted_scope else WorkItem.objects.all()
@@ -441,7 +466,7 @@ def queue(request):
         "can_manage_bookings": not preview and request.user.has_perm("workqueue.change_appointment"),
         "page_query": params, "statuses": Status.choices, "priorities": Priority.choices,
         "create_form": create_form, "copy_source": copy_source,
-        "create_open": bool(copy_source) or request.method == "POST" and request.POST.get("action") in ("create", "copy"),
+        "create_open": bool(copy_source) or bool(request.GET.get("update_project")) or request.method == "POST" and request.POST.get("action") in ("create", "copy"),
         "can_delete": not preview and request.user.has_perm('workqueue.delete_workitem'),
         "can_restore": not preview and request.user.has_perms(('workqueue.delete_workitem', 'workqueue.change_workitem')),
         "can_add": not preview and request.user.has_perm("workqueue.add_workitem"),

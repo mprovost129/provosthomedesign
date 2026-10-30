@@ -1,3 +1,4 @@
+from . import queue_project_update_views
 from . import bank_evidence_views
 from . import freshbooks_mirror_views, live_reconciliation_views
 from . import monthly_finance_views
@@ -48,6 +49,7 @@ from . import client_payment_views
 from . import billing_mail_views
 
 urlpatterns = [
+    path('work-queue/projects/<uuid:project_id>/defaults/', queue_project_update_views.defaults, name='queue_project_defaults'),
     path('work-projects/billing/reconciliation/bank/', bank_evidence_views.center, name='bank_reconciliation'),
     path('work-projects/billing/reconciliation/bank/mapping/', bank_evidence_views.mapping, name='bank_statement_mapping'),
     path('work-projects/billing/reconciliation/bank/save/', bank_evidence_views.save, name='bank_statement_save'),

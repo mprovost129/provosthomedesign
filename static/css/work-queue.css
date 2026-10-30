@@ -164,3 +164,4 @@
 }
 
 .queue-work .queue-edit-group{border:1px solid #d5e0e7;border-radius:8px;padding:16px;margin:20px 0;min-width:0}.queue-work .queue-edit-group legend{float:none;width:auto;padding:0 8px;font-weight:700;font-size:1.05rem}.queue-work [data-queue-editor]{scroll-margin-top:90px}
+.queue-work [data-project-update] .project-update-wide{grid-column:1 / -1}
