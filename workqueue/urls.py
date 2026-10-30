@@ -1,4 +1,4 @@
-from . import freshbooks_mirror_views
+from . import freshbooks_mirror_views, live_reconciliation_views
 from . import monthly_finance_views
 from . import payout_views
 from . import payment_finance_views
@@ -47,6 +47,8 @@ from . import client_payment_views
 from . import billing_mail_views
 
 urlpatterns = [
+    path('work-projects/billing/reconciliation/', live_reconciliation_views.center, name='live_reconciliation'),
+    path('work-projects/billing/reconciliation/<uuid:evidence_id>/', live_reconciliation_views.detail, name='live_reconciliation_detail'),
     path('work-projects/billing/mirror/', freshbooks_mirror_views.center, name='freshbooks_mirror'),
     path('work-projects/billing/mirror/<uuid:record_id>/', freshbooks_mirror_views.detail, name='freshbooks_mirror_detail'),
     path('work-projects/billing-test/monthly-review/', monthly_finance_views.center, name='monthly_finance'),
