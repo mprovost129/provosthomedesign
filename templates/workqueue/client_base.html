@@ -3,7 +3,7 @@
 {% block workspace %}
 <div class="client-work">
 <nav class="client-tools" aria-label="Client tools"><a href="{% url 'workqueue:portal_home' %}">My projects</a><a href="{% url 'workqueue:submit' %}">Submit work</a><a href="{% url 'workqueue:tracking' %}">Track my project</a>{% if booking_enabled %}<a href="{% url 'workqueue:book' %}">Book an appointment</a>{% endif %}</nav>
-<main id="content" tabindex="-1">{% for message in messages %}<p class="notice" role="status">{{ message }}</p>{% endfor %}{% block content %}{% endblock %}</main>
+<main id="content" tabindex="-1"><p class="notice">Need help with requests, updates, tracking, or appointments? <a href="{% static 'documents/PHD_Client_Guide_Complete.pdf' %}" target="_blank" rel="noopener">Read the client guide (PDF, opens in a new tab)</a>.</p>{% for message in messages %}<p class="notice" role="status">{{ message }}</p>{% endfor %}{% block content %}{% endblock %}</main>
 </div>
 {% endblock %}
 {% block tool_scripts %}

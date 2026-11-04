@@ -72,6 +72,7 @@
               <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item" href="{% url 'workqueue:submit' %}">Submit work or an update</a></li>
                 <li><a class="dropdown-item" href="{% url 'workqueue:tracking' %}">Track my project</a></li>
+                <li><a class="dropdown-item" href="{% static 'documents/PHD_Client_Guide_Complete.pdf' %}" target="_blank" rel="noopener">Client guide (PDF, new tab)</a></li>
                 {% if booking_enabled %}<li><a class="dropdown-item" href="{% url 'workqueue:book' %}">Book an appointment</a></li>{% endif %}
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="{% url 'pages:get_started' %}">General project inquiry</a></li>

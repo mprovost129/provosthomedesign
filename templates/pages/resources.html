@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Home Design Resources | Provost Home Design{% endblock %}
 {% block meta_description %}Practical guidance about residential plans, permit drawing sets, plan modifications, framing plans, and preparing for home design.{% endblock %}
@@ -13,6 +14,16 @@
     </div>
     <div class="col-lg-4 text-lg-end d-flex flex-wrap gap-2 justify-content-lg-end"><a class="btn btn-primary" href="{% url 'pages:get_started' %}">Discuss your project</a>{% if has_case_studies %}<a class="btn btn-outline-primary" href="{% url 'pages:case_study_list' %}">View project studies</a>{% endif %}</div>
   </header>
+
+  <section class="card border-primary mb-5" aria-labelledby="client-guide-heading">
+    <div class="card-body p-4">
+      <p class="small text-uppercase fw-semibold text-primary mb-2">Client resource</p>
+      <h2 class="h3" id="client-guide-heading">Using your client tools</h2>
+      <p>Follow the illustrated guide to submit a new request, send updates for an existing project, track progress, and book an appointment.</p>
+      <a class="btn btn-primary" href="{% static 'documents/PHD_Client_Guide_Complete.pdf' %}" target="_blank" rel="noopener">Read the client guide (PDF)</a>
+      <p class="small text-muted mt-2 mb-0">10 pages · Opens in a new tab so you can keep your place on the site.</p>
+    </div>
+  </section>
 
   <div class="row row-cols-1 row-cols-md-2 g-4">
     {% for article in articles %}
