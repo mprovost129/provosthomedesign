@@ -63,7 +63,7 @@
 .client-work .lookup {display:flex;flex-wrap:wrap;align-items:center;gap:14px}
 .client-work .lookup input {max-width:240px}
 .client-work .tracking-top {display:flex;justify-content:space-between;gap:20px}
-.client-work .badge {background:#eef4f8;border:1px solid var(--line);border-radius:30px;font-size:13px;padding:5px 14px;align-self:start}
+.client-work .badge {background:#eef4f8;color:var(--ink);border:1px solid var(--line);border-radius:30px;font-size:13px;padding:5px 14px;align-self:start}
 .client-work .selected {border:2px solid var(--blue)}
 .client-work summary {cursor:pointer;font-weight:600;color:var(--blue);margin:15px 0}
 .client-work .preserve-lines {white-space:pre-wrap;overflow-wrap:anywhere}
