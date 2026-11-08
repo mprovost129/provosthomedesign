@@ -18,6 +18,7 @@ from django.urls import reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods
 
+from .forecasting import attach_forecasts, get_schedule
 from .forms import CopyWorkForm, QueueDeleteForm, InformationRequestForm, ManualWorkForm, QueueEditForm, QuickStatusForm
 from .attention import attention_conditions, attention_summary, row_attention, with_email_attention
 from .information_requests import INFORMATION_TEMPLATES, TEMPLATE_CHOICES, information_email, request_information
@@ -342,7 +343,7 @@ def queue(request):
             edit_form = QueueEditForm(request.POST, instance=error_item, prefix=str(error_item.pk)) if action == "edit" else None
             form = edit_form if action == "edit" else QuickStatusForm(request.POST)
             if form.is_valid():
-                data = {name: form.cleaned_data[name] for name in EDIT_FIELDS if form.add_prefix(name) in request.POST} if action == "edit" else {"status": form.cleaned_data["status"]}
+                data = {name: form.cleaned_data[name] for name in EDIT_FIELDS if name in form.fields and form.add_prefix(name) in request.POST} if action == "edit" else {"status": form.cleaned_data["status"]}
                 try:
                     item = edit_work(item_id=item_id, version=form.cleaned_data["version"], data=data, actor=request.user,
                         notify_client=form.cleaned_data["client_email"] == "send")
@@ -352,7 +353,7 @@ def queue(request):
                     if edit_form:
                         conflict_values = [(edit_form.fields[name].label or name.replace('_', ' ').title(),
                                             request.POST.get(f"{error_item.pk}-{name}", ""))
-                                           for name in EDIT_FIELDS]
+                                           for name in EDIT_FIELDS if name in edit_form.fields]
                     edit_form = QueueEditForm(instance=WorkItem.objects.get(pk=item_id), prefix=str(item_id))
                 except ValidationError as exc:
                     # Model errors may refer to fields absent from the status/edit
@@ -431,6 +432,7 @@ def queue(request):
     if error_item and not any(row["item"].pk == error_item.pk for row in rows):
         error_item = WorkItem.all_objects.with_position().select_related("project").get(pk=error_item.pk)
         rows.insert(0, {"item": error_item, "form": edit_form or QueueEditForm(instance=error_item, prefix=str(error_item.pk)), "open": True, "conflict_values": conflict_values})
+    attach_forecasts([row["item"] for row in rows])
     for row in rows:
         item = row["item"]
         current = bool(error_item and item.pk == error_item.pk)
@@ -458,7 +460,7 @@ def queue(request):
     from .time_views import timer_context
     time_context = timer_context(request.user) if not preview and request.user.has_perm("workqueue.change_workitem") else {}
     return render(request, "workqueue/queue.html", {**time_context, "rows": rows, "page": page, "filters": filters,
-        "queue_health": health_snapshot(),
+        "queue_health": health_snapshot(), "design_schedule": get_schedule(),
         "arrival_snapshot": arrival_snapshot,
         "consultation_requests": ConsultationRequest.objects.filter(verified_at__isnull=False).select_related('contact__client').order_by('-verified_at')[:100],
         "appointments": appointments,

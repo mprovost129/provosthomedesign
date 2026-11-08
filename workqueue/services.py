@@ -100,7 +100,7 @@ def create_work(*, data, actor, idempotency_key=None, staff_contact=None, portal
     return item, True
 
 
-EDIT_FIELDS = {"status", "priority", "queue_order", "estimated_days", "requested_deadline",
+EDIT_FIELDS = {"estimated_hours", "next_deliverable", "client_action", "status", "priority", "queue_order", "estimated_days", "requested_deadline",
                "committed_due_date", "scheduled_start", "estimated_completion", "followup_date",
                "internal_notes", "project", "project_name", "project_street", "project_city",
                "project_state", "project_zip", "service_needed", "description", "kind", "project_context",

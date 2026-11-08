@@ -8,6 +8,7 @@ from . import billing_reminder_views
 from django.urls import path
 from . import dropbox_views
 from . import views
+from . import schedule_views
 from . import pricing_views
 from . import test_payment_views
 from . import test_refund_views
@@ -49,6 +50,7 @@ from . import client_payment_views
 from . import billing_mail_views
 
 urlpatterns = [
+    path("work-queue/design-schedule/", schedule_views.design_schedule, name="design_schedule"),
     path('work-queue/projects/<uuid:project_id>/defaults/', queue_project_update_views.defaults, name='queue_project_defaults'),
     path('work-projects/billing/reconciliation/bank/', bank_evidence_views.center, name='bank_reconciliation'),
     path('work-projects/billing/reconciliation/bank/mapping/', bank_evidence_views.mapping, name='bank_statement_mapping'),

@@ -235,6 +235,8 @@ def submitted(request, item_id):
     if str(item_id) not in request.session.get("queue_recent_requests", []):
         raise Http404
     item = get_object_or_404(WorkItem.objects.select_related("project"), pk=item_id)
+    from .forecasting import attach_forecasts
+    attach_forecasts([item])
     return render(request, "workqueue/submitted.html", {"item": item,
         "ahead": max(0, (item.submission_position or 1) - 1)})
 
@@ -268,6 +270,9 @@ def tracking(request):
     from .receipts import answer_rows
     from .notifications import site_url
     items = list(items[:100])
+    from .forecasting import attach_forecasts
+    if email:
+        attach_forecasts(items)
     for item in items:
         # Project collaborators retain file access, but personal answers/billing
         # snapshots are shown only to the verified original submitter.

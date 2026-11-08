@@ -8,6 +8,9 @@
 .client-work .eyebrow {text-transform:uppercase;letter-spacing:.09em;color:var(--blue);font-size:12px;font-weight:700;margin-bottom:8px}
 .client-work h1 {font-size:clamp(30px,4vw,42px);line-height:1.16;letter-spacing:-1px;margin:0 0 14px}
 .client-work h2 {font-size:21px;margin:0 0 14px}
+.client-work .delivery-forecast {background:#edf5fa;border-left:4px solid var(--blue);border-radius:8px;padding:18px;margin:20px 0;overflow-wrap:anywhere}
+.client-work .delivery-forecast h3 {font-size:clamp(19px,3vw,25px);line-height:1.35;margin:8px 0 14px}
+.client-work .delivery-forecast p:last-child {margin-bottom:0}
 .client-work p {margin:8px 0 16px}
 .client-work .card {padding:26px;background:var(--paper);border:1px solid var(--line);border-radius:12px;margin-bottom:20px;box-shadow:0 2px 7px #23385105;display:block;color:inherit;}
 .client-work .fields {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}

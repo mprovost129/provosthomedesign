@@ -121,6 +121,7 @@ def build_plan(payload, *, high_water, links=None):
                     kind="update" if row.get("Intake Channel") == "Files and Updates" else "new",
                     project_context=text(row.get("Project Address")) or text(row.get("Project Name")),
                     estimated_days=Decimal(text(row["Estimated Days"])) if row.get("Estimated Days") is not None else None)
+        data["estimated_hours"] = data["estimated_days"] * Decimal("5") if data["estimated_days"] is not None else Decimal("8")
         missing = [field for field in ["contact_full_name", "company", "contact_email", "contact_phone", "description"] if not data[field]]
         if missing:
             warnings.append({"reference": reference, "missing_historical_fields": missing})
@@ -247,7 +248,7 @@ def import_snapshot(payload, *, high_water, links=None, apply=False):
                 answers[question] = a.get("Answer Text")
             for label, value in spec["queue_row"].items():
                 if value not in (None, ""):
-                    answers[f"Original queue — {label}"] = value
+                    answers[f"Original queue â€” {label}"] = value
             for i, file in enumerate(sub["files"], 1):
                 if file.get("External URL"):
                     answers[f"Original file or folder link {i}"] = file["External URL"]

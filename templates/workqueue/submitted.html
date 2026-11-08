@@ -3,10 +3,13 @@
 {% block content %}
 <div class="intro"><p class="eyebrow">You’re on the list</p><h1>Your request is in our queue.</h1><p>We’ve saved your information. We’ll send your receipt to {{ item.contact_email }}.</p></div>
 <section class="card receipt"><h2>{{ item.reference }}</h2><p>Keep this ID so you can check your work later.</p>
-<div class="position-grid"><div><span>Position when submitted</span><strong>{{ item.submission_position }}</strong></div><div><span>Active requests ahead</span><strong>{{ ahead }}</strong></div></div>
+<div class="delivery-forecast"><p class="eyebrow">{{ item.next_deliverable|default:'Next drawing update' }}</p>
+{% if item.delivery_forecast.start %}<h3>Estimated delivery: {{ item.delivery_forecast.start|date:'F j, Y' }}{% if item.delivery_forecast.end != item.delivery_forecast.start %} to {{ item.delivery_forecast.end|date:'F j, Y' }}{% endif %}</h3><p class="muted">This is an estimated window, not a guaranteed delivery date. It can change as work progresses or new information arrives.</p>{% else %}<h3>{{ item.delivery_forecast.message|default:'Delivery estimate not available yet.' }}</h3>{% endif %}
+{% if item.client_action %}<h3>What we need from you</h3><p class="preserve-lines">{{ item.client_action }}</p>{% elif item.status == 'needs_information' %}<p>We need more information before we can estimate delivery. Please check our latest message or contact Provost Home Design.</p>{% elif item.status == 'on_hold' %}<p>This request is on hold. We will update the delivery estimate when work is ready to resume.</p>{% endif %}</div>
+<p class="muted">Position when submitted: {{ item.submission_position }}. Active requests ahead when submitted: {{ ahead }}.</p>
 {% if item.project %}<p>Connected project: {{ item.project.name }}</p>{% endif %}
 <p>Each update has its own place in line. Positions can change and do not guarantee a waiting time or start date.</p>
-<a class="button" href="{% url 'workqueue:tracking' %}?reference={{ item.reference|urlencode }}">Track current position</a></section>
+<a class="button" href="{% url 'workqueue:tracking' %}?reference={{ item.reference|urlencode }}">Track delivery estimate</a></section>
 {% if booking_enabled %}<section class="card"><h2>Would you like to meet?</h2><p>You can also book a 30-minute appointment. Verify your email using your receipt link, then choose a time.</p><a href="{% url 'workqueue:book' %}">Book an appointment</a></section>{% endif %}
 <p>We’ll contact you if we need more information. <a href="{% url 'workqueue:submit' %}">Send another request</a></p>
 {% endblock %}

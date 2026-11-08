@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django import forms
 from django.core.exceptions import ValidationError
 
@@ -26,14 +28,15 @@ class QueueEditForm(StyledForm, MilestoneEmailChoice, forms.ModelForm):
         ('Work requested', ['kind', 'service_needed', 'description']),
         ('Contact and billing for this request', ['contact_full_name', 'company', 'contact_email', 'contact_phone',
             'billing_street', 'billing_city', 'billing_state', 'billing_zip']),
-        ('Queue, dates and private notes', ['status', 'priority', 'queue_order', 'estimated_days', 'requested_deadline',
+        ('Queue, dates and private notes', ['status', 'priority', 'queue_order', 'requested_deadline',
             'committed_due_date', 'scheduled_start', 'estimated_completion', 'followup_date', 'internal_notes', 'client_email']),
+        ('Delivery forecast and client-visible update', ['estimated_hours', 'next_deliverable', 'client_action']),
         ('Source and original reference', ['source', 'legacy_ref']),
     ]
 
     class Meta:
         model = WorkItem
-        fields = ["status", "priority", "queue_order", "project", "estimated_days", "requested_deadline",
+        fields = ["status", "priority", "queue_order", "project", "estimated_hours", "next_deliverable", "client_action", "requested_deadline",
                   "committed_due_date", "scheduled_start", "estimated_completion", "followup_date", "internal_notes",
                   "project_name", "project_street", "project_city", "project_state", "project_zip",
                   "service_needed", "description", "kind", "project_context", "contact_full_name", "company",
@@ -41,15 +44,23 @@ class QueueEditForm(StyledForm, MilestoneEmailChoice, forms.ModelForm):
                   "source", "legacy_ref"]
         labels = {'kind': 'Request type', 'project_context': 'Project reference / context',
             'contact_full_name': 'Contact full name', 'contact_email': 'Contact email', 'contact_phone': 'Contact phone',
-            'billing_street': 'Billing address', 'legacy_ref': 'Original reference (internal)'}
+            'billing_street': 'Billing address', 'legacy_ref': 'Original reference (internal)',
+            'estimated_hours': 'Design hours remaining', 'next_deliverable': 'Next deliverable (client-visible)',
+            'client_action': 'What we need from the client (client-visible)'}
         widgets = {name: forms.DateInput(attrs={"type": "date"}) for name in
                    ["requested_deadline", "committed_due_date", "scheduled_start", "estimated_completion", "followup_date"]}
+        widgets["client_action"] = forms.Textarea(attrs={"rows": 3})
         widgets["internal_notes"] = forms.Textarea(attrs={"rows": 3})
         widgets["description"] = forms.Textarea(attrs={"rows": 3})
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["version"].initial = self.instance.version
+        self.fields['estimated_hours'].required = False
+        self.fields['estimated_hours'].help_text = 'Remaining design time to the next deliverable, not the whole project. Leave blank to use 8 hours.'
+        self.fields['next_deliverable'].required = False
+        self.fields['next_deliverable'].help_text = 'Shown to the client. Leave blank for Next drawing update.'
+        self.fields['client_action'].help_text = 'Shown on client tracking. Describe only what the client needs to provide or do. Keep private notes in Internal notes.'
         self.fields["project"].queryset = WorkProject.objects.all()
         self.fields["project"].label = "Connected project"
         self.fields["queue_order"].help_text = "Lower numbers appear earlier. Equal values use received time and request ID."
@@ -67,11 +78,18 @@ class QueueEditForm(StyledForm, MilestoneEmailChoice, forms.ModelForm):
         if self.is_bound:
             self.data = self.data.copy()
             for name in ['project_name', 'project_street', 'project_city', 'project_state',
-                         'project_zip', 'service_needed', 'description', *self.detail_fields]:
+                         'project_zip', 'service_needed', 'description', 'estimated_hours', 'next_deliverable', 'client_action', *self.detail_fields]:
                 if self.add_prefix(name) not in self.data:
                     self.data[self.add_prefix(name)] = self.initial.get(name, '')
         self.fields['description'].required = False
         self.style_fields()
+
+    def clean_estimated_hours(self):
+        value = self.cleaned_data.get('estimated_hours')
+        return Decimal('8') if value is None else value
+
+    def clean_next_deliverable(self):
+        return self.cleaned_data.get('next_deliverable') or 'Next drawing update'
 
     @property
     def grouped_fields(self):

@@ -279,6 +279,11 @@ class WorkItem(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(null=True, blank=True, db_index=True, editable=False)
     version = models.PositiveIntegerField(default=1, editable=False)
+    estimated_hours = models.DecimalField(max_digits=8, decimal_places=2, default=8, db_default=8,
+        validators=[MinValueValidator(0)], help_text="Remaining design hours to the next deliverable. Defaults to 8 hours.")
+    next_deliverable = models.CharField(max_length=200, default="Next drawing update", db_default="Next drawing update")
+    client_action = models.TextField(max_length=2000, blank=True, default="", db_default="",
+        help_text="Visible to this request's authorized clients. Never enter internal notes here.")
     estimated_days = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True,
                                          validators=[MinValueValidator(0)])
     requested_deadline = models.DateField(null=True, blank=True)
@@ -743,3 +748,5 @@ from .freshbooks_mirror_models import FreshBooksMirrorSettings,FreshBooksMirrorJ
 from .live_reconciliation_models import FreshBooksPaymentExport, FreshBooksPaymentCheck
 
 from .bank_evidence_models import PayoutEvidenceImport, LivePayoutEvidence, BankStatementImport, BankStatementEntry, LiveDepositMatch
+
+from .schedule_models import DesignSchedule

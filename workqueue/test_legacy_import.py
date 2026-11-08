@@ -46,6 +46,15 @@ class LegacyImportTests(TestCase):
     def run_import(self, apply=True, source=None):
         return import_snapshot(source or self.source, high_water=30, links=self.links, apply=apply)
 
+    def test_import_preserves_explicit_estimates_in_design_hours(self):
+        self.source["tables"]["Master Queue"][0]["Estimated Days"] = 3
+        self.run_import()
+        root, child = WorkItem.objects.order_by("queue_order")
+        self.assertEqual(root.estimated_hours, 15)
+        self.assertEqual(root.estimated_days, 3)
+        self.assertEqual(child.estimated_hours, 8)
+        self.assertEqual(self.run_import()["changed_requests"], 0)
+
     def test_dry_run_validates_and_rolls_back_every_write(self):
         result = self.run_import(apply=False)
         self.assertEqual(result["active"], 1)

@@ -1,0 +1,19 @@
+{% extends 'workqueue/pm_base.html' %}
+{% block title %}Design schedule{% endblock %}
+{% block pm_content %}
+<p><a href="{% url 'workqueue:queue' %}">Back to work queue</a></p>
+<h1>Design capacity &amp; delivery windows</h1>
+<p>Monday-Friday, Eastern time. The default workday is 8:30 a.m.-3:30 p.m., with 5 hours for actual design and the rest for meetings, calls and other work.</p>
+<form method="post" class="edit-form">{% csrf_token %}{{ form.version }}{{ form.non_field_errors }}
+<div class="fields">{% for field in form.visible_fields %}<div class="field">{{ field.label_tag }}{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{{ field.errors }}</div>{% endfor %}</div>
+<button type="submit">Save design schedule</button></form>
+<h2>How the estimate works</h2>
+<ul><li>Each request starts with 8 remaining design hours for its next drawing update. Adjust it in Manage request as work progresses.</li>
+<li>The saved queue order controls allocation. Move urgent work earlier using Arrange queue; priority labels alone do not move it.</li>
+<li>Needs Information and On Hold requests keep their place but use no design time until resumed. Closed or deleted work is excluded.</li>
+<li>Scheduled starts are respected. Work that can start earlier can use unreserved capacity before a later start.</li>
+<li>After the day starts, today's available design time is reduced in proportion to the time left until the workday ends. After the day ends, estimates start on the next working day.</li>
+<li>The delivery window begins on the calculated finish day and adds the working-day allowance (default 2). These are estimates, not promised due dates or automatic bookings.</li>
+<li>Hours are not automatically deducted by the clock or the time tracker. Update the remaining estimate when progress is made. Calendar meetings are already covered by the 5-hour allowance; they are not deducted again.</li>
+<li>Add holidays and absences above. Saving capacity or estimates does not send client emails or change appointment availability.</li></ul>
+{% endblock %}
