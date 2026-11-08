@@ -29,7 +29,10 @@ class MonthlyGateway(FinanceGateway):
 @override_settings(**SANDBOX,NATIVE_STRIPE_TEST_REFUNDS_ENABLED=True)
 class MonthlyReviewTests(FinanceFixtures,TestCase):
     def setUp(self):
-        self.seed_finance()
+        # Issue the fixture invoice in the same period as its provider activity.
+        # The report clock below deliberately advances to the following month.
+        with patch('django.utils.timezone.now', return_value=datetime(2026,10,20,16,tzinfo=utc.utc)):
+            self.seed_finance()
         NativeInvoiceEntry.objects.filter(pk=self.attempt.ledger_entry_id).update(date=date(2026,10,20))
         self.finance()
         self.gateway.__class__=MonthlyGateway

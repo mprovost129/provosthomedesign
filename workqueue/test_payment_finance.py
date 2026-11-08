@@ -272,7 +272,8 @@ class PaymentFinanceTests(FinanceFixtures,TestCase):
         self.assertEqual(browser.post(reverse('workqueue:payment_finance_detail',args=[self.attempt.pk])).status_code,403)
         self.assertEqual(browser.post(reverse('workqueue:payment_finance'),{'version':1,'enabled':'on'}).status_code,403)
 
-    def test_search_and_pagination_keep_default_period(self):
+    @patch('django.utils.timezone.now', return_value=datetime(2026,10,25,16,tzinfo=utc.utc))
+    def test_search_and_pagination_keep_default_period(self, _clock):
         response=self.client.get(reverse('workqueue:payment_finance'))
         self.assertIn('start=',response.context['query_string']);self.assertIn('end=',response.context['query_string'])
         self.finance();response=self.client.get(reverse('workqueue:payment_finance'))
