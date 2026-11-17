@@ -154,7 +154,14 @@ def plan(item, label, *, action='skip', pricing='fixed_price', amount=None, remo
     profile = client_snapshot(item)
     existing = FreshBooksProject.objects.filter(project_id=item.project_id).first() if item.project_id else None
     if existing:
-        if existing.client_id != item.client_contact.client_id or existing.account_id!=connection.account_id or existing.business_id!=business:
+        client_matches = existing.client_id == item.client_contact.client_id
+        if not client_matches and existing.state == 'linked':
+            # Preserve the original link's audit ownership across reversible CRM
+            # merges. Reuse requires both the surviving client and billing ID.
+            client_matches = (current_client(existing.client).pk == item.client_contact.client_id
+                and FreshBooksClientLink.objects.filter(client_id=item.client_contact.client_id,
+                    account_id=existing.account_id, customer_id=existing.customer_id).exists())
+        if not client_matches or existing.account_id!=connection.account_id or existing.business_id!=business:
             raise ValidationError('This project already has another FreshBooks client or business. Review its existing connection.')
         return {'action':'reuse','id':str(existing.pk),'account':existing.account_id,'business':existing.business_id,
             'profile':profile,'title':existing.title,'customer':{'mode':'existing','id':existing.customer_id,'label':profile['name']},'state':existing.get_state_display()}

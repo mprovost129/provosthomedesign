@@ -264,8 +264,51 @@ class RegistrationTests(RegistrationFixture, TestCase):
         self.assertFalse(WorkProject.objects.exists())
 
     def test_refresh_only_updates_local_folder_index(self):
+        stale = DropboxFolder.objects.create(id='id:stale', name='Old folder', path='/Projects/Old folder')
+        self.entries = [{**self.folder, 'name': '261101 - Renamed example', 'path_display': '/Projects/261101 - Renamed example'}]
         self.assertEqual(self.client.post(self.url, {'action': 'refresh'}).status_code, 302)
+        refreshed = DropboxFolder.objects.get(pk=self.folder['id'])
+        self.assertEqual(refreshed.name, self.entries[0]['name'])
+        self.assertEqual(refreshed.path, self.entries[0]['path_display'])
+        self.assertTrue(refreshed.available)
+        stale.refresh_from_db()
+        self.assertFalse(stale.available)
         self.assertFalse(WorkProject.objects.exists())
+        self.assert_no_work_or_side_effects()
+
+    def test_slow_dropbox_pagination_keeps_previous_index(self):
+        from . import dropbox_provider as provider
+        def paginated(endpoint, data, **kwargs):
+            if endpoint == 'files/list_folder':
+                return {'entries': [], 'has_more': True, 'cursor': 'fictional-cursor'}
+            return self.db_api(endpoint, data, **kwargs)
+        with patch.object(provider, 'api', side_effect=paginated), patch.object(provider.time, 'monotonic', side_effect=[0, 21]):
+            response = self.client.post(self.url, {'action': 'refresh'})
+        self.assertContains(response, 'took too long', status_code=400)
+        self.assertTrue(DropboxFolder.objects.get(pk=self.folder['id']).available)
+        self.assertFalse(WorkProject.objects.exists())
+        self.assert_no_work_or_side_effects()
+
+    def test_registered_project_billing_reuse_after_client_merge_and_undo(self):
+        from .crm import merge_clients, undo_merge
+        from . import freshbooks_projects
+        from .models import ClientEvent
+        project, _ = self.register()
+        target = Client.objects.create(name='Surviving Example')
+        merged = merge_clients(source_id=self.crm.pk, source_version=self.crm.version,
+            target_id=target.pk, target_version=target.version, actor=self.owner)
+        item = WorkItem(project=project, client_contact=ClientContact.objects.get(pk=self.contact.pk))
+        with patch.object(freshbooks_projects, 'configuration', return_value=(self.fb, 77)):
+            self.assertEqual(freshbooks_projects.plan(item, 'Example', action='link')['action'], 'reuse')
+            FreshBooksClientLink.objects.filter(client=merged).update(customer_id=99)
+            with self.assertRaisesMessage(ValidationError, 'another FreshBooks client'):
+                freshbooks_projects.plan(item, 'Example', action='link')
+            FreshBooksClientLink.objects.filter(client=merged).update(customer_id=7)
+            event = ClientEvent.objects.get(client=merged, action='Client records merged')
+            undo_merge(client_id=merged.pk, version=merged.version, event_id=event.pk, actor=self.owner)
+            item.client_contact = ClientContact.objects.get(pk=self.contact.pk)
+            self.assertEqual(freshbooks_projects.plan(item, 'Example', action='link')['action'], 'reuse')
+        self.assertEqual(FreshBooksProject.objects.get(project=project).client_id, self.crm.pk)
         self.assert_no_work_or_side_effects()
 
     def test_signed_review_tamper_expiry_and_actor(self):

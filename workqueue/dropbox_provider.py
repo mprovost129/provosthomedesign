@@ -3,6 +3,7 @@ import json
 import secrets
 import base64
 import hashlib
+import time
 from datetime import timedelta
 from urllib.parse import urlencode
 import requests
@@ -156,6 +157,7 @@ def root():
 
 
 def children():
+    started = time.monotonic()
     connection, _ = root()
     result = api('files/list_folder', {'path':connection.root_id, 'recursive':False, 'include_deleted':False})
     entries = []
@@ -163,6 +165,8 @@ def children():
         entries.extend(item for item in result.get('entries', []) if item.get('.tag') == 'folder')
         if not result.get('has_more'):
             return entries
+        if time.monotonic() - started > 20:
+            raise DropboxError('The Dropbox folder list took too long to check. No partial index was saved; try again later.')
         result = api('files/list_folder/continue', {'cursor':result['cursor']})
     raise DropboxError('The Projects folder index is too large. Review its structure.')
 

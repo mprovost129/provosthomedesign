@@ -57,6 +57,13 @@ conflicting reviews are rejected.
 Provider reads run before the local write transaction so a failed registration
 cannot roll back a rotated OAuth token. The transaction locks and rechecks both
 connection identities and the CRM link before saving the project graph.
+Dropbox pagination stops before requesting another page once its 20-second
+listing budget is spent; an incomplete listing never replaces the local index.
+Individual in-flight provider requests still use their existing network timeouts.
+
+After a reversible CRM merge, FreshBooks reuse follows the surviving CRM client
+only when its explicit account/customer billing link still matches. The original
+project-link ownership and registration audit remain intact, including on undo.
 
 Registration saves a `WorkProject`, `ProjectFolder`, already-linked
 `FreshBooksProject`, `ProjectRegistration` provenance snapshot/contact/actor, and
