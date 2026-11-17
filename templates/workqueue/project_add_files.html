@@ -1,7 +1,7 @@
 {% extends 'workqueue/client_base.html' %}{% load static %}
 {% block title %}Add files - {{ project.name }}{% endblock %}
 {% block content %}
-<div class="intro"><p class="eyebrow">{{ project.canonical_reference }}</p><h1>Add files</h1><p>{{ project.name }}</p><a href="{% url 'workqueue:project_detail' project.pk %}#files">Return to project</a></div>
+<div class="intro"><p class="eyebrow">{{ project.display_reference }}</p><h1>Add files</h1><p>{{ project.name }}</p><a href="{% url 'workqueue:project_detail' project.pk %}#files">Return to project</a></div>
 <p class="notice">Add source documents for staff to use on this project. This does not create a work request, change queue order or status, publish completed files, or notify the client.</p>
 <form id="project-source-files" method="post" data-upload-url="{% url 'workqueue:start_upload' %}" data-direct="{{ direct_uploads|yesno:'true,false' }}">
 {% csrf_token %}{{ form.intake_token }}{{ form.upload_ids }}<input type="hidden" name="recaptcha_token">

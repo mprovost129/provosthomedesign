@@ -42,7 +42,7 @@ class ClientWorkForm(forms.ModelForm):
     def __init__(self, *args, client, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["contact"].queryset = client.contacts.filter(archived_at__isnull=True).select_related("client")
-        self.fields["project"].queryset = WorkProject.objects.filter(work_items__client_contact__client=client).distinct()
+        self.fields["project"].queryset = WorkProject.objects.select_related('filing_folder').filter(work_items__client_contact__client=client).distinct()
         self.fields["project"].empty_label = "Create a new project"
         self.fields["project"].help_text = "Choose an existing project to add another job to it. Updates have their own place in the queue."
         self.fields["project_name"].help_text = "Needed for a new project; ignored when you choose an existing project."

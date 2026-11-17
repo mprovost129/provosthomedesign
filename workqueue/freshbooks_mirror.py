@@ -326,7 +326,7 @@ def context_records(client=None,project=None):
     rows=FreshBooksMirrorRecord.objects.filter(account_id=connection.account_id)
     if client:rows=rows.filter(client=client)
     if project:
-        related = Q(project=project)
+        related = Q(project=project, business_id=connection.business_id)
         # A verified project link may be newer than the last mirror scan. Resolve
         # its exact source identity for display without rewriting saved evidence.
         link = FreshBooksProject.objects.filter(project=project, state='linked',

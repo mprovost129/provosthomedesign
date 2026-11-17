@@ -65,7 +65,7 @@ def projects(request):
     q = request.GET.get('q', '').strip()[:200]
     scope = request.GET.get('scope', 'active')
     visible = Q(work_items__deleted_at__isnull=True, work_items__id__isnull=False)
-    queryset = WorkProject.objects.annotate(job_count=Count('work_items', filter=visible, distinct=True),
+    queryset = WorkProject.objects.select_related('filing_folder').annotate(job_count=Count('work_items', filter=visible, distinct=True),
         active_count=Count('work_items', filter=visible & ~Q(work_items__status__in=CLOSED_STATUSES), distinct=True)).filter(Q(job_count__gt=0) | Q(registration__isnull=False))
     if scope != 'all':
         scope = 'active'

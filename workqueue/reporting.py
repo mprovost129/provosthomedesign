@@ -26,7 +26,7 @@ def project_report_queryset(search=''):
         return Coalesce(Subquery(query.annotate(metric=expression).values('metric')[:1],
             output_field=BigIntegerField()), Value(0), output_field=BigIntegerField())
 
-    projects = WorkProject.objects.select_related('plan').annotate(
+    projects = WorkProject.objects.select_related('plan', 'filing_folder').annotate(
         job_count=metric(jobs, Count('pk')),
         active_count=metric(jobs, Count('pk', filter=~Q(status__in=CLOSED_STATUSES))),
         completed_count=metric(jobs, Count('pk', filter=Q(status=Status.COMPLETED))),

@@ -176,7 +176,7 @@ class WorkProject(models.Model):
     @property
     def display_reference(self):
         folder = getattr(self, 'filing_folder', None)
-        return folder.number if folder else self.canonical_reference or ''
+        return (folder.number if folder else '') or self.canonical_reference or ''
 
     def __str__(self):
         return f"{self.display_reference or 'Unnumbered project'} - {self.name}"

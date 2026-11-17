@@ -20,7 +20,7 @@ from .services import EditConflict, lock_queue
 def memberships(email):
     if not email:
         return PortalMember.objects.none()
-    return PortalMember.objects.filter(email=normalize_email(email), revoked_at__isnull=True).select_related('project', 'client')
+    return PortalMember.objects.filter(email=normalize_email(email), revoked_at__isnull=True).select_related('project', 'project__filing_folder', 'client')
 
 
 def related_clients(project):

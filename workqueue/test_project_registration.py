@@ -366,6 +366,27 @@ class RegistrationTests(RegistrationFixture, TestCase):
         self.assertIsNone(project.canonical_reference)
         self.assertEqual(str(WorkProject(name='Legacy', canonical_reference='PHD-00001')), 'PHD-00001 - Legacy')
         self.assertEqual(str(WorkProject(name='Draft')), 'Unnumbered project - Draft')
+        project.canonical_reference = 'PHD-00001'
+        for number in ('', None):
+            project.filing_folder.number = number
+            self.assertEqual(project.display_reference, 'PHD-00001')
+
+    def test_project_choice_labels_load_folders_in_one_query(self):
+        from .forms import QueueEditForm
+        from .crm_forms import ClientWorkForm
+        from .pricing_forms import PricingForm
+        from .time_forms import TimerForm
+        from .document_views import StartForm
+        from .invoice_history_views import AssociationForm
+        from .queue_project_updates import create_manual_work
+        from .tests import work_data
+        project, _ = self.register()
+        item, _ = create_manual_work(data={**work_data(), 'project': project}, actor=self.owner, idempotency_key=uuid.uuid4())
+        for form in (QueueEditForm(instance=item), ClientWorkForm(client=self.crm), PricingForm(), TimerForm(),
+                     StartForm(client=self.crm), AssociationForm()):
+            with self.subTest(form=type(form).__name__), self.assertNumQueries(1):
+                labels = [label for value, label in form.fields['project'].choices]
+                self.assertIn('261101 - Example House', labels)
 
     def test_workspace_reads_exact_link_before_mirror_scan_without_writes(self):
         from .freshbooks_mirror import context_records
@@ -386,6 +407,9 @@ class RegistrationTests(RegistrationFixture, TestCase):
             self.assertIsNone(record.project_id)
             self.assertEqual(record.version, 1)
             self.assertEqual(ProjectEvent.objects.count(), 1)
+            FreshBooksMirrorRecord.objects.filter(pk=record.pk).update(project=project, business_id=88)
+            self.assertFalse(context_records(project=project).exists())
+            FreshBooksMirrorRecord.objects.filter(pk=record.pk).update(project=None, business_id=self.fb.business_id)
             for field, value in [('account_id', 'OTHER'), ('business_id', 88), ('customer_id', 99),
                                  ('provider_id', 43), ('kind', 'invoices'),
                                  ('project_id', WorkProject.objects.create(name='Other project').pk)]:
