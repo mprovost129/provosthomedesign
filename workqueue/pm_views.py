@@ -55,7 +55,8 @@ def client_initial(project, proposal=None):
     if proposal:
         return current_client(proposal.client)
     item = WorkItem.objects.filter(project=project, client_contact__isnull=False).select_related('client_contact__client').first()
-    return item.client_contact.client if item else None
+    registration = getattr(project, 'registration', None)
+    return item.client_contact.client if item else (registration.contact.client if registration else None)
 
 
 @staff_view
@@ -65,13 +66,14 @@ def projects(request):
     scope = request.GET.get('scope', 'active')
     visible = Q(work_items__deleted_at__isnull=True, work_items__id__isnull=False)
     queryset = WorkProject.objects.annotate(job_count=Count('work_items', filter=visible, distinct=True),
-        active_count=Count('work_items', filter=visible & ~Q(work_items__status__in=CLOSED_STATUSES), distinct=True)).filter(job_count__gt=0)
+        active_count=Count('work_items', filter=visible & ~Q(work_items__status__in=CLOSED_STATUSES), distinct=True)).filter(Q(job_count__gt=0) | Q(registration__isnull=False))
     if scope != 'all':
         scope = 'active'
         queryset = queryset.filter(active_count__gt=0)
     if q:
         queryset = queryset.filter(Q(name__icontains=q) | Q(street__icontains=q) | Q(canonical_reference__icontains=q)
             | Q(work_items__client_contact__client__name__icontains=q) | Q(work_items__reference__icontains=q)
+            | Q(registration__contact__client__name__icontains=q)
             | Q(filing_folder__number__icontains=q) | Q(proposals__number__icontains=q)).distinct()
     return render(request, 'workqueue/projects.html', {'page': Paginator(queryset.order_by('name'), 30).get_page(request.GET.get('page')),
         'q':q, 'scope':scope})
@@ -115,6 +117,9 @@ def project_detail(request, project_id):
     files = Attachment.objects.filter(submission__work_item__in=items).select_related('submission__work_item').order_by('-uploaded_at')
     from .portal_services import related_clients
     clients = related_clients(project)
+    registration = getattr(project, 'registration', None)
+    if registration:
+        clients = (clients | Client.objects.filter(pk=registration.contact.client_id)).distinct()
     proposals = project.proposals.select_related('current_revision', 'client')
     accepted = ProposalRevision.objects.filter(proposal__project=project, state='accepted').order_by('-accepted_at')
     correspondence = ClientEmail.objects.filter(Q(project=project) | Q(work_item__in=items)).select_related('client', 'delivery').order_by('-created_at')[:20]

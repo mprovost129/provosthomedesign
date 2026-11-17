@@ -1,0 +1,30 @@
+{% extends 'workqueue/pm_base.html' %}
+{% block title %}Register existing project{% endblock %}
+{% block pm_content %}
+<header class="pm-heading"><div><span class="brand">Staff project tools</span><h1>Register existing project</h1>
+<p>Connect an existing Dropbox and FreshBooks project to a native PHD project, ready for a separate update request.</p></div></header>
+<p class="notice">Registration saves only the PHD project, its CRM contact, existing provider links and an audit record. It does not add or reorder work, create a submission, allocate a new project number, create an external project, invoice or folder, copy files, send email or invitations, or grant client access.</p>
+{% if review %}
+<section class="pm-card" aria-labelledby="review-title"><h2 id="review-title">Review verified identities</h2>
+<dl>
+<dt>Business project number</dt><dd>{{ review.number }}</dd>
+<dt>PHD project</dt><dd>{{ review.input.name }}<br>{{ review.input.street }} {{ review.input.city }} {{ review.input.state }} {{ review.input.zip_code }}</dd>
+<dt>CRM client and contact</dt><dd>{{ review.profile.client_name }} — {{ review.profile.contact_name }} ({{ review.profile.email|default:'No email' }})</dd>
+<dt>FreshBooks business / account</dt><dd>{{ review.business_name }} — business {{ review.business }}, account {{ review.account }}</dd>
+<dt>Verified billing client</dt><dd>{{ review.customer_name }} — client ID {{ review.profile.customer }}</dd>
+<dt>FreshBooks project</dt><dd>{{ review.remote_title }} — project ID {{ review.input.remote_id }}</dd>
+<dt>Dropbox account</dt><dd>{{ review.dropbox_email }} — {{ review.dropbox_account }}</dd>
+<dt>Existing Dropbox folder</dt><dd>{{ review.folder_path }}</dd>
+</dl>
+<p>Confirm that both records and the selected CRM contact describe the same job. Approval rechecks these identities; this review expires in 15 minutes.</p>
+{% if existing %}<p>This project is already registered. <a href="{% url 'workqueue:project_detail' existing.pk %}">Open existing PHD project</a>.</p>
+{% else %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="register"><input type="hidden" name="signed" value="{{ signed }}"><button type="submit">Register existing project</button></form>{% endif %}
+</section>
+{% endif %}
+<section class="pm-card"><h2>{% if review %}Revise details{% else %}Select existing records{% endif %}</h2>
+<p>Both provider names must begin with the same six-digit project number followed by a hyphen. Registration requires an existing CRM billing connection; use the client’s Billing connection screen to resolve a missing or incorrect link.</p>
+<form method="post">{% csrf_token %}<input type="hidden" name="action" value="refresh"><button type="submit" class="secondary">Refresh existing Dropbox folders</button></form>
+<form method="post">{% csrf_token %}<input type="hidden" name="action" value="preview">{{ form.as_p }}<button type="submit">Verify and review</button></form>
+</section>
+<p><a href="{% url 'workqueue:queue' %}">Back to work queue</a> · <a href="{% url 'workqueue:projects' %}?scope=all">All projects</a></p>
+{% endblock %}

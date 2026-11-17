@@ -1,4 +1,5 @@
 from . import queue_project_update_views
+from . import project_registration_views
 from . import bank_evidence_views
 from . import freshbooks_mirror_views, live_reconciliation_views
 from . import monthly_finance_views
@@ -50,6 +51,7 @@ from . import client_payment_views
 from . import billing_mail_views
 
 urlpatterns = [
+    path('work-projects/register-existing/', project_registration_views.register_existing, name='register_existing_project'),
     path("work-queue/design-schedule/", schedule_views.design_schedule, name="design_schedule"),
     path('work-queue/projects/<uuid:project_id>/defaults/', queue_project_update_views.defaults, name='queue_project_defaults'),
     path('work-projects/billing/reconciliation/bank/', bank_evidence_views.center, name='bank_reconciliation'),
