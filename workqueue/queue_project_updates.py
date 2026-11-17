@@ -27,6 +27,9 @@ def project_defaults(project, source_id=None):
     if source_id and source is None:
         raise ValidationError('The selected source request is no longer available on this project. Load the project details again.')
     contact = source.client_contact if source and source.client_contact_id else None
+    if not source:
+        registration = getattr(project, 'registration', None)
+        contact = registration.contact if registration else None
     if contact and (contact.archived_at or contact.client.merged_into_id):
         contact = None
     fields = {name:getattr(project,attribute) for name,attribute in PROJECT_FIELDS.items()}

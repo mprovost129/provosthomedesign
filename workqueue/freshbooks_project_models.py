@@ -15,7 +15,7 @@ class FreshBooksProject(models.Model):
         UNKNOWN = 'unknown', 'Check FreshBooks before retrying'
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     project = models.OneToOneField('WorkProject', on_delete=models.PROTECT, related_name='freshbooks_project')
-    work_item = models.ForeignKey('WorkItem', on_delete=models.PROTECT)
+    work_item = models.ForeignKey('WorkItem', null=True, blank=True, on_delete=models.PROTECT)
     client = models.ForeignKey('Client', on_delete=models.PROTECT)
     account_id = models.CharField(max_length=50)
     business_id = models.PositiveBigIntegerField()
@@ -34,7 +34,8 @@ class FreshBooksProject(models.Model):
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
     class Meta:
         constraints = [models.UniqueConstraint(fields=['business_id','remote_id'],name='wq_fb_remote_project_unique'),
-            models.CheckConstraint(condition=Q(state__in=['queued','working','linked','attention','unknown']),name='wq_fb_project_state')]
+            models.CheckConstraint(condition=Q(state__in=['queued','working','linked','attention','unknown']),name='wq_fb_project_state'),
+            models.CheckConstraint(condition=Q(work_item__isnull=False) | Q(state='linked', remote_id__isnull=False, customer_id__isnull=False), name='wq_fb_registered_link_only')]
 
 
 class FreshBooksClientProvision(models.Model):

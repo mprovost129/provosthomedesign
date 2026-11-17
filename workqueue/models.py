@@ -750,3 +750,4 @@ from .live_reconciliation_models import FreshBooksPaymentExport, FreshBooksPayme
 from .bank_evidence_models import PayoutEvidenceImport, LivePayoutEvidence, BankStatementImport, BankStatementEntry, LiveDepositMatch
 
 from .schedule_models import DesignSchedule
+from .project_registration_models import ProjectRegistration
