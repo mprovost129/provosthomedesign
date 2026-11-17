@@ -173,8 +173,13 @@ class WorkProject(models.Model):
     class Meta:
         ordering = ["name", "id"]
 
+    @property
+    def display_reference(self):
+        folder = getattr(self, 'filing_folder', None)
+        return (folder.number if folder else '') or self.canonical_reference or ''
+
     def __str__(self):
-        return f"{self.canonical_reference or 'Unnumbered project'} — {self.name}"
+        return f"{self.display_reference or 'Unnumbered project'} - {self.name}"
 
 
 class ProjectAccess(models.Model):

@@ -22,11 +22,11 @@ class TimerForm(forms.Form):
             initial['project'] = project.pk
         kwargs.setdefault('auto_id', 'timer_%s')
         super().__init__(*args, initial=initial, **kwargs)
-        self.fields['project'].queryset = WorkProject.objects.filter(work_items__deleted_at__isnull=True,
+        self.fields['project'].queryset = WorkProject.objects.select_related('filing_folder').filter(work_items__deleted_at__isnull=True,
             work_items__id__isnull=False).distinct().order_by('name')
         self.fields['work_item'].queryset = WorkItem.objects.filter(project__isnull=False).select_related('project').order_by('-received_at')
         if project:
-            self.fields['project'].queryset = WorkProject.objects.filter(pk=project.pk)
+            self.fields['project'].queryset = WorkProject.objects.select_related('filing_folder').filter(pk=project.pk)
             self.fields['project'].widget = forms.HiddenInput()
             self.fields['work_item'].queryset = self.fields['work_item'].queryset.filter(project=project)
 

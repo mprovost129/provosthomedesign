@@ -2,7 +2,7 @@
 {% block title %}{{ project.name }} · Client portal{% endblock %}
 {% block portal_content %}
 <a class="portal-back" href="{% url 'workqueue:portal_home' %}">← All my projects</a>
-<header class="portal-heading"><p class="eyebrow">{{ project.canonical_reference|default:'Your project' }}</p><h1>{{ project.name }}</h1><p>{{ project.street }} {{ project.city }} {{ project.state }} {{ project.zip_code }}</p></header>
+<header class="portal-heading"><p class="eyebrow">{{ project.display_reference|default:'Your project' }}</p><h1>{{ project.name }}</h1><p>{{ project.street }} {{ project.city }} {{ project.state }} {{ project.zip_code }}</p></header>
 <nav class="portal-tabs" aria-label="Project sections"><a href="#documents">Plans &amp; documents</a>{% if member.financial_access %}<a href="#proposals">Proposals</a><a href="#invoices">Invoices</a>{% endif %}<a href="/contact/">Contact us</a></nav>
 <section class="portal-section" id="documents"><div class="portal-section-heading"><h2>Plans &amp; documents</h2><p>Open the current version, or check an earlier release.</p></div>
 {% for document in documents %}{% if document.kind != 'invoice' %}{% include 'workqueue/portal_document_card.html' %}{% endif %}{% endfor %}

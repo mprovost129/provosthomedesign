@@ -148,7 +148,7 @@ def history(request):
 
 class AssociationForm(forms.Form):
     client = forms.ModelChoiceField(queryset=Client.objects.filter(merged_into__isnull=True), required=False, label='CRM client')
-    project = forms.ModelChoiceField(queryset=WorkProject.objects.all().order_by('name'), required=False, label='Existing project')
+    project = forms.ModelChoiceField(queryset=WorkProject.objects.select_related('filing_folder').all().order_by('name'), required=False, label='Existing project')
     version = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
 
 

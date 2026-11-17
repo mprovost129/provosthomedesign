@@ -25,7 +25,7 @@ from .services import EditConflict
 def related_projects(client):
     if not client:
         return WorkProject.objects.none()
-    return WorkProject.objects.filter(Q(work_items__client_contact__client=client) | Q(client_links__client=client)).distinct().order_by('name')
+    return WorkProject.objects.select_related('filing_folder').filter(Q(work_items__client_contact__client=client) | Q(client_links__client=client)).distinct().order_by('name')
 
 
 class StartForm(forms.Form):

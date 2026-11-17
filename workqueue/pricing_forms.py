@@ -34,7 +34,7 @@ class PricingForm(forms.Form):
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
         self.fields['client'].queryset = Client.objects.filter(merged_into__isnull=True).order_by('name','pk')
-        self.fields['project'].queryset = WorkProject.objects.all().order_by('name','pk')
+        self.fields['project'].queryset = WorkProject.objects.select_related('filing_folder').all().order_by('name','pk')
         for key,label,_ in SERVICES:
             self.fields[key+'_area'] = forms.DecimalField(required=False,max_digits=8,decimal_places=2,min_value=0,label=label+' area (sq ft)')
             self.fields[key+'_rate'] = forms.DecimalField(required=False,max_digits=10,decimal_places=2,min_value=0,label=label+' rate ($/sq ft)')

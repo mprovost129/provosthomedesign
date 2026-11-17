@@ -26,6 +26,11 @@ The project is also available in the normal update selector and in Projects with
 until a real update is submitted. The first update has no previous request; later
 updates use the normal latest/source-request behavior.
 
+Project labels use the saved Dropbox business number when available. The workspace
+shows the native FreshBooks connection independently of copied mirror records and
+can display an exact matching source project before the next mirror scan. These
+display reads do not rewrite project references or saved mirror associations.
+
 ## Boundaries and checks
 
 The flow requires active staff and all four existing permissions:

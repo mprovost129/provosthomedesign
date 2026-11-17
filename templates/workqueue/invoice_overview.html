@@ -20,7 +20,7 @@
 <p class="invoice-note">Drafts, voided/deleted invoices, payment issues, and incomplete balances are excluded. Currencies are kept separate. Overdue reflects FreshBooks’ saved status; balances are not a live accounting report.</p></section>
 <details class="pm-card invoice-projects"><summary>Completed projects needing billing review <span class="pm-badge">{{ review_total }}</span></summary>
 <p class="invoice-note">Matches search and project filters, independently of invoice status. These projects have no linked invoice, a draft, or an incomplete billing record. Check FreshBooks before creating another invoice.</p>
-<ul>{% for project in review_projects %}<li><a href="{% url 'workqueue:project_detail' project.pk %}">{{ project.name|default:'Untitled project' }}</a> <span class="invoice-note">· {{ project.canonical_reference }}</span></li>{% empty %}<li>No matching completed projects need billing review.</li>{% endfor %}</ul>
+<ul>{% for project in review_projects %}<li><a href="{% url 'workqueue:project_detail' project.pk %}">{{ project.name|default:'Untitled project' }}</a> <span class="invoice-note">· {{ project.display_reference }}</span></li>{% empty %}<li>No matching completed projects need billing review.</li>{% endfor %}</ul>
 {% if review_total > 10 %}<p>Showing the first 10 projects.</p>{% endif %}<a href="{% url 'workqueue:project_reports' %}?scope=completed&amp;attention=billing&amp;q={{ q|urlencode }}">Open billing review in Reports</a></details>
 <div class="invoice-list">
 {% for row in rows %}<article class="pm-card invoice-card">

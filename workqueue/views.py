@@ -379,7 +379,7 @@ def queue(request):
         create_form = ManualWorkForm(initial={"submission_token": uuid.uuid4()}, prefix="new")
     deleted_scope = filters['scope'] == 'deleted' and not preview and request.user.has_perm('workqueue.delete_workitem')
     queryset = WorkItem.all_objects.filter(deleted_at__isnull=False) if deleted_scope else WorkItem.objects.all()
-    items = with_email_attention(queryset.with_position()).select_related("project", "project__freshbooks_project", "client_contact__client", "plan_review__document_version__document").prefetch_related(
+    items = with_email_attention(queryset.with_position()).select_related("project", "project__filing_folder", "project__freshbooks_project", "client_contact__client", "plan_review__document_version__document").prefetch_related(
         "submissions__attachments", "submissions__notifications", "submissions__dropbox_filing__destination",
         "information_requests__delivery", "information_requests__reminder_delivery",
         "milestones__delivery", "milestones__actor",

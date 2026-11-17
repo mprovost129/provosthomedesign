@@ -128,7 +128,7 @@ def task_list(request):
             messages.success(request,'Task updated. Queue status and order are unchanged.')
             return redirect(reverse('workqueue:task_list')+'?'+urlencode(filters))
     jobs = WorkItem.objects.filter(project_id=OuterRef('project_id'))
-    tasks = ProjectTask.objects.select_related('project').alias(has_job=Exists(jobs)).filter(has_job=True)
+    tasks = ProjectTask.objects.select_related('project', 'project__filing_folder').alias(has_job=Exists(jobs)).filter(has_job=True)
     if filters['scope'] == 'active':
         tasks = tasks.alias(active_project=Exists(jobs.exclude(status__in=CLOSED_STATUSES))).filter(active_project=True)
     if filters['q']:
@@ -150,7 +150,7 @@ def task_list(request):
 @require_http_methods(['GET','POST'])
 def task_edit(request, task_id):
     editable(request)
-    task = get_object_or_404(ProjectTask.objects.select_related('project'),pk=task_id)
+    task = get_object_or_404(ProjectTask.objects.select_related('project', 'project__filing_folder'),pk=task_id)
     form = TaskEditForm(request.POST if request.method == 'POST' and request.POST.get('action') == 'save' else None,
         instance=task,initial={'version':task.version})
     status, error = 200, ''
