@@ -61,7 +61,7 @@ class QueueEditForm(StyledForm, MilestoneEmailChoice, forms.ModelForm):
         self.fields['next_deliverable'].required = False
         self.fields['next_deliverable'].help_text = 'Shown to the client. Leave blank for Next drawing update.'
         self.fields['client_action'].help_text = 'Shown on client tracking. Describe only what the client needs to provide or do. Keep private notes in Internal notes.'
-        self.fields["project"].queryset = WorkProject.objects.all()
+        self.fields["project"].queryset = WorkProject.objects.select_related('filing_folder').all()
         self.fields["project"].label = "Connected project"
         self.fields["queue_order"].help_text = "Lower numbers appear earlier. Equal values use received time and request ID."
         self.fields['project_name'].help_text = 'Changing the name or address also updates the connected project for its linked requests.'
